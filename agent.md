@@ -19,6 +19,7 @@
   3. Mọi lệnh gọi LLM/API có Timeout, Retry/Fallback và kiểm tra Schema (Zod/Pydantic).
   4. Không hardcode secret/API key; 100% Zero-Leak chạy cục bộ tại Localhost, tự động che chuỗi nhạy cảm qua hàm mask().
   5. Không đổi tên trường API/Database khi chưa cập nhật Vùng [3].
+  6. Luật phân việc ngoài lệ (CEO Override): Mặc định GPT 6.1 Sol chỉ làm kiến trúc & hợp đồng Vùng [3], Codex làm code; CHỈ KHI Chủ Dự Án (CEO) trực tiếp ban hành lệnh đặc cách (qua nút "Phân việc ngoài lề" hoặc ghi Vùng [4.1]) thì GPT 6.1 Sol mới được phép viết mã nguồn trực tiếp (Bypass Codex).
 
 ## [2] ĐẶC TẢ SẢN PHẨM, AI AGENT & THIẾT KẾ FULLSTACK FRONTEND (UI/UX) (Chủ: SPEC_ARCHITECT)
 ### [2.1] SẢN PHẨM & PHẠM VI MVP
@@ -32,6 +33,7 @@
   - F5 (Cơ Chế Đề Xuất Chuyển Lượt Tự Động 1-Click): Pop-up đề xuất khi xong Vùng, Giám đốc bấm duyệt là tự động cập nhật Vùng [4] và commit chore(agent-sync).
   - F6 (Zero-Leak Personal Accounts): Xác thực độc lập qua CLI từng hãng, dùng gói đăng ký của cá nhân, 100% Localhost.
   - F7 (Native Node.js 24 SQLite): Sử dụng DatabaseSync tiêu chuẩn, 0 thư viện ngoài.
+  - F8 (CEO Override & Smooth Room Zoom Navigation): Cơ chế phân việc ngoài lề cho phép Giám đốc chỉ định ngoại lệ (ví dụ cấp quyền code trực tiếp cho 6.1 Sol); kèm thanh điều hướng lướt phòng (Glide Focus), slider thu phóng và thao tác cuộn/di chuột êm dịu.
 - Out-of-Scope: Không can thiệp mã nhị phân VS Code, không đẩy dữ liệu ra Internet công cộng.
 
 ### [2.2] LUỒNG NGƯỜI DÙNG ĐẦU-CUỐI (E2E USER FLOW)

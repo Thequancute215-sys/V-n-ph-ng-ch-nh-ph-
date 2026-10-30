@@ -43,7 +43,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
 .btn.ghost:hover { background: rgba(255,255,255,0.1); color: #fff; }
 
 /* Sidebars (Thanh bên trợ năng) */
-.sidebar { position: fixed; top: 68px; bottom: 16px; width: 380px; z-index: 30; background: var(--panel-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--panel-border); border-radius: 20px; box-shadow: 0 16px 48px rgba(0,0,0,0.5); display: flex; flex-direction: column; overflow: hidden; transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease; pointer-events: auto; }
+.sidebar { position: fixed; top: 68px; bottom: 64px; width: 380px; z-index: 30; background: var(--panel-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--panel-border); border-radius: 20px; box-shadow: 0 16px 48px rgba(0,0,0,0.5); display: flex; flex-direction: column; overflow: hidden; transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease; pointer-events: auto; }
 .sidebar-left { left: 16px; transform: translateX(calc(-100% - 24px)); opacity: 0; }
 .sidebar-left.open { transform: translateX(0); opacity: 1; }
 .sidebar-right { right: 16px; transform: translateX(calc(100% + 24px)); opacity: 0; }
@@ -105,33 +105,119 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
 }
 @keyframes floatPop { from { transform: scale(0.7) translateY(8px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
 
-.say {
-  display: block; max-width: 260px; max-height: 160px; overflow: auto; pointer-events: auto;
-  margin: 0 auto 6px; font-size: 11px; font-weight: 600; line-height: 1.4; padding: 7px 10px;
-  border-radius: 12px; background: rgba(15, 23, 42, 0.95); border: 1px solid; white-space: normal;
-  text-align: left; box-shadow: 0 6px 20px rgba(0,0,0,.6); animation: floatPop .3s ease;
-}
-.say small { display: block; font-size: 9.5px; opacity: .85; font-weight: 700; margin-bottom: 2px; }
-
 /* Room labels on floor */
 .rl { font-size: 10px; letter-spacing: .15em; text-transform: uppercase; color: #94a3b8; font-weight: 700; white-space: nowrap; pointer-events: none; text-shadow: 0 1px 3px #000; }
-.dl { font-size: 11px; color: #f1f5f9; text-align: center; pointer-events: none; text-shadow: 0 1px 4px #000; white-space: nowrap; }
-.dl small { display: block; color: #94a3b8; font-size: 9.5px; }
 
-/* Flying message orb tag */
-.ml { font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: rgba(15,23,42,.92); border: 1px solid; white-space: nowrap; pointer-events: none; }
+/* Bottom Floating Room Navigator (Điều hướng phòng & Zoom mượt mà) */
+.room-nav-pill {
+  position: fixed;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--panel-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  padding: 6px 12px;
+  box-shadow: 0 10px 36px rgba(0,0,0,0.45);
+  z-index: 25;
+  pointer-events: auto;
+}
+.rbtn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--mute);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 11px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.rbtn:hover { color: #fff; background: rgba(255,255,255,0.08); }
+.rbtn.active {
+  color: #000;
+  background: var(--gold);
+  box-shadow: 0 4px 14px rgba(236,201,112,0.3);
+}
 
-/* Meeting label */
-.mt { min-width: 220px; max-width: 320px; padding: 8px 12px; border-radius: 14px; background: rgba(15,23,42,.92); border: 1px solid; font-size: 11px; line-height: 1.45; color: #f1f5f9; pointer-events: none; text-align: left; box-shadow: 0 8px 24px rgba(0,0,0,.5); }
-.mt b { display: block; font-size: 12px; margin-bottom: 2px; }
-.mt i { display: block; font-style: normal; color: #94a3b8; font-size: 10px; margin-bottom: 4px; }
-.mt.idle { min-width: 0; padding: 4px 10px; border-color: rgba(255,255,255,.14); color: #94a3b8; font-size: 10px; letter-spacing: .06em; }
+/* Zoom Slider */
+.zoom-slider-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 8px;
+  padding-left: 10px;
+  border-left: 1px solid rgba(255,255,255,0.12);
+}
+.zoom-slider-box input[type="range"] {
+  width: 75px;
+  height: 4px;
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+.zoom-slider-box button {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #fff;
+  border-radius: 6px;
+  width: 22px;
+  height: 22px;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Modal Overlay: Phân việc ngoài lề */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 16px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.modal-card {
+  width: 100%;
+  max-width: 520px;
+  background: #0f172a;
+  border: 1px solid rgba(236,201,112,0.4);
+  border-radius: 22px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transform: scale(0.94);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.modal-overlay.open .modal-card {
+  transform: scale(1);
+}
 
 /* Bottom Quick Links */
-.links { position: fixed; right: 16px; bottom: 12px; display: flex; gap: 8px; z-index: 20; }
+.links { position: fixed; right: 16px; bottom: 16px; display: flex; gap: 8px; z-index: 20; }
 .links a { font-size: 11px; font-weight: 600; color: var(--mute); text-decoration: none; border: 1px solid var(--panel-border); border-radius: 999px; padding: 5px 12px; background: var(--panel-bg); backdrop-filter: blur(10px); transition: all .2s; }
 .links a:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
-.hint { position: fixed; left: 16px; bottom: 12px; font-size: 11px; color: var(--mute2); z-index: 20; pointer-events: none; }
+.hint { position: fixed; left: 16px; bottom: 16px; font-size: 11px; color: var(--mute2); z-index: 20; pointer-events: none; }
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head>
@@ -151,7 +237,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
     <div class="logo">V</div>
     <div class="ttl">
       <b id="ttl">Văn phòng AI Chibi</b>
-      <small id="sub">View Thành Phố & Cây Xanh · Trực tiếp</small>
+      <small id="sub">City View & Cây Xanh · Điều Hướng Zoom Phòng</small>
     </div>
   </div>
 
@@ -169,16 +255,91 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
 
   <div class="sp"></div>
 
-  <!-- Right Side: Turn Indicator & Toggle Right Sidebar -->
-  <div class="pill" id="mutexPill" style="border-color:rgba(168,85,247,0.4)">
-    <span style="color:#a855f7;font-weight:700;font-size:11px">LƯỢT:</span>
-    <b style="font-size:12px;color:#f1f5f9;font-family:'JetBrains Mono'" id="mutexName">SPEC_ARCHITECT</b>
-  </div>
+  <!-- Nút Phân Việc Ngoài Lề Đặc Cách -->
+  <button class="btn" id="openOverrideBtn" style="background:linear-gradient(135deg, #ecc970, #f59e0b);color:#000;font-weight:800;box-shadow:0 6px 22px rgba(245,158,11,0.35)">
+    <span style="font-size:14px">⚡</span>
+    <span>Phân Việc Ngoài Lề (Đặc Cách)</span>
+  </button>
 
-  <button class="btn" id="toggleRightSidebar" title="Mở Trợ Năng Nhân Sự & Hòm Thư">
+  <button class="btn ghost pill" id="toggleRightSidebar" title="Mở Trợ Năng Nhân Sự & Hòm Thư">
     <span>Nhân Sự & Hòm Thư</span>
     <span style="font-size:14px">⚙</span>
   </button>
+</div>
+
+<!-- ================= CỤM ĐIỀU HƯỚNG PHÒNG & ZOOM TRỰC QUAN (BOTTOM BAR) ================= -->
+<div class="room-nav-pill">
+  <button class="rbtn active" data-room="all" title="Xem toàn cảnh văn phòng">🏢 Toàn Cảnh</button>
+  <button class="rbtn" data-room="ceo" title="Zoom vào Phòng Giám Đốc">👑 Giám Đốc</button>
+  <button class="rbtn" data-room="antigravity" title="Zoom vào Studio Antigravity">🤖 Antigravity</button>
+  <button class="rbtn" data-room="sol" title="Zoom vào Phòng Kiến Trúc Sol">📐 Sol Architect</button>
+  <button class="rbtn" data-room="codex" title="Zoom vào Xưởng Lập Trình Codex">💻 Codex Astra</button>
+  <button class="rbtn" data-room="claude" title="Zoom vào Phòng Claude Captain">🛡️ Claude</button>
+  <button class="rbtn" data-room="dev" title="Zoom vào Phòng DEV">⚡ DEV</button>
+  <button class="rbtn" data-room="lounge" title="Zoom vào Phòng Họp Ban">🪑 Họp Ban</button>
+
+  <div class="zoom-slider-box">
+    <button id="zoomOutBtn" title="Thu nhỏ">-</button>
+    <input type="range" id="zoomRange" min="15" max="180" value="85" title="Kéo cuộn để thu phóng">
+    <button id="zoomInBtn" title="Phóng to">+</button>
+  </div>
+</div>
+
+<!-- ================= MODAL: PHÂN VIỆC NGOÀI LỀ (ĐẶC CÁCH CODE CHO SOL) ================= -->
+<div class="modal-overlay" id="overrideModal">
+  <div class="modal-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:12px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:34px;height:34px;border-radius:10px;background:rgba(236,201,112,0.2);color:var(--gold);display:grid;place-items:center;font-size:18px">⚡</div>
+        <div>
+          <h3 style="margin:0;font-size:15px;font-weight:800;color:#fff;font-family:'Quicksand',sans-serif">CHỈ ĐỊNH PHÂN VIỆC NGOÀI LỀ (CEO OVERRIDE)</h3>
+          <p style="margin:2px 0 0;font-size:11px;color:var(--mute)">Cấp quyền đặc cách vượt ngoài vai trò mặc định của Protocol v2.2</p>
+        </div>
+      </div>
+      <button class="btn ghost" style="padding:4px 8px;font-size:12px" id="closeOverrideBtn">✕</button>
+    </div>
+
+    <!-- Chọn AI -->
+    <div>
+      <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--mute);margin-bottom:6px">Chọn AI nhận chỉ thị đặc biệt:</label>
+      <select id="overrideAgentSelect" style="width:100%;padding:10px 12px;background:#090d16;border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:#fff;font-size:12.5px;font-family:inherit;outline:none">
+        <option value="sol" selected>📐 GPT 6.1 Sol (Khuyên dùng: Cho phép Code trực tiếp)</option>
+        <option value="antigravity">🤖 Antigravity (Gemini 3.8 - Đặc tả & UI/UX)</option>
+        <option value="claude">🛡️ Claude Code (Captain & Auditor)</option>
+        <option value="codex">💻 Codex Astra (Fullstack Dev)</option>
+      </select>
+    </div>
+
+    <!-- Checkboxes đặc quyền -->
+    <div style="background:rgba(236,201,112,0.06);border:1px solid rgba(236,201,112,0.25);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px">
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#f8fafc;cursor:pointer">
+        <input type="checkbox" id="permCode" checked style="accent-color:var(--gold);width:16px;height:16px">
+        <b>Cho phép Lập Trình Mã Nguồn Trực Tiếp (Bypass Codex)</b>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#f8fafc;cursor:pointer">
+        <input type="checkbox" id="permSync" checked style="accent-color:var(--gold);width:16px;height:16px">
+        <span>Ghi nhận chỉ thị vào <b>agent.md</b> Vùng [4.1] & Sổ <b>CAN-ANH.md</b></span>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#f8fafc;cursor:pointer">
+        <input type="checkbox" id="permMail" checked style="accent-color:var(--gold);width:16px;height:16px">
+        <span>Gửi thông báo hỏa tốc vào hòm thư <b>hop-thu/sol.jsonl</b></span>
+      </label>
+    </div>
+
+    <!-- Nội dung công việc -->
+    <div>
+      <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--mute);margin-bottom:6px">Nội dung chỉ đạo của Giám Đốc:</label>
+      <textarea id="overrideTaskText" rows="3" style="width:100%;padding:10px 12px;background:#090d16;border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:#fff;font-size:12px;font-family:inherit;outline:none;resize:none">Sol hãy trực tiếp lập trình mã nguồn module đọc SQLite native và API Streaming trong server.js thay vì chờ Codex.</textarea>
+    </div>
+
+    <!-- Nút hành động -->
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:6px">
+      <button class="btn ghost" style="padding:10px 16px" id="cancelOverrideBtn">Hủy bỏ</button>
+      <button class="btn" style="padding:10px 18px;background:linear-gradient(135deg, #ecc970, #f59e0b)" onclick="submitOverrideDirective()">
+        🚀 Ban Hành Chỉ Thị Đặc Cách
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- ================= THANH BÊN TRÁI TRỢ NĂNG: ĐIỀU PHỐI, REPO & CÔNG VIỆC ================= -->
@@ -245,7 +406,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
       <div style="font-size:14px;font-weight:800;color:#fff" id="agentNameTxt">Anh Oanh (Chủ Dự Án)</div>
       <div style="font-size:11px;color:var(--gold);margin-top:2px" id="agentRoleTxt">Chủ văn phòng / Quyết định tối cao</div>
       <div style="font-size:11px;color:var(--mute);margin-top:8px;font-style:italic" id="agentLastTextTxt">
-        "Không thể tạo được cảnh thành phố kèm cây xanh hay gì à..."
+        "Chỉ khi tôi chỉ định thì 6.1 Sol mới có thể code..."
       </div>
     </div>
 
@@ -279,7 +440,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
   </div>
 </aside>
 
-<div class="hint" id="hint">Kéo chuột để xoay góc nhìn · Cuộn để thu phóng · Bấm vào nhân vật để xem chi tiết</div>
+<div class="hint" id="hint">Cuộn chuột để zoom sát từng phòng · Kéo chuột để xoay · Click vào phòng để lướt tới</div>
 <div class="links">
   <a href="prototype.html">Bản Prototype Chibi</a>
   <a href="tongquan.html">Tổng quan</a>
@@ -299,7 +460,6 @@ const h = (tag, cls, text) => { const e = document.createElement(tag); if (cls) 
 const ago = (ms) => { if (!ms) return "–"; const s = Math.max(0, (Date.now() - ms) / 1000); if (s < 60) return Math.round(s) + "s"; if (s < 3600) return Math.round(s / 60) + "m"; return (s / 3600).toFixed(1) + "h"; };
 const short = (n) => String(n || "").split(" · ")[0];
 const PCOL = { claude: 0xe07a5f, codex: 0x3a86ff, human: 0xecc970, antigravity: 0xa855f7, sol: 0x10b981 };
-const SC = { ok: 0x7ccf9b, warn: 0xecc970, bad: 0xe8a39b, idle: 0x475569, off: 0x1e293b };
 
 // Renderer
 const gl = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -317,13 +477,15 @@ $("lbl").appendChild(lblR.domElement);
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(0x0e1726, 160, 360);
 
-// Cozy camera angle: Focuses directly on the warm office floor without huge dizzying screens!
+// Camera and OrbitControls with expanded zoom range for smooth mouse wheel navigation!
 const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 600);
 const controls = new OrbitControls(camera, gl.domElement);
 controls.enableDamping = true;
-controls.maxPolarAngle = 1.35;
-controls.minDistance = 20;
-controls.maxDistance = 240;
+controls.dampingFactor = 0.08;
+controls.maxPolarAngle = 1.36;
+controls.minDistance = 8;  // Zoom sát từng mặt bàn!
+controls.maxDistance = 240; // Thu nhỏ toàn cảnh rộng rãi
+controls.zoomSpeed = 1.3;
 
 const HOME_CAM = { pos: new THREE.Vector3(0, 52, 92), target: new THREE.Vector3(0, 4, 0) };
 camera.position.copy(HOME_CAM.pos);
@@ -337,7 +499,20 @@ function resize() {
 addEventListener("resize", resize);
 resize();
 
-// Soft Architectural Daylight & Ambient Lights
+// Smooth Cinematic Camera Zoom/Glide Function
+let camAnim = null;
+function zoomTo(targetPos, targetLookAt, ms = 850) {
+  camAnim = {
+    p0: camera.position.clone(),
+    t0: controls.target.clone(),
+    p1: targetPos.clone(),
+    t1: targetLookAt.clone(),
+    start: performance.now(),
+    ms
+  };
+}
+
+// Lighting
 const pmrem = new THREE.PMREMGenerator(gl);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.05).texture;
 scene.add(new THREE.HemisphereLight(0xdbeafe, 0x1e293b, 0.65));
@@ -354,9 +529,6 @@ const skyFill = new THREE.DirectionalLight(0x93c5fd, 0.7);
 skyFill.position.set(50, 40, -40);
 scene.add(skyFill);
 
-const devLight = new THREE.PointLight(0xecc970, 0, 50, 2);
-scene.add(devLight);
-
 const std = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.55, metalness: 0.1, ...o });
 const add = (m, x, y, z, parent = scene) => { m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m; };
 
@@ -366,7 +538,6 @@ function makeSkylineTexture() {
   canvas.width = 2048; canvas.height = 1024;
   const ctx = canvas.getContext("2d");
 
-  // Sky Gradient: Twilight blue into warm ambient city glow
   const sky = ctx.createLinearGradient(0, 0, 0, 1024);
   sky.addColorStop(0, "#0b1528");
   sky.addColorStop(0.5, "#182c4d");
@@ -400,17 +571,15 @@ function makeSkylineTexture() {
     const by = 1024 - h;
     ctx.fillRect(x, by, w, h);
 
-    // Skyscraper rooftop spires or antennas
     if (Math.random() > 0.4) {
       ctx.fillStyle = "#2a4670";
       ctx.fillRect(x + w / 2 - 2, by - 45, 4, 45);
-      // Red or white aviation beacon light
       ctx.fillStyle = "#f43f5e";
       ctx.beginPath(); ctx.arc(x + w / 2, by - 46, 3, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = "#192e4e";
     }
 
-    // Windows Grid (Illuminated warm & cyan office windows)
+    // Windows Grid
     const cols = Math.floor(w / 14), rows = Math.floor(h / 18);
     for (let r = 2; r < rows - 2; r++) {
       for (let c = 1; c < cols - 1; c++) {
@@ -429,7 +598,6 @@ function makeSkylineTexture() {
   return texture;
 }
 
-// Background Panoramic Curved Wall with Skyline Texture
 const skylineTex = makeSkylineTexture();
 const skyGeo = new THREE.CylinderGeometry(240, 240, 110, 64, 1, true, -Math.PI * 0.75, Math.PI * 1.5);
 const skyMat = new THREE.MeshBasicMaterial({ map: skylineTex, side: THREE.BackSide });
@@ -437,70 +605,52 @@ const skyMesh = new THREE.Mesh(skyGeo, skyMat);
 skyMesh.position.set(0, 45, -30);
 scene.add(skyMesh);
 
-// Large Floor-To-Ceiling Panoramic Glass Window Wall Behind Office
+// Large Floor-To-Ceiling Panoramic Glass Window
 const GLASS_Z = -52;
 const winHgt = 32, winW = 168;
 const windowGroup = new THREE.Group();
 windowGroup.position.set(0, 0, GLASS_Z);
 scene.add(windowGroup);
 
-// Glass panes with soft reflection
 const bigGlassMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, transparent: true, opacity: 0.15, roughness: 0.05, metalness: 0.3 });
 const winPane = new THREE.Mesh(new THREE.PlaneGeometry(winW, winHgt), bigGlassMat);
 winPane.position.y = winHgt / 2;
 windowGroup.add(winPane);
 
-// Aluminum Window Frames & Mullions
 const frameMat = std(0x1e293b, { metalness: 0.8, roughness: 0.3 });
 add(new THREE.Mesh(new THREE.BoxGeometry(winW, 0.8, 0.8), frameMat), 0, winHgt, 0, windowGroup);
 add(new THREE.Mesh(new THREE.BoxGeometry(winW, 0.8, 0.8), frameMat), 0, 0.4, 0, windowGroup);
-const numPillars = 12;
-for (let i = 0; i <= numPillars; i++) {
-  const px = -winW / 2 + (winW / numPillars) * i;
+for (let i = 0; i <= 12; i++) {
+  const px = -winW / 2 + (winW / 12) * i;
   add(new THREE.Mesh(new THREE.BoxGeometry(0.8, winHgt, 0.8), frameMat), px, winHgt / 2, 0, windowGroup);
 }
 
-// ================= CÂY XANH TƯƠI MÁT DỌC CỬA SỔ & TRONG PHÒNG =================
+// Cây xanh tươi mát
 function makePlant(x, z, scale = 1, type = "large") {
-  const g = new THREE.Group();
-  g.position.set(x, 0, z);
-  g.scale.setScalar(scale);
-  scene.add(g);
-
-  // Modern ceramic pot
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.scale.setScalar(scale); scene.add(g);
   const potColor = Math.random() > 0.5 ? 0xf8fafc : 0x1e293b;
   add(new THREE.Mesh(new THREE.CylinderGeometry(1.0, 0.75, 2.0, 24), std(potColor, { roughness: 0.3 })), 0, 1.0, 0, g);
   add(new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.15, 24), std(0x271a0e, { roughness: 0.9 })), 0, 1.95, 0, g);
-
-  // Lush green foliage
   const leafCount = type === "large" ? 14 : 9;
   for (let i = 0; i < leafCount; i++) {
     const ang = (i / leafCount) * Math.PI * 2;
-    const leafGeo = new THREE.SphereGeometry(0.7, 10, 8);
-    const leafMat = std(i % 2 === 0 ? 0x22c55e : 0x15803d, { roughness: 0.65 });
-    const leaf = new THREE.Mesh(leafGeo, leafMat);
+    const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.7, 10, 8), std(i % 2 === 0 ? 0x22c55e : 0x15803d, { roughness: 0.65 }));
     leaf.scale.set(0.45, 1.8, 0.2);
     leaf.rotation.set(Math.cos(ang) * 0.5 + 0.2, ang, Math.sin(ang) * 0.5);
     add(leaf, Math.cos(ang) * 0.6, 2.8 + (i % 4) * 0.35, Math.sin(ang) * 0.6, g);
   }
 }
-
-// Greenery Along the Large Panoramic Window (Bồn cây xanh trải dài chân cửa kính)
-for (let px = -78; px <= 78; px += 14) {
-  makePlant(px, GLASS_Z + 3.2, 1.15, "large");
-}
-// Room Corner Plants
+for (let px = -78; px <= 78; px += 14) makePlant(px, GLASS_Z + 3.2, 1.15, "large");
 makePlant(-68, 38, 1.25, "large");
 makePlant(68, 38, 1.25, "large");
 makePlant(-15, 15, 0.9, "small");
 makePlant(20, -10, 1.0, "large");
 
-// ================= MẶT BẰNG SÀN GỖ VĂN PHÒNG =================
+// Sàn gỗ
 const S = 8;
 const X = (x) => (x - 600) / S, Z = (y) => (y - 390) / S;
 const OW = 1200 / S + 14, OD = 780 / S + 14;
 
-// Wood floor canvas texture
 function makeWoodTexture() {
   const c = document.createElement("canvas"); c.width = 512; c.height = 512;
   const g = c.getContext("2d");
@@ -530,12 +680,11 @@ const floor = add(new THREE.Mesh(new THREE.PlaneGeometry(OW, OD), floorMat), 0, 
 floor.rotation.x = -Math.PI / 2;
 floor.receiveShadow = true;
 
-// Low Outer Glass Balcony / Skirting
 const outerMat = std(0xf1f5f9, { roughness: 0.8 });
 add(new THREE.Mesh(new THREE.BoxGeometry(OW, 2.4, 0.6), outerMat), 0, 1.2, OD / 2);
 for (const sx of [-1, 1]) add(new THREE.Mesh(new THREE.BoxGeometry(0.6, 2.4, OD), outerMat), sx * OW / 2, 1.2, 0);
 
-// ================= PHÒNG BAN: VÁCH KÍNH NHÔM HIỆN ĐẠI =================
+// Phòng ban
 const ROOMS = [
   { id: "ceo", label: "Phòng Giám đốc (CEO)", x: 20, y: 20, w: 220, h: 170, tone: 0x8a6a3a },
   { id: "antigravity", label: "Studio Antigravity (Gemini)", x: 256, y: 20, w: 240, h: 170, tone: 0x6b21a8 },
@@ -557,11 +706,14 @@ function glassWall(x1, z1, x2, z2, hgt = 3.2) {
   add(new THREE.Mesh(new THREE.BoxGeometry(len, 0.12, 0.14), alu), 0, 0.06, 0, g);
 }
 
+const roomMeshes = [];
 for (const r of ROOMS) {
   const x0 = X(r.x) + 0.3, x1 = X(r.x + r.w) - 0.3, z0 = Z(r.y) + 0.3, z1 = Z(r.y + r.h) - 0.3;
-  // Carpet rug
   const rugMat = std(r.tone, { roughness: 0.95 });
-  add(new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, 0.06, z1 - z0), rugMat), (x0 + x1) / 2, 0.03, (z0 + z1) / 2);
+  const rug = add(new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, 0.06, z1 - z0), rugMat), (x0 + x1) / 2, 0.03, (z0 + z1) / 2);
+  rug.userData = { roomId: r.id, center: new THREE.Vector3((x0 + x1) / 2, 2, (z0 + z1) / 2) };
+  roomMeshes.push(rug);
+
   glassWall(x0, z0, x1, z0); glassWall(x0, z0, x0, z1); glassWall(x1, z0, x1, z1);
   const gap = Math.min(6, (x1 - x0) * 0.3);
   glassWall(x0, z1, (x0 + x1) / 2 - gap / 2, z1);
@@ -572,7 +724,7 @@ for (const r of ROOMS) {
   scene.add(lab);
 }
 
-// Bàn họp hội nghị tròn trong phòng họp
+// Bàn họp tròn
 const MT = { x: X(1029), z: Z(540) };
 add(new THREE.Mesh(new THREE.CylinderGeometry(5.4, 5.4, 0.28, 48), std(0xe2e8f0, { roughness: 0.2 })), MT.x, 1.5, MT.z);
 add(new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.4, 1.4, 24), std(0x1e293b, { metalness: 0.7 })), MT.x, 0.7, MT.z);
@@ -584,7 +736,7 @@ for (let i = 0; i < 6; i++) {
   back.lookAt(MT.x, 1.8, MT.z);
 }
 
-// ================= BÀN LÀM VIỆC & NHÂN VẬT CHIBI =================
+// Bàn làm việc
 const HOME = {
   ceo: [130, 112],
   antigravity: [376, 112],
@@ -592,29 +744,24 @@ const HOME = {
   claude: [1029, 170],
   codex: [431, 570],
 };
-const DEV_SEAT = [644, 336];
 
 const oak = std(0xc9a27a, { roughness: 0.4 }), white = std(0xf8fafc, { roughness: 0.3 });
 function makeDesk(k, x, y) {
   const isCeo = k === "ceo";
   const g = new THREE.Group(); g.position.set(X(x), 0, Z(y) - 3.4); scene.add(g);
-  // Table top
   add(new THREE.Mesh(new THREE.BoxGeometry(isCeo ? 9 : 7.6, 0.18, 3.2), isCeo ? std(0x451a03) : oak), 0, 1.55, 0, g);
-  // Legs
   for (const sx of [-1, 1]) add(new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.5, 2.9), white), sx * (isCeo ? 4.3 : 3.6), 0.75, 0, g);
-  // Monitors with screen light
   const sm = new THREE.MeshStandardMaterial({ color: 0x050607, emissive: 0x38bdf8, emissiveIntensity: 0.6, roughness: 0.2 });
   const mon = new THREE.Group(); mon.position.set(0, 0, -0.6); g.add(mon);
   add(new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.9, 0.12), std(0x0f172a)), 0, 2.75, 0, mon);
   const scr = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 1.7), sm); scr.position.set(0, 2.75, 0.065); mon.add(scr);
   add(new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.8, 8), alu), 0, 1.95, -0.05, mon);
-  // Keyboard & Coffee Cup
   add(new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.05, 0.6), std(0x334155)), 0, 1.68, 0.55, g);
   add(new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.15, 0.4, 16), white), -2.6, 1.85, 0.6, g);
 }
 for (const [k, [x, y]] of Object.entries(HOME)) makeDesk(k, x, y);
 
-// Nhân vật Chibi 3D dễ thương
+// Nhân vật Chibi
 const bots = {}; let selected = "ceo";
 
 function makeBot(a) {
@@ -622,45 +769,38 @@ function makeBot(a) {
   const col = PCOL[a.platform] || PCOL[a.key] || 0xa855f7;
   const shell = std(col, { roughness: 0.3, metalness: 0.2 });
 
-  // Chibi rounded body
   const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.75, 0.9, 12, 20), shell);
   body.position.y = 1.6; g.add(body);
 
-  // Big cute head
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.88, 32, 24), std(0xffffff, { roughness: 0.2 }));
   head.position.y = 3.2; g.add(head);
 
-  // Shiny Eye Visor
   const visorMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, emissive: col, emissiveIntensity: 0.5, roughness: 0.1 });
   const visor = new THREE.Mesh(new THREE.SphereGeometry(0.89, 24, 12, Math.PI * 0.5 - 0.95, 1.9, 1.15, 0.85), visorMat);
   visor.position.y = 3.2; g.add(visor);
 
-  // Glowing eyes
   const eyes = [];
   for (const sx of [-0.26, 0.26]) {
     const e = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
     e.position.set(sx, 3.25, 0.86); g.add(e); eyes.push(e);
   }
 
-  // Accessories
+  let crown = null;
   if (a.key === "ceo" || a.platform === "human") {
-    // Crown for CEO
-    const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.45, 0.4, 6, 1, true), std(0xecc970, { emissive: 0xecc970, emissiveIntensity: 0.4, metalness: 0.8 }));
+    crown = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.45, 0.4, 6, 1, true), std(0xecc970, { emissive: 0xecc970, emissiveIntensity: 0.4, metalness: 0.8 }));
     crown.position.y = 4.15; g.add(crown);
   } else {
-    // Tech Antenna
     const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.6, 8), std(0xcfcfcf)); ant.position.y = 4.2; g.add(ant);
     const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 8), new THREE.MeshBasicMaterial({ color: col })); bulb.position.y = 4.55; g.add(bulb);
   }
 
-  // Arms
   const arms = [];
   for (const sx of [-1, 1]) {
     const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.18, 0.5, 4, 10), shell);
     arm.position.set(sx * 1.0, 1.7, 0); g.add(arm); arms.push(arm);
   }
 
-  // Floating Label & REQUEST BUBBLE DIRECTLY ABOVE HEAD
+  // Floating Label & REQUEST BUBBLE
   const lab = h("div", "lb");
   const reqBubble = h("div", "req-bubble");
   reqBubble.style.display = "none";
@@ -672,10 +812,11 @@ function makeBot(a) {
     selected = a.key;
     updateSidebarAgentInfo(a);
     openRightSidebar();
+    focusOnAgent(a.key);
   });
 
   const lo = new CSS2DObject(lab);
-  lo.position.y = 5.2; // Directly above head
+  lo.position.y = 5.2;
   g.add(lo);
 
   g.scale.setScalar(1.35);
@@ -684,12 +825,11 @@ function makeBot(a) {
   const hm = HOME[a.key] || [600, 400];
   g.position.set(X(hm[0]), 0.14, Z(hm[1]));
 
-  return { g, body, head, visor, visorMat, eyes, arms, reqBubble, says, bub, lab, target: g.position.clone(), moving: false };
+  return { g, body, head, visor, visorMat, eyes, arms, reqBubble, says, bub, lab, target: g.position.clone(), moving: false, typing: false };
 }
 
-// Set up Default Initial Agents
 const defaultAgents = [
-  { key: "ceo", name: "Anh Oanh", role: "Chủ Dự Án / Quyết định tối cao", platform: "human", lastText: "Không thể tạo được cảnh thành phố kèm cây xanh hay gì à... Đặt yêu cầu trên đầu và đưa dữ liệu ra thanh bên trợ năng!" },
+  { key: "ceo", name: "Anh Oanh", role: "Chủ Dự Án / Quyết định tối cao", platform: "human", lastText: "Chỉ khi tôi chỉ định thì 6.1 Sol mới có thể code. Hãy hỗ trợ cuộn và zoom chuột mượt mà!" },
   { key: "antigravity", name: "Antigravity", role: "SPEC_ARCHITECT & UI/UX", platform: "antigravity", lastText: "Đã hoàn thành Vùng [2] Đặc Tả & Giao diện Chibi Cityscape. Đề xuất chuyển lượt cho Sol!" },
   { key: "sol", name: "GPT 6.1 Sol", role: "SOL_ARCHITECT_PLANNER", platform: "sol", lastText: "Sẵn sàng nhận lượt để lập kế hoạch Backend, DB Schema & API Contracts." },
   { key: "codex", name: "Codex Astra", role: "CODEX_ASTRA_DEV", platform: "codex", lastText: "Chờ hợp đồng Vùng [3] để triển khai source code." },
@@ -698,7 +838,6 @@ const defaultAgents = [
 
 for (const a of defaultAgents) {
   bots[a.key] = makeBot(a);
-  // Show Floating Request Bubble Above Character's Head
   showFloatingBubble(bots[a.key], a);
 }
 
@@ -718,6 +857,15 @@ const clock = new THREE.Clock();
 function loop() {
   const dt = Math.min(clock.getDelta(), 0.25), t = clock.elapsedTime;
 
+  // Smooth Camera Gliding
+  if (camAnim) {
+    const u = Math.min(1, (performance.now() - camAnim.start) / camAnim.ms);
+    const ease = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+    camera.position.lerpVectors(camAnim.p0, camAnim.p1, ease);
+    controls.target.lerpVectors(camAnim.t0, camAnim.t1, ease);
+    if (u >= 1) camAnim = null;
+  }
+
   for (const k in bots) {
     const b = bots[k];
     const d = b.target.clone().sub(b.g.position); d.y = 0; const dist = d.length();
@@ -729,12 +877,17 @@ function loop() {
       b.moving = false;
       b.g.rotation.y = Math.PI;
     }
-    // Gentle breathing & walking bob
     const bob = b.moving ? Math.abs(Math.sin(t * 10)) * 0.2 : Math.sin(t * 2.5 + k.length) * 0.04;
     b.body.position.y = 1.6 + bob;
     b.head.position.y = 3.2 + bob;
     b.visor.position.y = 3.2 + bob;
     b.eyes.forEach((e) => { e.position.y = 3.25 + bob; });
+
+    // Typing effect if typing
+    if (b.typing) {
+      b.arms[0].rotation.x = Math.sin(t * 16) * 0.35 - 0.55;
+      b.arms[1].rotation.x = Math.sin(t * 16 + 1.5) * 0.35 - 0.55;
+    }
   }
 
   controls.update();
@@ -744,7 +897,126 @@ function loop() {
 }
 loop();
 
-// ================= SIDEBAR TOGGLES & INTERACTION =================
+// ================= ZOOM & ROOM NAVIGATION =================
+const ROOM_COORDS = {
+  all: { pos: new THREE.Vector3(0, 52, 92), target: new THREE.Vector3(0, 4, 0) },
+  ceo: { pos: new THREE.Vector3(X(130), 18, Z(112) + 22), target: new THREE.Vector3(X(130), 2, Z(112)) },
+  antigravity: { pos: new THREE.Vector3(X(376), 18, Z(112) + 22), target: new THREE.Vector3(X(376), 2, Z(112)) },
+  sol: { pos: new THREE.Vector3(X(687), 18, Z(112) + 22), target: new THREE.Vector3(X(687), 2, Z(112)) },
+  codex: { pos: new THREE.Vector3(X(431), 22, Z(570) + 26), target: new THREE.Vector3(X(431), 2, Z(570)) },
+  claude: { pos: new THREE.Vector3(X(1029), 20, Z(170) + 24), target: new THREE.Vector3(X(1029), 2, Z(170)) },
+  dev: { pos: new THREE.Vector3(X(644), 20, Z(336) + 24), target: new THREE.Vector3(X(644), 2, Z(336)) },
+  lounge: { pos: new THREE.Vector3(MT.x, 22, MT.z + 26), target: new THREE.Vector3(MT.x, 2, MT.z) },
+};
+
+function focusRoom(roomId) {
+  const conf = ROOM_COORDS[roomId] || ROOM_COORDS.all;
+  zoomTo(conf.pos, conf.target, 800);
+  document.querySelectorAll(".rbtn").forEach(b => {
+    b.classList.toggle("active", b.dataset.room === roomId);
+  });
+}
+
+function focusOnAgent(agentKey) {
+  focusRoom(agentKey);
+}
+
+document.querySelectorAll(".rbtn").forEach(btn => {
+  btn.addEventListener("click", () => focusRoom(btn.dataset.room));
+});
+
+// Zoom Slider Events
+const zoomRange = $("zoomRange");
+zoomRange.addEventListener("input", (e) => {
+  const dist = parseFloat(e.target.value);
+  const dir = camera.position.clone().sub(controls.target).normalize();
+  camera.position.copy(controls.target.clone().addScaledVector(dir, dist));
+});
+
+$("zoomInBtn").addEventListener("click", () => {
+  const dir = camera.position.clone().sub(controls.target).normalize();
+  const cur = camera.position.distanceTo(controls.target);
+  const nxt = Math.max(8, cur - 14);
+  zoomTo(controls.target.clone().addScaledVector(dir, nxt), controls.target, 350);
+  zoomRange.value = nxt;
+});
+
+$("zoomOutBtn").addEventListener("click", () => {
+  const dir = camera.position.clone().sub(controls.target).normalize();
+  const cur = camera.position.distanceTo(controls.target);
+  const nxt = Math.min(220, cur + 14);
+  zoomTo(controls.target.clone().addScaledVector(dir, nxt), controls.target, 350);
+  zoomRange.value = nxt;
+});
+
+// Double Click to Zoom in on Room / Out to Full Overview
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+gl.domElement.addEventListener("dblclick", (e) => {
+  mouse.x = (e.clientX / innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / innerHeight) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+
+  const hits = raycaster.intersectObjects(roomMeshes);
+  if (hits.length > 0) {
+    const room = hits[0].object.userData;
+    focusRoom(room.roomId);
+  } else {
+    // Zoom back out to overview
+    focusRoom("all");
+  }
+});
+
+// Update zoom slider on mouse wheel
+controls.addEventListener("change", () => {
+  const dist = camera.position.distanceTo(controls.target);
+  zoomRange.value = Math.min(180, Math.max(15, dist));
+});
+
+// ================= AD-HOC TASK ASSIGNMENT (PHÂN VIỆC NGOÀI LỀ) =================
+const overrideModal = $("overrideModal");
+$("openOverrideBtn").addEventListener("click", () => overrideModal.classList.add("open"));
+$("closeOverrideBtn").addEventListener("click", () => overrideModal.classList.remove("open"));
+$("cancelOverrideBtn").addEventListener("click", () => overrideModal.classList.remove("open"));
+
+window.submitOverrideDirective = () => {
+  const agentKey = $("overrideAgentSelect").value;
+  const taskText = $("overrideTaskText").value.trim();
+  const permCode = $("permCode").checked;
+
+  overrideModal.classList.remove("open");
+
+  // Visual Alert & Update Bot
+  const b = bots[agentKey];
+  if (b) {
+    b.typing = true;
+    b.reqBubble.style.display = "block";
+    b.reqBubble.innerHTML = `<small style="color:var(--gold)">👑 ĐẶC CÁCH TỪ GIÁM ĐỐC ${permCode ? '(ĐƯỢC PHÉP CODE)' : ''}</small>${taskText}`;
+    b.reqBubble.style.borderColor = "var(--gold)";
+    b.bub.style.display = "inline-block";
+    b.bub.textContent = permCode ? "⚡ ĐẶC CÁCH CODE" : "⚡ NHIỆM VỤ ĐỘT XUẤT";
+    b.bub.style.color = "var(--gold)";
+    b.bub.style.borderColor = "var(--gold)";
+
+    // Glide camera directly to the assigned agent so user sees them immediately!
+    focusOnAgent(agentKey);
+  }
+
+  // Update Right Sidebar
+  const agentObj = defaultAgents.find(a => a.key === agentKey) || { name: agentKey, role: "Agent" };
+  $("agentNameTxt").textContent = agentObj.name;
+  $("agentRoleTxt").textContent = permCode ? "ĐƯỢC PHÉP CODE TRỰC TIẾP (CEO Override)" : agentObj.role;
+  $("agentStatusBadge").textContent = "OVERRIDE CODE ACTIVE";
+  $("agentStatusBadge").style.color = "var(--gold)";
+  $("agentLastTextTxt").textContent = `“${taskText}”`;
+
+  openRightSidebar();
+
+  alert(`ĐÃ BAN HÀNH CHỈ THỊ THÀNH CÔNG!\n\n• Phiên: ${agentObj.name}\n• Quyền hạn: ${permCode ? 'Cho phép Code trực tiếp (Bypass Codex)' : 'Nhiệm vụ ngoài lề'}\n• Chỉ thị: "${taskText}"\n\nNội dung đã được ghi nhận vào sổ điều phối và hòm thư của ${agentObj.name}!`);
+};
+
+// ================= SIDEBAR TOGGLES =================
 const sbLeft = $("sidebarLeft");
 const sbRight = $("sidebarRight");
 
@@ -772,7 +1044,7 @@ window.sendQuickMsg = () => {
   }
 };
 
-// ================= SSE / DATA SYNC =================
+// SSE Data Sync
 const es = new EventSource("events");
 es.onmessage = (m) => {
   $("live").className = "live";

@@ -36,6 +36,7 @@
 - **F6 (Zero-Leak Personal Accounts):** Hoạt động độc lập dựa trên các tài khoản cá nhân của người dùng đã đăng nhập sẵn qua CLI (`gemini` / `agy`, `claude login`, `codex login`), sử dụng đúng gói thuê bao đã mua. Không đòi hỏi nhập API key hay chuyển tiếp dữ liệu qua cloud server nào khác.  
   *Tiêu chí nghiệm thu:* Mọi chuỗi nhạy cảm đều được mặt nạ hóa tự động bằng `mask()`.
 - **F7 (Native Node.js 24 SQLite Engine):** Tận dụng module chuẩn `node:sqlite` có sẵn trên Node.js v24.20.0 để đọc dữ liệu phiên làm việc, giữ nguyên tôn chỉ "Zero npm install" của repo gốc.
+- **F8 (CEO Override & Smooth Room Zoom Navigation):** Cơ chế phân việc ngoài lề cho phép Giám Đốc chỉ định ngoại lệ (ví dụ: chỉ định GPT 6.1 Sol được phép code trực tiếp bypass Codex); tích hợp cụm điều hướng lướt phòng (Glide Focus), slider thu phóng và thao tác cuộn/di chuột êm dịu, không giật lag.
 
 ### 3. Ngoài phạm vi MVP (Out-of-Scope)
 - Không can thiệp vào mã nhị phân đóng gói của VS Code hoặc các extension độc quyền.
