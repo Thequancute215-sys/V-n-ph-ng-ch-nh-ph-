@@ -8,3 +8,5 @@ node_modules/
 
 # sổ điều phối của từng đội (việc, hòm thư, lượt DEV…) — dữ liệu riêng, không đưa lên GitHub
 data/
+
+scratch/

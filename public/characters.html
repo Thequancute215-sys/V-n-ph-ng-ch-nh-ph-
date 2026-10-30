@@ -226,9 +226,9 @@ body { background: #040711; color: #f8fafc; font-family: "Plus Jakarta Sans", sa
       <div id="charGl" class="w-full h-full"></div>
 
       <!-- Floating 3D Badge Controls -->
-      <div class="absolute top-6 left-6 z-10 glass-panel px-4 py-2 rounded-2xl flex items-center gap-3">
+      <div class="absolute bottom-6 left-6 z-10 glass-panel px-4 py-2 rounded-2xl flex items-center gap-3 shadow-xl">
         <div class="w-3 h-3 rounded-full bg-amber-400 animate-ping"></div>
-        <span class="text-xs font-mono font-bold text-slate-200">Xoay 360° · Cuộn chuột để soi sát từng chi tiết nét mặt & hoa văn</span>
+        <span class="text-xs font-mono font-bold text-slate-200">Xoay 360° · Cuộn chuột soi sát nét mặt & hoa văn</span>
       </div>
 
       <div class="absolute top-6 right-6 z-10 flex gap-2">
@@ -311,7 +311,7 @@ lucide.createIcons();
 const container = document.getElementById("charGl");
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 100);
-camera.position.set(0, 3.2, 8.5);
+camera.position.set(0, 2.0, 11.5);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(container.clientWidth, container.clientHeight);
@@ -322,7 +322,7 @@ container.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-controls.target.set(0, 2.0, 0);
+controls.target.set(0, 1.8, 0);
 controls.maxPolarAngle = 1.45;
 controls.minDistance = 2.5; // Soi cực sát nét mặt!
 controls.maxDistance = 14;
@@ -561,10 +561,10 @@ function makeFaceTexture(type) {
 
   } else if (type === "gaara") {
     // 5. Gaara: Dark ringed eyes, turquoise pupils, NO eyebrows, red Kanji "愛" (Love) on forehead!
-    // Kanji "愛" on upper left forehead
-    ctx.fillStyle = "#b91c1c";
-    ctx.font = "bold 64px 'Noto Serif', serif";
-    ctx.fillText("愛", 160, 120);
+    ctx.fillStyle = "#dc2626";
+    ctx.font = "bold 56px 'Microsoft YaHei', 'Meiryo', 'MS Gothic', 'SimSun', sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("愛", 170, 180);
 
     for (const sx of [170, 342]) {
       // Thick black kohl ring
@@ -689,7 +689,7 @@ const CHAR_DATA = {
       <div>🍥 <b>Nét mặt nguyên tác:</b> Đôi mắt xanh da trời viền cam Hiền Nhân, 3 vệt râu mèo cong mỗi bên má, nụ cười tự tin.</div>
       <div>🥋 <b>Trang phục Hokage:</b> Áo choàng trắng viền lửa đỏ rực rỡ, sau lưng thêu thư pháp đỏ <b>七代目火影 (Nanadaime Hokage)</b>.</div>
       <div>🎖️ <b>Băng trán & Tay:</b> Băng bảo vệ trán Làng Lá khắc biểu tượng lá xoáy Konoha sắc nét, tay phải quấn băng gạc Hashirama channeling Rasengan!</div>
-      <div>⚡ <b>Hào quang Chakra:</b> Vỏ bọc Chakra Cửu Vĩ vàng cam `#F59E0B` tỏa sáng phập phồng quanh toàn thân.</div>`,
+      <div>⚡ <b>Hào quang Chakra:</b> Vỏ bọc Chakra Cửu Vĩ vàng cam #F59E0B tỏa sáng phập phồng quanh toàn thân.</div>`,
     auth: "Tối Cao (Duyệt Lượt)", scale: "100% (80px Boss)", type: "shinobi", shinobiType: "naruto"
   },
   kakashi_antigravity: {
@@ -921,6 +921,7 @@ function build3DCharacter(data) {
 
   const head = new THREE.Mesh(new THREE.SphereGeometry(headR, 32, 24), headMat);
   head.position.y = isShinobi ? 3.3 : 2.4;
+  head.rotation.y = -Math.PI / 2; // Center of canvas (u=0.5) faces exactly front (+Z)
   head.castShadow = true;
   g.add(head);
 
@@ -956,36 +957,47 @@ function build3DCharacter(data) {
   const extras = [];
 
   if (isShinobi) {
-    // Forehead Protector: Metal plate with etched Konoha swirl + cloth ribbon tie
-    const clothColor = data.shinobiType === "naruto" ? 0x0f172a : data.shinobiType === "kakashi" ? 0x1e293b : 0x0f172a;
-    const bandMat = new THREE.MeshStandardMaterial({ color: clothColor, roughness: 0.5 });
-
-    // Forehead strap
-    const band = new THREE.Mesh(new THREE.CylinderGeometry(headR + 0.04, headR + 0.04, 0.28, 32, 1, true), bandMat);
-    band.position.y = head.position.y + 0.22;
-    if (data.shinobiType === "kakashi") band.rotation.z = -0.32;
-    g.add(band);
-
-    // Metal plate with leaf swirl texture!
     const plateMat = new THREE.MeshStandardMaterial({ map: headbandPlateTex, metalness: 0.7, roughness: 0.2 });
-    const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.58, 0.28), plateMat);
-    plate.position.set(0, head.position.y + 0.22, headR + 0.05);
-    if (data.shinobiType === "kakashi") {
-      plate.rotation.z = -0.32;
-      plate.position.set(-0.1, head.position.y + 0.22, headR + 0.05);
-    }
-    g.add(plate);
 
-    // Bandana flutter ribbons behind head
-    const ribbon = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.6, 0.02), bandMat);
-    ribbon.position.set(0, head.position.y + 0.1, -headR - 0.1);
-    ribbon.rotation.x = 0.4;
-    g.add(ribbon);
+    // Forehead Protector: ONLY for Naruto and Kakashi in Shippuden!
+    // Sasuke went rogue and doesn't wear one. Gaara is Sunagakure Kazekage with "愛" kanji on forehead. Shikamaru wears it on arm!
+    if (data.shinobiType === "naruto" || data.shinobiType === "kakashi") {
+      const clothColor = data.shinobiType === "naruto" ? 0x0f172a : 0x1e293b;
+      const bandMat = new THREE.MeshStandardMaterial({ color: clothColor, roughness: 0.5 });
+
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(headR + 0.04, headR + 0.04, 0.28, 32, 1, true), bandMat);
+      band.position.y = head.position.y + 0.22;
+      if (data.shinobiType === "kakashi") band.rotation.z = -0.32;
+      g.add(band);
+
+      const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.58, 0.28), plateMat);
+      plate.position.set(0, head.position.y + 0.22, headR + 0.05);
+      if (data.shinobiType === "kakashi") {
+        plate.rotation.z = -0.32;
+        plate.position.set(-0.1, head.position.y + 0.22, headR + 0.05);
+      }
+      g.add(plate);
+
+      const ribbon = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.6, 0.02), bandMat);
+      ribbon.position.set(0, head.position.y + 0.1, -headR - 0.1);
+      ribbon.rotation.x = 0.4;
+      g.add(ribbon);
+    } else if (data.shinobiType === "shikamaru") {
+      // Shikamaru wears Konoha metal plate on right bicep
+      const armPlate = new THREE.Mesh(new THREE.PlaneGeometry(0.38, 0.22), plateMat);
+      armPlate.position.set(0.98, 1.85, 0);
+      armPlate.rotation.y = Math.PI / 2;
+      g.add(armPlate);
+    }
 
     // Specific Costumes
     if (data.shinobiType === "naruto") {
       // 1. Spiky Golden Blonde Hair
       const hairMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.25 });
+      const hairBase = new THREE.Mesh(new THREE.SphereGeometry(headR + 0.03, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.52), hairMat);
+      hairBase.position.y = head.position.y;
+      g.add(hairBase);
+
       for (let i = 0; i < 16; i++) {
         const spike = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.7, 4), hairMat);
         const ang = (i / 16) * Math.PI * 2;
@@ -1024,6 +1036,10 @@ function build3DCharacter(data) {
     } else if (data.shinobiType === "kakashi") {
       // 2. Silver spiky hair
       const hairMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.3 });
+      const hairBase = new THREE.Mesh(new THREE.SphereGeometry(headR + 0.03, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.52), hairMat);
+      hairBase.position.y = head.position.y;
+      g.add(hairBase);
+
       for (let i = 0; i < 14; i++) {
         const spike = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.78, 4), hairMat);
         const ang = (i / 14) * Math.PI * 2;
@@ -1052,10 +1068,14 @@ function build3DCharacter(data) {
       extras.push({ obj: chidoriGroup, type: "flicker" });
 
     } else if (data.shinobiType === "shikamaru") {
-      // 3. Pineapple Ponytail
+      // 3. Pineapple Ponytail & Hair Base
       const hairMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.5 });
+      const hairBase = new THREE.Mesh(new THREE.SphereGeometry(headR + 0.03, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.52), hairMat);
+      hairBase.position.y = head.position.y;
+      g.add(hairBase);
+
       const ponytail = new THREE.Mesh(new THREE.ConeGeometry(0.42, 1.15, 8), hairMat);
-      ponytail.position.set(0, head.position.y + 1.18, -0.2);
+      ponytail.position.set(0, head.position.y + 0.95, -0.2);
       ponytail.rotation.x = -0.3;
       g.add(ponytail);
 
@@ -1074,8 +1094,12 @@ function build3DCharacter(data) {
       g.add(scroll);
 
     } else if (data.shinobiType === "sasuke") {
-      // 4. Sasuke spiky dark hair
+      // 4. Sasuke spiky dark hair & Hair Base
       const hairMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3 });
+      const hairBase = new THREE.Mesh(new THREE.SphereGeometry(headR + 0.03, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.52), hairMat);
+      hairBase.position.y = head.position.y;
+      g.add(hairBase);
+
       for (const sx of [-0.62, 0.62]) {
         const bang = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.72, 4), hairMat);
         bang.position.set(sx, head.position.y + 0.1, headR * 0.7);
@@ -1121,8 +1145,12 @@ function build3DCharacter(data) {
       extras.push({ obj: chidoriBlue, type: "flicker" });
 
     } else if (data.shinobiType === "gaara") {
-      // 5. Short spiky dark auburn hair
+      // 5. Short spiky dark auburn hair & Hair Base
       const hairMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.5 });
+      const hairBase = new THREE.Mesh(new THREE.SphereGeometry(headR + 0.03, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.48), hairMat);
+      hairBase.position.y = head.position.y;
+      g.add(hairBase);
+
       for (let i = 0; i < 14; i++) {
         const spike = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.5, 4), hairMat);
         const ang = (i / 14) * Math.PI * 2;
@@ -1326,7 +1354,12 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-selectChar("naruto_ceo");
+const initialChar = location.hash.replace(/^#/, '') || new URLSearchParams(location.search).get('char');
+selectChar(CHAR_DATA[initialChar] ? initialChar : "naruto_ceo");
+window.addEventListener("hashchange", () => {
+  const k = location.hash.replace(/^#/, '');
+  if (CHAR_DATA[k]) selectChar(k);
+});
 animate();
 
 window.addEventListener("resize", () => {
