@@ -476,9 +476,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
       </button>
     </div>
 
-    <!-- Sổ Cần Anh Làm -->
+    <!-- Sổ Cần Thế Quân CEO Duyệt -->
     <div class="box">
-      <div class="box-title"><span>Sổ Cần Anh Làm (CAN-ANH.md)</span><span id="askCount" style="color:var(--gold)">0</span></div>
+      <div class="box-title"><span>Sổ Cần Thế Quân CEO Duyệt (CAN-ANH.md)</span><span id="askCount" style="color:var(--gold)">0</span></div>
       <div id="askList" style="font-size:11.5px;color:var(--mute)">
         Hiện không có yêu cầu nào cần Giám đốc xử lý. Mọi việc đang diễn ra suôn sẻ!
       </div>
@@ -862,6 +862,197 @@ function makeDesk(k, x, y) {
 }
 for (const [k, [x, y]] of Object.entries(HOME)) makeDesk(k, x, y);
 
+// ================= CANVAS TEXTURES FOR MANGA-ACCURATE FACES & OUTFITS =================
+function drawKonohaHeadbandPlate() {
+  const c = document.createElement("canvas"); c.width = 256; c.height = 128;
+  const ctx = c.getContext("2d");
+  const grad = ctx.createLinearGradient(0,0,256,128);
+  grad.addColorStop(0, "#e2e8f0"); grad.addColorStop(0.5, "#cbd5e1"); grad.addColorStop(1, "#94a3b8");
+  ctx.fillStyle = grad; ctx.roundRect(16, 16, 224, 96, 12); ctx.fill();
+  ctx.strokeStyle = "#475569"; ctx.lineWidth = 4; ctx.stroke();
+  ctx.fillStyle = "#334155";
+  ctx.beginPath(); ctx.arc(36, 40, 4, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(36, 88, 4, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(220, 40, 4, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(220, 88, 4, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = "#1e293b"; ctx.lineWidth = 6; ctx.lineCap = "round";
+  ctx.beginPath(); ctx.arc(128, 64, 22, 0, Math.PI * 1.5, false); ctx.lineTo(162, 42); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(112, 64); ctx.lineTo(128, 64); ctx.stroke();
+  return new THREE.CanvasTexture(c);
+}
+
+function makeFaceTexture(type) {
+  const c = document.createElement("canvas"); c.width = 512; c.height = 512;
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = type === "gaara" ? "#fbf5ef" : type === "sasuke" ? "#fff1f2" : "#fed7aa";
+  ctx.fillRect(0, 0, 512, 512);
+
+  if (type === "naruto" || type === "ceo") {
+    for (const sx of [170, 342]) {
+      ctx.fillStyle = "rgba(249, 115, 22, 0.45)";
+      ctx.beginPath(); ctx.ellipse(sx, 245, 48, 44, 0, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath(); ctx.ellipse(sx, 245, 42, 38, 0, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = "#1e293b"; ctx.lineWidth = 5; ctx.stroke();
+      ctx.fillStyle = "#0284c7";
+      ctx.beginPath(); ctx.arc(sx, 245, 24, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = "#0f172a";
+      ctx.beginPath(); ctx.arc(sx, 245, 12, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath(); ctx.arc(sx - 8, 237, 6, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = "#0f172a"; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.arc(sx, 240, 44, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke();
+      ctx.strokeStyle = "#ca8a04"; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.moveTo(sx - 44, 185); ctx.quadraticCurveTo(sx, 168, sx + 44, 185); ctx.stroke();
+    }
+    ctx.strokeStyle = "#78350f"; ctx.lineWidth = 5; ctx.lineCap = "round";
+    for (const [x1, x2] of [[60, 130], [382, 452]]) {
+      for (const y of [310, 335, 360]) {
+        ctx.beginPath(); ctx.moveTo(x1, y); ctx.quadraticCurveTo((x1+x2)/2, y - 6, x2, y); ctx.stroke();
+      }
+    }
+    ctx.strokeStyle = "#78350f"; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.arc(256, 365, 32, 0.15, Math.PI - 0.15); ctx.stroke();
+
+  } else if (type === "kakashi" || type === "antigravity") {
+    ctx.fillStyle = "#1e293b";
+    ctx.beginPath(); ctx.moveTo(0, 270); ctx.quadraticCurveTo(256, 290, 512, 270); ctx.lineTo(512, 512); ctx.lineTo(0, 512); ctx.fill();
+    ctx.strokeStyle = "#0f172a"; ctx.lineWidth = 4; ctx.stroke();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath(); ctx.ellipse(345, 235, 38, 28, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = "#1e293b"; ctx.lineWidth = 4; ctx.stroke();
+    ctx.fillStyle = "#1e293b";
+    ctx.beginPath(); ctx.arc(345, 235, 14, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath(); ctx.arc(340, 230, 4, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = "#0f172a"; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.arc(345, 230, 40, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke();
+
+    ctx.strokeStyle = "rgba(185, 28, 28, 0.6)"; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(165, 150); ctx.lineTo(165, 300); ctx.stroke();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath(); ctx.ellipse(165, 235, 38, 30, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = "#0f172a"; ctx.lineWidth = 4; ctx.stroke();
+    ctx.fillStyle = "#dc2626";
+    ctx.beginPath(); ctx.arc(165, 235, 26, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "#0f172a";
+    ctx.beginPath(); ctx.arc(165, 235, 8, 0, Math.PI*2); ctx.fill();
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2;
+      ctx.beginPath(); ctx.arc(165 + Math.cos(a)*16, 235 + Math.sin(a)*16, 4, 0, Math.PI*2); ctx.fill();
+    }
+
+  } else if (type === "shikamaru" || type === "sol") {
+    for (const sx of [170, 342]) {
+      const dir = sx < 256 ? 1 : -1;
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath(); ctx.ellipse(sx, 245, 38, 26, dir * -0.1, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = "#1e293b"; ctx.lineWidth = 4; ctx.stroke();
+      ctx.fillStyle = "#78350f";
+      ctx.beginPath(); ctx.arc(sx, 245, 15, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = "#0f172a";
+      ctx.beginPath(); ctx.arc(sx, 245, 8, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = "#1c1917"; ctx.lineWidth = 7;
+      ctx.beginPath(); ctx.moveTo(sx - 44*dir, 195); ctx.lineTo(sx + 35*dir, 180); ctx.stroke();
+    }
+    ctx.strokeStyle = "#78350f"; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(226, 360); ctx.lineTo(286, 360); ctx.stroke();
+
+  } else if (type === "sasuke" || type === "codex") {
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath(); ctx.ellipse(345, 240, 42, 30, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = "#0f172a"; ctx.lineWidth = 5; ctx.stroke();
+    ctx.fillStyle = "#dc2626";
+    ctx.beginPath(); ctx.arc(345, 240, 24, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "#0f172a";
+    ctx.beginPath(); ctx.arc(345, 240, 7, 0, Math.PI*2); ctx.fill();
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2;
+      ctx.beginPath(); ctx.moveTo(345, 240);
+      ctx.lineTo(345 + Math.cos(a)*22, 240 + Math.sin(a)*22);
+      ctx.lineTo(345 + Math.cos(a + 0.3)*12, 240 + Math.sin(a + 0.3)*12); ctx.fill();
+    }
+
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath(); ctx.ellipse(165, 240, 42, 30, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = "#0f172a"; ctx.lineWidth = 5; ctx.stroke();
+    ctx.fillStyle = "#c084fc";
+    ctx.beginPath(); ctx.arc(165, 240, 26, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = "#581c87"; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(165, 240, 18, 0, Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(165, 240, 10, 0, Math.PI*2); ctx.stroke();
+    ctx.fillStyle = "#0f172a"; ctx.beginPath(); ctx.arc(165, 240, 4, 0, Math.PI*2); ctx.fill();
+
+    ctx.strokeStyle = "#0f172a"; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.moveTo(125, 195); ctx.lineTo(195, 185); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(385, 195); ctx.lineTo(315, 185); ctx.stroke();
+    ctx.strokeStyle = "#be123c"; ctx.lineWidth = 3.5;
+    ctx.beginPath(); ctx.moveTo(236, 355); ctx.lineTo(276, 355); ctx.stroke();
+
+  } else if (type === "gaara" || type === "claude") {
+    ctx.fillStyle = "#b91c1c";
+    ctx.font = "bold 64px serif";
+    ctx.fillText("愛", 160, 120);
+
+    for (const sx of [170, 342]) {
+      ctx.fillStyle = "#0f172a";
+      ctx.beginPath(); ctx.ellipse(sx, 245, 46, 34, 0, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = "#f8fafc";
+      ctx.beginPath(); ctx.ellipse(sx, 245, 36, 24, 0, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = "#0d9488";
+      ctx.beginPath(); ctx.arc(sx, 245, 14, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = "#134e4a";
+      ctx.beginPath(); ctx.arc(sx, 245, 6, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.strokeStyle = "#7c2d12"; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(230, 365); ctx.lineTo(282, 365); ctx.stroke();
+  }
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function makeHokageCloakTexture() {
+  const c = document.createElement("canvas"); c.width = 512; c.height = 512;
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, 512, 512);
+  ctx.fillStyle = "#dc2626";
+  ctx.beginPath(); ctx.moveTo(0, 512);
+  for (let x = 0; x <= 512; x += 32) {
+    ctx.lineTo(x + 16, 420 - (x % 64 === 0 ? 30 : 0));
+    ctx.lineTo(x + 32, 512);
+  }
+  ctx.fill();
+  ctx.fillStyle = "#dc2626";
+  ctx.font = "bold 56px serif";
+  ctx.textAlign = "center";
+  const text = ["七", "代", "目", "火", "影"];
+  for (let i = 0; i < text.length; i++) ctx.fillText(text[i], 256, 120 + i * 62);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function makeUchihaCrestTexture() {
+  const c = document.createElement("canvas"); c.width = 256; c.height = 256;
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = "transparent"; ctx.clearRect(0,0,256,256);
+  ctx.fillStyle = "#dc2626";
+  ctx.beginPath(); ctx.arc(128, 110, 80, Math.PI, 0, false); ctx.fill();
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath(); ctx.arc(128, 110, 80, 0, Math.PI, false); ctx.fill();
+  ctx.strokeStyle = "#475569"; ctx.lineWidth = 4; ctx.stroke();
+  ctx.fillStyle = "#ffffff"; ctx.fillRect(116, 175, 24, 45); ctx.strokeRect(116, 175, 24, 45);
+  return new THREE.CanvasTexture(c);
+}
+
+const gHeadbandTex = drawKonohaHeadbandPlate();
+const gHokageTex = makeHokageCloakTexture();
+const gUchihaTex = makeUchihaCrestTexture();
+
 // Nhân vật Nhẫn Giả Naruto Shippuden & 10 Vĩ Thú
 const bots = {}; let selected = "ceo";
 
@@ -885,28 +1076,29 @@ function makeBot(a) {
 
   // Body Outfit
   let outfitColor = col;
-  if (a.key === "ceo") outfitColor = 0xea580c; // Naruto orange
+  if (a.key === "ceo") outfitColor = 0x18181b; // Inner black shirt with Hokage Haori!
   else if (a.key === "antigravity" || a.key === "sol") outfitColor = 0x166534; // Konoha Green Flak Jacket
-  else if (a.key === "codex") outfitColor = 0x1e1b4b; // Sasuke dark navy
-  else if (a.key === "claude") outfitColor = 0x7c2d12; // Gaara Sand brown
+  else if (a.key === "codex") outfitColor = 0xe2e8f0; // Sasuke open chest shirt
+  else if (a.key === "claude") outfitColor = 0x7c2d12; // Gaara Sand brown coat
 
   const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.72, 0.9, 12, 20), std(outfitColor, { roughness: 0.4 }));
   body.position.y = 1.6; g.add(body);
 
-  // Chibi Head
-  const skinMat = std(0xffdfc4, { roughness: 0.3 });
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.88, 32, 24), skinMat);
+  // Manga Head with High-Detail Canvas Face Texture
+  const faceTex = makeFaceTexture(a.key);
+  const headMat = new THREE.MeshStandardMaterial({ map: faceTex, roughness: 0.3 });
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.88, 32, 24), headMat);
   head.position.y = 3.2; g.add(head);
 
-  // Forehead Protector (Băng trán Konoha / Làng Cát)
+  // Forehead Protector: Metal plate with etched Konoha swirl
   const bandMat = std(0x0f172a, { roughness: 0.4 });
-  const plateMat = std(0xe2e8f0, { metalness: 0.9, roughness: 0.1 });
   const band = new THREE.Mesh(new THREE.CylinderGeometry(0.91, 0.91, 0.28, 32, 1, true), bandMat);
   band.position.y = 3.42;
   if (a.key === "antigravity") band.rotation.z = -0.32; // Kakashi tilted!
   g.add(band);
 
-  const plate = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.2, 0.05), plateMat);
+  const plateMat = new THREE.MeshStandardMaterial({ map: gHeadbandTex, metalness: 0.7, roughness: 0.2 });
+  const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.56, 0.26), plateMat);
   plate.position.set(0, 3.42, 0.9);
   if (a.key === "antigravity") {
     plate.rotation.z = -0.32;
@@ -917,60 +1109,50 @@ function makeBot(a) {
   // Specific Shinobi Hair & Signatures
   if (a.key === "ceo") {
     // Naruto Spiky Blonde Hair
-    const hairMat = std(0xfacc15, { roughness: 0.3 });
-    for (let i = 0; i < 14; i++) {
-      const spk = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.6, 4), hairMat);
-      const ang = (i / 14) * Math.PI * 2;
+    const hairMat = std(0xfacc15, { roughness: 0.25 });
+    for (let i = 0; i < 16; i++) {
+      const spk = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.65, 4), hairMat);
+      const ang = (i / 16) * Math.PI * 2;
       spk.position.set(Math.cos(ang) * 0.65, 3.8 + Math.sin(ang * 2) * 0.1, Math.sin(ang) * 0.65);
       spk.rotation.set(Math.sin(ang) * 0.4 + 0.2, ang, -Math.cos(ang) * 0.4);
       g.add(spk);
     }
-    const topSpk = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.75, 4), hairMat);
-    topSpk.position.set(0, 4.25, 0); g.add(topSpk);
+    const topSpk = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.8, 4), hairMat);
+    topSpk.position.set(0, 4.3, 0); g.add(topSpk);
 
-    // Whiskers on cheeks
-    for (const sx of [-0.38, 0.38]) {
-      for (let w = -1; w <= 1; w++) {
-        const wh = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.02, 0.02), new THREE.MeshBasicMaterial({ color: 0x92400e }));
-        wh.position.set(sx, 3.05 + w * 0.06, 0.82);
-        wh.rotation.z = (sx > 0 ? 1 : -1) * (w * 0.2);
-        g.add(wh);
-      }
-    }
-
-    // White Hokage Cloak
-    const cloak = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 1.1, 1.25, 24, 1, true), std(0xffffff, { roughness: 0.4 }));
+    // Hokage Haori White Cloak with Calligraphy "七代目火影"
+    const cloakMat = new THREE.MeshStandardMaterial({ map: gHokageTex, roughness: 0.4, side: THREE.DoubleSide });
+    const cloak = new THREE.Mesh(new THREE.CylinderGeometry(0.74, 1.2, 1.35, 24, 1, true), cloakMat);
     cloak.position.y = 1.45; g.add(cloak);
 
     // Spinning Rasengan on hand
-    const ras = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true }));
+    const ras = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 16), new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true }));
     ras.position.set(0.85, 1.6, 0.65); g.add(ras);
     extras.push({ obj: ras, type: "spin" });
 
   } else if (a.key === "antigravity") {
     // Kakashi Silver Spiky Hair
     const hairMat = std(0xe2e8f0, { roughness: 0.3 });
-    for (let i = 0; i < 12; i++) {
-      const spk = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.7, 4), hairMat);
-      const ang = (i / 12) * Math.PI * 2;
-      spk.position.set(Math.cos(ang) * 0.6 - 0.18, 3.85, Math.sin(ang) * 0.6);
+    for (let i = 0; i < 14; i++) {
+      const spk = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.75, 4), hairMat);
+      const ang = (i / 14) * Math.PI * 2;
+      spk.position.set(Math.cos(ang) * 0.6 - 0.18, 3.88, Math.sin(ang) * 0.6);
       spk.rotation.set(0.2, ang, 0.45);
       g.add(spk);
     }
 
-    // Mask covering lower face
-    const mask = new THREE.Mesh(new THREE.SphereGeometry(0.89, 24, 12, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5), std(0x1e293b));
-    mask.position.y = 3.2; g.add(mask);
+    // Jounin Vest Chest Pockets
+    const pocketMat = std(0x14532d);
+    for (const sx of [-0.3, 0.3]) {
+      const pocket = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.26, 0.08), pocketMat);
+      pocket.position.set(sx, 1.8, 0.65); g.add(pocket);
+    }
 
-    // Sharingan Red Glowing Eye
-    const shar = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), new THREE.MeshBasicMaterial({ color: 0xef4444 }));
-    shar.position.set(-0.25, 3.25, 0.85); g.add(shar);
-
-    // Purple Lightning Raikiri / Chidori
+    // Purple Lightning Raikiri / Shiden
     const chidori = new THREE.Group();
     chidori.position.set(0.85, 1.6, 0.6);
-    for (let i = 0; i < 5; i++) {
-      const spark = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.02, 0.45, 4), new THREE.MeshBasicMaterial({ color: 0xc084fc }));
+    for (let i = 0; i < 6; i++) {
+      const spark = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.02, 0.5, 4), new THREE.MeshBasicMaterial({ color: 0xc084fc }));
       spark.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
       chidori.add(spark);
     }
@@ -979,9 +1161,16 @@ function makeBot(a) {
 
   } else if (a.key === "sol") {
     // Shikamaru Pineapple Ponytail
-    const ponytail = new THREE.Mesh(new THREE.ConeGeometry(0.38, 1.0, 8), std(0x1c1917, { roughness: 0.5 }));
-    ponytail.position.set(0, 4.3, -0.18);
+    const ponytail = new THREE.Mesh(new THREE.ConeGeometry(0.4, 1.1, 8), std(0x1c1917, { roughness: 0.5 }));
+    ponytail.position.set(0, 4.35, -0.18);
     ponytail.rotation.x = -0.3; g.add(ponytail);
+
+    // Silver ring earrings
+    const silver = std(0xe2e8f0, { metalness: 0.9 });
+    for (const sx of [-0.9, 0.9]) {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.02, 6, 12), silver);
+      ring.position.set(sx, 3.05, 0); g.add(ring);
+    }
 
     // Blueprint Scroll on hip
     const scroll = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 1.0, 16), std(0xfef08a, { roughness: 0.6 }));
@@ -994,26 +1183,34 @@ function makeBot(a) {
   } else if (a.key === "codex") {
     // Sasuke Dark Navy Spiky Hair
     const hairMat = std(0x0f172a, { roughness: 0.3 });
-    for (const sx of [-0.55, 0.55]) {
-      const bng = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.65, 4), hairMat);
+    for (const sx of [-0.58, 0.58]) {
+      const bng = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.68, 4), hairMat);
       bng.position.set(sx, 3.25, 0.6); bng.rotation.set(0.4, 0, -sx * 0.3); g.add(bng);
     }
-    for (let i = 0; i < 10; i++) {
-      const spk = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.65, 4), hairMat);
-      const ang = (i / 10) * Math.PI + Math.PI;
-      spk.position.set(Math.cos(ang) * 0.58, 3.85, Math.sin(ang) * 0.58);
+    for (let i = 0; i < 12; i++) {
+      const spk = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.68, 4), hairMat);
+      const ang = (i / 12) * Math.PI + Math.PI;
+      spk.position.set(Math.cos(ang) * 0.58, 3.88, Math.sin(ang) * 0.58);
       spk.rotation.set(0.4, ang, 0.2); g.add(spk);
     }
 
+    // Uchiha Crest on Back
+    const crest = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.6), new THREE.MeshBasicMaterial({ map: gUchihaTex, transparent: true }));
+    crest.position.set(0, 1.7, -0.75); crest.rotation.y = Math.PI; g.add(crest);
+
+    // Purple Shimenawa rope belt
+    const rope = new THREE.Mesh(new THREE.TorusGeometry(0.8, 0.1, 8, 24), std(0x6b21a8, { roughness: 0.6 }));
+    rope.position.y = 1.15; rope.rotation.x = Math.PI / 2; g.add(rope);
+
     // Kusanagi Sword on back
-    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.6, 0.03), std(0xe2e8f0, { metalness: 0.9 }));
-    blade.position.set(0, 2.0, -0.9); blade.rotation.z = Math.PI / 4; g.add(blade);
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.7, 0.03), std(0xe2e8f0, { metalness: 0.9 }));
+    blade.position.set(0.4, 1.4, -0.6); blade.rotation.set(0.3, 0, Math.PI / 4); g.add(blade);
 
     // Blue Chidori Electricity
     const chidoriB = new THREE.Group();
     chidoriB.position.set(0.85, 1.6, 0.6);
-    for (let i = 0; i < 5; i++) {
-      const spark = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.02, 0.45, 4), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+    for (let i = 0; i < 6; i++) {
+      const spark = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.02, 0.5, 4), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
       spark.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
       chidoriB.add(spark);
     }
@@ -1023,28 +1220,28 @@ function makeBot(a) {
   } else if (a.key === "claude") {
     // Gaara Red Spiky Hair
     const hairMat = std(0x991b1b, { roughness: 0.5 });
-    for (let i = 0; i < 12; i++) {
-      const spk = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.45, 4), hairMat);
-      const ang = (i / 12) * Math.PI * 2;
+    for (let i = 0; i < 14; i++) {
+      const spk = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.48, 4), hairMat);
+      const ang = (i / 14) * Math.PI * 2;
       spk.position.set(Math.cos(ang) * 0.6, 3.75, Math.sin(ang) * 0.6);
       spk.rotation.set(Math.sin(ang) * 0.3, ang, -Math.cos(ang) * 0.3); g.add(spk);
     }
 
-    // Kanji "Ái" (愛) on forehead
-    const ai = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.02), new THREE.MeshBasicMaterial({ color: 0xb91c1c }));
-    ai.position.set(0.26, 3.6, 0.82); g.add(ai);
+    // White sash
+    const sash = new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.5, 0.08), std(0xf8fafc));
+    sash.position.set(0, 1.6, 0); sash.rotation.z = -0.65; g.add(sash);
 
     // Giant Sand Gourd
     const gourdMat = std(0xd4a373, { roughness: 0.6 });
-    const gBot = new THREE.Mesh(new THREE.SphereGeometry(0.78, 16, 14), gourdMat);
+    const gBot = new THREE.Mesh(new THREE.SphereGeometry(0.8, 16, 14), gourdMat);
     gBot.position.set(0, 1.4, -0.85); g.add(gBot);
-    const gTop = new THREE.Mesh(new THREE.SphereGeometry(0.58, 16, 14), gourdMat);
+    const gTop = new THREE.Mesh(new THREE.SphereGeometry(0.6, 16, 14), gourdMat);
     gTop.position.set(0, 2.4, -0.8); g.add(gTop);
 
     // Orbiting Sand Defense
     const sandG = new THREE.Group();
     for (let i = 0; i < 4; i++) {
-      const chk = new THREE.Mesh(new THREE.DodecahedronGeometry(0.15), gourdMat);
+      const chk = new THREE.Mesh(new THREE.DodecahedronGeometry(0.16), gourdMat);
       const ang = (i / 4) * Math.PI * 2;
       chk.position.set(Math.cos(ang) * 1.5, 2.0 + Math.sin(i) * 0.3, Math.sin(ang) * 1.5);
       sandG.add(chk);
@@ -1055,6 +1252,7 @@ function makeBot(a) {
 
   // Arms
   const arms = [];
+  const skinMat = std(0xffdfc4, { roughness: 0.3 });
   for (const sx of [-1, 1]) {
     const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.48, 4, 10), skinMat);
     arm.position.set(sx * 0.95, 1.6, 0); g.add(arm); arms.push(arm);
