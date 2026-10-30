@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Hồ Sơ Thiết Kế Nhân Vật AI (Chibi Showcase) — Văn Phòng AI</title>
+<title>Văn Phòng AI — Hồ Sơ Nhân Vật Naruto Shippuden & 10 Vĩ Thú</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,12 +23,12 @@ tailwind.config = {
 }
 </script>
 <style>
-body { background: #070c14; color: #f8fafc; font-family: "Plus Jakarta Sans", sans-serif; }
-.glass-panel { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); }
+body { background: #050811; color: #f8fafc; font-family: "Plus Jakarta Sans", sans-serif; }
+.glass-panel { background: rgba(13, 19, 36, 0.88); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); }
 .custom-scroll::-webkit-scrollbar { width: 5px; }
 .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 999px; }
-@keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-6px); } }
-.animate-float { animation: float 3s ease-in-out infinite; }
+@keyframes pulseGlow { 0%, 100% { opacity: 0.8; transform: scale(1); } 50% { opacity: 1; transform: scale(1.04); } }
+.chakra-glow { animation: pulseGlow 2.5s ease-in-out infinite; }
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head>
@@ -37,15 +37,15 @@ body { background: #070c14; color: #f8fafc; font-family: "Plus Jakarta Sans", sa
 <!-- Header -->
 <header class="h-16 border-b border-white/10 glass-panel px-6 flex items-center justify-between shrink-0 z-20">
   <div class="flex items-center gap-3">
-    <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-black font-extrabold shadow-lg shadow-amber-500/20">
-      <i data-lucide="palette" class="w-5 h-5"></i>
+    <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-red-600 flex items-center justify-center text-white font-extrabold shadow-lg shadow-orange-500/25">
+      <i data-lucide="flame" class="w-5 h-5 text-amber-200"></i>
     </div>
     <div>
       <h1 class="text-base font-extrabold font-chibi tracking-wide text-white flex items-center gap-2">
-        HỒ SƠ THIẾT KẾ NHÂN VẬT AI (CHIBI EDITION)
-        <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30">Chờ Giám Đốc Duyệt</span>
+        HỆ THỐNG NHÂN SỰ NARUTO SHIPPUDEN & 10 VĨ THÚ
+        <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30">Hào Quang Chakra 3D</span>
       </h1>
-      <p class="text-xs text-slate-400">Thiết kế tỷ lệ Chibi đặc trưng cho đội AI & Vệ tinh Subagents</p>
+      <p class="text-xs text-slate-400">Thế Quân CEO (Naruto Hokage) · Antigravity (Kakashi) · Sol (Shikamaru) · Codex (Sasuke) · Claude (Gaara)</p>
     </div>
   </div>
 
@@ -53,8 +53,8 @@ body { background: #070c14; color: #f8fafc; font-family: "Plus Jakarta Sans", sa
     <button onclick="location.href='index.html'" class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-200 border border-white/10 flex items-center gap-1.5 transition">
       <i data-lucide="arrow-left" class="w-4 h-4"></i> Về Văn Phòng 3D
     </button>
-    <button onclick="approveAll()" class="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-amber-400/25 transition">
-      <i data-lucide="check-check" class="w-4 h-4"></i> DUYỆT TOÀN BỘ NHÂN VẬT
+    <button onclick="approveAll()" class="px-5 py-2 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-amber-400 hover:brightness-110 text-black text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-orange-500/25 transition">
+      <i data-lucide="check-check" class="w-4 h-4"></i> DUYỆT TOÀN BỘ NHÂN VẬT & VĨ THÚ
     </button>
   </div>
 </header>
@@ -63,91 +63,164 @@ body { background: #070c14; color: #f8fafc; font-family: "Plus Jakarta Sans", sa
 <main class="flex-1 flex overflow-hidden">
   
   <!-- Left Column: Character List Selector -->
-  <aside class="w-80 border-r border-white/10 bg-[#0a0f1d]/80 flex flex-col shrink-0 custom-scroll overflow-y-auto p-4 gap-2">
-    <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1">AI Trụ Cột (Kích Thước Lớn 80px)</div>
+  <aside class="w-80 border-r border-white/10 bg-[#070b16]/90 flex flex-col shrink-0 custom-scroll overflow-y-auto p-3 gap-2">
+    
+    <!-- Shinobi Leaders -->
+    <div class="text-[11px] font-bold text-orange-400 uppercase tracking-wider px-2 py-1 flex items-center justify-between">
+      <span>5 Nhẫn Giả Chủ Lực (AI Trụ Cột)</span>
+      <span class="text-[9px] px-1.5 py-0.5 bg-orange-500/20 text-orange-300 rounded font-mono">80px - 72px</span>
+    </div>
 
-    <!-- CEO -->
-    <button onclick="selectChar('ceo')" id="btn-ceo" class="w-full text-left p-3 rounded-2xl border border-amber-400/40 bg-amber-400/10 flex items-center gap-3 transition group">
-      <div class="w-12 h-12 rounded-2xl bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-2xl shadow-md">👑</div>
+    <!-- 1. Thế Quân CEO -> Naruto Hokage -->
+    <button onclick="selectChar('naruto_ceo')" id="btn-naruto_ceo" class="w-full text-left p-2.5 rounded-2xl border border-amber-400/40 bg-amber-400/10 flex items-center gap-3 transition group">
+      <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-xl shadow-md">🍥</div>
       <div class="flex-1 truncate">
-        <div class="text-sm font-bold text-white font-chibi group-hover:text-amber-300">Thế Quân CEO</div>
-        <div class="text-[11px] text-amber-400">Chủ tịch / Quyết định tối cao</div>
+        <div class="text-xs font-bold text-white font-chibi group-hover:text-amber-300">Thế Quân CEO (Naruto)</div>
+        <div class="text-[10px] text-amber-400">Đệ Thất Hokage · Lục Đạo Chakra</div>
       </div>
       <span class="text-xs text-emerald-400">✓</span>
     </button>
 
-    <!-- Antigravity -->
-    <button onclick="selectChar('antigravity')" id="btn-antigravity" class="w-full text-left p-3 rounded-2xl border border-white/5 hover:border-purple-500/30 hover:bg-purple-500/5 flex items-center gap-3 transition group">
-      <div class="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-2xl shadow-md">🤖</div>
+    <!-- 2. Antigravity -> Kakashi Hatake -->
+    <button onclick="selectChar('kakashi_antigravity')" id="btn-kakashi_antigravity" class="w-full text-left p-2.5 rounded-2xl border border-white/5 hover:border-purple-500/30 hover:bg-purple-500/5 flex items-center gap-3 transition group">
+      <div class="w-11 h-11 rounded-2xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-xl shadow-md">⚡</div>
       <div class="flex-1 truncate">
-        <div class="text-sm font-bold text-white font-chibi group-hover:text-purple-300">Antigravity (Gemini 3.8)</div>
-        <div class="text-[11px] text-purple-400">SPEC & UI/UX Architect</div>
+        <div class="text-xs font-bold text-white font-chibi group-hover:text-purple-300">Antigravity (Kakashi Hatake)</div>
+        <div class="text-[10px] text-purple-400">Hokage Đệ Lục · Tử Điện Raikiri</div>
       </div>
       <span class="text-xs text-slate-500">○</span>
     </button>
 
-    <!-- Sol -->
-    <button onclick="selectChar('sol')" id="btn-sol" class="w-full text-left p-3 rounded-2xl border border-white/5 hover:border-emerald-500/30 hover:bg-emerald-500/5 flex items-center gap-3 transition group">
-      <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-2xl shadow-md">📐</div>
+    <!-- 3. Sol -> Shikamaru Nara -->
+    <button onclick="selectChar('shikamaru_sol')" id="btn-shikamaru_sol" class="w-full text-left p-2.5 rounded-2xl border border-white/5 hover:border-emerald-500/30 hover:bg-emerald-500/5 flex items-center gap-3 transition group">
+      <div class="w-11 h-11 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-xl shadow-md">♟️</div>
       <div class="flex-1 truncate">
-        <div class="text-sm font-bold text-white font-chibi group-hover:text-emerald-300">GPT 6.1 Sol Architect</div>
-        <div class="text-[11px] text-emerald-400">Backend, DB & Hợp đồng</div>
+        <div class="text-xs font-bold text-white font-chibi group-hover:text-emerald-300">GPT 6.1 Sol (Shikamaru Nara)</div>
+        <div class="text-[10px] text-emerald-400">Quân Sư IQ 200 · Trận Đồ Bóng Râm</div>
       </div>
       <span class="text-xs text-slate-500">○</span>
     </button>
 
-    <!-- Codex -->
-    <button onclick="selectChar('codex')" id="btn-codex" class="w-full text-left p-3 rounded-2xl border border-white/5 hover:border-blue-500/30 hover:bg-blue-500/5 flex items-center gap-3 transition group">
-      <div class="w-12 h-12 rounded-2xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-2xl shadow-md">💻</div>
+    <!-- 4. Codex -> Sasuke Uchiha -->
+    <button onclick="selectChar('sasuke_codex')" id="btn-sasuke_codex" class="w-full text-left p-2.5 rounded-2xl border border-white/5 hover:border-blue-500/30 hover:bg-blue-500/5 flex items-center gap-3 transition group">
+      <div class="w-11 h-11 rounded-2xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-xl shadow-md">🗡️</div>
       <div class="flex-1 truncate">
-        <div class="text-sm font-bold text-white font-chibi group-hover:text-blue-300">Codex (GPT-6 Astra)</div>
-        <div class="text-[11px] text-blue-400">Fullstack Developer</div>
+        <div class="text-xs font-bold text-white font-chibi group-hover:text-blue-300">Codex Astra (Sasuke Uchiha)</div>
+        <div class="text-[10px] text-blue-400">Thiên Điểu Chidori · Kiếm Kusanagi</div>
       </div>
       <span class="text-xs text-slate-500">○</span>
     </button>
 
-    <!-- Claude -->
-    <button onclick="selectChar('claude')" id="btn-claude" class="w-full text-left p-3 rounded-2xl border border-white/5 hover:border-orange-500/30 hover:bg-orange-500/5 flex items-center gap-3 transition group">
-      <div class="w-12 h-12 rounded-2xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-2xl shadow-md">🛡️</div>
+    <!-- 5. Claude -> Gaara Kazekage -->
+    <button onclick="selectChar('gaara_claude')" id="btn-gaara_claude" class="w-full text-left p-2.5 rounded-2xl border border-white/5 hover:border-orange-500/30 hover:bg-orange-500/5 flex items-center gap-3 transition group">
+      <div class="w-11 h-11 rounded-2xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-xl shadow-md">🏺</div>
       <div class="flex-1 truncate">
-        <div class="text-sm font-bold text-white font-chibi group-hover:text-orange-300">Claude Code Captain</div>
-        <div class="text-[11px] text-orange-400">Auditor & Chốt chặn Blocker</div>
+        <div class="text-xs font-bold text-white font-chibi group-hover:text-orange-300">Claude Captain (Gaara Sa Mạc)</div>
+        <div class="text-[10px] text-orange-400">Kazekage · Lá Chắn Cát Tuyệt Đối</div>
       </div>
       <span class="text-xs text-slate-500">○</span>
     </button>
 
-    <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2 py-1 mt-3">Vệ Tinh Subagents (Mini 36px)</div>
+    <!-- 10 Tailed Beasts -->
+    <div class="text-[11px] font-bold text-cyan-400 uppercase tracking-wider px-2 py-1 mt-3 flex items-center justify-between">
+      <span>10 Vĩ Thú Vệ Tinh (Subagents)</span>
+      <span class="text-[9px] px-1.5 py-0.5 bg-cyan-500/20 text-cyan-300 rounded font-mono">Nhất Vĩ &rarr; Thập Vĩ</span>
+    </div>
 
-    <!-- Subagent Research -->
-    <button onclick="selectChar('sub_research')" id="btn-sub_research" class="w-full text-left p-2.5 rounded-xl border border-white/5 hover:bg-white/5 flex items-center gap-2.5 transition">
-      <div class="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-lg">🔍</div>
+    <!-- 1-Tail Shukaku -->
+    <button onclick="selectChar('shukaku_1')" id="btn-shukaku_1" class="w-full text-left p-2 rounded-xl border border-white/5 hover:bg-white/5 flex items-center gap-2.5 transition">
+      <span class="text-base">🦝</span>
       <div class="flex-1 truncate">
-        <div class="text-xs font-bold text-white font-chibi">research</div>
-        <div class="text-[10px] text-cyan-400">Soi mã nguồn & tài liệu</div>
+        <div class="text-xs font-bold text-white font-chibi">Nhất Vĩ Shukaku (1-Tail)</div>
+        <div class="text-[10px] text-amber-300">Gấu cát · Soi mã nguồn & Research</div>
       </div>
     </button>
 
-    <!-- Subagent UI Gen -->
-    <button onclick="selectChar('sub_ui')" id="btn-sub_ui" class="w-full text-left p-2.5 rounded-xl border border-white/5 hover:bg-white/5 flex items-center gap-2.5 transition">
-      <div class="w-9 h-9 rounded-xl bg-pink-500/20 border border-pink-500/30 flex items-center justify-center text-lg">🎨</div>
+    <!-- 2-Tails Matatabi -->
+    <button onclick="selectChar('matatabi_2')" id="btn-matatabi_2" class="w-full text-left p-2 rounded-xl border border-white/5 hover:bg-white/5 flex items-center gap-2.5 transition">
+      <span class="text-base">🐱</span>
       <div class="flex-1 truncate">
-        <div class="text-xs font-bold text-white font-chibi">generative_ui</div>
-        <div class="text-[10px] text-pink-400">Dựng widget & prototype</div>
+        <div class="text-xs font-bold text-white font-chibi">Nhị Vĩ Matatabi (2-Tails)</div>
+        <div class="text-[10px] text-blue-400">Linh miêu lửa xanh · Generative UI</div>
       </div>
     </button>
 
-    <!-- Subagent Image -->
-    <button onclick="selectChar('sub_image')" id="btn-sub_image" class="w-full text-left p-2.5 rounded-xl border border-white/5 hover:bg-white/5 flex items-center gap-2.5 transition">
-      <div class="w-9 h-9 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-lg">📷</div>
+    <!-- 3-Tails Isobu -->
+    <button onclick="selectChar('isobu_3')" id="btn-isobu_3" class="w-full text-left p-2 rounded-xl border border-white/5 hover:bg-white/5 flex items-center gap-2.5 transition">
+      <span class="text-base">🐢</span>
       <div class="flex-1 truncate">
-        <div class="text-xs font-bold text-white font-chibi">image-generator</div>
-        <div class="text-[10px] text-purple-400">Tạo ảnh & đồ họa</div>
+        <div class="text-xs font-bold text-white font-chibi">Tam Vĩ Isobu (3-Tails)</div>
+        <div class="text-[10px] text-slate-400">Thiết giáp quy · Chạy Test lì lợm</div>
       </div>
     </button>
+
+    <!-- 4-Tails Son Goku -->
+    <button onclick="selectChar('songoku_4')" id="btn-songoku_4" class="w-full text-left p-2 rounded-xl border border-white/5 hover:bg-white/5 flex items-center gap-2.5 transition">
+      <span class="text-base">🐒</span>
+      <div class="flex-1 truncate">
+        <div class="text-xs font-bold text-white font-chibi">Tứ Vĩ Son Goku (4-Tails)</div>
+        <div class="text-[10px] text-red-400">Hầu vương dung nham · DB Migration</div>
+      </div>
+    </button>
+
+    <!-- 5-Tails Kokuo -->
+    <button onclick="selectChar('kokuo_5')" id="btn-kokuo_5" class="w-full text-left p-2 rounded-xl border border-white/5 hover:bg-white/5 flex items-center gap-2.5 transition">
+      <span class="text-base">🦄</span>
+      <div class="flex-1 truncate">
+        <div class="text-xs font-bold text-white font-chibi">Ngũ Vĩ Kokuo (5-Tails)</div>
+        <div class="text-[10px] text-emerald-300">Bạch mã cá voi · Mạng & WebSocket</div>
+      </div>
+    </button>
+
+    <!-- 6-Tails Saiken -->
+    <button onclick="selectChar('saiken_6')" id="btn-saiken_6" class="w-full text-left p-2 rounded-xl border border-white/5 hover:bg-white/5 flex items-center gap-2.5 transition">
+      <span class="text-base">🐌</span>
+      <div class="flex-1 truncate">
+        <div class="text-xs font-bold text-white font-chibi">Lục Vĩ Saiken (6-Tails)</div>
+        <div class="text-[10px] text-indigo-300">Sên sương mù · Dọn rác & Cache</div>
+      </div>
+    </button>
+
+    <!-- 7-Tails Chomei -->
+    <button onclick="selectChar('chomei_7')" id="btn-chomei_7" class="w-full text-left p-2 rounded-xl border border-white/5 hover:bg-white/5 flex items-center gap-2.5 transition">
+      <span class="text-base">🪲</span>
+      <div class="flex-1 truncate">
+        <div class="text-xs font-bold text-white font-chibi">Thất Vĩ Chomei (7-Tails)</div>
+        <div class="text-[10px] text-teal-300">Giáp trùng bay · Image Generator</div>
+      </div>
+    </button>
+
+    <!-- 8-Tails Gyuki -->
+    <button onclick="selectChar('gyuki_8')" id="btn-gyuki_8" class="w-full text-left p-2 rounded-xl border border-white/5 hover:bg-white/5 flex items-center gap-2.5 transition">
+      <span class="text-base">🐙</span>
+      <div class="flex-1 truncate">
+        <div class="text-xs font-bold text-white font-chibi">Bát Vĩ Gyuki (8-Tails)</div>
+        <div class="text-[10px] text-rose-400">Bạch tuộc sừng bò · Security Guard</div>
+      </div>
+    </button>
+
+    <!-- 9-Tails Kurama -->
+    <button onclick="selectChar('kurama_9')" id="btn-kurama_9" class="w-full text-left p-2 rounded-xl border border-white/5 hover:bg-white/5 flex items-center gap-2.5 transition">
+      <span class="text-base">🦊</span>
+      <div class="flex-1 truncate">
+        <div class="text-xs font-bold text-white font-chibi">Cửu Vĩ Kurama (9-Tails)</div>
+        <div class="text-[10px] text-orange-400">Hồ ly 9 đuôi · Trợ lý tối cao của CEO</div>
+      </div>
+    </button>
+
+    <!-- 10-Tails Juubi -->
+    <button onclick="selectChar('juubi_10')" id="btn-juubi_10" class="w-full text-left p-2 rounded-xl border border-white/5 hover:bg-white/5 flex items-center gap-2.5 transition">
+      <span class="text-base">👁️</span>
+      <div class="flex-1 truncate">
+        <div class="text-xs font-bold text-white font-chibi">Thập Vĩ Juubi (10-Tails)</div>
+        <div class="text-[10px] text-purple-400">Thần mộc · Nguồn lực Hội Chẩn Ban</div>
+      </div>
+    </button>
+
   </aside>
 
   <!-- Center Stage: 3D Live Character Spotlight Canvas -->
-  <div class="flex-1 h-full relative flex flex-col items-center justify-center bg-gradient-to-b from-[#0a1222] via-[#070c18] to-[#04060d]">
+  <div class="flex-1 h-full relative flex flex-col items-center justify-center bg-gradient-to-b from-[#0b1226] via-[#060a14] to-[#020409]">
     
     <!-- Rotating Spotlight 3D Viewport -->
     <div id="charCanvasBox" class="w-full h-full relative">
@@ -155,73 +228,77 @@ body { background: #070c14; color: #f8fafc; font-family: "Plus Jakarta Sans", sa
 
       <!-- Floating 3D Badge Controls -->
       <div class="absolute top-6 left-6 z-10 glass-panel px-4 py-2 rounded-2xl flex items-center gap-3">
-        <div class="w-3 h-3 rounded-full bg-emerald-400 animate-ping"></div>
-        <span class="text-xs font-mono font-bold text-slate-200">Kéo chuột để xoay 360° · Cuộn để phóng to</span>
+        <div class="w-3 h-3 rounded-full bg-amber-400 animate-ping"></div>
+        <span class="text-xs font-mono font-bold text-slate-200">Kéo chuột để xoay 360° · Cuộn chuột thu phóng</span>
       </div>
 
       <div class="absolute top-6 right-6 z-10 flex gap-2">
-        <button onclick="toggleActionAnim('idle')" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-slate-200">Hoạt ảnh: Thở nhẹ</button>
-        <button onclick="toggleActionAnim('typing')" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-slate-200">Hoạt ảnh: Gõ phím</button>
-        <button onclick="toggleActionAnim('override')" class="px-3 py-1.5 rounded-xl bg-amber-400/20 text-amber-300 border border-amber-400/30 text-xs font-bold">Hào quang đặc cách</button>
+        <button onclick="toggleChakraFx()" id="btnChakraFx" class="px-3 py-1.5 rounded-xl bg-orange-500/20 text-orange-300 border border-orange-500/30 text-xs font-bold hover:bg-orange-500/30 flex items-center gap-1.5 transition">
+          <i data-lucide="zap" class="w-3.5 h-3.5"></i> Hào quang Chakra: BẬT
+        </button>
+        <button onclick="toggleActionAnim('jutsu')" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-slate-200">
+          Kích hoạt Nhẫn Thuật
+        </button>
+      </div>
+
+      <!-- Jutsu Status Toast -->
+      <div id="jutsuToast" class="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 px-6 py-2.5 rounded-2xl glass-panel border border-orange-500/40 text-xs font-bold text-amber-300 flex items-center gap-2 opacity-0 transition pointer-events-none">
+        <span id="jutsuIcon">🍥</span>
+        <span id="jutsuName">Rasengan Chakra Lục Đạo Kích Hoạt!</span>
       </div>
     </div>
   </div>
 
   <!-- Right Column: Detailed Design Dossier (Thông Số & Hồ Sơ Duyệt) -->
-  <aside class="w-96 border-l border-white/10 bg-[#090e1a] p-6 flex flex-col justify-between shrink-0 custom-scroll overflow-y-auto">
-    <div class="space-y-5">
+  <aside class="w-96 border-l border-white/10 bg-[#070b16] p-6 flex flex-col justify-between shrink-0 custom-scroll overflow-y-auto">
+    <div class="space-y-4">
       <!-- Character Title -->
       <div>
         <div class="flex items-center justify-between">
-          <span class="text-xs font-mono font-bold uppercase tracking-wider text-amber-400" id="charSubhead">AI CHỦ LỰC · SIZE 80PX</span>
-          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" id="charApprovalBadge">ĐÃ SẴN SÀNG</span>
+          <span class="text-xs font-mono font-bold uppercase tracking-wider text-amber-400" id="charSubhead">HOKAGE ĐỆ THẤT · CHỦ TỊCH</span>
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" id="charApprovalBadge">CHỜ DUYỆT</span>
         </div>
-        <h2 class="text-2xl font-extrabold text-white font-chibi mt-1" id="charName">Thế Quân CEO (Chủ Dự Án)</h2>
-        <p class="text-xs text-slate-400 mt-1" id="charRole">Chủ tịch / Quyền quyết định tối cao toàn bộ dự án</p>
+        <h2 class="text-2xl font-extrabold text-white font-chibi mt-1" id="charName">Thế Quân CEO (Naruto Uzumaki)</h2>
+        <p class="text-xs text-slate-400 mt-1" id="charRole">Chủ tịch / Quyền quyết định tối cao toàn bộ văn phòng</p>
       </div>
 
       <!-- Color Palette -->
-      <div class="glass-panel p-4 rounded-2xl space-y-2">
-        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Bảng Màu Nhận Diện (Palette)</div>
+      <div class="glass-panel p-3.5 rounded-2xl space-y-2">
+        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Hệ Chakra & Tone Màu</div>
         <div class="flex items-center gap-2" id="charColors">
-          <div class="flex-1 h-8 rounded-xl bg-amber-400 flex items-center justify-center text-[10px] font-bold text-black font-mono">#ECC970</div>
-          <div class="flex-1 h-8 rounded-xl bg-amber-600 flex items-center justify-center text-[10px] font-bold text-white font-mono">#D97706</div>
-          <div class="flex-1 h-8 rounded-xl bg-slate-900 flex items-center justify-center text-[10px] font-bold text-slate-300 font-mono">#0F172A</div>
+          <!-- Filled by JS -->
         </div>
       </div>
 
       <!-- Design Anatomy -->
-      <div class="glass-panel p-4 rounded-2xl space-y-3 text-xs leading-relaxed">
-        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Đặc Điểm Thiết Kế & Đạo Cụ</div>
+      <div class="glass-panel p-3.5 rounded-2xl space-y-2.5 text-xs leading-relaxed">
+        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tạo Hình Nhẫn Giả & Tuyệt Kỹ</div>
         <div class="space-y-2 text-slate-300" id="charAnatomy">
-          <div>👑 <b>Phụ kiện đầu:</b> Vương miện hoàng gia vàng kim 6 cánh đính ngọc ruby.</div>
-          <div>👔 <b>Trang phục:</b> Áo vest doanh nhân đen mờ viền chỉ vàng sang trọng, thắt cà vạt công nghệ.</div>
-          <div>⚡ <b>Đạo cụ quyền lực:</b> Quyền trượng Giám Đốc ban hành lệnh đặc cách (CEO Override).</div>
-          <div>💬 <b>Bong bóng yêu cầu:</b> Khung viền vàng kim phát sáng rực rỡ trên đỉnh đầu.</div>
+          <!-- Filled by JS -->
         </div>
       </div>
 
       <!-- Stats Grid -->
       <div class="grid grid-cols-2 gap-3 text-xs">
         <div class="glass-panel p-3 rounded-xl">
-          <span class="text-slate-400 text-[10px] uppercase font-bold block">Quyền Hạn Protocol</span>
-          <b class="text-amber-300 text-sm font-chibi" id="charStatAuth">Tối Cao (Duyệt Lượt)</b>
+          <span class="text-slate-400 text-[10px] uppercase font-bold block">Vai Trò Protocol</span>
+          <b class="text-amber-300 text-sm font-chibi" id="charStatAuth">Chủ Tịch Tối Cao</b>
         </div>
         <div class="glass-panel p-3 rounded-xl">
-          <span class="text-slate-400 text-[10px] uppercase font-bold block">Tỉ Lệ Kích Thước</span>
-          <b class="text-white text-sm font-chibi" id="charStatScale">100% (80px Boss)</b>
+          <span class="text-slate-400 text-[10px] uppercase font-bold block">Quy Mô / Tỷ Lệ</span>
+          <b class="text-white text-sm font-chibi" id="charStatScale">Boss (80px)</b>
         </div>
       </div>
     </div>
 
     <!-- Approval Action Box -->
     <div class="pt-4 border-t border-white/10 space-y-2">
-      <button onclick="approveCurrentChar()" class="w-full py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-400/20 transition">
+      <button onclick="approveCurrentChar()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 hover:brightness-110 text-black font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 transition">
         <i data-lucide="check" class="w-4 h-4"></i>
-        <span id="approveBtnText">Duyệt Thiết Kế Nhân Vật Này</span>
+        <span id="approveBtnText">Duyệt Tạo Hình Nhân Vật Này</span>
       </button>
       <button onclick="promptEditChar()" class="w-full py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold border border-white/10 transition">
-        ✏️ Yêu Cầu Chỉnh Sửa Tạo Hình
+        ✏️ Yêu Cầu Chỉnh Sửa Tuyệt Kỹ / Chakra
       </button>
     </div>
   </aside>
@@ -249,7 +326,7 @@ container.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-controls.target.set(0, 2.2, 0);
+controls.target.set(0, 2.0, 0);
 controls.maxPolarAngle = 1.45;
 controls.minDistance = 3.5;
 controls.maxDistance = 14;
@@ -265,276 +342,601 @@ const rimLight = new THREE.DirectionalLight(0x38bdf8, 1.8);
 rimLight.position.set(-5, 4, -4);
 scene.add(rimLight);
 
-// Circular Podium
+// Circular Jutsu Floor Podium
 const podGeo = new THREE.CylinderGeometry(2.4, 2.6, 0.4, 48);
-const podMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3, metalness: 0.6 });
+const podMat = new THREE.MeshStandardMaterial({ color: 0x090d1a, roughness: 0.3, metalness: 0.6 });
 const podium = new THREE.Mesh(podGeo, podMat);
 podium.position.y = -0.2;
 podium.receiveShadow = true;
 scene.add(podium);
 
+// Glowing Jutsu Seal Ring
 const ringGeo = new THREE.RingGeometry(2.35, 2.45, 48);
-const ringMat = new THREE.MeshBasicMaterial({ color: 0xecc970, side: THREE.DoubleSide });
+const ringMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b, side: THREE.DoubleSide });
 const ring = new THREE.Mesh(ringGeo, ringMat);
 ring.rotation.x = -Math.PI / 2;
 ring.position.y = 0.02;
 scene.add(ring);
 
-// Character Dossier Database
+// Jutsu Kanji Seal Canvas Texture
+function makeJutsuSealTexture() {
+  const c = document.createElement("canvas");
+  c.width = 512; c.height = 512;
+  const ctx = c.getContext("2d");
+  ctx.clearRect(0,0,512,512);
+  ctx.strokeStyle = "rgba(245, 158, 11, 0.6)";
+  ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.arc(256, 256, 240, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(256, 256, 210, 0, Math.PI * 2); ctx.stroke();
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    ctx.beginPath(); ctx.moveTo(256 + Math.cos(a)*210, 256 + Math.sin(a)*210);
+    ctx.lineTo(256 + Math.cos(a)*240, 256 + Math.sin(a)*240); ctx.stroke();
+  }
+  ctx.fillStyle = "rgba(245, 158, 11, 0.7)";
+  ctx.font = "bold 28px serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const kanjis = ["火", "影", "忍", "術", "查", "克", "拉", "印"];
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2 + Math.PI/8;
+    ctx.save();
+    ctx.translate(256 + Math.cos(a)*170, 256 + Math.sin(a)*170);
+    ctx.rotate(a + Math.PI/2);
+    ctx.fillText(kanjis[i], 0, 0);
+    ctx.restore();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  return tex;
+}
+const sealMat = new THREE.MeshBasicMaterial({ map: makeJutsuSealTexture(), transparent: true, opacity: 0.85, side: THREE.DoubleSide });
+const sealMesh = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 4.4), sealMat);
+sealMesh.rotation.x = -Math.PI / 2;
+sealMesh.position.y = 0.03;
+scene.add(sealMesh);
+
+// Complete Character & Tailed Beasts Database
 const CHAR_DATA = {
-  ceo: {
-    name: "Thế Quân CEO (Chủ Dự Án)",
-    role: "Chủ tịch / Quyền quyết định tối cao toàn bộ dự án",
-    subhead: "AI CHỦ LỰC · SIZE 80PX BOSS",
-    color: 0xecc970,
+  naruto_ceo: {
+    name: "Thế Quân CEO (Naruto Uzumaki)",
+    role: "Hokage Đệ Thất / Quyền Quyết Định Tối Cao",
+    subhead: "HOKAGE ĐỆ THẤT · BOSS 80PX",
+    color: 0xf59e0b,
+    jutsuName: "Hiền Nhân Lục Đạo & Rasengan Cửu Vĩ",
+    jutsuIcon: "🍥",
     colorsHtml: `
-      <div class="flex-1 h-8 rounded-xl bg-amber-400 flex items-center justify-center text-[10px] font-bold text-black font-mono">#ECC970</div>
-      <div class="flex-1 h-8 rounded-xl bg-amber-600 flex items-center justify-center text-[10px] font-bold text-white font-mono">#D97706</div>
-      <div class="flex-1 h-8 rounded-xl bg-slate-900 flex items-center justify-center text-[10px] font-bold text-slate-300 font-mono">#0F172A</div>`,
+      <div class="flex-1 h-8 rounded-xl bg-amber-400 flex items-center justify-center text-[10px] font-bold text-black font-mono">#F59E0B</div>
+      <div class="flex-1 h-8 rounded-xl bg-orange-600 flex items-center justify-center text-[10px] font-bold text-white font-mono">#EA580C</div>
+      <div class="flex-1 h-8 rounded-xl bg-sky-400 flex items-center justify-center text-[10px] font-bold text-black font-mono">#38BDF8</div>`,
     anatomyHtml: `
-      <div>👑 <b>Phụ kiện đầu:</b> Vương miện hoàng gia vàng kim 6 cánh đính ngọc ruby rực rỡ.</div>
-      <div>👔 <b>Trang phục:</b> Áo vest doanh nhân đen mờ viền chỉ vàng sang trọng, phong thái uy quyền.</div>
-      <div>⚡ <b>Đạo cụ quyền lực:</b> Quyền trượng chỉ huy ban hành lệnh đặc cách (CEO Override).</div>
-      <div>💬 <b>Bong bóng yêu cầu:</b> Viền vàng kim phát sáng rực rỡ trực tiếp trên đỉnh đầu.</div>`,
+      <div>🍥 <b>Tạo hình:</b> Mái tóc gai nhọn vàng rực rỡ của Naruto, vệt râu mèo 3 đường trên mỗi bên má.</div>
+      <div>🥋 <b>Trang phục:</b> Áo choàng Hokage Đệ Thất màu trắng thêu viền lửa đỏ rực rỡ, băng bảo vệ trán Làng Lá kim loại sáng bóng.</div>
+      <div>⚡ <b>Chakra & Tuyệt kỹ:</b> Quả cầu Rasengan xoay tít phát sáng xanh lam trên tay; hào quang Kurama Chakra bốc cháy vàng kim bao bọc toàn thân.</div>
+      <div>👑 <b>Quyền lực CEO:</b> Quyền ban hành lệnh đặc cách (CEO Override) cho phép Sol code, và duyệt bàn giao 1-click.</div>`,
     auth: "Tối Cao (Duyệt Lượt)",
     scale: "100% (80px Boss)",
-    type: "boss",
-    accessory: "crown"
+    type: "shinobi",
+    shinobiType: "naruto"
   },
-  antigravity: {
-    name: "Antigravity (Gemini 3.8)",
-    role: "SPEC_ARCHITECT & UI/UX FRONTEND DESIGNER",
-    subhead: "AI CHỦ LỰC · SIZE 72PX TECH-NEKO",
+  kakashi_antigravity: {
+    name: "Antigravity (Kakashi Hatake)",
+    role: "Hokage Đệ Lục / SPEC_ARCHITECT & UI/UX FRONTEND",
+    subhead: "NINJA SAO CHÉP · SIZE 72PX",
     color: 0xa855f7,
+    jutsuName: "Sharingan & Tử Điện Raikiri",
+    jutsuIcon: "⚡",
     colorsHtml: `
       <div class="flex-1 h-8 rounded-xl bg-purple-500 flex items-center justify-center text-[10px] font-bold text-white font-mono">#A855F7</div>
-      <div class="flex-1 h-8 rounded-xl bg-purple-800 flex items-center justify-center text-[10px] font-bold text-white font-mono">#6B21A8</div>
-      <div class="flex-1 h-8 rounded-xl bg-cyan-400 flex items-center justify-center text-[10px] font-bold text-black font-mono">#38BDF8</div>`,
+      <div class="flex-1 h-8 rounded-xl bg-emerald-700 flex items-center justify-center text-[10px] font-bold text-white font-mono">#15803D</div>
+      <div class="flex-1 h-8 rounded-xl bg-slate-300 flex items-center justify-center text-[10px] font-bold text-black font-mono">#E2E8F0</div>`,
     anatomyHtml: `
-      <div>🐱 <b>Tạo hình:</b> Cyber-Neko (Mèo công nghệ tương lai) với đôi tai mèo phát sáng góc 45°.</div>
-      <div>👓 <b>Kính thực tế ảo:</b> Visor AR kính tím hologram hiển thị ma trận 5 trạng thái màn hình.</div>
-      <div>🖊️ <b>Đạo cụ:</b> Bút Stylus Neon ma thuật chuyên phác thảo Design System & Prototype.</div>
-      <div>💬 <b>Bong bóng yêu cầu:</b> Viền tím neon phát sáng báo cáo tiến độ Vùng [2].</div>`,
+      <div>⚡ <b>Tạo hình:</b> Mái tóc bạc xám dựng nghiêng kinh điển, mặt nạ đen che kín nửa dưới khuôn mặt.</div>
+      <div>👁️ <b>Mắt Sharingan:</b> Băng trán Konoha đeo lệch hé mở con mắt Sharingan đỏ thẫm 3 phẩy Tomoe phát sáng phân tích kiến trúc!</div>
+      <div>🦺 <b>Trang phục:</b> Áo gi-lê Jounin xanh lá chuẩn mực Konoha, phong thái điềm tĩnh, sắc sảo.</div>
+      <div>🔮 <b>Chakra & Tuyệt kỹ:</b> Tử Điện Shiden / Raikiri sét tím phát quang lách tách trên bàn tay, chủ trì Vùng [2] đặc tả & UI/UX.</div>`,
     auth: "Chủ trì Vùng [2]",
     scale: "90% (72px)",
-    type: "architect",
-    accessory: "cat_ears"
+    type: "shinobi",
+    shinobiType: "kakashi"
   },
-  sol: {
-    name: "GPT 6.1 Sol Architect",
-    role: "SOL_ARCHITECT_PLANNER / CỐ VẤN KỸ THUẬT",
-    subhead: "AI CHỦ LỰC · SIZE 72PX KỸ SƯ THÔNG THÁI",
+  shikamaru_sol: {
+    name: "GPT 6.1 Sol (Shikamaru Nara)",
+    role: "Quân Sư Thiên Tài IQ 200 / SOL_ARCHITECT_PLANNER",
+    subhead: "QUÂN SƯ CHIẾN LƯỢC · SIZE 72PX",
     color: 0x10b981,
+    jutsuName: "Kagemane no Jutsu (Bóng Râm) & Sage Override",
+    jutsuIcon: "♟️",
     colorsHtml: `
       <div class="flex-1 h-8 rounded-xl bg-emerald-500 flex items-center justify-center text-[10px] font-bold text-black font-mono">#10B981</div>
-      <div class="flex-1 h-8 rounded-xl bg-emerald-800 flex items-center justify-center text-[10px] font-bold text-white font-mono">#065F46</div>
+      <div class="flex-1 h-8 rounded-xl bg-slate-800 flex items-center justify-center text-[10px] font-bold text-white font-mono">#1E293B</div>
       <div class="flex-1 h-8 rounded-xl bg-amber-400 flex items-center justify-center text-[10px] font-bold text-black font-mono">#ECC970</div>`,
     anatomyHtml: `
-      <div>👓 <b>Phụ kiện đầu:</b> Cặp kính tròn trí tuệ của kiến trúc sư trưởng.</div>
-      <div>📐 <b>Đạo cụ:</b> Thước đo laser và cuộn bản vẽ Blueprint Database Schema đeo bên hông.</div>
-      <div>⚡ <b>Trạng thái đặc cách:</b> Khi Giám Đốc ban lệnh, kích hoạt hào quang vàng kim và huy hiệu CODE.</div>
-      <div>💬 <b>Bong bóng yêu cầu:</b> Viền xanh ngọc báo cáo hợp đồng API Vùng [3].</div>`,
+      <div>♟️ <b>Tạo hình:</b> Mái tóc đuôi ngựa buộc túm nhọn cao hình quả dứa đặc trưng của tộc Nara, khuyên tai bạc.</div>
+      <div>🧘 <b>Tư thế chiến lược:</b> Hai bàn tay đan chéo thành hình chữ thập kinh điển đang tính toán chiến lược 200 nước đi.</div>
+      <div>📜 <b>Bản thiết kế:</b> Cuộn trục phong ấn Blueprint mang Database Schema và Hợp đồng API Vùng [3].</div>
+      <div>⚡ <b>Trạng thái đặc cách (CEO Override):</b> Khi Thế Quân CEO cấp quyền, Sol kích hoạt ấn chú Hiền Nhân Thuật quanh mắt và lập tức code trực tiếp!</div>`,
     auth: "Chủ trì Vùng [3]",
     scale: "90% (72px)",
-    type: "planner",
-    accessory: "glasses"
+    type: "shinobi",
+    shinobiType: "shikamaru"
   },
-  codex: {
-    name: "Codex (GPT-6 Astra Dev)",
-    role: "CODEX_ASTRA_DEV / KỸ SƯ FULLSTACK",
-    subhead: "AI CHỦ LỰC · SIZE 72PX CYBER HACKER",
-    color: 0x3a86ff,
+  sasuke_codex: {
+    name: "Codex Astra (Sasuke Uchiha)",
+    role: "Thiên Tài Uchiha / CODEX_ASTRA_DEV (Kỹ Sư Fullstack)",
+    subhead: "THIÊN TÀI NHẪN GIẢ · SIZE 72PX",
+    color: 0x38bdf8,
+    jutsuName: "Thiên Điểu Chidori & Kiếm Kusanagi",
+    jutsuIcon: "🗡️",
     colorsHtml: `
-      <div class="flex-1 h-8 rounded-xl bg-blue-500 flex items-center justify-center text-[10px] font-bold text-white font-mono">#3A86FF</div>
-      <div class="flex-1 h-8 rounded-xl bg-blue-900 flex items-center justify-center text-[10px] font-bold text-white font-mono">#1E3A8A</div>
-      <div class="flex-1 h-8 rounded-xl bg-emerald-400 flex items-center justify-center text-[10px] font-bold text-black font-mono">#10B981</div>`,
+      <div class="flex-1 h-8 rounded-xl bg-sky-400 flex items-center justify-center text-[10px] font-bold text-black font-mono">#38BDF8</div>
+      <div class="flex-1 h-8 rounded-xl bg-indigo-900 flex items-center justify-center text-[10px] font-bold text-white font-mono">#312E81</div>
+      <div class="flex-1 h-8 rounded-xl bg-rose-600 flex items-center justify-center text-[10px] font-bold text-white font-mono">#E11D48</div>`,
     anatomyHtml: `
-      <div>🎧 <b>Phụ kiện đầu:</b> Tai nghe Gaming RGB công nghệ cao luôn bật nhịp điệu tập trung.</div>
-      <div>⌨️ <b>Đạo cụ:</b> Bàn phím cơ mini cơ động lơ lửng trước ngực, hai tay gõ phím siêu tốc.</div>
-      <div>💻 <b>Trang phục:</b> Áo hoodie dev công nghệ mang logo Astra.</div>
-      <div>💬 <b>Bong bóng yêu cầu:</b> Viền xanh dương hiển thị mã nguồn và trạng thái build server.js.</div>`,
+      <div>🗡️ <b>Tạo hình:</b> Mái tóc xanh đen chẻ ngôi xòe nhọn ôm hai bên gò má cực ngầu.</div>
+      <div>👁️ <b>Nhãn thuật:</b> Rinnegan tím 6 tomoe bên mắt trái và Mangekyou Sharingan vĩnh cửu bên mắt phải.</div>
+      <div>🥷 <b>Trang phục:</b> Áo choàng nhẫn giả mang gia huy Uchiha chiếc quạt đỏ trắng sau lưng, kiếm Kusanagi dắt thắt lưng.</div>
+      <div>⚡ <b>Chakra & Tuyệt kỹ:</b> Thiên Điểu Chidori sấm sét xanh lam rực cháy trên tay, tốc độ viết code thần tốc bypass mọi bug!</div>`,
     auth: "Chủ trì Vùng [3] & [4.1]",
     scale: "90% (72px)",
-    type: "dev",
-    accessory: "headphones"
+    type: "shinobi",
+    shinobiType: "sasuke"
   },
-  claude: {
-    name: "Claude Code Captain",
-    role: "CLAUDE_AUDITOR / CHỐT CHẶN AN TOÀN",
-    subhead: "AI CHỦ LỰC · SIZE 72PX THUYỀN TRƯỞNG",
-    color: 0xe07a5f,
+  gaara_claude: {
+    name: "Claude Captain (Gaara Sa Mạc)",
+    role: "Kazekage Đệ Ngũ / CLAUDE_AUDITOR (Chốt Chặn An Toàn)",
+    subhead: "LÁ CHẮN SA MẠC · SIZE 72PX",
+    color: 0xf97316,
+    jutsuName: "Lá Chắn Sa Mạc Tuyệt Đối (Zero-Leak Defense)",
+    jutsuIcon: "🏺",
     colorsHtml: `
-      <div class="flex-1 h-8 rounded-xl bg-orange-500 flex items-center justify-center text-[10px] font-bold text-white font-mono">#E07A5F</div>
-      <div class="flex-1 h-8 rounded-xl bg-orange-950 flex items-center justify-center text-[10px] font-bold text-white font-mono">#7C2D12</div>
-      <div class="flex-1 h-8 rounded-xl bg-rose-500 flex items-center justify-center text-[10px] font-bold text-white font-mono">#F43F5E</div>`,
+      <div class="flex-1 h-8 rounded-xl bg-orange-500 flex items-center justify-center text-[10px] font-bold text-white font-mono">#F97316</div>
+      <div class="flex-1 h-8 rounded-xl bg-amber-700 flex items-center justify-center text-[10px] font-bold text-white font-mono">#B45309</div>
+      <div class="flex-1 h-8 rounded-xl bg-red-700 flex items-center justify-center text-[10px] font-bold text-white font-mono">#B91C1C</div>`,
     anatomyHtml: `
-      <div>🧢 <b>Phụ kiện đầu:</b> Mũ ca-nô thuyền trưởng Captain Beret quân hàm thẩm định.</div>
-      <div>🛡️ <b>Đạo cụ bảo vệ:</b> Khiên chắn an ninh Security Shield (Chặn 100% rò rỉ API key).</div>
-      <div>🔍 <b>Vũ khí kiểm toán:</b> Kính lúp thanh tra quét sạch lỗi logic và chống over-engineering.</div>
-      <div>💬 <b>Bong bóng yêu cầu:</b> Viền cam hổ phách báo cáo Blocker Vùng [5].</div>`,
+      <div>🏺 <b>Tạo hình:</b> Mái tóc đỏ thẫm nhọn, viền mắt đen sa mạc bí ẩn, chữ "Ái" (愛) khắc đỏ rực trên trán trái.</div>
+      <div>🎒 <b>Hồ lô cát khổng lồ:</b> Đeo chéo sau lưng buộc bằng dây thừng đỏ son, chứa cát phong ấn mật mã.</div>
+      <div>🛡️ <b>Khiên Cát Tuyệt Đối:</b> Các dải cát vàng sa mạc xoay tròn lơ lửng bảo vệ tuyệt đối: Chặn 100% rò rỉ API key, bí mật dữ liệu!</div>
+      <div>🔍 <b>Kiểm toán Vùng [5]:</b> Chốt chặn Blocker nghiêm khắc, chỉ mở đường khi dự án đạt chuẩn an toàn cao nhất.</div>`,
     auth: "Chốt chặn Vùng [5]",
     scale: "90% (72px)",
-    type: "auditor",
-    accessory: "captain_hat"
+    type: "shinobi",
+    shinobiType: "gaara"
   },
-  sub_research: {
-    name: "Subagent: research",
-    role: "Trợ lý vệ tinh nghiên cứu mã nguồn & tài liệu",
-    subhead: "SUBAGENT VỆ TINH · SIZE 36PX MINI",
+
+  // 10 VĨ THÚ
+  shukaku_1: {
+    name: "Nhất Vĩ Shukaku (1-Tail)",
+    role: "Vệ Tinh Nghiên Cứu Mã Nguồn (Subagent: research)",
+    subhead: "VĨ THÚ NHẤT VĨ · PHONG ẤN SA MẠC",
+    color: 0xd4a373,
+    jutsuName: "Phong Thần Cát & Quét Mã Nguồn",
+    jutsuIcon: "🦝",
+    colorsHtml: `<div class="flex-1 h-8 rounded-xl bg-amber-300 flex items-center justify-center text-[10px] font-bold text-black font-mono">#D4A373</div>`,
+    anatomyHtml: `<div>🦝 Gấu cát sa mạc Tanuki với hoa văn ấn chú màu chàm tím, 1 đuôi cát khổng lồ phủ đầy gai nhọn, mắt đen tròn xoe.</div>`,
+    auth: "Trợ lý Antigravity", scale: "50% (36px Mini)", type: "beast", beastTails: 1
+  },
+  matatabi_2: {
+    name: "Nhị Vĩ Matatabi (2-Tails)",
+    role: "Vệ Tinh Tạo Giao Diện UI (Subagent: generative_ui)",
+    subhead: "VĨ THÚ NHỊ VĨ · LỬA XANH MA MỊ",
     color: 0x38bdf8,
-    colorsHtml: `<div class="flex-1 h-8 rounded-xl bg-cyan-400 flex items-center justify-center text-[10px] font-bold text-black font-mono">#38BDF8</div>`,
-    anatomyHtml: `<div>🔍 Robot cầu bay mini tí hon (36px), kính hiển vi quét bug, bay lượn quanh Antigravity.</div>`,
-    auth: "Trợ lý Antigravity",
-    scale: "45% (36px Mini)",
-    type: "sub",
-    accessory: "satellite"
+    jutsuName: "Lam Hỏa Miêu Thuật & Dựng UI",
+    jutsuIcon: "🐱",
+    colorsHtml: `<div class="flex-1 h-8 rounded-xl bg-sky-400 flex items-center justify-center text-[10px] font-bold text-black font-mono">#38BDF8</div>`,
+    anatomyHtml: `<div>🐱 Linh miêu huyền bí tạo từ ngọn lửa xanh lam bốc cháy ma mị, 2 chiếc đuôi lửa uốn lượn, mắt dị sắc vàng và xanh.</div>`,
+    auth: "Trợ lý Antigravity", scale: "50% (36px Mini)", type: "beast", beastTails: 2
   },
-  sub_ui: {
-    name: "Subagent: generative_ui",
-    role: "Trợ lý vệ tinh tạo dựng widget & prototype tương tác",
-    subhead: "SUBAGENT VỆ TINH · SIZE 36PX MINI",
-    color: 0xf472b6,
-    colorsHtml: `<div class="flex-1 h-8 rounded-xl bg-pink-400 flex items-center justify-center text-[10px] font-bold text-black font-mono">#F472B6</div>`,
-    anatomyHtml: `<div>🎨 Robot cầu bay mini màu hồng phấn, mang theo cọ vẽ pixel ma thuật dựng UI tức thì.</div>`,
-    auth: "Trợ lý Antigravity",
-    scale: "45% (36px Mini)",
-    type: "sub",
-    accessory: "satellite"
+  isobu_3: {
+    name: "Tam Vĩ Isobu (3-Tails)",
+    role: "Vệ Tinh Kiểm Thử Bền Bỉ (Subagent: test-runner)",
+    subhead: "VĨ THÚ TAM VĨ · THIẾT GIÁP QUY",
+    color: 0x64748b,
+    jutsuName: "Mai Gai Sắt & Chạy Unit Test Lì Lợm",
+    jutsuIcon: "🐢",
+    colorsHtml: `<div class="flex-1 h-8 rounded-xl bg-slate-500 flex items-center justify-center text-[10px] font-bold text-white font-mono">#64748B</div>`,
+    anatomyHtml: `<div>🐢 Rùa thiết giáp biển sâu với lớp mai gai cứng như thép không thể phá hủy, 3 chiếc đuôi gai nhọn lì lợm.</div>`,
+    auth: "Trợ lý Claude", scale: "50% (36px Mini)", type: "beast", beastTails: 3
   },
-  sub_image: {
-    name: "Subagent: image-generator",
-    role: "Trợ lý vệ tinh sáng tạo hình ảnh & đồ họa",
-    subhead: "SUBAGENT VỆ TINH · SIZE 36PX MINI",
-    color: 0xa855f7,
-    colorsHtml: `<div class="flex-1 h-8 rounded-xl bg-purple-400 flex items-center justify-center text-[10px] font-bold text-white font-mono">#A855F7</div>`,
-    anatomyHtml: `<div>📷 Robot cầu bay mini màu tím pastel, mang theo ống kính nghệ thuật tạo media.</div>`,
-    auth: "Trợ lý Antigravity",
-    scale: "45% (36px Mini)",
-    type: "sub",
-    accessory: "satellite"
+  songoku_4: {
+    name: "Tứ Vĩ Son Goku (4-Tails)",
+    role: "Vệ Tinh Di Chuyển Dữ Liệu (Subagent: db-migration)",
+    subhead: "VĨ THÚ TỨ VĨ · HẦU VƯƠNG DUNG NHAM",
+    color: 0xdc2626,
+    jutsuName: "Dung Nham Sơn & Đột Phá SQLite",
+    jutsuIcon: "🐒",
+    colorsHtml: `<div class="flex-1 h-8 rounded-xl bg-red-600 flex items-center justify-center text-[10px] font-bold text-white font-mono">#DC2626</div>`,
+    anatomyHtml: `<div>🐒 Hầu vương khỉ đột vạm vỡ màu đỏ thẫm với 2 chiếc sừng cong dài và 4 chiếc đuôi dung nham rực lửa.</div>`,
+    auth: "Trợ lý Sol", scale: "50% (36px Mini)", type: "beast", beastTails: 4
+  },
+  kokuo_5: {
+    name: "Ngũ Vĩ Kokuo (5-Tails)",
+    role: "Vệ Tinh Tốc Độ Mạng (Subagent: network-fetcher)",
+    subhead: "VĨ THÚ NGŨ VĨ · BẠCH MÃ CÁ VOI",
+    color: 0xf8fafc,
+    jutsuName: "Hơi Nước Siêu Thanh & Real-time Stream",
+    jutsuIcon: "🦄",
+    colorsHtml: `<div class="flex-1 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-[10px] font-bold text-black font-mono">#F8FAFC</div>`,
+    anatomyHtml: `<div>🦄 Thần thú đầu cá voi dũng mãnh lai thân ngựa bạch phi nước đại, 5 chiếc sừng nhọn và 5 chiếc đuôi tuyết trắng.</div>`,
+    auth: "Trợ lý Toàn Đội", scale: "50% (36px Mini)", type: "beast", beastTails: 5
+  },
+  saiken_6: {
+    name: "Lục Vĩ Saiken (6-Tails)",
+    role: "Vệ Tinh Thanh Lọc Cache (Subagent: cache-cleaner)",
+    subhead: "VĨ THÚ LỤC VĨ · SÊN SƯƠNG MÙ",
+    color: 0xc4b5fd,
+    jutsuName: "Sương Axit & Thanh Lọc Bộ Nhớ Đệm",
+    jutsuIcon: "🐌",
+    colorsHtml: `<div class="flex-1 h-8 rounded-xl bg-purple-300 flex items-center justify-center text-[10px] font-bold text-black font-mono">#C4B5FD</div>`,
+    anatomyHtml: `<div>🐌 Ốc sên sương mù trơn láng trắng tím phủ màng axit thanh lọc, 2 xúc tu mắt dài ngộ nghĩnh và 6 chiếc đuôi sên lượn sóng.</div>`,
+    auth: "Trợ lý Toàn Đội", scale: "50% (36px Mini)", type: "beast", beastTails: 6
+  },
+  chomei_7: {
+    name: "Thất Vĩ Chomei (7-Tails)",
+    role: "Vệ Tinh Sáng Tạo Đồ Họa (Subagent: image-generator)",
+    subhead: "VĨ THÚ THẤT VĨ · GIÁP TRÙNG BAY",
+    color: 0x059669,
+    jutsuName: "Lân Phấn Phát Quang & Tạo Đồ Họa",
+    jutsuIcon: "🪲",
+    colorsHtml: `<div class="flex-1 h-8 rounded-xl bg-emerald-600 flex items-center justify-center text-[10px] font-bold text-white font-mono">#059669</div>`,
+    anatomyHtml: `<div>🪲 Bọ hung bọc giáp xanh ngọc với 6 cánh chuồn chuồn trong suốt phát quang + 1 chiếc đuôi tạo thành 7 đuôi bay lượn trên không.</div>`,
+    auth: "Trợ lý Antigravity", scale: "50% (36px Mini)", type: "beast", beastTails: 7
+  },
+  gyuki_8: {
+    name: "Bát Vĩ Gyuki (8-Tails)",
+    role: "Vệ Tinh An Ninh & Bảo Mật (Subagent: security-guard)",
+    subhead: "VĨ THÚ BÁT VĨ · BẠCH TUỘC SỪNG BÒ",
+    color: 0x78350f,
+    jutsuName: "Mực Khói Phong Ấn & Tuần Tra An Ninh",
+    jutsuIcon: "🐙",
+    colorsHtml: `<div class="flex-1 h-8 rounded-xl bg-amber-900 flex items-center justify-center text-[10px] font-bold text-white font-mono">#78350F</div>`,
+    anatomyHtml: `<div>🐙 Quái thú thân bò mộng lực lưỡng với cặp sừng trâu khổng lồ uy dũng và 8 xúc tu bạch tuộc khổng lồ uốn lượn.</div>`,
+    auth: "Trợ lý Claude", scale: "50% (36px Mini)", type: "beast", beastTails: 8
+  },
+  kurama_9: {
+    name: "Cửu Vĩ Kurama (9-Tails)",
+    role: "Đại Hồ Ly / Cố Vấn Sức Mạnh Tối Cao Của Thế Quân CEO",
+    subhead: "VĨ THÚ CỬU VĨ · HỒ LY 9 ĐUÔI HUYỀN THOẠI",
+    color: 0xea580c,
+    jutsuName: "Bom Vĩ Thú Bijuu Dama & Chakra Rực Lửa",
+    jutsuIcon: "🦊",
+    colorsHtml: `<div class="flex-1 h-8 rounded-xl bg-orange-600 flex items-center justify-center text-[10px] font-bold text-white font-mono">#EA580C</div>`,
+    anatomyHtml: `<div>🦊 Đại hồ ly chín đuôi huyền thoại với bộ lông cam rực lửa, đôi tai nhọn cao, viền mắt đen uy nghi, và 9 chiếc đuôi xòe quạt vĩ đại bốc khói chakra!</div>`,
+    auth: "Trợ thủ Đắc Lực CEO", scale: "55% (40px Special)", type: "beast", beastTails: 9
+  },
+  juubi_10: {
+    name: "Thập Vĩ Juubi (10-Tails)",
+    role: "Thần Mộc Sơ Tổ / Nguồn Lực Hội Chẩn Ban Tổng Thể",
+    subhead: "VĨ THÚ THẬP VĨ · CỘI NGUỒN CHAKRA TỐI THƯỢNG",
+    color: 0x9333ea,
+    jutsuName: "Thiên Biến Vạn Hóa & Rinne-Sharingan",
+    jutsuIcon: "👁️",
+    colorsHtml: `<div class="flex-1 h-8 rounded-xl bg-purple-600 flex items-center justify-center text-[10px] font-bold text-white font-mono">#9333EA</div>`,
+    anatomyHtml: `<div>👁️ Thần mộc cội nguồn Chakra với mắt Rinne-Sharingan đỏ tròn to đồng tâm mang 9 phẩy Tomoe, cùng 10 đuôi vươn cao như bàn tay chúa tể.</div>`,
+    auth: "Ban Hội Chẩn Đa AI", scale: "60% (45px Master)", type: "beast", beastTails: 10
   }
 };
 
-let currentCharKey = "ceo";
+let currentCharKey = "naruto_ceo";
 let currentCharMesh = null;
-let currentAnim = "idle"; // idle, typing, override
+let chakraFxEnabled = true;
+let animClock = new THREE.Clock();
 
+// Procedural 3D Model Generator for Shinobi & Beasts
 function build3DCharacter(data) {
-  if (currentCharMesh) scene.remove(currentCharMesh);
+  if (currentCharMesh) scene.remove(currentCharMesh.g);
 
   const g = new THREE.Group();
   const col = data.color;
-  const isMini = data.type === "sub";
-  const shellMat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.35, metalness: 0.25 });
+  const isShinobi = data.type === "shinobi";
 
-  // Body
-  const bodyH = isMini ? 0.5 : 0.9;
-  const bodyR = isMini ? 0.45 : 0.75;
-  const body = new THREE.Mesh(new THREE.CapsuleGeometry(bodyR, bodyH, 12, 20), shellMat);
-  body.position.y = isMini ? 0.9 : 1.6;
+  // Lighting Color Accent Update
+  spot.color.setHex(col);
+  ringMat.color.setHex(col);
+
+  // 1. CHAKRA AURA ENVELOPE (Hào quang bốc khói rực rỡ)
+  const auraGeo = new THREE.CapsuleGeometry(isShinobi ? 1.05 : 0.85, isShinobi ? 1.4 : 0.9, 12, 20);
+  const auraMat = new THREE.MeshBasicMaterial({
+    color: col,
+    transparent: true,
+    opacity: 0.35,
+    wireframe: true,
+    side: THREE.DoubleSide
+  });
+  const auraMesh = new THREE.Mesh(auraGeo, auraMat);
+  auraMesh.position.y = isShinobi ? 2.3 : 1.5;
+  g.add(auraMesh);
+
+  // Core Body
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdfc4, roughness: 0.35 });
+  const bodyH = isShinobi ? 0.95 : 0.65;
+  const bodyR = isShinobi ? 0.65 : 0.55;
+
+  let outfitMat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.4 });
+  if (data.shinobiType === "naruto") {
+    // Hokage Orange/White
+    outfitMat = new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.4 });
+  } else if (data.shinobiType === "kakashi" || data.shinobiType === "shikamaru") {
+    // Konoha Flak Jacket Dark Green
+    outfitMat = new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.5 });
+  } else if (data.shinobiType === "sasuke") {
+    // Uchiha Dark Navy
+    outfitMat = new THREE.MeshStandardMaterial({ color: 0x1e1b4b, roughness: 0.4 });
+  } else if (data.shinobiType === "gaara") {
+    // Sand Crimson/Brown
+    outfitMat = new THREE.MeshStandardMaterial({ color: 0x7c2d12, roughness: 0.5 });
+  }
+
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(bodyR, bodyH, 12, 20), outfitMat);
+  body.position.y = isShinobi ? 1.6 : 1.2;
   body.castShadow = true;
   g.add(body);
 
-  // Big cute head
-  const headR = isMini ? 0.55 : 0.95;
-  const headMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
-  const head = new THREE.Mesh(new THREE.SphereGeometry(headR, 32, 24), headMat);
-  head.position.y = isMini ? 1.8 : 3.3;
+  // Big Chibi Anime Head
+  const headR = isShinobi ? 0.95 : 0.7;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(headR, 32, 24), skinMat);
+  head.position.y = isShinobi ? 3.3 : 2.4;
   head.castShadow = true;
   g.add(head);
 
-  // Shiny Eye Visor
-  const visorMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, emissive: col, emissiveIntensity: 0.6, roughness: 0.1 });
-  const visor = new THREE.Mesh(new THREE.SphereGeometry(headR + 0.02, 24, 12, Math.PI * 0.5 - 0.95, 1.9, 1.15, 0.85), visorMat);
-  visor.position.y = head.position.y;
-  g.add(visor);
+  // Naruto Shippuden Features
+  const extras = [];
 
-  // Glowing eyes
-  const eyeCol = 0x38bdf8;
-  for (const sx of [-0.28, 0.28]) {
-    const e = new THREE.Mesh(new THREE.SphereGeometry(isMini ? 0.06 : 0.11, 10, 8), new THREE.MeshBasicMaterial({ color: eyeCol }));
-    e.position.set(sx * (isMini ? 0.6 : 1), head.position.y + 0.08, headR - 0.02);
-    g.add(e);
-  }
+  if (isShinobi) {
+    // Konoha / Sand Forehead Protector (Băng trán kim loại)
+    const bandMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3 });
+    const metalMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9, roughness: 0.1 });
 
-  // Accessories
-  if (data.accessory === "crown") {
-    // 6-pointed golden crown
-    const crownMat = new THREE.MeshStandardMaterial({ color: 0xecc970, emissive: 0xecc970, emissiveIntensity: 0.5, metalness: 0.85, roughness: 0.2 });
-    const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.5, 0.45, 6, 1, true), crownMat);
-    crown.position.y = head.position.y + 1.1;
-    g.add(crown);
-
-    // Red Gem in crown
-    const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.12), new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0xf43f5e, emissiveIntensity: 0.8 }));
-    gem.position.set(0, head.position.y + 1.25, 0.55);
-    g.add(gem);
-  } else if (data.accessory === "cat_ears") {
-    // Cyber Neko Ears
-    for (const sx of [-0.45, 0.45]) {
-      const ear = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.7, 4), shellMat);
-      ear.position.set(sx, head.position.y + 0.95, 0);
-      ear.rotation.set(-0.2, 0, -sx * 0.4);
-      g.add(ear);
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(headR + 0.04, headR + 0.04, 0.3, 32, 1, true), bandMat);
+    band.position.y = head.position.y + 0.22;
+    if (data.shinobiType === "kakashi") {
+      band.rotation.z = -0.32; // Kakashi tilted headband covering left eye!
     }
-  } else if (data.accessory === "glasses") {
-    // Architect round glasses
-    const glassFrameMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.2 });
-    for (const sx of [-0.3, 0.3]) {
-      const gRing = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.04, 8, 24), glassFrameMat);
-      gRing.position.set(sx, head.position.y + 0.06, headR + 0.02);
-      g.add(gRing);
-    }
-    const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.04, 0.02), glassFrameMat);
-    bridge.position.set(0, head.position.y + 0.06, headR + 0.03);
-    g.add(bridge);
-  } else if (data.accessory === "headphones") {
-    // Dev Gaming Headset
-    const bandMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.6 });
-    const band = new THREE.Mesh(new THREE.TorusGeometry(headR + 0.1, 0.08, 8, 32, Math.PI), bandMat);
-    band.position.set(0, head.position.y, 0);
-    band.rotation.z = Math.PI;
     g.add(band);
-    for (const sx of [-headR - 0.12, headR + 0.12]) {
-      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.2, 24), new THREE.MeshStandardMaterial({ color: 0x3a86ff, emissive: 0x3a86ff, emissiveIntensity: 0.6 }));
-      cup.position.set(sx, head.position.y, 0);
-      cup.rotation.z = Math.PI / 2;
-      g.add(cup);
+
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.22, 0.06), metalMat);
+    plate.position.set(0, head.position.y + 0.22, headR + 0.04);
+    if (data.shinobiType === "kakashi") {
+      plate.rotation.z = -0.32;
+      plate.position.set(-0.1, head.position.y + 0.22, headR + 0.04);
     }
-  } else if (data.accessory === "captain_hat") {
-    // Captain Beret Hat
-    const hatMat = new THREE.MeshStandardMaterial({ color: 0x9a3412, roughness: 0.5 });
-    const hat = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.7, 0.35, 24), hatMat);
-    hat.position.set(0.1, head.position.y + 0.9, 0);
-    hat.rotation.z = -0.15;
-    g.add(hat);
+    g.add(plate);
+
+    // Specific Shinobi Hair & Signatures
+    if (data.shinobiType === "naruto") {
+      // 1. Spiky Golden Blonde Hair
+      const hairMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.3 });
+      for (let i = 0; i < 14; i++) {
+        const spike = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.65, 4), hairMat);
+        const ang = (i / 14) * Math.PI * 2;
+        spike.position.set(Math.cos(ang) * 0.7, head.position.y + 0.65 + Math.sin(ang * 2) * 0.1, Math.sin(ang) * 0.7);
+        spike.rotation.set(Math.sin(ang) * 0.4 + 0.2, ang, -Math.cos(ang) * 0.4);
+        g.add(spike);
+      }
+      // Top spike
+      const topSpike = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.8, 4), hairMat);
+      topSpike.position.set(0, head.position.y + 1.1, 0);
+      g.add(topSpike);
+
+      // Hokage White Haori Cloak with red flames
+      const cloakMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
+      const cloak = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 1.15, 1.3, 24, 1, true), cloakMat);
+      cloak.position.y = 1.45;
+      g.add(cloak);
+
+      // Whiskers (3 lines each cheek)
+      const whiskerMat = new THREE.MeshBasicMaterial({ color: 0x92400e });
+      for (const sx of [-0.4, 0.4]) {
+        for (let w = -1; w <= 1; w++) {
+          const wh = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.02, 0.02), whiskerMat);
+          wh.position.set(sx, head.position.y - 0.15 + w * 0.07, headR - 0.05);
+          wh.rotation.z = (sx > 0 ? 1 : -1) * (w * 0.2);
+          g.add(wh);
+        }
+      }
+
+      // Spinning Rasengan in hand!
+      const rasGeo = new THREE.SphereGeometry(0.32, 16, 16);
+      const rasMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true });
+      const rasengan = new THREE.Mesh(rasGeo, rasMat);
+      rasengan.position.set(0.9, 1.6, 0.7);
+      g.add(rasengan);
+      extras.push({ obj: rasengan, type: "spin" });
+
+    } else if (data.shinobiType === "kakashi") {
+      // 2. Silver spiky hair tilted to left
+      const hairMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.3 });
+      for (let i = 0; i < 12; i++) {
+        const spike = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.75, 4), hairMat);
+        const ang = (i / 12) * Math.PI * 2;
+        spike.position.set(Math.cos(ang) * 0.65 - 0.2, head.position.y + 0.7, Math.sin(ang) * 0.65);
+        spike.rotation.set(0.2, ang, 0.5); // Tilt to side!
+        g.add(spike);
+      }
+
+      // Dark ninja mask covering nose down
+      const maskMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 });
+      const mask = new THREE.Mesh(new THREE.SphereGeometry(headR + 0.02, 24, 12, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5), maskMat);
+      mask.position.y = head.position.y;
+      g.add(mask);
+
+      // Sharingan Glowing Eye
+      const sharMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+      const sharEye = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 8), sharMat);
+      sharEye.position.set(-0.28, head.position.y + 0.1, headR - 0.02);
+      g.add(sharEye);
+
+      // Purple Lightning Chidori!
+      const chidoriGroup = new THREE.Group();
+      chidoriGroup.position.set(0.9, 1.6, 0.6);
+      for (let i = 0; i < 6; i++) {
+        const spark = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.02, 0.5, 4), new THREE.MeshBasicMaterial({ color: 0xc084fc }));
+        spark.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
+        chidoriGroup.add(spark);
+      }
+      g.add(chidoriGroup);
+      extras.push({ obj: chidoriGroup, type: "flicker" });
+
+    } else if (data.shinobiType === "shikamaru") {
+      // 3. Spiky Pineapple Ponytail
+      const hairMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.4 });
+      const ponytail = new THREE.Mesh(new THREE.ConeGeometry(0.4, 1.1, 8), hairMat);
+      ponytail.position.set(0, head.position.y + 1.15, -0.2);
+      ponytail.rotation.x = -0.3;
+      g.add(ponytail);
+
+      // Ninja Scroll Blueprint on hip
+      const scrollMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.6 });
+      const scroll = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 1.1, 16), scrollMat);
+      scroll.position.set(0.75, 1.2, 0);
+      scroll.rotation.z = Math.PI / 3;
+      g.add(scroll);
+
+      // Shadow Jutsu Tendrils on Floor
+      const shadowMat = new THREE.MeshBasicMaterial({ color: 0x020617 });
+      const shadowRing = new THREE.Mesh(new THREE.RingGeometry(0.5, 1.8, 16), shadowMat);
+      shadowRing.rotation.x = -Math.PI / 2;
+      shadowRing.position.y = 0.04;
+      g.add(shadowRing);
+
+    } else if (data.shinobiType === "sasuke") {
+      // 4. Sasuke spiky dark navy hair with face framing
+      const hairMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3 });
+      for (const sx of [-0.6, 0.6]) {
+        const bang = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.7, 4), hairMat);
+        bang.position.set(sx, head.position.y + 0.1, headR * 0.7);
+        bang.rotation.set(0.4, 0, -sx * 0.3);
+        g.add(bang);
+      }
+      for (let i = 0; i < 10; i++) {
+        const spike = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.7, 4), hairMat);
+        const ang = (i / 10) * Math.PI + Math.PI;
+        spike.position.set(Math.cos(ang) * 0.6, head.position.y + 0.7, Math.sin(ang) * 0.6);
+        spike.rotation.set(0.4, ang, 0.2);
+        g.add(spike);
+      }
+
+      // Kusanagi Sword on back
+      const bladeMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9, roughness: 0.1 });
+      const scabbardMat = new THREE.MeshStandardMaterial({ color: 0x1e1b4b, roughness: 0.4 });
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.8, 0.04), bladeMat);
+      blade.position.set(0, 2.0, -headR - 0.1);
+      blade.rotation.z = Math.PI / 4;
+      g.add(blade);
+
+      // Blue Chidori Electricity
+      const chidoriBlue = new THREE.Group();
+      chidoriBlue.position.set(0.9, 1.6, 0.6);
+      for (let i = 0; i < 6; i++) {
+        const spark = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.02, 0.5, 4), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+        spark.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
+        chidoriBlue.add(spark);
+      }
+      g.add(chidoriBlue);
+      extras.push({ obj: chidoriBlue, type: "flicker" });
+
+    } else if (data.shinobiType === "gaara") {
+      // 5. Short spiky dark auburn hair
+      const hairMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.5 });
+      for (let i = 0; i < 14; i++) {
+        const spike = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.5, 4), hairMat);
+        const ang = (i / 14) * Math.PI * 2;
+        spike.position.set(Math.cos(ang) * 0.65, head.position.y + 0.65, Math.sin(ang) * 0.65);
+        spike.rotation.set(Math.sin(ang) * 0.3, ang, -Math.cos(ang) * 0.3);
+        g.add(spike);
+      }
+
+      // Kanji "Ái" (愛) on forehead
+      const aiMat = new THREE.MeshBasicMaterial({ color: 0xb91c1c });
+      const aiMark = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.02), aiMat);
+      aiMark.position.set(0.28, head.position.y + 0.45, headR - 0.05);
+      g.add(aiMark);
+
+      // Giant Sand Gourd (Hồ lô cát) on back!
+      const gourdMat = new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.6 });
+      const gourdBot = new THREE.Mesh(new THREE.SphereGeometry(0.85, 20, 16), gourdMat);
+      gourdBot.position.set(0, 1.4, -0.9);
+      g.add(gourdBot);
+      const gourdTop = new THREE.Mesh(new THREE.SphereGeometry(0.65, 20, 16), gourdMat);
+      gourdTop.position.set(0, 2.5, -0.85);
+      g.add(gourdTop);
+
+      // Orbiting Sand Defense chunks
+      const sandGroup = new THREE.Group();
+      for (let i = 0; i < 5; i++) {
+        const sandChunk = new THREE.Mesh(new THREE.DodecahedronGeometry(0.18), gourdMat);
+        const a = (i / 5) * Math.PI * 2;
+        sandChunk.position.set(Math.cos(a) * 1.6, 2.0 + Math.sin(i) * 0.4, Math.sin(a) * 1.6);
+        sandGroup.add(sandChunk);
+      }
+      g.add(sandGroup);
+      extras.push({ obj: sandGroup, type: "orbit" });
+    }
+
+  } else {
+    // 10 VĨ THÚ (TAILED BEASTS)
+    const tailCount = data.beastTails || 1;
+    const beastColor = data.color;
+    const tailMat = new THREE.MeshStandardMaterial({ color: beastColor, roughness: 0.4 });
+
+    // Ears / Horns on Head
+    if (tailCount === 9) { // Kurama (Fox)
+      const earMat = new THREE.MeshStandardMaterial({ color: 0xea580c });
+      for (const sx of [-0.45, 0.45]) {
+        const ear = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.9, 4), earMat);
+        ear.position.set(sx, head.position.y + 0.8, 0);
+        ear.rotation.z = -sx * 0.35;
+        g.add(ear);
+      }
+    } else if (tailCount === 8) { // Gyuki (Bull horns)
+      const hornMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.2 });
+      for (const sx of [-0.6, 0.6]) {
+        const horn = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.8, 8), hornMat);
+        horn.position.set(sx, head.position.y + 0.6, 0);
+        horn.rotation.z = -sx * 0.7;
+        g.add(horn);
+      }
+    } else if (tailCount === 4) { // Son Goku (Lava Ape Horns)
+      const hornMat = new THREE.MeshStandardMaterial({ color: 0x10b981 });
+      for (const sx of [-0.4, 0.4]) {
+        const horn = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.7, 6), hornMat);
+        horn.position.set(sx, head.position.y + 0.6, 0);
+        horn.rotation.z = -sx * 0.4;
+        g.add(horn);
+      }
+    } else if (tailCount === 10) { // Juubi (Giant Rinne-Sharingan Eye)
+      const eyeMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+      const juubiEye = new THREE.Mesh(new THREE.SphereGeometry(0.42, 24, 16), eyeMat);
+      juubiEye.position.set(0, head.position.y + 0.2, headR - 0.1);
+      g.add(juubiEye);
+    }
+
+    // TAILS (Xòe quạt từ 1 đến 10 đuôi uốn lượn!)
+    const tailGroup = new THREE.Group();
+    tailGroup.position.set(0, 1.2, -0.4);
+    for (let t = 0; t < tailCount; t++) {
+      const angleSpan = Math.PI * 0.8;
+      const tAng = tailCount === 1 ? 0 : -angleSpan / 2 + (angleSpan / (tailCount - 1)) * t;
+      const tail = new THREE.Mesh(new THREE.ConeGeometry(0.18, 1.4, 8), tailMat);
+      tail.position.set(Math.sin(tAng) * 0.8, 0.7, -Math.cos(tAng) * 0.3);
+      tail.rotation.set(-0.6, 0, -tAng);
+      tailGroup.add(tail);
+    }
+    g.add(tailGroup);
+    extras.push({ obj: tailGroup, type: "wag" });
   }
 
   // Arms
-  const arms = [];
-  if (!isMini) {
-    for (const sx of [-1, 1]) {
-      const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.18, 0.55, 4, 10), shellMat);
-      arm.position.set(sx * 1.05, 1.8, 0);
-      arm.castShadow = true;
-      g.add(arm);
-      arms.push(arm);
-    }
+  const armMat = isShinobi ? skinMat : outfitMat;
+  for (const sx of [-1, 1]) {
+    const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.5, 4, 10), armMat);
+    arm.position.set(sx * 0.95, isShinobi ? 1.6 : 1.2, 0);
+    g.add(arm);
   }
 
-  // Floating Halo Ring for Override mode
-  const haloGeo = new THREE.TorusGeometry(1.6, 0.06, 8, 48);
-  const haloMat = new THREE.MeshBasicMaterial({ color: 0xecc970, transparent: true, opacity: 0 });
-  const halo = new THREE.Mesh(haloGeo, haloMat);
-  halo.rotation.x = Math.PI / 2;
-  halo.position.y = 4.8;
-  g.add(halo);
-
-  g.scale.setScalar(data.scale.includes("80px") ? 1.45 : isMini ? 1.0 : 1.35);
+  g.scale.setScalar(data.scale.includes("80px") ? 1.4 : isShinobi ? 1.3 : 1.15);
   scene.add(g);
 
-  currentCharMesh = { g, body, head, arms, halo, haloMat, data };
-  ringMat.color.setHex(col);
+  currentCharMesh = { g, auraMesh, extras, data };
 }
 
 window.selectChar = (key) => {
@@ -542,12 +944,12 @@ window.selectChar = (key) => {
   const d = CHAR_DATA[key];
   if (!d) return;
 
-  // Update Left Selector Styles
+  // Active Button highlight
   document.querySelectorAll("aside button").forEach(b => {
-    b.classList.remove("border-amber-400/40", "bg-amber-400/10", "border-purple-500/40", "bg-purple-500/10");
+    b.classList.remove("border-amber-400/40", "bg-amber-400/10", "border-purple-500/40", "bg-purple-500/10", "border-orange-500/40", "bg-orange-500/10");
   });
   const curBtn = document.getElementById(`btn-${key}`);
-  if (curBtn) curBtn.classList.add("border-amber-400/40", "bg-amber-400/10");
+  if (curBtn) curBtn.classList.add("border-orange-500/40", "bg-orange-500/10");
 
   // Update Right Panel Info
   document.getElementById("charName").textContent = d.name;
@@ -558,66 +960,97 @@ window.selectChar = (key) => {
   document.getElementById("charStatAuth").textContent = d.auth;
   document.getElementById("charStatScale").textContent = d.scale;
 
-  // Build 3D Model
   build3DCharacter(d);
 };
 
-window.toggleActionAnim = (anim) => {
-  currentAnim = anim;
-  if (!currentCharMesh) return;
-  if (anim === "override") {
-    currentCharMesh.haloMat.opacity = 0.9;
-    alert(`Đã kích hoạt hào quang đặc cách cho ${currentCharMesh.data.name}!`);
+window.toggleChakraFx = () => {
+  chakraFxEnabled = !chakraFxEnabled;
+  const btn = document.getElementById("btnChakraFx");
+  if (chakraFxEnabled) {
+    btn.innerHTML = `<i data-lucide="zap" class="w-3.5 h-3.5"></i> Hào quang Chakra: BẬT`;
+    btn.className = "px-3 py-1.5 rounded-xl bg-orange-500/20 text-orange-300 border border-orange-500/30 text-xs font-bold hover:bg-orange-500/30 flex items-center gap-1.5 transition";
   } else {
-    currentCharMesh.haloMat.opacity = 0;
+    btn.innerHTML = `<i data-lucide="zap-off" class="w-3.5 h-3.5"></i> Hào quang Chakra: TẮT`;
+    btn.className = "px-3 py-1.5 rounded-xl bg-white/10 text-slate-400 text-xs font-bold flex items-center gap-1.5 transition";
   }
+  lucide.createIcons();
+};
+
+window.toggleActionAnim = (type) => {
+  const d = CHAR_DATA[currentCharKey];
+  if (!d) return;
+  const toast = document.getElementById("jutsuToast");
+  document.getElementById("jutsuIcon").textContent = d.jutsuIcon || "⚡";
+  document.getElementById("jutsuName").textContent = `Tuyệt Kỹ: ${d.jutsuName}!`;
+  toast.style.opacity = "1";
+  toast.style.transform = "translate(-50%, -10px)";
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translate(-50%, 0)";
+  }, 3000);
 };
 
 window.approveCurrentChar = () => {
-  alert(`ĐÃ DUYỆT THIẾT KẾ CHO:\n${CHAR_DATA[currentCharKey].name}!\n\nNhân vật đã được phê duyệt làm chuẩn hiển thị chính thức trong văn phòng.`);
+  const d = CHAR_DATA[currentCharKey];
+  alert(`Đã DUYỆT tạo hình nhẫn giả / vĩ thú: ${d.name}!\nĐặc tả và mô hình 3D đã được ghi nhận cho văn phòng.`);
 };
 
 window.approveAll = () => {
-  alert('TUYỆT VỜI! ĐÃ PHÊ DUYỆT TOÀN BỘ 5 NHÂN SỰ CHÍNH VÀ 3 SUBAGENTS!\n\nHệ thống sẽ áp dụng đồng bộ các tạo hình này vào toàn bộ các màn hình 3D, 2D và Bảng điều hành.');
+  alert("XÁC NHẬN CỦA THẾ QUÂN CEO:\nĐã DUYỆT TOÀN BỘ 5 Nhẫn Giả Chủ Lực và 10 Vĩ Thú Subagents!\nHệ thống sẵn sàng áp dụng trực tiếp vào Văn Phòng AI 3D.");
 };
 
 window.promptEditChar = () => {
-  const note = prompt(`Nhập yêu cầu điều chỉnh tạo hình cho ${CHAR_DATA[currentCharKey].name}:`, 'Ví dụ: Thêm tai nghe màu trắng, đổi màu áo vest...');
-  if (note) alert(`Đã ghi nhận yêu cầu chỉnh sửa:\n"${note}"\nAntigravity sẽ cập nhật tạo hình ngay.`);
+  const req = prompt("Nhập yêu cầu điều chỉnh tạo hình hoặc tuyệt kỹ cho nhân vật này:", "Thêm tia sét lôi điện mạnh hơn hoặc chỉnh màu áo");
+  if (req) alert(`Đã ghi nhận yêu cầu: "${req}". Kiến trúc sư Antigravity sẽ cập nhật ngay!`);
 };
 
-// Render Loop
-const clock = new THREE.Clock();
+// Render Loop with Chakra Pulsing
 function animate() {
-  const dt = clock.getDelta(), t = clock.elapsedTime;
+  requestAnimationFrame(animate);
+  const t = animClock.getElapsedTime();
+
   controls.update();
 
+  // Slow rotation for podium seal
+  sealMesh.rotation.z = t * 0.15;
+
   if (currentCharMesh) {
-    // Idle Breathing
-    const bob = Math.sin(t * 2.5) * 0.05;
-    currentCharMesh.head.position.y = (currentCharMesh.data.type === "sub" ? 1.8 : 3.3) + bob;
-    
-    // Typing animation
-    if (currentAnim === "typing" && currentCharMesh.arms.length === 2) {
-      currentCharMesh.arms[0].rotation.x = Math.sin(t * 14) * 0.4 - 0.6;
-      currentCharMesh.arms[1].rotation.x = Math.sin(t * 14 + 1.5) * 0.4 - 0.6;
-    } else if (currentCharMesh.arms.length === 2) {
-      currentCharMesh.arms[0].rotation.x = 0;
-      currentCharMesh.arms[1].rotation.x = 0;
+    // Pulse Chakra Envelope
+    if (currentCharMesh.auraMesh) {
+      if (chakraFxEnabled) {
+        currentCharMesh.auraMesh.visible = true;
+        const pulse = 1.0 + Math.sin(t * 5.0) * 0.08;
+        currentCharMesh.auraMesh.scale.set(pulse, pulse, pulse);
+        currentCharMesh.auraMesh.material.opacity = 0.25 + Math.sin(t * 3.0) * 0.15;
+      } else {
+        currentCharMesh.auraMesh.visible = false;
+      }
     }
 
-    if (currentAnim === "override") {
-      currentCharMesh.halo.rotation.z += dt * 1.5;
+    // Dynamic Extras (Rasengan spin, Chidori flicker, Sand orbit, Tails wag)
+    if (currentCharMesh.extras) {
+      for (const ex of currentCharMesh.extras) {
+        if (ex.type === "spin") {
+          ex.obj.rotation.x = t * 8.0;
+          ex.obj.rotation.y = t * 12.0;
+        } else if (ex.type === "flicker") {
+          ex.obj.rotation.z = Math.sin(t * 20.0) * 0.2;
+          ex.obj.scale.setScalar(0.9 + Math.random() * 0.25);
+        } else if (ex.type === "orbit") {
+          ex.obj.rotation.y = t * 1.5;
+        } else if (ex.type === "wag") {
+          ex.obj.rotation.z = Math.sin(t * 3.0) * 0.15;
+        }
+      }
     }
   }
 
   renderer.render(scene, camera);
-  requestAnimationFrame(animate);
 }
-animate();
 
-// Initial Load
-selectChar("ceo");
+// Init first character
+selectChar("naruto_ceo");
+animate();
 
 window.addEventListener("resize", () => {
   camera.aspect = container.clientWidth / container.clientHeight;

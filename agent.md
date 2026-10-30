@@ -27,7 +27,7 @@
 - Chỉ số thành công: 100% không cần mở tay file agent.md; 1-click phê duyệt chuyển lượt; chuyển đổi giữa các repo GitHub linh hoạt trong < 500ms; phát hiện phiên Antigravity cục bộ qua native node:sqlite trong < 2 giây.
 - Phạm vi MVP (F1..F7):
   - F1 (GitHub Repo Switcher): Liệt kê danh sách repo đã tạo trên GitHub, chuyển workspace hoặc clone về máy trong 1 click.
-  - F2 (Chibi Cute Avatars): Nhân sự AI chính to lớn (72-80px), Subagents vệ tinh nhỏ gọn (32-36px), cử động nhịp thở và gõ phím.
+  - F2 (Naruto Shippuden & 10 Vĩ Thú): 5 Nhẫn giả AI chủ lực (Thế Quân CEO Naruto 80px, Antigravity Kakashi 72px, Sol Shikamaru 72px, Codex Sasuke 72px, Claude Gaara 72px) cùng 10 Vĩ Thú Subagents từ Nhất Vĩ Shukaku đến Thập Vĩ Juubi với hiệu ứng hào quang Chakra tỏa sáng bốc khói rực rỡ quanh nhân vật.
   - F3 (Antigravity & Subagents Hierarchy): Module đọc SQLite cục bộ nhận diện phiên cha và vệ tinh (research, generative_ui).
   - F4 (Hội Chẩn Ban Tổng Thể): Phòng họp bàn tròn xuất tài liệu đồng thuận data/HOI-CHAN-TONG-THE.md từ cả 4 AI.
   - F5 (Cơ Chế Đề Xuất Chuyển Lượt Tự Động 1-Click): Pop-up đề xuất khi xong Vùng, Giám đốc bấm duyệt là tự động cập nhật Vùng [4] và commit chore(agent-sync).
@@ -43,11 +43,13 @@
 4. Giám đốc bấm "Duyệt chuyển lượt ngay" -> Tự động commit chore(agent-sync) -> AI tiếp theo nhận lượt.
 5. Khi cần hội ý liên AI -> Mở Phòng Họp Ban -> Xuất tài liệu HOI-CHAN-TONG-THE.md.
 
-### [2.3] LUỒNG AI AGENT & SUBAGENTS
-- Antigravity (Gemini 3.8): SPEC_ARCHITECT & UIUX_FRONTEND_ARCHITECT (Vùng [2]). Vệ tinh: research, generative_ui.
-- GPT 6.1 Sol: SOL_ARCHITECT_PLANNER / ADVISOR (Vùng [3]).
-- Codex / Astra: CODEX_ASTRA_DEV (Vùng [3] & [4.1]).
-- Claude Code: CLAUDE_AUDITOR / CAPTAIN (Vùng [5]).
+### [2.3] LUỒNG AI AGENT, HỆ THỐNG NHẪN GIẢ & 10 VĨ THÚ
+- Thế Quân CEO: Naruto Uzumaki (Hokage Đệ Thất / Kurama Chakra Lục Đạo / Rasengan) - Chủ Tịch Tối Cao. Cố vấn: Cửu Vĩ Kurama.
+- Antigravity (Gemini 3.8): Kakashi Hatake (Hokage Đệ Lục / Sharingan / Tử Điện Raikiri) - SPEC & UI/UX (Vùng [2]). Vệ tinh: Nhất Vĩ Shukaku (Research) & Nhị Vĩ Matatabi (Generative UI).
+- GPT 6.1 Sol: Shikamaru Nara (Quân Sư IQ 200 / Trận Đồ Bóng Râm Kagemane / Sage Mode Override) - SOL_PLANNER (Vùng [3]). Vệ tinh: Tam Vĩ Isobu & Tứ Vĩ Son Goku.
+- Codex / Astra: Sasuke Uchiha (Thiên Tài Uchiha / Thiên Điểu Chidori / Kiếm Kusanagi) - CODEX_DEV (Vùng [3] & [4.1]). Vệ tinh: Ngũ Vĩ Kokuo, Thất Vĩ Chomei, Bát Vĩ Gyuki.
+- Claude Code: Gaara Sa Mạc (Kazekage Đệ Ngũ / Lá Chắn Cát Tuyệt Đối Zero-Leak) - AUDITOR (Vùng [5]). Vệ tinh: Lục Vĩ Saiken.
+- Phòng Họp Ban Hội Chẩn: Thập Vĩ Juubi (Cội nguồn Chakra Ban Hội Chẩn Đa AI).
 
 ### [2.4] THIẾT KẾ FULLSTACK FRONTEND & UI/UX DESIGN SYSTEM
 - Design Tokens: Background #06080d, Glass Surface rgba(14,18,26,0.82), Accent Gold #ecc970, Violet #a855f7, Blue #3a86ff, Orange #e07a5f, Emerald #10b981, Rose #f43f5e.

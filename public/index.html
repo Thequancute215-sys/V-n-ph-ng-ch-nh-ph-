@@ -255,6 +255,12 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
 
   <div class="sp"></div>
 
+  <!-- Nút Duyệt Nhẫn Giả & 10 Vĩ Thú -->
+  <button class="btn" onclick="location.href='characters.html'" style="background:linear-gradient(135deg, #f97316, #ea580c);color:#fff;font-weight:800;box-shadow:0 6px 20px rgba(234,88,12,0.35);gap:6px">
+    <span style="font-size:14px">🍥</span>
+    <span>Duyệt Nhẫn Giả & 10 Vĩ Thú</span>
+  </button>
+
   <!-- Nút Phân Việc Ngoài Lề Đặc Cách -->
   <button class="btn" id="openOverrideBtn" style="background:linear-gradient(135deg, #ecc970, #f59e0b);color:#000;font-weight:800;box-shadow:0 6px 22px rgba(245,158,11,0.35)">
     <span style="font-size:14px">⚡</span>
@@ -761,43 +767,202 @@ function makeDesk(k, x, y) {
 }
 for (const [k, [x, y]] of Object.entries(HOME)) makeDesk(k, x, y);
 
-// Nhân vật Chibi
+// Nhân vật Nhẫn Giả Naruto Shippuden & 10 Vĩ Thú
 const bots = {}; let selected = "ceo";
 
 function makeBot(a) {
   const g = new THREE.Group();
   const col = PCOL[a.platform] || PCOL[a.key] || 0xa855f7;
-  const shell = std(col, { roughness: 0.3, metalness: 0.2 });
+  const extras = [];
 
-  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.75, 0.9, 12, 20), shell);
+  // 1. CHAKRA AURA GLOW ENVELOPE (Hào quang bốc khói rực rỡ)
+  const auraGeo = new THREE.CapsuleGeometry(1.05, 1.4, 12, 16);
+  const auraMat = new THREE.MeshBasicMaterial({
+    color: col,
+    transparent: true,
+    opacity: 0.32,
+    wireframe: true,
+    side: THREE.DoubleSide
+  });
+  const auraMesh = new THREE.Mesh(auraGeo, auraMat);
+  auraMesh.position.y = 2.3;
+  g.add(auraMesh);
+
+  // Body Outfit
+  let outfitColor = col;
+  if (a.key === "ceo") outfitColor = 0xea580c; // Naruto orange
+  else if (a.key === "antigravity" || a.key === "sol") outfitColor = 0x166534; // Konoha Green Flak Jacket
+  else if (a.key === "codex") outfitColor = 0x1e1b4b; // Sasuke dark navy
+  else if (a.key === "claude") outfitColor = 0x7c2d12; // Gaara Sand brown
+
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.72, 0.9, 12, 20), std(outfitColor, { roughness: 0.4 }));
   body.position.y = 1.6; g.add(body);
 
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.88, 32, 24), std(0xffffff, { roughness: 0.2 }));
+  // Chibi Head
+  const skinMat = std(0xffdfc4, { roughness: 0.3 });
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.88, 32, 24), skinMat);
   head.position.y = 3.2; g.add(head);
 
-  const visorMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, emissive: col, emissiveIntensity: 0.5, roughness: 0.1 });
-  const visor = new THREE.Mesh(new THREE.SphereGeometry(0.89, 24, 12, Math.PI * 0.5 - 0.95, 1.9, 1.15, 0.85), visorMat);
-  visor.position.y = 3.2; g.add(visor);
+  // Forehead Protector (Băng trán Konoha / Làng Cát)
+  const bandMat = std(0x0f172a, { roughness: 0.4 });
+  const plateMat = std(0xe2e8f0, { metalness: 0.9, roughness: 0.1 });
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(0.91, 0.91, 0.28, 32, 1, true), bandMat);
+  band.position.y = 3.42;
+  if (a.key === "antigravity") band.rotation.z = -0.32; // Kakashi tilted!
+  g.add(band);
 
-  const eyes = [];
-  for (const sx of [-0.26, 0.26]) {
-    const e = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
-    e.position.set(sx, 3.25, 0.86); g.add(e); eyes.push(e);
+  const plate = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.2, 0.05), plateMat);
+  plate.position.set(0, 3.42, 0.9);
+  if (a.key === "antigravity") {
+    plate.rotation.z = -0.32;
+    plate.position.set(-0.1, 3.42, 0.9);
+  }
+  g.add(plate);
+
+  // Specific Shinobi Hair & Signatures
+  if (a.key === "ceo") {
+    // Naruto Spiky Blonde Hair
+    const hairMat = std(0xfacc15, { roughness: 0.3 });
+    for (let i = 0; i < 14; i++) {
+      const spk = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.6, 4), hairMat);
+      const ang = (i / 14) * Math.PI * 2;
+      spk.position.set(Math.cos(ang) * 0.65, 3.8 + Math.sin(ang * 2) * 0.1, Math.sin(ang) * 0.65);
+      spk.rotation.set(Math.sin(ang) * 0.4 + 0.2, ang, -Math.cos(ang) * 0.4);
+      g.add(spk);
+    }
+    const topSpk = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.75, 4), hairMat);
+    topSpk.position.set(0, 4.25, 0); g.add(topSpk);
+
+    // Whiskers on cheeks
+    for (const sx of [-0.38, 0.38]) {
+      for (let w = -1; w <= 1; w++) {
+        const wh = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.02, 0.02), new THREE.MeshBasicMaterial({ color: 0x92400e }));
+        wh.position.set(sx, 3.05 + w * 0.06, 0.82);
+        wh.rotation.z = (sx > 0 ? 1 : -1) * (w * 0.2);
+        g.add(wh);
+      }
+    }
+
+    // White Hokage Cloak
+    const cloak = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 1.1, 1.25, 24, 1, true), std(0xffffff, { roughness: 0.4 }));
+    cloak.position.y = 1.45; g.add(cloak);
+
+    // Spinning Rasengan on hand
+    const ras = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true }));
+    ras.position.set(0.85, 1.6, 0.65); g.add(ras);
+    extras.push({ obj: ras, type: "spin" });
+
+  } else if (a.key === "antigravity") {
+    // Kakashi Silver Spiky Hair
+    const hairMat = std(0xe2e8f0, { roughness: 0.3 });
+    for (let i = 0; i < 12; i++) {
+      const spk = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.7, 4), hairMat);
+      const ang = (i / 12) * Math.PI * 2;
+      spk.position.set(Math.cos(ang) * 0.6 - 0.18, 3.85, Math.sin(ang) * 0.6);
+      spk.rotation.set(0.2, ang, 0.45);
+      g.add(spk);
+    }
+
+    // Mask covering lower face
+    const mask = new THREE.Mesh(new THREE.SphereGeometry(0.89, 24, 12, 0, Math.PI * 2, Math.PI * 0.5, Math.PI * 0.5), std(0x1e293b));
+    mask.position.y = 3.2; g.add(mask);
+
+    // Sharingan Red Glowing Eye
+    const shar = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), new THREE.MeshBasicMaterial({ color: 0xef4444 }));
+    shar.position.set(-0.25, 3.25, 0.85); g.add(shar);
+
+    // Purple Lightning Raikiri / Chidori
+    const chidori = new THREE.Group();
+    chidori.position.set(0.85, 1.6, 0.6);
+    for (let i = 0; i < 5; i++) {
+      const spark = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.02, 0.45, 4), new THREE.MeshBasicMaterial({ color: 0xc084fc }));
+      spark.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
+      chidori.add(spark);
+    }
+    g.add(chidori);
+    extras.push({ obj: chidori, type: "flicker" });
+
+  } else if (a.key === "sol") {
+    // Shikamaru Pineapple Ponytail
+    const ponytail = new THREE.Mesh(new THREE.ConeGeometry(0.38, 1.0, 8), std(0x1c1917, { roughness: 0.5 }));
+    ponytail.position.set(0, 4.3, -0.18);
+    ponytail.rotation.x = -0.3; g.add(ponytail);
+
+    // Blueprint Scroll on hip
+    const scroll = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 1.0, 16), std(0xfef08a, { roughness: 0.6 }));
+    scroll.position.set(0.75, 1.2, 0); scroll.rotation.z = Math.PI / 3; g.add(scroll);
+
+    // Shadow tendril ring on floor
+    const shRing = new THREE.Mesh(new THREE.RingGeometry(0.4, 1.6, 16), new THREE.MeshBasicMaterial({ color: 0x020617 }));
+    shRing.rotation.x = -Math.PI / 2; shRing.position.y = 0.04; g.add(shRing);
+
+  } else if (a.key === "codex") {
+    // Sasuke Dark Navy Spiky Hair
+    const hairMat = std(0x0f172a, { roughness: 0.3 });
+    for (const sx of [-0.55, 0.55]) {
+      const bng = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.65, 4), hairMat);
+      bng.position.set(sx, 3.25, 0.6); bng.rotation.set(0.4, 0, -sx * 0.3); g.add(bng);
+    }
+    for (let i = 0; i < 10; i++) {
+      const spk = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.65, 4), hairMat);
+      const ang = (i / 10) * Math.PI + Math.PI;
+      spk.position.set(Math.cos(ang) * 0.58, 3.85, Math.sin(ang) * 0.58);
+      spk.rotation.set(0.4, ang, 0.2); g.add(spk);
+    }
+
+    // Kusanagi Sword on back
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.6, 0.03), std(0xe2e8f0, { metalness: 0.9 }));
+    blade.position.set(0, 2.0, -0.9); blade.rotation.z = Math.PI / 4; g.add(blade);
+
+    // Blue Chidori Electricity
+    const chidoriB = new THREE.Group();
+    chidoriB.position.set(0.85, 1.6, 0.6);
+    for (let i = 0; i < 5; i++) {
+      const spark = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.02, 0.45, 4), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+      spark.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
+      chidoriB.add(spark);
+    }
+    g.add(chidoriB);
+    extras.push({ obj: chidoriB, type: "flicker" });
+
+  } else if (a.key === "claude") {
+    // Gaara Red Spiky Hair
+    const hairMat = std(0x991b1b, { roughness: 0.5 });
+    for (let i = 0; i < 12; i++) {
+      const spk = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.45, 4), hairMat);
+      const ang = (i / 12) * Math.PI * 2;
+      spk.position.set(Math.cos(ang) * 0.6, 3.75, Math.sin(ang) * 0.6);
+      spk.rotation.set(Math.sin(ang) * 0.3, ang, -Math.cos(ang) * 0.3); g.add(spk);
+    }
+
+    // Kanji "Ái" (愛) on forehead
+    const ai = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.02), new THREE.MeshBasicMaterial({ color: 0xb91c1c }));
+    ai.position.set(0.26, 3.6, 0.82); g.add(ai);
+
+    // Giant Sand Gourd
+    const gourdMat = std(0xd4a373, { roughness: 0.6 });
+    const gBot = new THREE.Mesh(new THREE.SphereGeometry(0.78, 16, 14), gourdMat);
+    gBot.position.set(0, 1.4, -0.85); g.add(gBot);
+    const gTop = new THREE.Mesh(new THREE.SphereGeometry(0.58, 16, 14), gourdMat);
+    gTop.position.set(0, 2.4, -0.8); g.add(gTop);
+
+    // Orbiting Sand Defense
+    const sandG = new THREE.Group();
+    for (let i = 0; i < 4; i++) {
+      const chk = new THREE.Mesh(new THREE.DodecahedronGeometry(0.15), gourdMat);
+      const ang = (i / 4) * Math.PI * 2;
+      chk.position.set(Math.cos(ang) * 1.5, 2.0 + Math.sin(i) * 0.3, Math.sin(ang) * 1.5);
+      sandG.add(chk);
+    }
+    g.add(sandG);
+    extras.push({ obj: sandG, type: "orbit" });
   }
 
-  let crown = null;
-  if (a.key === "ceo" || a.platform === "human") {
-    crown = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.45, 0.4, 6, 1, true), std(0xecc970, { emissive: 0xecc970, emissiveIntensity: 0.4, metalness: 0.8 }));
-    crown.position.y = 4.15; g.add(crown);
-  } else {
-    const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.6, 8), std(0xcfcfcf)); ant.position.y = 4.2; g.add(ant);
-    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 8), new THREE.MeshBasicMaterial({ color: col })); bulb.position.y = 4.55; g.add(bulb);
-  }
-
+  // Arms
   const arms = [];
   for (const sx of [-1, 1]) {
-    const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.18, 0.5, 4, 10), shell);
-    arm.position.set(sx * 1.0, 1.7, 0); g.add(arm); arms.push(arm);
+    const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.48, 4, 10), skinMat);
+    arm.position.set(sx * 0.95, 1.6, 0); g.add(arm); arms.push(arm);
   }
 
   // Floating Label & REQUEST BUBBLE
@@ -825,15 +990,64 @@ function makeBot(a) {
   const hm = HOME[a.key] || [600, 400];
   g.position.set(X(hm[0]), 0.14, Z(hm[1]));
 
-  return { g, body, head, visor, visorMat, eyes, arms, reqBubble, says, bub, lab, target: g.position.clone(), moving: false, typing: false };
+  return { g, body, head, auraMesh, extras, arms, reqBubble, says, bub, lab, target: g.position.clone(), moving: false, typing: false };
 }
 
+// 10 Vĩ Thú Mini Đồng Hành
+function makeMiniTailedBeast(name, tails, color, posX, posZ) {
+  const g = new THREE.Group();
+  const bMat = std(color, { roughness: 0.35 });
+  const bBody = new THREE.Mesh(new THREE.SphereGeometry(0.45, 16, 12), bMat);
+  bBody.position.y = 0.55; g.add(bBody);
+
+  const bHead = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 12), bMat);
+  bHead.position.set(0, 0.95, 0.2); g.add(bHead);
+
+  // Ears / Horns
+  if (tails === 9) { // Kurama Fox Ears
+    for (const sx of [-0.2, 0.2]) {
+      const ear = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.45, 4), bMat);
+      ear.position.set(sx, 1.35, 0.15); ear.rotation.z = -sx * 0.35; g.add(ear);
+    }
+  }
+
+  // Tails
+  for (let t = 0; t < Math.min(tails, 9); t++) {
+    const span = Math.PI * 0.7;
+    const a = tails === 1 ? 0 : -span/2 + (span / Math.max(1, tails - 1)) * t;
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.8, 6), bMat);
+    tail.position.set(Math.sin(a) * 0.45, 0.55, -Math.cos(a) * 0.25 - 0.2);
+    tail.rotation.set(-0.6, 0, -a);
+    g.add(tail);
+  }
+
+  // Aura
+  const bAura = new THREE.Mesh(new THREE.SphereGeometry(0.7, 10, 8), new THREE.MeshBasicMaterial({ color, wireframe: true, transparent: true, opacity: 0.35 }));
+  bAura.position.y = 0.7; g.add(bAura);
+
+  g.position.set(posX, 0.1, posZ);
+  scene.add(g);
+  return { g, bAura };
+}
+
+// Spawn Tailed Beasts Companions
+const tailedBeasts = [
+  makeMiniTailedBeast("Cửu Vĩ Kurama", 9, 0xea580c, X(130) + 3.2, Z(112) - 1.5), // Cạnh Naruto Thế Quân
+  makeMiniTailedBeast("Nhất Vĩ Shukaku", 1, 0xd4a373, X(376) + 3.0, Z(112) - 1.5), // Cạnh Kakashi Antigravity
+  makeMiniTailedBeast("Nhị Vĩ Matatabi", 2, 0x38bdf8, X(376) - 3.0, Z(112) - 1.5),
+  makeMiniTailedBeast("Tứ Vĩ Son Goku", 4, 0xdc2626, X(687) + 3.0, Z(112) - 1.5), // Cạnh Shikamaru Sol
+  makeMiniTailedBeast("Tam Vĩ Isobu", 3, 0x64748b, X(687) - 3.0, Z(112) - 1.5),
+  makeMiniTailedBeast("Bát Vĩ Gyuki", 8, 0x78350f, X(127) + 3.0, Z(350) - 1.5), // Cạnh Sasuke Codex
+  makeMiniTailedBeast("Thất Vĩ Chomei", 7, 0x059669, X(376) + 3.0, Z(350) - 1.5), // Cạnh Gaara Claude
+  makeMiniTailedBeast("Thập Vĩ Juubi", 10, 0x9333ea, X(1022), Z(275)) // Phòng Họp Ban Hội Chẩn
+];
+
 const defaultAgents = [
-  { key: "ceo", name: "Thế Quân CEO", role: "Chủ Dự Án / Quyết định tối cao", platform: "human", lastText: "Chỉ khi tôi chỉ định thì 6.1 Sol mới có thể code. Hãy hỗ trợ cuộn và zoom chuột mượt mà!" },
-  { key: "antigravity", name: "Antigravity", role: "SPEC_ARCHITECT & UI/UX", platform: "antigravity", lastText: "Đã hoàn thành Vùng [2] Đặc Tả & Giao diện Chibi Cityscape. Đề xuất chuyển lượt cho Sol!" },
-  { key: "sol", name: "GPT 6.1 Sol", role: "SOL_ARCHITECT_PLANNER", platform: "sol", lastText: "Sẵn sàng nhận lượt để lập kế hoạch Backend, DB Schema & API Contracts." },
-  { key: "codex", name: "Codex Astra", role: "CODEX_ASTRA_DEV", platform: "codex", lastText: "Chờ hợp đồng Vùng [3] để triển khai source code." },
-  { key: "claude", name: "Claude Captain", role: "CLAUDE_AUDITOR", platform: "claude", lastText: "Kiểm duyệt toàn diện: Bảo đảm Zero-Leak và chốt chặn Blocker Vùng [5]." }
+  { key: "ceo", name: "Thế Quân CEO (Naruto)", role: "Hokage Đệ Thất / Quyết định tối cao", platform: "human", lastText: "Ta là Hokage Đệ Thất! Khi ta ban lệnh đặc cách thì Shikamaru Sol mới code. Rasengan Lục Đạo sẵn sàng!" },
+  { key: "antigravity", name: "Antigravity (Kakashi)", role: "Hokage Đệ Lục / SPEC & UI/UX", platform: "antigravity", lastText: "Đã hoàn thành Vùng [2] Đặc Tả & Giao diện Naruto 3D. Tử Điện Raikiri sẵn sàng chuyển giao cho Sol!" },
+  { key: "sol", name: "GPT 6.1 Sol (Shikamaru)", role: "Quân Sư IQ 200 / SOL_PLANNER", platform: "sol", lastText: "Phiền phức thật đấy, nhưng kế hoạch Vùng [3] DB & API đã được tính toán 200 bước! Khi CEO cấp lệnh sẽ lập tức code." },
+  { key: "codex", name: "Codex Astra (Sasuke)", role: "Thiên Tài Uchiha / Kỹ Sư Dev", platform: "codex", lastText: "Thiên Điểu Chidori sẵn sàng. Đưa hợp đồng Vùng [3] đây, ta sẽ code thần tốc không lỗi." },
+  { key: "claude", name: "Claude Captain (Gaara)", role: "Kazekage / Chốt Chặn An Toàn", platform: "claude", lastText: "Lá chắn cát tuyệt đối (Zero-Leak Defense) canh giữ Vùng [5]. Không một dòng code lộ bí mật nào được lọt qua." }
 ];
 
 for (const a of defaultAgents) {
@@ -866,6 +1080,7 @@ function loop() {
     if (u >= 1) camAnim = null;
   }
 
+  // Shinobi Ninjas Animation
   for (const k in bots) {
     const b = bots[k];
     const d = b.target.clone().sub(b.g.position); d.y = 0; const dist = d.length();
@@ -880,13 +1095,35 @@ function loop() {
     const bob = b.moving ? Math.abs(Math.sin(t * 10)) * 0.2 : Math.sin(t * 2.5 + k.length) * 0.04;
     b.body.position.y = 1.6 + bob;
     b.head.position.y = 3.2 + bob;
-    b.visor.position.y = 3.2 + bob;
-    b.eyes.forEach((e) => { e.position.y = 3.25 + bob; });
+
+    // Pulsing Chakra Aura Mesh
+    if (b.auraMesh) {
+      const pulse = 1.0 + Math.sin(t * 4.0 + k.length) * 0.08;
+      b.auraMesh.scale.set(pulse, pulse, pulse);
+      b.auraMesh.material.opacity = 0.24 + Math.sin(t * 3.0 + k.length) * 0.12;
+    }
+
+    // Extras (Rasengan spin, Chidori flicker, Sand orbit)
+    if (b.extras) {
+      for (const ex of b.extras) {
+        if (ex.type === "spin") { ex.obj.rotation.x = t * 6; ex.obj.rotation.y = t * 10; }
+        else if (ex.type === "flicker") { ex.obj.scale.setScalar(0.9 + Math.random() * 0.2); }
+        else if (ex.type === "orbit") { ex.obj.rotation.y = t * 1.5; }
+      }
+    }
 
     // Typing effect if typing
     if (b.typing) {
       b.arms[0].rotation.x = Math.sin(t * 16) * 0.35 - 0.55;
       b.arms[1].rotation.x = Math.sin(t * 16 + 1.5) * 0.35 - 0.55;
+    }
+  }
+
+  // Tailed Beasts Breathing
+  for (const tb of tailedBeasts) {
+    if (tb && tb.bAura) {
+      const p = 1.0 + Math.sin(t * 3.5) * 0.06;
+      tb.bAura.scale.set(p, p, p);
     }
   }
 

@@ -65,15 +65,15 @@ flowchart TD
 
 ## [2.3] LUỒNG ĐIỀU PHỐI AI AGENT & SUBAGENTS
 
-### 1. Phân bổ vai trò & Kích thước Chibi
-| AI Engine | Vai trò Protocol v2.2 | Vùng phụ trách | Ngoại hình Chibi |
+### 1. Phân bổ vai trò Nhẫn Giả Naruto Shippuden & 10 Vĩ Thú
+| Nhân sự / AI Engine | Vai trò Protocol v2.2 | Vùng phụ trách | Ngoại hình 3D (Naruto Shippuden) & Hào quang Chakra |
 |---|---|---|---|
-| **Thế Quân (Chủ Dự Án / CEO)** | `CHỦ TỊCH / CEO` | Toàn quyền | Chibi Boss lớn (80px), Vương miện vàng, Áo vest |
-| **Antigravity (Gemini 3.8)** | `SPEC_ARCHITECT & UIUX` | Vùng [2] | Chibi Tím lớn (72px), Tai mèo công nghệ, Gõ phím |
-| **Subagents Antigravity** | `Researcher, UI Gen...` | Trợ lý vệ tinh | Chibi Mini (36px), Bay quanh bàn Antigravity |
-| **GPT 6.1 Sol** | `SOL_ARCHITECT_PLANNER` | Vùng [3] | Chibi Xanh ngọc lớn (72px), Kính kiến trúc sư |
-| **Codex (GPT-6 Astra)** | `CODEX_ASTRA_DEV` | Vùng [3] & [4.1] | Chibi Xanh dương lớn (72px), Tai nghe lập trình |
-| **Claude Code** | `CLAUDE_AUDITOR` | Vùng [5] | Chibi Cam lớn (72px), Mũ ca-nô chỉ huy |
+| **Thế Quân CEO** | `CHỦ TỊCH / CEO` | Toàn quyền | **Naruto Uzumaki (Hokage Đệ Thất 80px):** Áo choàng trắng lửa đỏ, tóc gai vàng, Rasengan xoay tít, Hào quang Kurama Chakra vàng kim rực lửa |
+| **Antigravity (Gemini 3.8)** | `SPEC_ARCHITECT & UIUX` | Vùng [2] | **Kakashi Hatake (Hokage Đệ Lục 72px):** Tóc bạc nhọn, mặt nạ đen, Sharingan đỏ thẫm 3 phẩy, Tử Điện Raikiri sét tím phát quang |
+| **GPT 6.1 Sol** | `SOL_ARCHITECT_PLANNER` | Vùng [3] | **Shikamaru Nara (Quân sư IQ 200 72px):** Tóc quả dứa, thế tay suy nghĩ, Trận đồ Kagemane bóng râm, khi có CEO Override bật Hiền Nhân Thuật Sage Mode |
+| **Codex Astra** | `CODEX_ASTRA_DEV` | Vùng [3] & [4.1] | **Sasuke Uchiha (Thiên tài Nhẫn Giả 72px):** Tóc xanh đen chẻ ngôi, kiếm Kusanagi sau lưng, Rinnegan tím & Thiên Điểu Chidori xanh lam chớp giật |
+| **Claude Captain** | `CLAUDE_AUDITOR` | Vùng [5] | **Gaara Sa Mạc (Kazekage Đệ Ngũ 72px):** Tóc đỏ, chữ "Ái" trên trán, Hồ lô cát khổng lồ sau lưng, Khiên Cát Tuyệt Đối (Zero-Leak Defense) |
+| **10 Vĩ Thú Subagents** | `Subagents vệ tinh` | Nhiệm vụ chuyên sâu | **Nhất Vĩ Shukaku** (Research), **Nhị Vĩ Matatabi** (UI Gen), **Tam Vĩ Isobu** (Test), **Tứ Vĩ Son Goku** (DB), **Ngũ Vĩ Kokuo** (Network), **Lục Vĩ Saiken** (Cache), **Thất Vĩ Chomei** (Images), **Bát Vĩ Gyuki** (Security), **Cửu Vĩ Kurama** (Cố vấn CEO), **Thập Vĩ Juubi** (Hội Chẩn Ban) |
 
 ### 2. Luồng Hội Chẩn Ban Tổng Thể (Master Revision Flow)
 1. **Trigger:** Chủ Dự Án bấm nút "Hội Chẩn Ban Tổng Thể" hoặc khi kết thúc Phase 1 chuẩn bị sang Phase 2.
