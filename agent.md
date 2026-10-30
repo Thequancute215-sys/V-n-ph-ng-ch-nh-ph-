@@ -34,6 +34,8 @@
   - F6 (Zero-Leak Personal Accounts): Xác thực độc lập qua CLI từng hãng, dùng gói đăng ký của cá nhân, 100% Localhost.
   - F7 (Native Node.js 24 SQLite): Sử dụng DatabaseSync tiêu chuẩn, 0 thư viện ngoài.
   - F8 (CEO Override & Smooth Room Zoom Navigation): Cơ chế phân việc ngoài lề cho phép Giám đốc chỉ định ngoại lệ (ví dụ cấp quyền code trực tiếp cho 6.1 Sol); kèm thanh điều hướng lướt phòng (Glide Focus), slider thu phóng và thao tác cuộn/di chuột êm dịu.
+  - F9 (All-Hands Broadcast & Self-Assignment Dispatch): Phát loa toàn thể nhân viên khi CEO có task chưa biết giao ai; các AI tự động rà soát ai đang rảnh và phù hợp nhất, tự check chéo lẫn nhau rồi báo cáo đề xuất người nhận việc lên CEO duyệt 1-click.
+  - F10 (Active Tasks Monitor & Emergency Kill Switch): Bảng nhắc nhở thời gian thực danh sách task/subagent đang chạy ngầm kèm thời lượng; cảnh báo task chạy quá lâu và cung cấp nút dừng từng task hoặc dừng tất cả để CEO kiểm soát tài nguyên máy tính.
 - Out-of-Scope: Không can thiệp mã nhị phân VS Code, không đẩy dữ liệu ra Internet công cộng.
 
 ### [2.2] LUỒNG NGƯỜI DÙNG ĐẦU-CUỐI (E2E USER FLOW)

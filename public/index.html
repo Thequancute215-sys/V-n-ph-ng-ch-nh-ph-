@@ -255,6 +255,18 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
 
   <div class="sp"></div>
 
+  <!-- Nút Phát Loa Toàn Thể Nhân Viên -->
+  <button class="btn" id="openBroadcastBtn" style="background:linear-gradient(135deg, #0ea5e9, #2563eb);color:#fff;font-weight:800;box-shadow:0 6px 20px rgba(37,99,235,0.35);gap:6px">
+    <span style="font-size:14px">📢</span>
+    <span>Phát Loa Toàn Thể</span>
+  </button>
+
+  <!-- Nút Nhắc Task Đang Chạy & Phanh Khẩn Cấp -->
+  <button class="btn pill" id="openRunningTasksBtn" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:#fca5a5;font-weight:800;gap:6px">
+    <span style="width:8px;height:8px;border-radius:50%;background:#ef4444;display:inline-block"></span>
+    <span id="runningTasksBtnTxt">Đang tải task...</span>
+  </button>
+
   <!-- Nút Duyệt Nhẫn Giả & 10 Vĩ Thú -->
   <button class="btn" onclick="location.href='characters.html'" style="background:linear-gradient(135deg, #f97316, #ea580c);color:#fff;font-weight:800;box-shadow:0 6px 20px rgba(234,88,12,0.35);gap:6px">
     <span style="font-size:14px">🍥</span>
@@ -343,6 +355,89 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
       <button class="btn ghost" style="padding:10px 16px" id="cancelOverrideBtn">Hủy bỏ</button>
       <button class="btn" style="padding:10px 18px;background:linear-gradient(135deg, #ecc970, #f59e0b)" onclick="submitOverrideDirective()">
         🚀 Ban Hành Chỉ Thị Đặc Cách
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL 2: PHÁT LOA TOÀN THỂ NHÂN VIÊN (TỰ ĐẤU THẦU & CHECK CHÉO) ================= -->
+<div class="modal-overlay" id="broadcastModal">
+  <div class="modal-card" style="max-width:620px">
+    <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:12px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:12px;background:rgba(14,165,233,0.2);color:#38bdf8;display:grid;place-items:center;font-size:20px">📢</div>
+        <div>
+          <h3 style="margin:0;font-size:15px;font-weight:800;color:#fff;font-family:'Quicksand',sans-serif">PHÁT LOA TOÀN THỂ (TỰ ĐẤU THẦU & CHECK CHÉO)</h3>
+          <p style="margin:2px 0 0;font-size:11px;color:var(--mute)">Task chưa biết giao ai? Toàn thể AI sẽ tự rà soát ai rảnh và phù hợp nhất rồi báo CEO!</p>
+        </div>
+      </div>
+      <button class="btn ghost" style="padding:4px 8px;font-size:12px" id="closeBroadcastBtn">✕</button>
+    </div>
+
+    <!-- Nhập nội dung task -->
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--mute)">Nội dung Task cần phân việc:</label>
+      <textarea id="broadcastInput" rows="3" placeholder="Ví dụ: Cần tối ưu truy vấn SQLite trong server.js và làm giao diện thông báo..." style="width:100%;padding:10px 12px;background:#090d16;border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:#fff;font-size:12px;font-family:inherit;outline:none;resize:none"></textarea>
+      <div style="display:flex;justify-content:flex-end">
+        <button class="btn" id="sendBroadcastBtn" style="padding:8px 16px;background:linear-gradient(135deg, #0ea5e9, #2563eb);color:#fff;font-weight:800;box-shadow:0 4px 14px rgba(37,99,235,0.3)">
+          ⚡ Gửi Phát Loa Toàn Đội
+        </button>
+      </div>
+    </div>
+
+    <!-- Hộp Kết Quả Tự Thảo Luận & Check Chéo -->
+    <div id="broadcastResultArea" style="display:none;flex-direction:column;gap:12px;margin-top:6px;border-top:1px dashed rgba(255,255,255,0.15);padding-top:12px">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#38bdf8;display:flex;align-items:center;gap:6px">
+        <span>✓ KẾT QUẢ ĐỒNG THUẬN TỰ PHÂN VIỆC CỦA ĐỘI NGŨ</span>
+      </div>
+
+      <!-- Đề xuất Người Nhận Việc -->
+      <div id="proposedAssigneeCard" style="background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.3);border-radius:14px;padding:12px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:40px;height:40px;border-radius:12px;background:rgba(56,189,248,0.2);display:grid;place-items:center;font-size:22px" id="bPropIcon">💻</div>
+          <div>
+            <div style="font-size:13px;font-weight:800;color:#fff" id="bPropName">Codex Astra (Sasuke)</div>
+            <div style="font-size:11px;color:#38bdf8" id="bPropBeast">Đồng hành: Thất Vĩ Chomei (7-Tails)</div>
+            <div style="font-size:10.5px;color:var(--mute);margin-top:2px" id="bPropReason">Đang rảnh 100% · Chuyên gia Lập trình Fullstack</div>
+          </div>
+        </div>
+        <button class="btn" id="confirmAssignBtn" style="padding:10px 18px;background:linear-gradient(135deg, #10b981, #059669);color:#fff;font-weight:800;box-shadow:0 4px 14px rgba(16,185,129,0.3)">
+          🚀 Duyệt Giao Việc Ngay
+        </button>
+      </div>
+
+      <!-- Ý kiến thảo luận chéo (Peer Review) -->
+      <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px" id="peerReviewContainer">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL 3: NHẮC TASK ĐANG CHẠY & PHANH KHẨN CẤP (RUNNING TASKS & KILL SWITCH) ================= -->
+<div class="modal-overlay" id="runningTasksModal">
+  <div class="modal-card" style="max-width:640px">
+    <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:12px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:12px;background:rgba(239,68,68,0.2);color:#f87171;display:grid;place-items:center;font-size:20px">⚡</div>
+        <div>
+          <h3 style="margin:0;font-size:15px;font-weight:800;color:#fff;font-family:'Quicksand',sans-serif">DANH SÁCH TASK ĐANG CHẠY & PHANH KHẨN CẤP</h3>
+          <p style="margin:2px 0 0;font-size:11px;color:var(--mute)">Cảnh báo task chạy quá 10 phút · Cho phép dừng từng task hoặc dừng toàn bộ</p>
+        </div>
+      </div>
+      <button class="btn ghost" style="padding:4px 8px;font-size:12px" id="closeRunningTasksBtn">✕</button>
+    </div>
+
+    <!-- Danh sách Task -->
+    <div id="runningTasksList" style="display:flex;flex-direction:column;gap:10px;max-height:340px;overflow-y:auto;padding-right:4px">
+      <!-- Filled by JS -->
+    </div>
+
+    <!-- Thanh Dừng Khẩn Cấp -->
+    <div style="border-top:1px solid rgba(255,255,255,0.1);padding-top:12px;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:11px;color:var(--mute)">Cần giải phóng tài nguyên máy tính ngay?</span>
+      <button class="btn" id="killAllTasksBtn" style="padding:10px 18px;background:linear-gradient(135deg, #ef4444, #b91c1c);color:#fff;font-weight:800;box-shadow:0 4px 16px rgba(239,68,68,0.4)">
+        🛑 DỪNG TẤT CẢ TASK NGAY LẬP TỨC
       </button>
     </div>
   </div>
@@ -1252,6 +1347,201 @@ window.submitOverrideDirective = () => {
 
   alert(`ĐÃ BAN HÀNH CHỈ THỊ THÀNH CÔNG!\n\n• Phiên: ${agentObj.name}\n• Quyền hạn: ${permCode ? 'Cho phép Code trực tiếp (Bypass Codex)' : 'Nhiệm vụ ngoài lề'}\n• Chỉ thị: "${taskText}"\n\nNội dung đã được ghi nhận vào sổ điều phối và hòm thư của ${agentObj.name}!`);
 };
+
+// ================= PHÁT LOA TOÀN THỂ (BROADCAST & SELF-ASSIGNMENT) =================
+const broadcastModal = $("broadcastModal");
+$("openBroadcastBtn").addEventListener("click", () => {
+  broadcastModal.classList.add("open");
+  $("broadcastResultArea").style.display = "none";
+});
+$("closeBroadcastBtn").addEventListener("click", () => broadcastModal.classList.remove("open"));
+
+let currentConsensus = null;
+
+$("sendBroadcastBtn").addEventListener("click", async () => {
+  const text = $("broadcastInput").value.trim();
+  if (!text) return alert("Vui lòng nhập nội dung task cần phát loa!");
+
+  $("sendBroadcastBtn").disabled = true;
+  $("sendBroadcastBtn").innerHTML = `⏳ Toàn thể AI đang rà soát & check chéo...`;
+
+  try {
+    const res = await fetch("/api/broadcast", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text })
+    });
+    const d = await res.json();
+    if (d.ok && d.consensus) {
+      currentConsensus = d.consensus;
+      const c = d.consensus;
+
+      $("broadcastResultArea").style.display = "flex";
+      $("bPropName").textContent = c.proposedAssignee.name;
+      $("bPropBeast").textContent = `Linh vật: ${c.proposedAssignee.beast}`;
+      $("bPropReason").textContent = `${c.proposedAssignee.reason} · Đang giữ ${c.proposedAssignee.activeTaskCount} task`;
+      
+      const iconMap = { codex: "💻", antigravity: "🤖", sol: "📐", claude: "🛡️" };
+      $("bPropIcon").textContent = iconMap[c.proposedAssignee.key] || "🍥";
+
+      // Render Peer Reviews
+      $("peerReviewContainer").innerHTML = c.peerReview.map(pr => `
+        <div style="font-size:11.5px;display:flex;gap:8px;align-items:flex-start">
+          <b style="color:var(--gold);white-space:nowrap">${pr.who}:</b>
+          <span style="color:#cbd5e1">“${pr.comment}”</span>
+        </div>
+      `).join("");
+    }
+  } catch (err) {
+    alert("Lỗi kết nối phát loa: " + err.message);
+  } finally {
+    $("sendBroadcastBtn").disabled = false;
+    $("sendBroadcastBtn").innerHTML = `⚡ Gửi Phát Loa Toàn Đội`;
+  }
+});
+
+$("confirmAssignBtn").addEventListener("click", async () => {
+  if (!currentConsensus) return;
+  const p = currentConsensus.proposedAssignee;
+  try {
+    const res = await fetch("/api/accept-broadcast", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: currentConsensus.taskTitle,
+        assigneeKey: p.key,
+        assigneeName: p.name,
+        beast: p.beast
+      })
+    });
+    const d = await res.json();
+    if (d.ok) {
+      broadcastModal.classList.remove("open");
+      $("broadcastInput").value = "";
+
+      // Speech bubble on the assigned agent
+      const b = bots[p.key];
+      if (b) {
+        b.typing = true;
+        b.reqBubble.style.display = "block";
+        b.reqBubble.innerHTML = `<small style="color:#38bdf8">📢 NHẬN TASK TỪ PHÁT LOA TOÀN THỂ</small>${currentConsensus.taskTitle}`;
+        b.reqBubble.style.borderColor = "var(--cyan)";
+        focusOnAgent(p.key);
+      }
+
+      refreshRunningTasks();
+      alert(`ĐÃ DUYỆT GIAO VIỆC THÀNH CÔNG!\n\n• Nhẫn giả nhận việc: ${p.name}\n• Linh vật đồng hành: ${p.beast}\n• Task: "${currentConsensus.taskTitle}"\n\nTask đã được thêm vào danh sách quản lý task đang chạy!`);
+    }
+  } catch (err) {
+    alert("Lỗi giao việc: " + err.message);
+  }
+});
+
+// ================= QUẢN LÝ TASK ĐANG CHẠY & KILL SWITCH =================
+const runningTasksModal = $("runningTasksModal");
+$("openRunningTasksBtn").addEventListener("click", () => {
+  runningTasksModal.classList.add("open");
+  refreshRunningTasks();
+});
+$("closeRunningTasksBtn").addEventListener("click", () => runningTasksModal.classList.remove("open"));
+
+async function refreshRunningTasks() {
+  try {
+    const res = await fetch("/api/running-tasks");
+    const d = await res.json();
+    if (!d.ok) return;
+
+    const list = d.tasks.filter(t => t.status === "running");
+    const btn = $("openRunningTasksBtn");
+    const txt = $("runningTasksBtnTxt");
+
+    const hasWarning = list.some(t => t.isWarning);
+    txt.textContent = `${list.length} Task Đang Chạy ${hasWarning ? '⚠️ (Có task lâu)' : ''}`;
+
+    if (hasWarning) {
+      btn.style.background = "rgba(239, 68, 68, 0.3)";
+      btn.style.borderColor = "#ef4444";
+      btn.style.color = "#fecaca";
+    } else {
+      btn.style.background = "rgba(239,68,68,0.15)";
+      btn.style.borderColor = "rgba(239,68,68,0.4)";
+      btn.style.color = "#fca5a5";
+    }
+
+    // Render in modal
+    if (!list.length) {
+      $("runningTasksList").innerHTML = `
+        <div style="padding:30px;text-align:center;color:var(--mute);font-size:12px;background:rgba(255,255,255,0.02);border-radius:12px">
+          🎉 Hiện không có task nào đang chạy ngầm. Tài nguyên máy tính 100% rảnh!
+        </div>
+      `;
+      return;
+    }
+
+    $("runningTasksList").innerHTML = list.map(t => `
+      <div style="background:${t.isWarning ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.03)'};border:1px solid ${t.isWarning ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.1)'};border-radius:12px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:12px;font-weight:800;color:#fff">${t.title}</span>
+            ${t.isWarning ? '<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#ef4444;color:#fff;font-weight:700">⚠️ Chạy > 10m</span>' : ''}
+          </div>
+          <div style="font-size:11px;color:var(--mute);margin-top:2px">
+            👤 Phụ trách: <b style="color:#fff">${t.assigneeName}</b> · Linh vật: <span style="color:#38bdf8">${t.beast}</span>
+          </div>
+          <div style="font-size:10.5px;color:${t.isWarning ? '#f87171' : 'var(--mute)'};margin-top:2px;font-family:monospace">
+            ⏱️ Đã chạy: ${t.durationMinutes} phút (${Math.floor(t.durationMs / 1000)}s)
+          </div>
+        </div>
+        <button class="btn" onclick="killSingleTask('${t.id}')" style="padding:6px 14px;font-size:11.5px;background:rgba(239,68,68,0.25);border:1px solid #ef4444;color:#fca5a5;font-weight:800">
+          ⏹️ Dừng Task
+        </button>
+      </div>
+    `).join("");
+  } catch (err) {
+    console.error("refreshRunningTasks err:", err);
+  }
+}
+
+window.killSingleTask = async (taskId) => {
+  if (!confirm(`Xác nhận dừng task "${taskId}"?`)) return;
+  try {
+    const res = await fetch("/api/kill-task", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ taskId })
+    });
+    const d = await res.json();
+    if (d.ok) {
+      refreshRunningTasks();
+      alert(d.message);
+    }
+  } catch (err) {
+    alert("Lỗi dừng task: " + err.message);
+  }
+};
+
+$("killAllTasksBtn").addEventListener("click", async () => {
+  if (!confirm("⚠️ PHANH KHẨN CẤP:\nBạn có chắc chắn muốn DỪNG TẤT CẢ các task đang chạy ngầm để thu hồi toàn bộ tài nguyên?")) return;
+  try {
+    const res = await fetch("/api/kill-task", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ all: true })
+    });
+    const d = await res.json();
+    if (d.ok) {
+      refreshRunningTasks();
+      runningTasksModal.classList.remove("open");
+      alert(d.message);
+    }
+  } catch (err) {
+    alert("Lỗi dừng tất cả task: " + err.message);
+  }
+});
+
+// Periodic Running Tasks Check (every 3 seconds)
+refreshRunningTasks();
+setInterval(refreshRunningTasks, 3000);
 
 // ================= SIDEBAR TOGGLES =================
 const sbLeft = $("sidebarLeft");

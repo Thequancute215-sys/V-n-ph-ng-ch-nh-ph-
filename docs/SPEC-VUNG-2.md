@@ -37,6 +37,16 @@
   *Tiêu chí nghiệm thu:* Mọi chuỗi nhạy cảm đều được mặt nạ hóa tự động bằng `mask()`.
 - **F7 (Native Node.js 24 SQLite Engine):** Tận dụng module chuẩn `node:sqlite` có sẵn trên Node.js v24.20.0 để đọc dữ liệu phiên làm việc, giữ nguyên tôn chỉ "Zero npm install" của repo gốc.
 - **F8 (CEO Override & Smooth Room Zoom Navigation):** Cơ chế phân việc ngoài lề cho phép Giám Đốc chỉ định ngoại lệ (ví dụ: chỉ định GPT 6.1 Sol được phép code trực tiếp bypass Codex); tích hợp cụm điều hướng lướt phòng (Glide Focus), slider thu phóng và thao tác cuộn/di chuột êm dịu, không giật lag.
+- **F9 (All-Hands Broadcast & Self-Assignment Dispatch - Phát Loa Toàn Thể & Tự Đấu Thầu):** Khi CEO có task mới nhưng chưa biết giao cho ai, CEO gửi lệnh Phát Loa Toàn Thể. Hệ thống kích hoạt cơ chế tự phân tích:
+  1. Các AI kiểm tra độ bận (`idle/busy`), số task đang giữ và mức độ chuyên môn phù hợp với nội dung task (Antigravity: Spec/UI; Sol: DB/Architecture; Codex: Code/Dev; Claude: Audit/Security).
+  2. Các AI tự thảo luận và kiểm tra chéo (Cross-check) để chọn ra cá nhân tối ưu nhất, kèm ý kiến bảo lãnh chất lượng từ Claude Captain.
+  3. Bắn pop-up đề xuất người nhận việc lên Thế Quân CEO với 1 nút duyệt `[ DUYỆT GIAO VIỆC NGAY ]`.  
+  *Tiêu chí nghiệm thu:* Sau khi phát loa, trong vòng < 2 giây bảng phân tích độ rảnh và đề xuất người nhận việc hiển thị trực quan cho CEO bấm duyệt.
+- **F10 (Active Tasks Monitor & Emergency Kill Switch - Giám Sát Task Đang Chạy & Phanh Khẩn Cấp):**
+  - Hiển thị bảng/badge thông báo thời gian thực về mọi task và subagent đang chạy ngầm trên máy tính (Task ID, tên task, AI & Vĩ thú phụ trách, thời gian chạy tính theo giây/phút).
+  - Tự động nhấp nháy cảnh báo nếu có task chạy lâu (> 10 phút) để nhắc Thế Quân CEO không bị quên.
+  - Cung cấp nút dừng tức thì cho từng task `[ ⏹️ DỪNG TASK ]` và nút dừng khẩn cấp toàn bộ `[ 🛑 DỪNG TẤT CẢ ]` để thu hồi 100% tài nguyên CPU/RAM.  
+  *Tiêu chí nghiệm thu:* Bấm nút dừng là tiến trình/task lập tức được hủy an toàn và cập nhật giao diện ngay lập tức.
 
 ### 3. Ngoài phạm vi MVP (Out-of-Scope)
 - Không can thiệp vào mã nhị phân đóng gói của VS Code hoặc các extension độc quyền.

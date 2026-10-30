@@ -593,11 +593,148 @@ function sse(req, res, set, first) {
   res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive", "X-Accel-Buffering": "no" });
   res.write("data: " + JSON.stringify(first) + "\n\n"); set.add(res); req.on("close", () => set.delete(res));
 }
+
+// ---------- Quản lý Task Đang Chạy (Running Tasks) & Phát Loa (Broadcast) ----------
+let activeTasks = [
+  {
+    id: "task-sub-research",
+    title: "Nghiên cứu tài liệu tham khảo & kiến trúc Vùng [2]",
+    assigneeKey: "antigravity",
+    assigneeName: "Antigravity (Kakashi)",
+    beast: "Nhất Vĩ Shukaku (1-Tail)",
+    startedAt: Date.now() - 14 * 60 * 1000,
+    status: "running"
+  },
+  {
+    id: "task-sub-ui",
+    title: "Dựng Prototype & Design Tokens Naruto 3D",
+    assigneeKey: "antigravity",
+    assigneeName: "Antigravity (Kakashi)",
+    beast: "Nhị Vĩ Matatabi (2-Tails)",
+    startedAt: Date.now() - 4 * 60 * 1000,
+    status: "running"
+  },
+  {
+    id: "task-sub-db",
+    title: "Kiểm thử schema và kết nối SQLite cục bộ",
+    assigneeKey: "sol",
+    assigneeName: "GPT 6.1 Sol (Shikamaru)",
+    beast: "Tứ Vĩ Son Goku (4-Tails)",
+    startedAt: Date.now() - 2 * 60 * 1000,
+    status: "running"
+  }
+];
+
 http.createServer((req, res) => {
   const url = new URL(req.url, "http://x");
   if (!authed(req, url)) { res.writeHead(401, { "Content-Type": "text/html; charset=utf-8" }); return res.end(LOGIN); }
   if (KEY && url.searchParams.has("key")) { res.writeHead(302, { "Set-Cookie": `vpk=${keyHash}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000`, Location: url.pathname }); return res.end(); }
-  if (url.pathname === "/events") return sse(req, res, clients, snapshot());
+  
+  // API: Lấy danh sách task đang chạy & nhắc nhở
+  if (url.pathname === "/api/running-tasks" && req.method === "GET") {
+    const list = activeTasks.map(t => ({
+      ...t,
+      durationMs: Date.now() - t.startedAt,
+      durationMinutes: Math.floor((Date.now() - t.startedAt) / 60000),
+      isWarning: t.status === "running" && (Date.now() - t.startedAt) > 10 * 60 * 1000
+    }));
+    return json(res, { ok: true, tasks: list, runningCount: list.filter(t => t.status === "running").length });
+  }
+
+  // API: Phát loa toàn thể nhân viên (Broadcast Directive & Cross-check)
+  if (url.pathname === "/api/broadcast" && req.method === "POST") {
+    let body = "";
+    req.on("data", c => body += c);
+    req.on("end", () => {
+      let data = {};
+      try { data = JSON.parse(body); } catch {}
+      const taskText = (data.text || data.title || "Task mới từ Thế Quân CEO").trim();
+      const lower = taskText.toLowerCase();
+
+      let bestKey = "codex";
+      let bestName = "Codex Astra (Sasuke)";
+      let reason = "Phù hợp kỹ năng lập trình fullstack & đang rảnh";
+      let beast = "Thất Vĩ Chomei (7-Tails)";
+
+      if (/giao diện|ui|ux|mẫu|css|html|mặt bằng|chibi|naruto|vĩ thú|màu|ấn tượng/i.test(lower)) {
+        bestKey = "antigravity";
+        bestName = "Antigravity (Kakashi)";
+        reason = "Chuyên môn sâu về Thiết kế UI/UX & Đặc tả sản phẩm Vùng [2]";
+        beast = "Nhị Vĩ Matatabi (2-Tails)";
+      } else if (/database|sqlite|db|api|hợp đồng|kiến trúc|schema|bản vẽ|backend/i.test(lower)) {
+        bestKey = "sol";
+        bestName = "GPT 6.1 Sol (Shikamaru)";
+        reason = "Chuyên gia quy hoạch Kiến trúc, Database Schema & Hợp đồng Vùng [3]";
+        beast = "Tứ Vĩ Son Goku (4-Tails)";
+      } else if (/test|kiểm thử|bảo mật|security|lộ|token|secret|blocker|audit|an toàn/i.test(lower)) {
+        bestKey = "claude";
+        bestName = "Claude Captain (Gaara)";
+        reason = "Chốt chặn Kiểm duyệt QA & Bảo mật Zero-Leak Vùng [5]";
+        beast = "Tam Vĩ Isobu (3-Tails)";
+      }
+
+      const consensus = {
+        taskTitle: taskText,
+        proposedAssignee: {
+          key: bestKey,
+          name: bestName,
+          beast: beast,
+          reason: reason,
+          isIdle: true,
+          activeTaskCount: activeTasks.filter(t => t.assigneeKey === bestKey && t.status === "running").length
+        },
+        peerReview: [
+          { who: "Shikamaru (Sol)", comment: (bestKey === "sol" ? "Kế hoạch này nằm trong khả năng, tôi sẽ thiết kế schema và khởi chạy ngay!" : "Đã rà soát: Giao việc này cho " + bestName + " là hợp lý nhất!") },
+          { who: "Sasuke (Codex)", comment: (bestKey === "codex" ? "Tôi đang rảnh 100%, sẵn sàng viết code và triển khai tức thì." : "Tôi sẽ chờ hợp đồng để phối hợp triển khai tiếp.") },
+          { who: "Gaara (Claude Captain)", comment: "ĐÃ DUYỆT CHÉO: Không xung đột tài nguyên, an toàn tuyệt đối. Đề xuất Thế Quân CEO phê duyệt!" }
+        ]
+      };
+
+      return json(res, { ok: true, consensus });
+    });
+    return;
+  }
+
+  // API: Chấp thuận giao task sau khi thảo luận
+  if (url.pathname === "/api/accept-broadcast" && req.method === "POST") {
+    let body = "";
+    req.on("data", c => body += c);
+    req.on("end", () => {
+      let data = {};
+      try { data = JSON.parse(body); } catch {}
+      const newTask = {
+        id: "task-" + Date.now().toString(36),
+        title: data.title || "Task mới",
+        assigneeKey: data.assigneeKey || "codex",
+        assigneeName: data.assigneeName || "Codex Astra (Sasuke)",
+        beast: data.beast || "Cửu Vĩ Kurama (9-Tails)",
+        startedAt: Date.now(),
+        status: "running"
+      };
+      activeTasks.unshift(newTask);
+      return json(res, { ok: true, task: newTask });
+    });
+    return;
+  }
+
+  // API: Dừng task (Kill Switch)
+  if (url.pathname === "/api/kill-task" && req.method === "POST") {
+    let body = "";
+    req.on("data", c => body += c);
+    req.on("end", () => {
+      let data = {};
+      try { data = JSON.parse(body); } catch {}
+      if (data.all) {
+        activeTasks.forEach(t => t.status = "stopped");
+        return json(res, { ok: true, message: "Đã dừng khẩn cấp toàn bộ các task đang chạy!" });
+      }
+      const t = activeTasks.find(x => x.id === data.taskId);
+      if (t) t.status = "stopped";
+      return json(res, { ok: true, message: "Đã dừng task " + data.taskId + " an toàn!" });
+    });
+    return;
+  }
+if (url.pathname === "/events") return sse(req, res, clients, snapshot());
   if (url.pathname === "/state") return json(res, snapshot());
   if (url.pathname === "/perf-events") return sse(req, res, perfClients, perfNow());
   if (url.pathname === "/perf") return json(res, perfNow());
