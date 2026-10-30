@@ -403,7 +403,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
     <!-- Selected Character Card -->
     <div class="box" id="agentDetailBox">
       <div class="box-title"><span>Nhân Sự Được Chọn</span><span id="agentStatusBadge" style="color:var(--ok)">ACTIVE</span></div>
-      <div style="font-size:14px;font-weight:800;color:#fff" id="agentNameTxt">Anh Oanh (Chủ Dự Án)</div>
+      <div style="font-size:14px;font-weight:800;color:#fff" id="agentNameTxt">Thế Quân (Chủ Dự Án / CEO)</div>
       <div style="font-size:11px;color:var(--gold);margin-top:2px" id="agentRoleTxt">Chủ văn phòng / Quyết định tối cao</div>
       <div style="font-size:11px;color:var(--mute);margin-top:8px;font-style:italic" id="agentLastTextTxt">
         "Chỉ khi tôi chỉ định thì 6.1 Sol mới có thể code..."
@@ -829,7 +829,7 @@ function makeBot(a) {
 }
 
 const defaultAgents = [
-  { key: "ceo", name: "Anh Oanh", role: "Chủ Dự Án / Quyết định tối cao", platform: "human", lastText: "Chỉ khi tôi chỉ định thì 6.1 Sol mới có thể code. Hãy hỗ trợ cuộn và zoom chuột mượt mà!" },
+  { key: "ceo", name: "Thế Quân CEO", role: "Chủ Dự Án / Quyết định tối cao", platform: "human", lastText: "Chỉ khi tôi chỉ định thì 6.1 Sol mới có thể code. Hãy hỗ trợ cuộn và zoom chuột mượt mà!" },
   { key: "antigravity", name: "Antigravity", role: "SPEC_ARCHITECT & UI/UX", platform: "antigravity", lastText: "Đã hoàn thành Vùng [2] Đặc Tả & Giao diện Chibi Cityscape. Đề xuất chuyển lượt cho Sol!" },
   { key: "sol", name: "GPT 6.1 Sol", role: "SOL_ARCHITECT_PLANNER", platform: "sol", lastText: "Sẵn sàng nhận lượt để lập kế hoạch Backend, DB Schema & API Contracts." },
   { key: "codex", name: "Codex Astra", role: "CODEX_ASTRA_DEV", platform: "codex", lastText: "Chờ hợp đồng Vùng [3] để triển khai source code." },

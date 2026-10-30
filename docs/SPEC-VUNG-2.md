@@ -1,7 +1,7 @@
 # ĐẶC TẢ SẢN PHẨM & THIẾT KẾ FULLSTACK FRONTEND (VÙNG [2] PROTOCOL V2.2)
 **Dự án:** Văn phòng Quản lý AI Trực quan Đa Nền tảng (Chibi Edition - BCC v2.2)  
 **Tác giả:** Antigravity (Gemini 3.8 / `SPEC_ARCHITECT & UIUX_FRONTEND_ARCHITECT`)  
-**Chủ Dự Án:** Anh Oanh (Quyết định tối cao)  
+**Chủ Dự Án:** Thế Quân CEO (Quyết định tối cao)  
 **Tham chiếu gốc:** `https://github.com/marketingjuliancongdanh79-pixel/van-phong-ao-3d`  
 **Giao thức:** Universal Protocol agent.md v2.2 (`/bcc`)
 
@@ -68,7 +68,7 @@ flowchart TD
 ### 1. Phân bổ vai trò & Kích thước Chibi
 | AI Engine | Vai trò Protocol v2.2 | Vùng phụ trách | Ngoại hình Chibi |
 |---|---|---|---|
-| **Anh Oanh (Chủ Dự Án)** | `CHỦ TỊCH / CEO` | Toàn quyền | Chibi Boss lớn (80px), Vương miện vàng, Áo vest |
+| **Thế Quân (Chủ Dự Án / CEO)** | `CHỦ TỊCH / CEO` | Toàn quyền | Chibi Boss lớn (80px), Vương miện vàng, Áo vest |
 | **Antigravity (Gemini 3.8)** | `SPEC_ARCHITECT & UIUX` | Vùng [2] | Chibi Tím lớn (72px), Tai mèo công nghệ, Gõ phím |
 | **Subagents Antigravity** | `Researcher, UI Gen...` | Trợ lý vệ tinh | Chibi Mini (36px), Bay quanh bàn Antigravity |
 | **GPT 6.1 Sol** | `SOL_ARCHITECT_PLANNER` | Vùng [3] | Chibi Xanh ngọc lớn (72px), Kính kiến trúc sư |

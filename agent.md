@@ -23,7 +23,7 @@
 
 ## [2] ĐẶC TẢ SẢN PHẨM, AI AGENT & THIẾT KẾ FULLSTACK FRONTEND (UI/UX) (Chủ: SPEC_ARCHITECT)
 ### [2.1] SẢN PHẨM & PHẠM VI MVP
-- Vấn đề & Người dùng: Kỹ sư / Chủ dự án (Anh Oanh) dùng đồng thời Antigravity, Codex, Claude Code trong VS Code; gặp khó khăn khi chuyển phiên thủ công, thiếu góc nhìn trực quan toàn cảnh và thiếu trạm chỉ huy điều phối lượt.
+- Vấn đề & Người dùng: Kỹ sư / Chủ dự án (Thế Quân CEO) dùng đồng thời Antigravity, Codex, Claude Code trong VS Code; gặp khó khăn khi chuyển phiên thủ công, thiếu góc nhìn trực quan toàn cảnh và thiếu trạm chỉ huy điều phối lượt.
 - Chỉ số thành công: 100% không cần mở tay file agent.md; 1-click phê duyệt chuyển lượt; chuyển đổi giữa các repo GitHub linh hoạt trong < 500ms; phát hiện phiên Antigravity cục bộ qua native node:sqlite trong < 2 giây.
 - Phạm vi MVP (F1..F7):
   - F1 (GitHub Repo Switcher): Liệt kê danh sách repo đã tạo trên GitHub, chuyển workspace hoặc clone về máy trong 1 click.
