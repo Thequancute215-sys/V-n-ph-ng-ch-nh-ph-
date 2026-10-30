@@ -49,7 +49,14 @@ body { background: #040711; color: #f8fafc; font-family: "Plus Jakarta Sans", sa
     </div>
   </div>
 
-  <div class="flex items-center gap-3">
+  <div class="flex items-center gap-2.5">
+    <a href="https://www.meshy.ai/vi/tags/naruto" target="_blank" class="px-3.5 py-2 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 text-xs font-bold flex items-center gap-1.5 transition">
+      <i data-lucide="external-link" class="w-4 h-4"></i> Mẫu Meshy.ai Naruto
+    </a>
+    <button onclick="document.getElementById('glbFileInput').click()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:brightness-110 text-white text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-sky-500/25 transition">
+      <i data-lucide="upload-cloud" class="w-4 h-4 text-cyan-200"></i> Nạp Model 3D (.glb) Meshy.ai
+    </button>
+    <input type="file" id="glbFileInput" accept=".glb,.gltf" style="display:none">
     <button onclick="location.href='index.html'" class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-200 border border-white/10 flex items-center gap-1.5 transition">
       <i data-lucide="arrow-left" class="w-4 h-4"></i> Về Văn Phòng 3D
     </button>
@@ -225,6 +232,24 @@ body { background: #040711; color: #f8fafc; font-family: "Plus Jakarta Sans", sa
     <div id="charCanvasBox" class="w-full h-full relative">
       <div id="charGl" class="w-full h-full"></div>
 
+      <!-- Drag & Drop Dropzone Overlay -->
+      <div id="dropOverlay" class="absolute inset-0 z-30 pointer-events-none bg-sky-950/80 backdrop-blur-md border-4 border-dashed border-sky-400 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all duration-200 opacity-0 scale-95">
+        <div class="w-16 h-16 rounded-3xl bg-sky-500/20 border border-sky-400/50 flex items-center justify-center text-sky-300 text-3xl animate-bounce">
+          📥
+        </div>
+        <div class="text-xl font-extrabold text-white font-chibi">Thả File 3D (.glb) Meshy.ai Vào Đây</div>
+        <div class="text-xs text-sky-200 max-w-sm text-center">Tải model Naruto từ Meshy.ai (.glb) rồi thả vào đây để render 3D tức thì!</div>
+      </div>
+
+      <!-- Guide Pill: Meshy Tag Link & Reset (Placed at bottom-right to prevent any top bar collision) -->
+      <div id="meshyGuidePill" class="absolute bottom-6 right-6 z-10 glass-panel px-3.5 py-2 rounded-2xl border border-sky-500/30 text-xs text-sky-200 flex items-center gap-2.5 shadow-xl">
+        <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+        <span>Kéo & thả <b>.glb</b> tải từ <a href="https://www.meshy.ai/vi/tags/naruto" target="_blank" class="underline text-amber-300 font-bold hover:text-white">meshy.ai/vi/tags/naruto</a></span>
+        <button onclick="resetProceduralChar()" id="btnResetProcedural" class="hidden ml-1 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[11px] font-bold border border-white/10">
+          ↩ Về 3D Nguyên Tác
+        </button>
+      </div>
+
       <!-- Floating 3D Badge Controls -->
       <div class="absolute bottom-6 left-6 z-10 glass-panel px-4 py-2 rounded-2xl flex items-center gap-3 shadow-xl">
         <div class="w-3 h-3 rounded-full bg-amber-400 animate-ping"></div>
@@ -304,6 +329,7 @@ body { background: #040711; color: #f8fafc; font-family: "Plus Jakarta Sans", sa
 <script type="module">
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 lucide.createIcons();
 
@@ -327,12 +353,17 @@ controls.maxPolarAngle = 1.45;
 controls.minDistance = 2.5; // Soi cực sát nét mặt!
 controls.maxDistance = 14;
 
-// Lighting Stage
-scene.add(new THREE.AmbientLight(0xffffff, 0.95));
+// Lighting Stage (Meshy.ai Studio Anime Lighting)
+scene.add(new THREE.AmbientLight(0xffffff, 1.15));
 const spot = new THREE.SpotLight(0xffeedd, 3.8, 25, Math.PI / 4, 0.4);
 spot.position.set(4, 9, 7);
 spot.castShadow = true;
 scene.add(spot);
+
+// Anime Figurine High-Contrast Rim Light (Tạo viền sáng rực rỡ như mô hình 3D Meshy)
+const animeRimLight = new THREE.DirectionalLight(0xffedd5, 3.8);
+animeRimLight.position.set(0, 8, -9);
+scene.add(animeRimLight);
 
 const rimLight = new THREE.DirectionalLight(0x38bdf8, 2.0);
 rimLight.position.set(-5, 4, -4);
@@ -879,6 +910,10 @@ const uchihaCrestTex = makeUchihaCrestTexture();
 const shukakuTex = makeShukakuTexture();
 const matatabiTex = makeMatatabiTexture();
 
+const gltfLoader = new GLTFLoader();
+const customGlbMeshes = {};
+let activeMixer = null;
+
 function build3DCharacter(data) {
   if (currentCharMesh) scene.remove(currentCharMesh.g);
 
@@ -889,7 +924,7 @@ function build3DCharacter(data) {
   spot.color.setHex(col);
 
   // 1. CHAKRA AURA ENVELOPE
-  const auraGeo = new THREE.CapsuleGeometry(isShinobi ? 1.08 : 0.88, isShinobi ? 1.45 : 0.95, 12, 20);
+  const auraGeo = new THREE.CapsuleGeometry(isShinobi ? 1.15 : 0.95, isShinobi ? 1.55 : 1.05, 12, 20);
   const auraMat = new THREE.MeshBasicMaterial({
     color: col,
     transparent: true,
@@ -901,15 +936,44 @@ function build3DCharacter(data) {
   auraMesh.position.y = isShinobi ? 2.3 : 1.5;
   g.add(auraMesh);
 
-  // 2. HEAD WITH DETAILED ANIME CANVAS FACE
-  const headR = isShinobi ? 0.95 : 0.7;
+  const extras = [];
+
+  // Check if a custom Meshy.ai 3D Model (.glb) was loaded for this character
+  if (customGlbMeshes[currentCharKey]) {
+    const glbData = customGlbMeshes[currentCharKey];
+    g.add(glbData.model);
+    activeMixer = glbData.mixer || null;
+    g.scale.setScalar(data.scale.includes("80px") ? 1.4 : isShinobi ? 1.3 : 1.15);
+    scene.add(g);
+    currentCharMesh = { g, auraMesh, extras, data, isCustomGlb: true };
+
+    const resetBtn = document.getElementById("btnResetProcedural");
+    if (resetBtn) resetBtn.classList.remove("hidden");
+    const badge = document.getElementById("charApprovalBadge");
+    if (badge) {
+      badge.textContent = "MESHY.AI 3D GLB";
+      badge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-sky-500/20 text-sky-400 border border-sky-500/30";
+    }
+    return;
+  }
+
+  const resetBtn = document.getElementById("btnResetProcedural");
+  if (resetBtn) resetBtn.classList.add("hidden");
+  const badge = document.getElementById("charApprovalBadge");
+  if (badge) {
+    badge.textContent = "CHUẨN MANGA 100%";
+    badge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+  }
+
+  // 2. HEAD WITH BILATERAL ANIME FACE UV ROTATION
+  const headR = isShinobi ? 0.95 : 0.72;
   let headMat;
 
   if (isShinobi) {
     const faceTex = makeFaceTexture(data.shinobiType);
     headMat = new THREE.MeshStandardMaterial({
       map: faceTex,
-      roughness: 0.3
+      roughness: 0.28
     });
   } else if (data.beastTails === 1) {
     headMat = new THREE.MeshStandardMaterial({ map: shukakuTex, roughness: 0.5 });
@@ -920,47 +984,16 @@ function build3DCharacter(data) {
   }
 
   const head = new THREE.Mesh(new THREE.SphereGeometry(headR, 32, 24), headMat);
-  head.position.y = isShinobi ? 3.3 : 2.4;
-  head.rotation.y = -Math.PI / 2; // Center of canvas (u=0.5) faces exactly front (+Z)
+  head.position.y = isShinobi ? 3.35 : 2.45;
+  head.rotation.y = -Math.PI / 2; // Center of canvas (u=0.5) faces front toward camera (+Z)
   head.castShadow = true;
   g.add(head);
 
-  // 3. BODY & COSTUME
-  let bodyMat;
-  if (data.shinobiType === "naruto") {
-    // Inner black shirt with orange accents
-    bodyMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.4 });
-  } else if (data.shinobiType === "kakashi" || data.shinobiType === "shikamaru") {
-    // Jounin Flak Jacket green
-    bodyMat = new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.5 });
-  } else if (data.shinobiType === "sasuke") {
-    // Open chest tunic
-    bodyMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.4 });
-  } else if (data.shinobiType === "gaara") {
-    // Dark burgundy coat
-    bodyMat = new THREE.MeshStandardMaterial({ color: 0x7c2d12, roughness: 0.5 });
-  } else if (data.beastTails === 1) {
-    bodyMat = new THREE.MeshStandardMaterial({ map: shukakuTex, roughness: 0.5 });
-  } else if (data.beastTails === 2) {
-    bodyMat = new THREE.MeshStandardMaterial({ map: matatabiTex, roughness: 0.3 });
-  } else {
-    bodyMat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.4 });
-  }
-
-  const bodyH = isShinobi ? 0.95 : 0.65;
-  const bodyR = isShinobi ? 0.65 : 0.55;
-  const body = new THREE.Mesh(new THREE.CapsuleGeometry(bodyR, bodyH, 12, 20), bodyMat);
-  body.position.y = isShinobi ? 1.6 : 1.2;
-  body.castShadow = true;
-  g.add(body);
-
-  const extras = [];
-
   if (isShinobi) {
-    const plateMat = new THREE.MeshStandardMaterial({ map: headbandPlateTex, metalness: 0.7, roughness: 0.2 });
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdfc4, roughness: 0.35 });
+    const plateMat = new THREE.MeshStandardMaterial({ map: headbandPlateTex, metalness: 0.75, roughness: 0.2 });
 
     // Forehead Protector: ONLY for Naruto and Kakashi in Shippuden!
-    // Sasuke went rogue and doesn't wear one. Gaara is Sunagakure Kazekage with "愛" kanji on forehead. Shikamaru wears it on arm!
     if (data.shinobiType === "naruto" || data.shinobiType === "kakashi") {
       const clothColor = data.shinobiType === "naruto" ? 0x0f172a : 0x1e293b;
       const bandMat = new THREE.MeshStandardMaterial({ color: clothColor, roughness: 0.5 });
@@ -983,29 +1016,134 @@ function build3DCharacter(data) {
       ribbon.rotation.x = 0.4;
       g.add(ribbon);
     } else if (data.shinobiType === "shikamaru") {
-      // Shikamaru wears Konoha metal plate on right bicep
+      // Shikamaru Konoha plate on right bicep
       const armPlate = new THREE.Mesh(new THREE.PlaneGeometry(0.38, 0.22), plateMat);
-      armPlate.position.set(0.98, 1.85, 0);
+      armPlate.position.set(0.98, 1.95, 0);
       armPlate.rotation.y = Math.PI / 2;
       g.add(armPlate);
     }
 
-    // Specific Costumes
+    // 3. TAPERED TORSO, HIPS & 3D COLLAR (Meshy Figurine Proportions)
+    let torsoMat, pantsMat;
     if (data.shinobiType === "naruto") {
-      // 1. Spiky Golden Blonde Hair
+      torsoMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.4 }); // Black inner shirt
+      pantsMat = new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.45 }); // Orange pants
+    } else if (data.shinobiType === "kakashi") {
+      torsoMat = new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.5 }); // Jounin green vest
+      pantsMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.45 }); // Navy dark pants
+    } else if (data.shinobiType === "shikamaru") {
+      torsoMat = new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.5 }); // Jounin vest
+      pantsMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.45 }); // Grey-navy pants
+    } else if (data.shinobiType === "sasuke") {
+      torsoMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.35 }); // Open-chest white tunic
+      pantsMat = new THREE.MeshStandardMaterial({ color: 0x1e1b4b, roughness: 0.45 }); // Deep navy/black
+    } else if (data.shinobiType === "gaara") {
+      torsoMat = new THREE.MeshStandardMaterial({ color: 0x7f1d1d, roughness: 0.5 }); // Crimson coat
+      pantsMat = new THREE.MeshStandardMaterial({ color: 0x7f1d1d, roughness: 0.5 }); // Crimson pants
+    }
+
+    // Chest (tapered down to waist)
+    const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.70, 0.54, 0.85, 20), torsoMat);
+    chest.position.y = 1.95;
+    chest.castShadow = true;
+    g.add(chest);
+
+    // Hips / Pelvis
+    const pelvis = new THREE.Mesh(new THREE.SphereGeometry(0.55, 20, 14), pantsMat);
+    pelvis.position.y = 1.45;
+    pelvis.scale.set(1, 0.72, 0.9);
+    pelvis.castShadow = true;
+    g.add(pelvis);
+
+    // Stand-up 3D Collar around neck
+    const collarMat = (data.shinobiType === "kakashi" || data.shinobiType === "shikamaru") ? torsoMat :
+                      (data.shinobiType === "naruto") ? new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.4 }) :
+                      (data.shinobiType === "sasuke") ? new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.3 }) :
+                      torsoMat;
+    const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.66, 0.58, 0.35, 24, 1, true), collarMat);
+    collar.position.y = 2.45;
+    g.add(collar);
+
+    // 4. ARTICULATED SEPARATED NINJA LEGS & SANDALS
+    const sandalSoleMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 });
+    const sandalClothMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 });
+    const wrapMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.6 });
+
+    for (const sx of [-0.34, 0.34]) {
+      const legGroup = new THREE.Group();
+      legGroup.position.set(sx, 1.35, 0);
+      legGroup.rotation.z = -sx * 0.12; // Athletic stance
+      legGroup.rotation.x = sx > 0 ? -0.06 : 0.06;
+
+      // Thigh & Calf
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.16, 0.95, 14), pantsMat);
+      leg.position.y = -0.45;
+      leg.castShadow = true;
+      legGroup.add(leg);
+
+      // Naruto's right leg bandage wrap
+      if (data.shinobiType === "naruto" && sx > 0) {
+        const wrap = new THREE.Mesh(new THREE.CylinderGeometry(0.205, 0.185, 0.38, 14), wrapMat);
+        wrap.position.y = -0.55;
+        legGroup.add(wrap);
+        // Kunai holster pouch
+        const pouch = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.18, 0.08), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+        pouch.position.set(0.18, -0.55, 0);
+        legGroup.add(pouch);
+      }
+
+      // Ninja Sandal Cuff
+      const sandalCuff = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.17, 0.22, 14), sandalClothMat);
+      sandalCuff.position.y = -0.92;
+      legGroup.add(sandalCuff);
+
+      // Sandal Sole
+      const sole = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.08, 0.44), sandalSoleMat);
+      sole.position.set(0, -1.04, 0.08);
+      sole.castShadow = true;
+      legGroup.add(sole);
+
+      // Open ninja toes (classic manga anime ninja sandals)
+      const toes = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.06, 0.12), skinMat);
+      toes.position.set(0, -1.01, 0.22);
+      legGroup.add(toes);
+
+      g.add(legGroup);
+    }
+
+    // 5. SPECIFIC SHINOBI HAIR & SIGNATURE GEAR
+    if (data.shinobiType === "naruto") {
+      // 5.1 Spiky Golden Blonde Hair with Layered Front Bangs & Sideburns
       const hairMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.25 });
       const hairBase = new THREE.Mesh(new THREE.SphereGeometry(headR + 0.03, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.52), hairMat);
       hairBase.position.y = head.position.y;
       g.add(hairBase);
 
+      // 7 Front Bangs hanging over brow
+      for (let b = 0; b < 7; b++) {
+        const bang = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.55, 4), hairMat);
+        const bx = -0.45 + b * 0.15;
+        bang.position.set(bx, head.position.y + 0.18, headR * 0.9);
+        bang.rotation.set(0.45, 0, (bx / 0.45) * -0.2);
+        g.add(bang);
+      }
+      // Sideburn locks in front of ears
+      for (const sx of [-headR * 0.85, headR * 0.85]) {
+        const sideLock = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.65, 4), hairMat);
+        sideLock.position.set(sx, head.position.y - 0.1, 0.3);
+        sideLock.rotation.set(0.2, 0, -sx * 0.2);
+        g.add(sideLock);
+      }
+
+      // Tiered Crown Spikes
       for (let i = 0; i < 16; i++) {
-        const spike = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.7, 4), hairMat);
+        const spike = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.72, 4), hairMat);
         const ang = (i / 16) * Math.PI * 2;
         spike.position.set(Math.cos(ang) * 0.7, head.position.y + 0.65 + Math.sin(ang * 2) * 0.1, Math.sin(ang) * 0.7);
         spike.rotation.set(Math.sin(ang) * 0.4 + 0.2, ang, -Math.cos(ang) * 0.4);
         g.add(spike);
       }
-      const topSpike = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.85, 4), hairMat);
+      const topSpike = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.88, 4), hairMat);
       topSpike.position.set(0, head.position.y + 1.15, 0);
       g.add(topSpike);
 
@@ -1019,30 +1157,47 @@ function build3DCharacter(data) {
       cloak.position.y = 1.45;
       g.add(cloak);
 
-      // Orange Pants & Bandaged Right Leg
-      const pants = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.6, 16), new THREE.MeshStandardMaterial({ color: 0xea580c }));
-      pants.position.y = 0.5; g.add(pants);
-      const legWrap = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.35, 12), new THREE.MeshStandardMaterial({ color: 0xf8fafc }));
-      legWrap.position.set(0.25, 0.5, 0); g.add(legWrap);
+      // Posed Arms: Left arm at hip, Right arm channeling 3D Meshy Rasengan
+      const leftArm = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.52, 4, 10), skinMat);
+      leftArm.position.set(-0.95, 1.75, 0.1);
+      leftArm.rotation.set(0.15, 0, 0.25);
+      g.add(leftArm);
 
-      // Spinning Rasengan
-      const rasGeo = new THREE.SphereGeometry(0.32, 16, 16);
-      const rasMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true });
-      const rasengan = new THREE.Mesh(rasGeo, rasMat);
-      rasengan.position.set(0.9, 1.6, 0.7);
-      g.add(rasengan);
-      extras.push({ obj: rasengan, type: "spin" });
+      const rightArm = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.52, 4, 10), skinMat);
+      rightArm.position.set(0.9, 1.85, 0.35);
+      rightArm.rotation.set(-0.45, 0, -0.2);
+      g.add(rightArm);
+
+      // Multi-layer Meshy-grade Rasengan with dual counter-rotating orbital rings!
+      const rasGroup = new THREE.Group();
+      rasGroup.position.set(0.9, 1.85, 0.75);
+
+      const coreSphere = new THREE.Mesh(new THREE.SphereGeometry(0.24, 16, 16), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+      rasGroup.add(coreSphere);
+
+      const shellSphere = new THREE.Mesh(new THREE.SphereGeometry(0.36, 16, 16), new THREE.MeshBasicMaterial({ color: 0x7dd3fc, transparent: true, opacity: 0.55, wireframe: true }));
+      rasGroup.add(shellSphere);
+
+      const ring1 = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.02, 6, 24), new THREE.MeshBasicMaterial({ color: 0x0284c7 }));
+      rasGroup.add(ring1);
+
+      const ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.02, 6, 24), new THREE.MeshBasicMaterial({ color: 0xbae6fd }));
+      ring2.rotation.x = Math.PI / 2;
+      rasGroup.add(ring2);
+
+      g.add(rasGroup);
+      extras.push({ obj: rasGroup, ring1, ring2, type: "rasengan" });
 
     } else if (data.shinobiType === "kakashi") {
-      // 2. Silver spiky hair
+      // 5.2 Silver Spiky Hair swept left and back
       const hairMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.3 });
       const hairBase = new THREE.Mesh(new THREE.SphereGeometry(headR + 0.03, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.52), hairMat);
       hairBase.position.y = head.position.y;
       g.add(hairBase);
 
-      for (let i = 0; i < 14; i++) {
-        const spike = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.78, 4), hairMat);
-        const ang = (i / 14) * Math.PI * 2;
+      for (let i = 0; i < 15; i++) {
+        const spike = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.82, 4), hairMat);
+        const ang = (i / 15) * Math.PI * 2;
         spike.position.set(Math.cos(ang) * 0.65 - 0.2, head.position.y + 0.72, Math.sin(ang) * 0.65);
         spike.rotation.set(0.2, ang, 0.5);
         g.add(spike);
@@ -1052,15 +1207,25 @@ function build3DCharacter(data) {
       const pocketMat = new THREE.MeshStandardMaterial({ color: 0x14532d });
       for (const sx of [-0.35, 0.35]) {
         const pocket = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.28, 0.08), pocketMat);
-        pocket.position.set(sx, 1.8, 0.65);
+        pocket.position.set(sx, 1.95, 0.65);
         g.add(pocket);
       }
 
+      // Arms: Left hand at vest, Right arm channeling Purple Lightning Shiden
+      const leftArm = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.52, 4, 10), torsoMat);
+      leftArm.position.set(-0.95, 1.8, 0);
+      g.add(leftArm);
+
+      const rightArm = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.52, 4, 10), skinMat);
+      rightArm.position.set(0.9, 1.85, 0.3);
+      rightArm.rotation.set(-0.35, 0, -0.2);
+      g.add(rightArm);
+
       // Purple Lightning Shiden / Raikiri
       const chidoriGroup = new THREE.Group();
-      chidoriGroup.position.set(0.9, 1.6, 0.6);
-      for (let i = 0; i < 6; i++) {
-        const spark = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.02, 0.5, 4), new THREE.MeshBasicMaterial({ color: 0xc084fc }));
+      chidoriGroup.position.set(0.9, 1.85, 0.65);
+      for (let i = 0; i < 8; i++) {
+        const spark = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.02, 0.55, 4), new THREE.MeshBasicMaterial({ color: 0xc084fc }));
         spark.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
         chidoriGroup.add(spark);
       }
@@ -1068,7 +1233,7 @@ function build3DCharacter(data) {
       extras.push({ obj: chidoriGroup, type: "flicker" });
 
     } else if (data.shinobiType === "shikamaru") {
-      // 3. Pineapple Ponytail & Hair Base
+      // 5.3 Pineapple Ponytail & Hair Base
       const hairMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.5 });
       const hairBase = new THREE.Mesh(new THREE.SphereGeometry(headR + 0.03, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.52), hairMat);
       hairBase.position.y = head.position.y;
@@ -1090,54 +1255,81 @@ function build3DCharacter(data) {
       // Blueprint scroll on hip
       const scrollMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.6 });
       const scroll = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 1.1, 16), scrollMat);
-      scroll.position.set(0.75, 1.2, 0); scroll.rotation.z = Math.PI / 3;
+      scroll.position.set(0.75, 1.35, 0); scroll.rotation.z = Math.PI / 3;
       g.add(scroll);
 
+      // Nara Shadow Strategist Finger Cross Arms
+      const leftArm = new THREE.Mesh(new THREE.CapsuleGeometry(0.15, 0.45, 4, 10), torsoMat);
+      leftArm.position.set(-0.55, 1.85, 0.4);
+      leftArm.rotation.set(-0.5, 0, 0.7);
+      g.add(leftArm);
+
+      const rightArm = new THREE.Mesh(new THREE.CapsuleGeometry(0.15, 0.45, 4, 10), torsoMat);
+      rightArm.position.set(0.55, 1.85, 0.4);
+      rightArm.rotation.set(-0.5, 0, -0.7);
+      g.add(rightArm);
+
+      // Interlocking hands in center
+      const hands = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 10), skinMat);
+      hands.position.set(0, 1.85, 0.6);
+      g.add(hands);
+
     } else if (data.shinobiType === "sasuke") {
-      // 4. Sasuke spiky dark hair & Hair Base
+      // 5.4 Sasuke Dark Spiky Hair with Long Center-Parted Side Bangs
       const hairMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3 });
       const hairBase = new THREE.Mesh(new THREE.SphereGeometry(headR + 0.03, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.52), hairMat);
       hairBase.position.y = head.position.y;
       g.add(hairBase);
 
+      // Long side bangs framing cheeks past jawline
       for (const sx of [-0.62, 0.62]) {
-        const bang = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.72, 4), hairMat);
-        bang.position.set(sx, head.position.y + 0.1, headR * 0.7);
-        bang.rotation.set(0.4, 0, -sx * 0.3);
+        const bang = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.95, 4), hairMat);
+        bang.position.set(sx, head.position.y - 0.05, headR * 0.75);
+        bang.rotation.set(0.35, 0, -sx * 0.25);
         g.add(bang);
       }
-      for (let i = 0; i < 12; i++) {
-        const spike = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.72, 4), hairMat);
-        const ang = (i / 12) * Math.PI + Math.PI;
-        spike.position.set(Math.cos(ang) * 0.6, head.position.y + 0.72, Math.sin(ang) * 0.6);
+      for (let i = 0; i < 14; i++) {
+        const spike = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.75, 4), hairMat);
+        const ang = (i / 14) * Math.PI + Math.PI;
+        spike.position.set(Math.cos(ang) * 0.65, head.position.y + 0.72, Math.sin(ang) * 0.65);
         spike.rotation.set(0.4, ang, 0.2);
         g.add(spike);
       }
 
       // Uchiha Crest on back
       const crest = new THREE.Mesh(new THREE.PlaneGeometry(0.65, 0.65), new THREE.MeshBasicMaterial({ map: uchihaCrestTex, transparent: true }));
-      crest.position.set(0, 1.7, -bodyR - 0.02);
+      crest.position.set(0, 1.95, -0.6);
       crest.rotation.y = Math.PI;
       g.add(crest);
 
       // Shimenawa Rope Belt (Thừng tím bản to quấn quanh hông)
       const ropeMat = new THREE.MeshStandardMaterial({ color: 0x6b21a8, roughness: 0.6 });
-      const rope = new THREE.Mesh(new THREE.TorusGeometry(bodyR + 0.08, 0.12, 8, 24), ropeMat);
-      rope.position.y = 1.15; rope.rotation.x = Math.PI / 2;
+      const rope = new THREE.Mesh(new THREE.TorusGeometry(0.68, 0.14, 8, 24), ropeMat);
+      rope.position.y = 1.45; rope.rotation.x = Math.PI / 2;
       g.add(rope);
 
       // Kusanagi Sword sheathed through rope belt
       const bladeMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9, roughness: 0.1 });
       const blade = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.8, 0.04), bladeMat);
-      blade.position.set(0.45, 1.4, -0.6);
+      blade.position.set(0.45, 1.45, -0.6);
       blade.rotation.set(0.3, 0, Math.PI / 4);
       g.add(blade);
 
+      // Arms: Left arm at hip, Right arm holding Blue Chidori
+      const leftArm = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.52, 4, 10), skinMat);
+      leftArm.position.set(-0.95, 1.75, 0);
+      g.add(leftArm);
+
+      const rightArm = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.52, 4, 10), skinMat);
+      rightArm.position.set(0.9, 1.85, 0.3);
+      rightArm.rotation.set(-0.4, 0, -0.2);
+      g.add(rightArm);
+
       // Blue Chidori
       const chidoriBlue = new THREE.Group();
-      chidoriBlue.position.set(0.9, 1.6, 0.6);
-      for (let i = 0; i < 6; i++) {
-        const spark = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.02, 0.5, 4), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+      chidoriBlue.position.set(0.9, 1.85, 0.65);
+      for (let i = 0; i < 8; i++) {
+        const spark = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.02, 0.55, 4), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
         spark.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
         chidoriBlue.add(spark);
       }
@@ -1145,15 +1337,15 @@ function build3DCharacter(data) {
       extras.push({ obj: chidoriBlue, type: "flicker" });
 
     } else if (data.shinobiType === "gaara") {
-      // 5. Short spiky dark auburn hair & Hair Base
+      // 5.5 Short spiky auburn hair & Hair Base
       const hairMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.5 });
       const hairBase = new THREE.Mesh(new THREE.SphereGeometry(headR + 0.03, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.48), hairMat);
       hairBase.position.y = head.position.y;
       g.add(hairBase);
 
-      for (let i = 0; i < 14; i++) {
-        const spike = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.5, 4), hairMat);
-        const ang = (i / 14) * Math.PI * 2;
+      for (let i = 0; i < 15; i++) {
+        const spike = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.52, 4), hairMat);
+        const ang = (i / 15) * Math.PI * 2;
         spike.position.set(Math.cos(ang) * 0.65, head.position.y + 0.65, Math.sin(ang) * 0.65);
         spike.rotation.set(Math.sin(ang) * 0.3, ang, -Math.cos(ang) * 0.3);
         g.add(spike);
@@ -1161,22 +1353,34 @@ function build3DCharacter(data) {
 
       // White sash draped over right shoulder
       const sash = new THREE.Mesh(new THREE.BoxGeometry(0.25, 1.6, 0.08), new THREE.MeshStandardMaterial({ color: 0xf8fafc }));
-      sash.position.set(0, 1.6, 0); sash.rotation.z = -0.65;
+      sash.position.set(0, 1.95, 0); sash.rotation.z = -0.65;
       g.add(sash);
 
       // Giant Sand Gourd on back
       const gourdMat = new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.6 });
       const gourdBot = new THREE.Mesh(new THREE.SphereGeometry(0.85, 20, 16), gourdMat);
-      gourdBot.position.set(0, 1.4, -0.9); g.add(gourdBot);
+      gourdBot.position.set(0, 1.55, -0.9); g.add(gourdBot);
       const gourdTop = new THREE.Mesh(new THREE.SphereGeometry(0.65, 20, 16), gourdMat);
-      gourdTop.position.set(0, 2.5, -0.85); g.add(gourdTop);
+      gourdTop.position.set(0, 2.55, -0.85); g.add(gourdTop);
+      const cork = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.22, 0.25, 12), new THREE.MeshStandardMaterial({ color: 0x92400e }));
+      cork.position.set(0, 3.15, -0.85); g.add(cork);
 
-      // Orbiting Sand chunks
+      // Arms: Right hand outstretched commanding sand, Left at hip
+      const leftArm = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.52, 4, 10), torsoMat);
+      leftArm.position.set(-0.95, 1.8, 0);
+      g.add(leftArm);
+
+      const rightArm = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.52, 4, 10), skinMat);
+      rightArm.position.set(0.9, 1.95, 0.35);
+      rightArm.rotation.set(-0.55, 0, -0.2);
+      g.add(rightArm);
+
+      // Orbiting Sand Chunks & Swirling Sand Ring
       const sandGroup = new THREE.Group();
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < 6; i++) {
         const sandChunk = new THREE.Mesh(new THREE.DodecahedronGeometry(0.18), gourdMat);
-        const a = (i / 5) * Math.PI * 2;
-        sandChunk.position.set(Math.cos(a) * 1.6, 2.0 + Math.sin(i) * 0.4, Math.sin(a) * 1.6);
+        const a = (i / 6) * Math.PI * 2;
+        sandChunk.position.set(Math.cos(a) * 1.65, 2.0 + Math.sin(i) * 0.4, Math.sin(a) * 1.65);
         sandGroup.add(sandChunk);
       }
       g.add(sandGroup);
@@ -1184,10 +1388,22 @@ function build3DCharacter(data) {
     }
 
   } else {
-    // 10 VĨ THÚ DETAIL
+    // 10 VĨ THÚ DETAIL (Subagents)
     const tailCount = data.beastTails || 1;
     const beastColor = data.color;
     const tailMat = new THREE.MeshStandardMaterial({ color: beastColor, roughness: 0.4 });
+
+    // Beast Body
+    const bBody = new THREE.Mesh(new THREE.CapsuleGeometry(0.65, 0.8, 12, 16), headMat);
+    bBody.position.y = 1.35;
+    g.add(bBody);
+
+    // Beast Arms / Paws
+    for (const sx of [-0.85, 0.85]) {
+      const paw = new THREE.Mesh(new THREE.CapsuleGeometry(0.18, 0.45, 4, 10), headMat);
+      paw.position.set(sx, 1.3, 0.2);
+      g.add(paw);
+    }
 
     // Ears / Horns / Features
     if (tailCount === 9) { // Kurama
@@ -1237,19 +1453,112 @@ function build3DCharacter(data) {
     extras.push({ obj: tailGroup, type: "wag" });
   }
 
-  // Arms
-  const armMat = isShinobi ? new THREE.MeshStandardMaterial({ color: 0xffdfc4 }) : bodyMat;
-  for (const sx of [-1, 1]) {
-    const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.52, 4, 10), armMat);
-    arm.position.set(sx * 0.95, isShinobi ? 1.6 : 1.2, 0);
-    g.add(arm);
-  }
-
   g.scale.setScalar(data.scale.includes("80px") ? 1.4 : isShinobi ? 1.3 : 1.15);
   scene.add(g);
 
   currentCharMesh = { g, auraMesh, extras, data };
 }
+
+// Meshy.ai File Loader & Drag-and-Drop Handlers
+function loadGlbFile(file) {
+  const url = URL.createObjectURL(file);
+  const toast = document.getElementById("jutsuToast");
+  document.getElementById("jutsuIcon").textContent = "📥";
+  document.getElementById("jutsuName").textContent = `Đang nạp model 3D ${file.name}...`;
+  toast.style.opacity = "1";
+
+  gltfLoader.load(url, (gltf) => {
+    const model = gltf.scene;
+    const box = new THREE.Box3().setFromObject(model);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+
+    // Normalize height to ~4.2 units
+    const maxDim = Math.max(size.y, 0.001);
+    const scaleFactor = 4.2 / maxDim;
+    model.scale.setScalar(scaleFactor);
+
+    // Center on podium
+    model.position.x = -center.x * scaleFactor;
+    model.position.z = -center.z * scaleFactor;
+    model.position.y = -box.min.y * scaleFactor + 0.05;
+
+    model.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+
+    let mixer = null;
+    if (gltf.animations && gltf.animations.length > 0) {
+      mixer = new THREE.AnimationMixer(model);
+      const action = mixer.clipAction(gltf.animations[0]);
+      action.play();
+    }
+
+    customGlbMeshes[currentCharKey] = { model, mixer, fileName: file.name };
+    build3DCharacter(CHAR_DATA[currentCharKey]);
+
+    document.getElementById("jutsuName").textContent = `Đã nạp thành công 3D Meshy: ${file.name}!`;
+    setTimeout(() => { toast.style.opacity = "0"; }, 3500);
+  }, undefined, (err) => {
+    console.error("Lỗi nạp file GLB:", err);
+    alert("Không thể đọc file 3D (.glb). Vui lòng kiểm tra file tải từ Meshy.ai!");
+    toast.style.opacity = "0";
+  });
+}
+
+// Drag & Drop Handlers on #charCanvasBox
+const dropBox = document.getElementById("charCanvasBox");
+const dropOverlay = document.getElementById("dropOverlay");
+
+if (dropBox && dropOverlay) {
+  ["dragenter", "dragover"].forEach(evtName => {
+    dropBox.addEventListener(evtName, (e) => {
+      e.preventDefault(); e.stopPropagation();
+      dropOverlay.classList.remove("opacity-0", "scale-95");
+      dropOverlay.classList.add("opacity-100", "scale-100");
+    });
+  });
+
+  ["dragleave", "drop"].forEach(evtName => {
+    dropBox.addEventListener(evtName, (e) => {
+      e.preventDefault(); e.stopPropagation();
+      dropOverlay.classList.remove("opacity-100", "scale-100");
+      dropOverlay.classList.add("opacity-0", "scale-95");
+    });
+  });
+
+  dropBox.addEventListener("drop", (e) => {
+    const files = e.dataTransfer && e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      if (/\.(glb|gltf)$/i.test(file.name)) {
+        loadGlbFile(file);
+      } else {
+        alert("Vui lòng thả file 3D có đuôi .glb hoặc .gltf tải từ Meshy.ai!");
+      }
+    }
+  });
+}
+
+const glbFileInput = document.getElementById("glbFileInput");
+if (glbFileInput) {
+  glbFileInput.addEventListener("change", (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      loadGlbFile(e.target.files[0]);
+    }
+  });
+}
+
+window.resetProceduralChar = () => {
+  if (customGlbMeshes[currentCharKey]) {
+    delete customGlbMeshes[currentCharKey];
+    build3DCharacter(CHAR_DATA[currentCharKey]);
+  }
+};
+
 
 window.selectChar = (key) => {
   currentCharKey = key;
@@ -1320,6 +1629,7 @@ function animate() {
   const t = animClock.getElapsedTime();
 
   controls.update();
+  if (activeMixer) activeMixer.update(0.016);
   sealMesh.rotation.z = t * 0.15;
 
   if (currentCharMesh) {
@@ -1336,7 +1646,11 @@ function animate() {
 
     if (currentCharMesh.extras) {
       for (const ex of currentCharMesh.extras) {
-        if (ex.type === "spin") {
+        if (ex.type === "rasengan") {
+          if (ex.ring1) ex.ring1.rotation.z = t * 14.0;
+          if (ex.ring2) ex.ring2.rotation.y = t * 12.0;
+          ex.obj.rotation.x = t * 4.0;
+        } else if (ex.type === "spin") {
           ex.obj.rotation.x = t * 8.0;
           ex.obj.rotation.y = t * 12.0;
         } else if (ex.type === "flicker") {

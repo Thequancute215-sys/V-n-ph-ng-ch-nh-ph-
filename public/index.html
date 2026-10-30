@@ -1089,15 +1089,56 @@ function makeBot(a) {
   auraMesh.position.y = 2.3;
   g.add(auraMesh);
 
-  // Body Outfit
+  // Body Outfit & Anatomy (Meshy.ai Nendoroid Figurine Proportions)
   let outfitColor = col;
   if (a.key === "ceo") outfitColor = 0x18181b; // Inner black shirt with Hokage Haori!
   else if (a.key === "antigravity" || a.key === "sol") outfitColor = 0x166534; // Konoha Green Flak Jacket
   else if (a.key === "codex") outfitColor = 0xe2e8f0; // Sasuke open chest shirt
   else if (a.key === "claude") outfitColor = 0x7c2d12; // Gaara Sand brown coat
 
-  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.72, 0.9, 12, 20), std(outfitColor, { roughness: 0.4 }));
-  body.position.y = 1.6; g.add(body);
+  // 1. Tapered Torso & Pelvis
+  const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.70, 0.54, 0.82, 18), std(outfitColor, { roughness: 0.4 }));
+  chest.position.y = 1.95; g.add(chest);
+  const body = chest;
+
+  const pantsColor = a.key === "ceo" ? 0xea580c : (a.key === "codex" ? 0x1e1b4b : (a.key === "claude" ? 0x7c2d12 : 0x1e293b));
+  const pelvis = new THREE.Mesh(new THREE.SphereGeometry(0.55, 16, 12), std(pantsColor, { roughness: 0.45 }));
+  pelvis.position.y = 1.45; pelvis.scale.set(1, 0.72, 0.9); g.add(pelvis);
+
+  // Standup collar
+  const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.64, 0.56, 0.32, 20, 1, true), std(outfitColor, { roughness: 0.4 }));
+  collar.position.y = 2.45; g.add(collar);
+
+  // 2. Separated Athletic Ninja Legs & Sandals
+  const sandalSoleMat = std(0x0f172a, { roughness: 0.6 });
+  const sandalClothMat = std(0x1e293b, { roughness: 0.5 });
+  const skinMat = std(0xffdfc4, { roughness: 0.3 });
+
+  for (const sx of [-0.34, 0.34]) {
+    const legG = new THREE.Group();
+    legG.position.set(sx, 1.35, 0);
+    legG.rotation.z = -sx * 0.12;
+    legG.rotation.x = sx > 0 ? -0.06 : 0.06;
+
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.15, 0.92, 12), std(pantsColor));
+    leg.position.y = -0.45; legG.add(leg);
+
+    if (a.key === "ceo" && sx > 0) {
+      const wrap = new THREE.Mesh(new THREE.CylinderGeometry(0.195, 0.175, 0.36, 12), std(0xf8fafc));
+      wrap.position.y = -0.55; legG.add(wrap);
+    }
+
+    const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.16, 0.20, 12), sandalClothMat);
+    cuff.position.y = -0.92; legG.add(cuff);
+
+    const sole = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.08, 0.44), sandalSoleMat);
+    sole.position.set(0, -1.04, 0.08); legG.add(sole);
+
+    const toes = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.06, 0.12), skinMat);
+    toes.position.set(0, -1.01, 0.22); legG.add(toes);
+
+    g.add(legG);
+  }
 
   // Manga Head with High-Detail Canvas Face Texture
   const faceTex = makeFaceTexture(a.key);
@@ -1289,12 +1330,36 @@ function makeBot(a) {
     extras.push({ obj: sandG, type: "orbit" });
   }
 
-  // Arms
+  // Arms with Dynamic Ninja Poses
   const arms = [];
-  const skinMat = std(0xffdfc4, { roughness: 0.3 });
-  for (const sx of [-1, 1]) {
-    const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.48, 4, 10), skinMat);
-    arm.position.set(sx * 0.95, 1.6, 0); g.add(arm); arms.push(arm);
+  if (a.key === "ceo") {
+    // Left arm at hip fist, Right arm channeling Rasengan
+    const leftArm = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.48, 4, 10), skinMat);
+    leftArm.position.set(-0.95, 1.75, 0.1); leftArm.rotation.set(0.15, 0, 0.25);
+    g.add(leftArm); arms.push(leftArm);
+
+    const rightArm = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.48, 4, 10), skinMat);
+    rightArm.position.set(0.85, 1.8, 0.35); rightArm.rotation.set(-0.45, 0, -0.2);
+    g.add(rightArm); arms.push(rightArm);
+  } else if (a.key === "sol") {
+    // Both arms bent in front of chest forming Nara shadow thinking pose
+    const leftArm = new THREE.Mesh(new THREE.CapsuleGeometry(0.15, 0.42, 4, 10), std(outfitColor));
+    leftArm.position.set(-0.52, 1.85, 0.35); leftArm.rotation.set(-0.5, 0, 0.7);
+    g.add(leftArm); arms.push(leftArm);
+
+    const rightArm = new THREE.Mesh(new THREE.CapsuleGeometry(0.15, 0.42, 4, 10), std(outfitColor));
+    rightArm.position.set(0.52, 1.85, 0.35); rightArm.rotation.set(-0.5, 0, -0.7);
+    g.add(rightArm); arms.push(rightArm);
+
+    const hands = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), skinMat);
+    hands.position.set(0, 1.85, 0.55); g.add(hands);
+  } else {
+    for (const sx of [-1, 1]) {
+      const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.48, 4, 10), skinMat);
+      arm.position.set(sx * 0.95, 1.75, sx > 0 ? 0.2 : 0);
+      if (sx > 0) arm.rotation.x = -0.3;
+      g.add(arm); arms.push(arm);
+    }
   }
 
   // Floating Label & REQUEST BUBBLE
