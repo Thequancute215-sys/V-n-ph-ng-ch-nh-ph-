@@ -1,0 +1,2663 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Naruto 3D Anime Studio 1:1 — Visual Inspector & Agent Prompt Generator</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js r128 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --font-sans: 'Inter', sans-serif;
+      --font-display: 'Chakra Petch', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background-color: #0b0d13;
+      color: #f1f5f9;
+      overflow: hidden;
+      user-select: none;
+    }
+    .font-display {
+      font-family: var(--font-display);
+    }
+    .font-mono-code {
+      font-family: var(--font-mono);
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(249, 115, 22, 0.45);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(249, 115, 22, 0.8);
+    }
+    /* Range Slider Styling */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: transparent;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-runnable-track {
+      background: #1e293b;
+      height: 6px;
+      border-radius: 999px;
+      border: 1px solid #334155;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      margin-top: -5px;
+      background-color: #f97316;
+      height: 14px;
+      width: 14px;
+      border-radius: 999px;
+      border: 2px solid #fff;
+      box-shadow: 0 0 8px rgba(249, 115, 22, 0.8);
+    }
+    .anime-grid-bg {
+      background-image: 
+        radial-gradient(circle at 50% 35%, rgba(249, 115, 22, 0.10), transparent 60%),
+        linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 100% 100%, 36px 36px, 36px 36px;
+    }
+  </style>
+</head>
+<body class="h-screen w-screen flex flex-col bg-slate-950 text-slate-100">
+
+  <!-- TOP HEADER BAR -->
+  <header class="h-14 shrink-0 border-b border-slate-800/80 bg-slate-900/90 backdrop-blur-md px-4 flex items-center justify-between z-20">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center shadow-lg shadow-orange-500/20 border border-orange-400/40">
+        <!-- Sharingan/Uzumaki Spiral SVG -->
+        <svg class="w-5 h-5 text-white animate-spin" style="animation-duration: 14s;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <circle cx="12" cy="12" r="9"/>
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 3 C16 6, 16 9, 12 9"/>
+          <path d="M19.8 16.5 C15 17, 13 14, 14.6 10.5"/>
+          <path d="M4.2 16.5 C7 13, 10 13, 9.4 16.5"/>
+        </svg>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="font-display text-base md:text-lg font-bold tracking-wider uppercase text-white">
+            Naruto 3D Anime Studio <span class="text-orange-400">1:1 CC2 Spec</span>
+          </h1>
+          <span class="hidden sm:inline-block text-[11px] font-mono-code uppercase px-2 py-0.5 rounded bg-orange-500/15 text-orange-400 border border-orange-500/30">
+            6 Shinobi + 10 Vĩ Thú
+          </span>
+        </div>
+        <p class="text-[11px] text-slate-400 hidden sm:block">
+          Mô phỏng Cel-Shader 2 tầng sáng, Viền đen Inverted Hull, Pháp tuyến mặt phẳng &amp; Trình xuất Prompt cho AI Agent
+        </p>
+      </div>
+    </div>
+
+    <!-- Right Actions: Camera Presets + Prompt Generator Modal Trigger -->
+    <div class="flex items-center gap-2">
+      <div class="hidden xl:flex items-center bg-slate-800/80 p-1 rounded-lg border border-slate-700/70 gap-1">
+        <button onclick="setCameraPreset('full')" class="px-2.5 py-1 rounded text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-700/80 transition">
+          Toàn thân
+        </button>
+        <button onclick="setCameraPreset('face45')" class="px-2.5 py-1 rounded text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-700/80 transition">
+          Góc mặt 45°
+        </button>
+        <button onclick="setCameraPreset('eyes')" class="px-2.5 py-1 rounded text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-700/80 transition">
+          Cận cảnh Nhãn thuật
+        </button>
+        <button onclick="setCameraPreset('side')" class="px-2.5 py-1 rounded text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-700/80 transition">
+          Góc nghiêng 90°
+        </button>
+      </div>
+
+      <button onclick="openPromptModal()" class="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-gradient-to-r from-orange-500 via-amber-500 to-red-500 hover:from-orange-400 hover:to-red-400 text-slate-950 font-bold text-xs md:text-sm shadow-lg shadow-orange-500/25 transition transform active:scale-95">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+        </svg>
+        <span>Lấy Prompt Master</span>
+      </button>
+
+      <button onclick="location.href='characters.html'" class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs transition">
+        <span>🥷</span>
+        <span>Kho Meshy.ai</span>
+      </button>
+
+      <button onclick="location.href='index.html'" class="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-500 hover:brightness-110 text-slate-950 font-bold text-xs shadow-md transition">
+        <span>🔙</span>
+        <span>Về Văn Phòng 3D</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- LEFT SIDEBAR: CHARACTER & TAILED BEAST SELECTOR -->
+    <aside class="w-64 md:w-72 shrink-0 bg-slate-900/95 border-r border-slate-800/80 flex flex-col z-10">
+      <!-- Category Tabs -->
+      <div class="p-2.5 grid grid-cols-2 gap-1.5 border-b border-slate-800">
+        <button id="tabBtnShinobi" onclick="switchCategory('shinobi')" class="py-2 px-2 rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center justify-center gap-1.5 bg-orange-500 text-slate-950 shadow-md shadow-orange-500/20">
+          <span>6 Nhân Vật</span>
+        </button>
+        <button id="tabBtnBijuu" onclick="switchCategory('bijuu')" class="py-2 px-2 rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center justify-center gap-1.5 bg-slate-800 text-slate-300 hover:bg-slate-700">
+          <span>10 Vĩ Thú</span>
+        </button>
+      </div>
+
+      <!-- Character List Container -->
+      <div id="EntityListContainer" class="flex-1 overflow-y-auto p-2.5 space-y-1.5">
+        <!-- Populated dynamically via JS -->
+      </div>
+
+      <!-- Left Bottom Tip -->
+      <div class="p-3 border-t border-slate-800/80 bg-slate-950/60 text-[11px] text-slate-400 space-y-1">
+        <div class="flex items-center justify-between text-slate-300 font-medium">
+          <span>Điều khiển Camera 3D:</span>
+          <span class="text-orange-400 font-mono-code">Chuột / Cảm ứng</span>
+        </div>
+        <p>• Kéo chuột trái: Xoay 360° quanh mẫu</p>
+        <p>• Con lăn chuột: Phóng to / Thu nhỏ chi tiết</p>
+        <p>• Kéo chuột phải: Dịch chuyển khung nhìn</p>
+      </div>
+    </aside>
+
+    <!-- CENTER 3D VIEWPORT -->
+    <main class="flex-1 relative anime-grid-bg flex flex-col overflow-hidden">
+      <!-- Top Overlay Badges inside Viewport -->
+      <div class="absolute top-3 left-3 right-3 flex flex-wrap items-center justify-between gap-2 pointer-events-none z-10">
+        <div class="bg-slate-900/85 backdrop-blur-md border border-slate-700/80 rounded-xl px-3.5 py-2 pointer-events-auto shadow-xl">
+          <div class="flex items-center gap-2">
+            <span id="hudBadgeType" class="px-2 py-0.5 text-[10px] font-mono-code font-bold uppercase rounded bg-orange-500/20 text-orange-400 border border-orange-500/30">
+              SHINOBI
+            </span>
+            <h2 id="hudCharName" class="font-display text-base md:text-lg font-bold text-white">
+              Pain (Thiên Đạo - Yahiko)
+            </h2>
+          </div>
+          <p id="hudCharSubtitle" class="text-xs text-slate-300 mt-0.5">
+            Rinnegan 4 vòng đồng tâm • 16 Hắc Trượng • Tóc cam 15 chóp nhọn
+          </p>
+        </div>
+
+        <!-- Mobile/Tablet Quick Camera Presets -->
+        <div class="flex xl:hidden items-center bg-slate-900/85 backdrop-blur-md p-1 rounded-lg border border-slate-700/80 gap-1 pointer-events-auto">
+          <button onclick="setCameraPreset('full')" class="px-2 py-1 rounded text-[11px] font-medium text-slate-200 hover:bg-slate-700">Toàn thân</button>
+          <button onclick="setCameraPreset('face45')" class="px-2 py-1 rounded text-[11px] font-medium text-slate-200 hover:bg-slate-700">Mặt 45°</button>
+          <button onclick="setCameraPreset('eyes')" class="px-2 py-1 rounded text-[11px] font-medium text-slate-200 hover:bg-slate-700">Mắt</button>
+        </div>
+      </div>
+
+      <!-- Three.js Canvas Mount -->
+      <div id="canvasContainer" class="flex-1 w-full h-full relative cursor-grab active:cursor-grabbing"></div>
+
+      <!-- BOTTOM HUD: GEOMETRY, FACIAL ANGLES & PALETTE SPECS -->
+      <div class="bg-slate-900/95 backdrop-blur-md border-t border-slate-800/90 px-4 py-3 z-10">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
+          <!-- Metrics Columns -->
+          <div class="lg:col-span-5 grid grid-cols-3 gap-2">
+            <div class="bg-slate-950/80 border border-slate-800 rounded-lg p-2">
+              <span class="text-[10px] uppercase tracking-wider text-slate-400 block">Chiều cao / Tỷ lệ</span>
+              <span id="specHeightRatio" class="font-mono-code text-xs md:text-sm font-semibold text-orange-400 mt-0.5 block">176.5cm (1:7.5)</span>
+            </div>
+            <div class="bg-slate-950/80 border border-slate-800 rounded-lg p-2">
+              <span class="text-[10px] uppercase tracking-wider text-slate-400 block">Góc hàm / Cấu trúc</span>
+              <span id="specJawAngle" class="font-mono-code text-xs md:text-sm font-semibold text-emerald-400 mt-0.5 block">115° Sắc nhọn</span>
+            </div>
+            <div class="bg-slate-950/80 border border-slate-800 rounded-lg p-2">
+              <span class="text-[10px] uppercase tracking-wider text-slate-400 block">Nhãn thuật / Đặc trưng</span>
+              <span id="specEyeFeature" class="font-mono-code text-xs md:text-sm font-semibold text-purple-400 mt-0.5 block truncate">Rinnegan Tím Xám</span>
+            </div>
+          </div>
+
+          <!-- Facial & Topology Notes -->
+          <div class="lg:col-span-4 bg-slate-950/80 border border-slate-800 rounded-lg p-2">
+            <span class="text-[10px] uppercase tracking-wider text-slate-400 block">Ghi chú Góc cạnh &amp; Topology 1:1</span>
+            <p id="specTopologyNote" class="text-xs text-slate-200 line-clamp-2 mt-0.5">
+              6 đinh tán dọc sống mũi, 2 thanh trụ dọc cằm, 7 khuyên mỗi tai. Là phẳng pháp tuyến má/mũi bằng Normal Transfer.
+            </p>
+          </div>
+
+          <!-- Color Swatches -->
+          <div class="lg:col-span-3 bg-slate-950/80 border border-slate-800 rounded-lg p-2">
+            <span class="text-[10px] uppercase tracking-wider text-slate-400 block mb-1">Bảng mã màu Cel-Shader (Hex)</span>
+            <div id="specColorSwatches" class="flex items-center gap-1.5 flex-wrap">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- RIGHT SIDEBAR: REAL-TIME SHADER, NORMAL & RIGGING INSPECTOR -->
+    <aside class="w-72 md:w-80 shrink-0 bg-slate-900/95 border-l border-slate-800/80 flex flex-col z-10 overflow-y-auto">
+      <div class="p-3.5 border-b border-slate-800 flex items-center justify-between">
+        <h3 class="font-display text-sm font-bold uppercase tracking-wider text-orange-400 flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+          </svg>
+          <span>Bộ Điều Khiển Shader &amp; Rig</span>
+        </h3>
+        <button onclick="resetInspector()" class="text-[11px] text-slate-400 hover:text-orange-400 underline">
+          Mặc định
+        </button>
+      </div>
+
+      <div class="p-3.5 space-y-4 flex-1">
+        <!-- 1. Render Mode Selector -->
+        <div class="space-y-1.5">
+          <label class="text-xs font-semibold text-slate-200 block">1. Chế độ Hiển thị Kỹ thuật</label>
+          <div class="grid grid-cols-1 gap-1.5">
+            <button id="modeBtnCel" onclick="setRenderMode(0)" class="px-3 py-2 rounded-lg text-xs font-medium text-left border transition flex items-center justify-between bg-orange-500/15 border-orange-500 text-orange-300">
+              <span>Anime Cel-Shader 1:1 (2 tầng sáng)</span>
+              <span class="w-2 h-2 rounded-full bg-orange-400"></span>
+            </button>
+            <button id="modeBtnNormals" onclick="setRenderMode(1)" class="px-3 py-2 rounded-lg text-xs font-medium text-left border border-slate-700/80 bg-slate-800/60 text-slate-300 hover:bg-slate-800 transition flex items-center justify-between">
+              <span>Kiểm tra Pháp tuyến (Flat Face Normals)</span>
+              <span class="w-2 h-2 rounded-full bg-slate-600"></span>
+            </button>
+            <button id="modeBtnWire" onclick="setRenderMode(2)" class="px-3 py-2 rounded-lg text-xs font-medium text-left border border-slate-700/80 bg-slate-800/60 text-slate-300 hover:bg-slate-800 transition flex items-center justify-between">
+              <span>Lưới Đa Giác (Wireframe Topology)</span>
+              <span class="w-2 h-2 rounded-full bg-slate-600"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. Dojutsu & Chakra Mode Toggle -->
+        <div class="p-3 rounded-xl bg-gradient-to-br from-slate-800/90 to-slate-900 border border-orange-500/30 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-xs font-bold text-white block">Kích hoạt Nhãn Thuật / Chakra</span>
+              <span class="text-[11px] text-slate-400">Sharingan/Rinnegan, Bạch Hào, Vĩ Thú Y</span>
+            </div>
+            <button id="btnToggleDojutsu" onclick="toggleDojutsuState()" class="px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-orange-500 text-slate-950 shadow-md shadow-orange-500/20 transition">
+              ĐANG BẬT
+            </button>
+          </div>
+
+          <div class="space-y-1">
+            <div class="flex justify-between text-[11px]">
+              <span class="text-slate-300">Cường độ Rim Light Chakra</span>
+              <span id="valRimIntensity" class="font-mono-code text-orange-400">0.65</span>
+            </div>
+            <input id="sliderRim" type="range" min="0" max="1.5" step="0.05" value="0.65" oninput="updateShaderParams()" class="w-full" />
+          </div>
+        </div>
+
+        <!-- 3. Flat Face Normals Proxy Blend -->
+        <div class="space-y-1.5 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+          <div class="flex justify-between text-xs">
+            <span class="font-semibold text-slate-200">Độ phẳng Pháp tuyến Mặt (Normal Proxy)</span>
+            <span id="valFlatNormal" class="font-mono-code text-emerald-400">85%</span>
+          </div>
+          <p class="text-[11px] text-slate-400 leading-relaxed">
+            Kéo về 0% để xem bóng đổ 3D thường (bị gãy bóng mũi/má). Kéo lên 85–100% để là phẳng pháp tuyến như hoạt hình 2D.
+          </p>
+          <input id="sliderFlatNormal" type="range" min="0" max="1" step="0.05" value="0.85" oninput="updateShaderParams()" class="w-full mt-1" />
+        </div>
+
+        <!-- 4. Inverted Hull Outline Thickness -->
+        <div class="space-y-1.5 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+          <div class="flex justify-between text-xs">
+            <span class="font-semibold text-slate-200">Độ dày Viền đen (Inverted Hull)</span>
+            <span id="valOutline" class="font-mono-code text-orange-400">0.018</span>
+          </div>
+          <input id="sliderOutline" type="range" min="0" max="0.045" step="0.002" value="0.018" oninput="updateShaderParams()" class="w-full" />
+        </div>
+
+        <!-- 5. Light Angle & Stepped Shadow Controls -->
+        <div class="space-y-2.5 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+          <div class="flex justify-between text-xs">
+            <span class="font-semibold text-slate-200">Góc Chiếu Sáng Ngang (Azimuth)</span>
+            <span id="valLightAzimuth" class="font-mono-code text-orange-400">35°</span>
+          </div>
+          <input id="sliderLightAzimuth" type="range" min="-180" max="180" step="5" value="35" oninput="updateShaderParams()" class="w-full" />
+
+          <div class="flex justify-between text-xs pt-1">
+            <span class="font-semibold text-slate-200">Góc Chiếu Sáng Cao (Elevation)</span>
+            <span id="valLightElevation" class="font-mono-code text-orange-400">40°</span>
+          </div>
+          <input id="sliderLightElevation" type="range" min="-20" max="85" step="5" value="40" oninput="updateShaderParams()" class="w-full" />
+        </div>
+
+        <!-- 6. Expression & Procedural Tail Wave -->
+        <div class="space-y-2.5 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+          <div class="flex justify-between text-xs">
+            <span class="font-semibold text-slate-200">Biểu cảm Nét mặt (BlendShape)</span>
+          </div>
+          <div class="grid grid-cols-3 gap-1">
+            <button onclick="setExpression('calm')" id="exprCalm" class="py-1.5 px-2 rounded text-[11px] font-medium bg-orange-500 text-slate-950 font-bold">Điềm tĩnh</button>
+            <button onclick="setExpression('glare')" id="exprGlare" class="py-1.5 px-2 rounded text-[11px] font-medium bg-slate-800 text-slate-300 hover:bg-slate-700">Chiến đấu</button>
+            <button onclick="setExpression('roar')" id="exprRoar" class="py-1.5 px-2 rounded text-[11px] font-medium bg-slate-800 text-slate-300 hover:bg-slate-700">Bùng nổ</button>
+          </div>
+
+          <div class="flex justify-between text-xs pt-2">
+            <span class="font-semibold text-slate-200">Tốc độ uốn đuôi Vĩ Thú / Áo choàng</span>
+            <span id="valWaveSpeed" class="font-mono-code text-orange-400">1.0x</span>
+          </div>
+          <input id="sliderWaveSpeed" type="range" min="0" max="2.5" step="0.1" value="1.0" oninput="updateShaderParams()" class="w-full" />
+        </div>
+      </div>
+
+      <!-- Prompt Export Action in Sidebar -->
+      <div class="p-3.5 border-t border-slate-800 bg-slate-950/90">
+        <button onclick="openPromptModal()" class="w-full py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-orange-500/40 text-orange-300 font-semibold text-xs flex items-center justify-center gap-2 transition">
+          <span>Xem &amp; Sao Chép Prompt Cho Nhân Vật Này</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+          </svg>
+        </button>
+      </div>
+    </aside>
+  </div>
+
+  <!-- MODAL: AI AGENT PROMPT GENERATOR & EXPORTER -->
+  <div id="promptModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700/90 rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <!-- Modal Header -->
+      <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+        <div>
+          <span class="text-[11px] font-mono-code uppercase tracking-wider text-orange-400 block">
+            Hồ Sơ Kỹ Thuật 3D Chuẩn 1:1 Hoạt Hình (CyberConnect2 / Studio Pierrot Pipeline)
+          </span>
+          <h3 class="font-display text-lg font-bold text-white mt-0.5">
+            Trình Xuất Prompt Thiết Kế 3D Cho AI Agent Khác
+          </h3>
+        </div>
+        <button onclick="closePromptModal()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center">
+          ✕
+        </button>
+      </div>
+
+      <!-- Modal Prompt Type Selector -->
+      <div class="px-5 py-3 bg-slate-900 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex flex-wrap gap-1.5">
+          <button id="promptTabCurrent" onclick="switchPromptType('current')" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-orange-500 text-slate-950">
+            Prompt Riêng Cho Mẫu Đang Chọn
+          </button>
+          <button id="promptTabMaster" onclick="switchPromptType('master')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">
+            Master Prompt Trọn Bộ (6 Nhân Vật + 10 Vĩ Thú)
+          </button>
+          <button id="promptTabBlender" onclick="switchPromptType('blender')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700">
+            Prompt Viết Code Three.js / Blender Python
+          </button>
+        </div>
+
+        <button onclick="copyPromptToClipboard()" class="px-4 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/20 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+          </svg>
+          <span id="copyBtnLabel">Sao Chép Prompt Này</span>
+        </button>
+      </div>
+
+      <!-- Modal Textarea Content -->
+      <div class="p-5 flex-1 overflow-y-auto bg-slate-950/80">
+        <textarea id="promptOutputTextarea" readonly class="w-full h-96 bg-slate-900/90 border border-slate-800 rounded-xl p-4 font-mono-code text-xs md:text-sm text-slate-200 leading-relaxed focus:outline-none focus:border-orange-500 resize-none"></textarea>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-5 py-3 border-t border-slate-800 bg-slate-900 flex items-center justify-between text-xs text-slate-400">
+        <span>Mẹo: Bạn có thể dán trực tiếp Prompt này vào Claude, ChatGPT, Cursor, hoặc 3D Generation Agent.</span>
+        <button onclick="closePromptModal()" class="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium">
+          Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPLICATION SCRIPT -->
+  <script>
+    /***************************************************************************
+     * 1. DATABASE OF 6 SHINOBI & 10 TAILED BEASTS (1:1 ANIME SPECIFICATIONS)
+     ***************************************************************************/
+    const CHARACTER_SPECS = {
+      shinobi: [
+        {
+          id: 'pain',
+          name: 'Pain (Thiên Đạo - Yahiko)',
+          badge: 'AKATSUKI • THIÊN ĐẠO',
+          subtitle: 'Rinnegan 4 vòng đồng tâm • 16 Hắc Trượng • Tóc cam 15 chóp nhọn',
+          heightRatio: '176.5 cm (1:7.5)',
+          jawAngle: '115° Sắc nhọn',
+          eyeFeature: 'Rinnegan Tím Xám',
+          topologyNote: 'Gắn chính xác 16 thanh Hắc Trượng: 6 đinh tán tròn chia 3 cặp dọc sống mũi, 2 thanh trụ dọc dưới cằm, 7 khuyên mỗi bên tai (6 vòng + 1 thanh ngang). Pháp tuyến mặt phẳng.',
+          colors: [
+            { label: 'Da sáng', hex: '#F3C9B1' },
+            { label: 'Da tối', hex: '#C4937A' },
+            { label: 'Tóc cam', hex: '#E86A24' },
+            { label: 'Rinnegan', hex: '#9B8DA6' },
+            { label: 'Hắc Trượng', hex: '#1A1A1D' },
+            { label: 'Mây Đỏ', hex: '#B81D24' }
+          ],
+          skinBase: '#F3C9B1',
+          skinShade: '#C4937A',
+          hairBase: '#E86A24',
+          hairShade: '#B04410',
+          outfitBase: '#181920',
+          outfitShade: '#0B0C10',
+          accentHex: '#B81D24',
+          rimHex: '#A855F7',
+          jawWidth: 0.72,
+          chinSharpness: 1.25
+        },
+        {
+          id: 'naruto',
+          name: 'Thế Quân CEO (Naruto Uzumaki)',
+          badge: 'HOKAGE • QUYỀN TỐI CAO',
+          subtitle: 'Tóc vàng 360° • 6 vệt râu cáo nổi 0.5mm • Mắt Cửu Vĩ Tiên Nhân',
+          heightRatio: '166.0 cm (1:7.0)',
+          jawAngle: '125° Hơi đầy trẻ trung',
+          eyeFeature: 'Lam / Cửu Vĩ Đỏ Cam',
+          topologyNote: '3 vệt râu cáo mỗi bên má dựng bằng lưới nổi 0.5mm để giữ nét ở góc nghiêng. Khớp hàm (Jaw Bone) mở rộng 1.4x chuẩn thường. Tóc chóp nhọn tỏa tròn quanh đỉnh đầu.',
+          colors: [
+            { label: 'Da sáng', hex: '#FAD1B3' },
+            { label: 'Da tối', hex: '#CF9774' },
+            { label: 'Tóc vàng', hex: '#FAD02C' },
+            { label: 'Áo cam', hex: '#F26B1D' },
+            { label: 'Mắt lam', hex: '#2B76C9' },
+            { label: 'Chakra', hex: '#FF5500' }
+          ],
+          skinBase: '#FAD1B3',
+          skinShade: '#CF9774',
+          hairBase: '#FAD02C',
+          hairShade: '#C99714',
+          outfitBase: '#F26B1D',
+          outfitShade: '#B84409',
+          accentHex: '#1F242D',
+          rimHex: '#FF6B00',
+          jawWidth: 0.84,
+          chinSharpness: 1.0
+        },
+        {
+          id: 'itachi',
+          name: 'Itachi Uchiha',
+          badge: 'UCHIHA • MANGEKYO',
+          subtitle: 'Rãnh lệ góc 35° • Mắt nửa khép • Mangekyo Sharingan & Áo Akatsuki',
+          heightRatio: '178.0 cm (1:7.5)',
+          jawAngle: '112° Thon dài (1.45)',
+          eyeFeature: 'Mangekyo Sharingan',
+          topologyNote: 'Hai đường rãnh lệ (tear-trough creases) vát chéo 35° từ khóe mắt xuống giữa má bắt buộc dựng bằng dải Line Mesh đen áp sát mặt. Mí mắt trên hạ thấp che 30% con ngươi.',
+          colors: [
+            { label: 'Da sáng', hex: '#EED0BE' },
+            { label: 'Da tối', hex: '#B8927E' },
+            { label: 'Tóc đen', hex: '#1C202B' },
+            { label: 'Sharingan', hex: '#C81D25' },
+            { label: 'Áo choàng', hex: '#16181F' },
+            { label: 'Mây Đỏ', hex: '#B81D24' }
+          ],
+          skinBase: '#EED0BE',
+          skinShade: '#B8927E',
+          hairBase: '#1C202B',
+          hairShade: '#0E1017',
+          outfitBase: '#16181F',
+          outfitShade: '#090A0F',
+          accentHex: '#C81D25',
+          rimHex: '#EF4444',
+          jawWidth: 0.68,
+          chinSharpness: 1.32
+        },
+        {
+          id: 'sakura',
+          name: 'Sakura Haruno',
+          badge: 'KONOHA • BÁCH HÀO',
+          subtitle: 'Ấn Bách Hào hình thoi tím • Tóc hồng ngắn bất đối xứng • Mắt lục bảo',
+          heightRatio: '161.0 cm (1:6.8)',
+          jawAngle: '130° Trái xoan mềm',
+          eyeFeature: 'Lục Bảo + Bách Hào Ấn',
+          topologyNote: 'Trán cao chiếm 1/3 khuôn mặt với ấn Bách Hào hình thoi (#6D4C82). Khi bật Nhãn thuật/Bách Hào, hoa văn đen lan từ trán qua má xuống cổ. Đuôi mi trên có 2 gai nhọn vểnh lên.',
+          colors: [
+            { label: 'Da sáng', hex: '#FCE0D2' },
+            { label: 'Da tối', hex: '#D6A996' },
+            { label: 'Tóc hồng', hex: '#F4A6B8' },
+            { label: 'Mắt lục', hex: '#3B9E78' },
+            { label: 'Ấn Bách Hào', hex: '#6D4C82' },
+            { label: 'Áo đỏ', hex: '#9E2B3B' }
+          ],
+          skinBase: '#FCE0D2',
+          skinShade: '#D6A996',
+          hairBase: '#F4A6B8',
+          hairShade: '#C47286',
+          outfitBase: '#9E2B3B',
+          outfitShade: '#6E1825',
+          accentHex: '#6D4C82',
+          rimHex: '#EC4899',
+          jawWidth: 0.78,
+          chinSharpness: 1.12
+        },
+        {
+          id: 'hinata',
+          name: 'Hinata Hyuga',
+          badge: 'HYUGA • BẠCH NHÃN',
+          subtitle: 'Đôi mắt Byakugan trắng tím • Gân máu thái dương • Tóc Hime-cut',
+          heightRatio: '160.0 cm (1:6.8)',
+          jawAngle: '135° Bầu bĩnh dịu dàng',
+          eyeFeature: 'Byakugan Trắng Tím',
+          topologyNote: 'Tóc Hime-cut chuẩn: mái bằng ngang lông mày, 2 lọn tóc mai cắt vuông ở cằm, tóc sau thẳng dài. Khi khai mở Bạch Nhãn, kích hoạt BlendShape gân máu nổi dọc hai bên thái dương.',
+          colors: [
+            { label: 'Da sáng', hex: '#FDF4E3' },
+            { label: 'Da tối', hex: '#D5B59C' },
+            { label: 'Tóc tím than', hex: '#2A2B4A' },
+            { label: 'Bạch Nhãn', hex: '#E2DCF0' },
+            { label: 'Áo tím nhạt', hex: '#AEA3C9' },
+            { label: 'Song Sư Quyền', hex: '#38BDF8' }
+          ],
+          skinBase: '#FDF4E3',
+          skinShade: '#D5B59C',
+          hairBase: '#2A2B4A',
+          hairShade: '#16172B',
+          outfitBase: '#AEA3C9',
+          outfitShade: '#7F739C',
+          accentHex: '#E2DCF0',
+          rimHex: '#38BDF8',
+          jawWidth: 0.86,
+          chinSharpness: 0.95
+        },
+        {
+          id: 'sasuke',
+          name: 'Sasuke Uchiha',
+          badge: 'UCHIHA • LỤC ĐẠO ÂM',
+          subtitle: 'Tóc đuôi vịt góc 45° • Mắt phải Sharingan / Mắt trái Rinnegan 6 Tomoe',
+          heightRatio: '168.0 cm (1:7.2)',
+          jawAngle: '118° Góc cạnh sắc lạnh',
+          eyeFeature: 'Sharingan + Rinnegan',
+          topologyNote: 'Đuôi mắt xếch nhẹ, vùng dưới mắt phẳng lỳ không có rãnh lệ. Tóc sau gáy gồm 7 khối chóp nhọn lớn vểnh lên góc 45°, 2 mảng tóc mái dài ôm sát gò má. Đai thừng tím + kiếm Kusanagi.',
+          colors: [
+            { label: 'Da sáng', hex: '#F5D5C3' },
+            { label: 'Da tối', hex: '#C29884' },
+            { label: 'Tóc đen xanh', hex: '#181C26' },
+            { label: 'Đai thừng tím', hex: '#6B5B95' },
+            { label: 'Sharingan', hex: '#C81D25' },
+            { label: 'Rinnegan', hex: '#9B8DA6' }
+          ],
+          skinBase: '#F5D5C3',
+          skinShade: '#C29884',
+          hairBase: '#181C26',
+          hairShade: '#0B0D13',
+          outfitBase: '#D8DCE6',
+          outfitShade: '#9AA2B8',
+          accentHex: '#6B5B95',
+          rimHex: '#6366F1',
+          jawWidth: 0.73,
+          chinSharpness: 1.24
+        }
+      ],
+      bijuu: [
+        {
+          id: 'shukaku',
+          tails: 1,
+          name: 'Nhất Vĩ Shukaku',
+          badge: '1 ĐUÔI • ICHIBI',
+          subtitle: 'Lửng chó (Tanuki) bằng cát vàng • Hoa văn nguyền ấn xanh tím • 1 đuôi gai',
+          heightRatio: 'Khổng lồ (Tỷ lệ 1:3.5)',
+          jawAngle: 'Hàm rộng răng cưa',
+          eyeFeature: 'Đồng tử Sao 4 Cánh Đen',
+          topologyNote: 'Thân hình cầu béo phệ, 4 chi ngắn mập, 1 cái đuôi khổng lồ gồm nhiều đốt gai tròn xếp chồng. Hoa văn nguyền ấn xanh tím (#2E3B6E) uốn lượn khắp thân và mặt.',
+          colors: [
+            { label: 'Cát vàng', hex: '#D2B48C' },
+            { label: 'Bóng cát', hex: '#9C7E54' },
+            { label: 'Nguyền ấn', hex: '#2E3B6E' },
+            { label: 'Mắt vàng', hex: '#FACC15' }
+          ],
+          baseHex: '#D2B48C',
+          shadeHex: '#9C7E54',
+          accentHex: '#2E3B6E',
+          rimHex: '#EAB308'
+        },
+        {
+          id: 'matatabi',
+          tails: 2,
+          name: 'Nhị Vĩ Matatabi',
+          badge: '2 ĐUÔI • NIBI',
+          subtitle: 'Mèo yêu quái lửa xanh lam • 2 lớp Mesh lửa cuộn sóng • Mắt dị sắc',
+          heightRatio: 'Mảnh khảnh (Feline Rig)',
+          jawAngle: 'Hàm mèo sắc gọn',
+          eyeFeature: 'Phải Vàng / Trái Lục',
+          topologyNote: 'Dựng bằng 2 lớp Mesh lồng nhau: lõi xanh đen (#0A1931) và vỏ ngoài dùng Vertex Displacement lửa xanh (#00BFFF -> #1034A6). Mắt phải vàng, mắt trái xanh lục.',
+          colors: [
+            { label: 'Lửa sáng', hex: '#00BFFF' },
+            { label: 'Lửa đậm', hex: '#1034A6' },
+            { label: 'Mắt phải', hex: '#FFD700' },
+            { label: 'Mắt trái', hex: '#00E676' }
+          ],
+          baseHex: '#00BFFF',
+          shadeHex: '#1034A6',
+          accentHex: '#0A1931',
+          rimHex: '#38BDF8'
+        },
+        {
+          id: 'isobu',
+          tails: 3,
+          name: 'Tam Vĩ Isobu',
+          badge: '3 ĐUÔI • SANBI',
+          subtitle: 'Rùa giáp xác gai sừng • Tay người có màng bơi • 3 đuôi tôm có vây',
+          heightRatio: 'Khối mai tròn nặng',
+          jawAngle: 'Hàm bọc giáp sừng',
+          eyeFeature: 'Mắt phải nhắm / Trái đỏ',
+          topologyNote: 'Mai rùa lồi nhiều gai sừng xám nâu che lớp cơ thịt đỏ sẫm bên dưới. 2 tay trước có 5 ngón màng bơi, 3 đuôi dẹt như đuôi tôm. Mắt phải luôn nhắm, mắt trái đỏ-vàng.',
+          colors: [
+            { label: 'Giáp mai', hex: '#7A7571' },
+            { label: 'Cơ đỏ sẫm', hex: '#8C2D38' },
+            { label: 'Bóng giáp', hex: '#4A4643' },
+            { label: 'Mắt đỏ', hex: '#EF4444' }
+          ],
+          baseHex: '#7A7571',
+          shadeHex: '#4A4643',
+          accentHex: '#8C2D38',
+          rimHex: '#F43F5E'
+        },
+        {
+          id: 'songoku',
+          tails: 4,
+          name: 'Tứ Vĩ Son Goku',
+          badge: '4 ĐUÔI • YONBI',
+          subtitle: 'Khỉ đột lông đỏ thẫm • Da xanh lục • 2 sừng vương miện & Miệng dung nham',
+          heightRatio: 'Khung Gorilla ngực lớn',
+          jawAngle: 'Hàm rộng 2 nanh dài',
+          eyeFeature: 'Mắt vàng + Miệng Lửa',
+          topologyNote: 'Lồng ngực và bắp tay khổng lồ, lông đỏ thẫm (#8B1E1E), mặt và ngực xanh lục xám. Trán có 2 sừng vàng uốn cong, khoang miệng phát sáng Emission màu dung nham, 4 đuôi gai.',
+          colors: [
+            { label: 'Lông đỏ', hex: '#8B1E1E' },
+            { label: 'Da lục xám', hex: '#526B56' },
+            { label: 'Sừng vàng', hex: '#EAB308' },
+            { label: 'Dung nham', hex: '#FF4500' }
+          ],
+          baseHex: '#8B1E1E',
+          shadeHex: '#541111',
+          accentHex: '#526B56',
+          rimHex: '#FF4500'
+        },
+        {
+          id: 'kokuo',
+          tails: 5,
+          name: 'Ngũ Vĩ Kokuo',
+          badge: '5 ĐUÔI • GOBI',
+          subtitle: 'Thân ngựa trắng thuần chủng • Đầu cá heo 4 sừng thoát hơi nước • 5 đuôi',
+          heightRatio: 'Khung Quadruped thanh thoát',
+          jawAngle: 'Đầu cá heo thuôn',
+          eyeFeature: 'Mắt lam viền xanh đen',
+          topologyNote: 'Lai giữa thân ngựa trắng có móng guốc và đầu cá heo vuốt ngược thành 4 chiếc sừng (2 sừng dài trên, 2 sừng ngắn dưới) thoát hơi nước. 5 chiếc đuôi trắng dài mượt.',
+          colors: [
+            { label: 'Trắng sứ', hex: '#F5F7FA' },
+            { label: 'Bóng trắng', hex: '#C5D1E0' },
+            { label: 'Viền mắt', hex: '#1E293B' },
+            { label: 'Mắt lam', hex: '#38BDF8' }
+          ],
+          baseHex: '#F5F7FA',
+          shadeHex: '#C5D1E0',
+          accentHex: '#1E293B',
+          rimHex: '#38BDF8'
+        },
+        {
+          id: 'saiken',
+          tails: 6,
+          name: 'Lục Vĩ Saiken',
+          badge: '6 ĐUÔI • ROKUBI',
+          subtitle: 'Sên khổng lồ đứng thẳng • Chất liệu SSS bóng ướt trắng hồng • 6 đuôi mập',
+          heightRatio: 'Thân mềm (Soft-Body)',
+          jawAngle: 'Miệng tròn không hàm',
+          eyeFeature: '2 Râu Cảm Giác Tròn',
+          topologyNote: 'Bụng dưới phình to, 2 tay ngắn mập, 2 sừng cảm giác mắt trên đỉnh đầu và 6 đuôi mập trơn láng. Cần bật Subsurface Scattering (SSS) và độ bóng ướt (Specular) cao.',
+          colors: [
+            { label: 'Trắng hồng', hex: '#F2E6EA' },
+            { label: 'Bóng SSS', hex: '#C9A9B8' },
+            { label: 'Đầu râu', hex: '#9D7A8C' }
+          ],
+          baseHex: '#F2E6EA',
+          shadeHex: '#C9A9B8',
+          accentHex: '#9D7A8C',
+          rimHex: '#F472B6'
+        },
+        {
+          id: 'chomei',
+          tails: 7,
+          name: 'Thất Vĩ Chomei',
+          badge: '7 ĐUÔI • NANABI',
+          subtitle: 'Bọ cánh cứng giáp xanh lục • 6 cánh côn trùng màu cam + 1 đuôi bụng',
+          heightRatio: 'Khung Côn Trùng Giáp Xác',
+          jawAngle: 'Giáp đầu có sừng dài',
+          eyeFeature: 'Mắt Kép Cam Phát Sáng',
+          topologyNote: 'Thân bọc giáp xác màu xanh lục kim loại (#3E6B64), đầu có sừng tê giác dài. Hệ thống 7 đuôi gồm 6 chiếc cánh côn trùng màu cam phát sáng + 1 chiếc đuôi thật màu lục ở chóp bụng.',
+          colors: [
+            { label: 'Giáp lục', hex: '#3E6B64' },
+            { label: 'Bóng giáp', hex: '#23423D' },
+            { label: 'Cánh cam', hex: '#F97316' },
+            { label: 'Mắt cam', hex: '#FB923C' }
+          ],
+          baseHex: '#3E6B64',
+          shadeHex: '#23423D',
+          accentHex: '#F97316',
+          rimHex: '#FB923C'
+        },
+        {
+          id: 'gyuki',
+          tails: 8,
+          name: 'Bát Vĩ Gyuki',
+          badge: '8 ĐUÔI • HACHIBI',
+          subtitle: 'Thân trên trâu khổng lồ (sừng trái cụt) • 8 xúc tu bạch tuộc có giác hút',
+          heightRatio: 'Khung Ushi-Oni Cơ Bắp',
+          jawAngle: 'Hàm vuông (sừng cằm gãy)',
+          eyeFeature: 'Mắt Trắng Không Đồng Tử',
+          topologyNote: 'Thân trên là trâu cơ bắp màu hồng nâu (#9C5B5B), đầu có 4 sừng (sừng trên bên trái bị chém cụt phẳng, sừng dưới cằm bị gãy). Thân dưới gồm 8 xúc tu bạch tuộc uốn lượn.',
+          colors: [
+            { label: 'Da hồng nâu', hex: '#9C5B5B' },
+            { label: 'Bóng cơ', hex: '#6B3838' },
+            { label: 'Sừng vàng xám', hex: '#D6C7B2' },
+            { label: 'Giác hút', hex: '#C48B8B' }
+          ],
+          baseHex: '#9C5B5B',
+          shadeHex: '#6B3838',
+          accentHex: '#D6C7B2',
+          rimHex: '#EF4444'
+        },
+        {
+          id: 'kurama',
+          tails: 9,
+          name: 'Cửu Vĩ Kurama',
+          badge: '9 ĐUÔI • KYUUBI',
+          subtitle: 'Hồ ly cam rực rỡ • Khung vai người + 5 ngón móng vuốt • 9 đuôi lớn',
+          heightRatio: 'Bán Nhân Hồ Ly Khổng Lồ',
+          jawAngle: 'Mõm cáo dài viền đen',
+          eyeFeature: 'Mắt Đỏ Con Ngươi Dọc',
+          topologyNote: 'Kết hợp giải phẫu cáo và lồng ngực/vai người, bàn tay 5 ngón gắn móng vuốt đen. Tai cáo dài vát góc 25°, viền mắt đen kéo từ mũi lên gốc tai, 9 chiếc đuôi cam lớn phồng ở giữa.',
+          colors: [
+            { label: 'Lông cam', hex: '#E05A19' },
+            { label: 'Bóng lông', hex: '#9E3608' },
+            { label: 'Viền đen', hex: '#141418' },
+            { label: 'Mắt đỏ', hex: '#DC2626' }
+          ],
+          baseHex: '#E05A19',
+          shadeHex: '#9E3608',
+          accentHex: '#141418',
+          rimHex: '#FF4500'
+        },
+        {
+          id: 'juubi',
+          tails: 10,
+          name: 'Thập Vĩ Juubi',
+          badge: '10 ĐUÔI • THẦN THỤ',
+          subtitle: 'Quái vật gỗ đá bất đối xứng • 1 mắt Rinne Sharingan 9 Tomoe • 10 đuôi bàn tay',
+          heightRatio: 'Khổng lồ Bất đối xứng',
+          jawAngle: 'Miệng rộng răng nhọn',
+          eyeFeature: '1 Mắt Rinne Sharingan',
+          topologyNote: 'Chất liệu vỏ cây khô và đá xám nâu (#6E5D53), lưng mọc hàng gai xoắn ốc như nụ Thần Thụ. Đầu có 1 con mắt độc nhất Rinne Sharingan (4 vòng + 9 Tomoe), 10 đuôi kết thúc bằng hình bàn tay người.',
+          colors: [
+            { label: 'Vỏ gỗ đá', hex: '#6E5D53' },
+            { label: 'Bóng đá', hex: '#423730' },
+            { label: 'Rinne Sharingan', hex: '#DC2626' },
+            { label: 'Gai Thần Thụ', hex: '#4F3E34' }
+          ],
+          baseHex: '#6E5D53',
+          shadeHex: '#423730',
+          accentHex: '#DC2626',
+          rimHex: '#DC2626'
+        }
+      ]
+    };
+
+    /***************************************************************************
+     * 2. STATE MANAGEMENT
+     ***************************************************************************/
+    let currentCategory = 'shinobi';
+    let currentEntityId = 'pain';
+    let currentRenderMode = 0; // 0: Cel-Shader, 1: Flat Normals Inspector, 2: Wireframe
+    let dojutsuActive = true;
+    let currentExpression = 'calm';
+    let currentPromptTab = 'current';
+
+    // Three.js Globals
+    let scene, camera, renderer, clock;
+    let rootGroup, characterMeshGroup, auraGroup;
+    let animatedTailChains = [];
+    let animatedEyes = [];
+    let animatedCloakOrHair = [];
+    let dojutsuDependentMeshes = [];
+    let allCelMaterials = [];
+    let allOutlineMaterials = [];
+    let browMeshes = [];
+    let jawGroup = null;
+
+    // Custom Orbit Camera State
+    const camState = {
+      theta: 0.25,
+      phi: 1.32,
+      radius: 5.4,
+      target: new THREE.Vector3(0, 1.35, 0),
+      targetTheta: 0.25,
+      targetPhi: 1.32,
+      targetRadius: 5.4,
+      targetLookAt: new THREE.Vector3(0, 1.35, 0),
+      isDragging: false,
+      isPanning: false,
+      prevX: 0,
+      prevY: 0
+    };
+
+    /***************************************************************************
+     * 3. CUSTOM GLSL ANIME CEL-SHADER & INVERTED HULL OUTLINE SHADER
+     ***************************************************************************/
+    const ANIME_VERTEX_SHADER = `
+      varying vec3 vNormal;
+      varying vec3 vWorldPos;
+      varying vec3 vLocalPos;
+      varying vec3 vViewDir;
+      varying vec2 vUv;
+
+      void main() {
+        vUv = uv;
+        vLocalPos = position;
+        vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+        vWorldPos = worldPosition.xyz;
+        vec4 mvPosition = viewMatrix * worldPosition;
+        vViewDir = normalize(-mvPosition.xyz);
+        vNormal = normalize(normalMatrix * normal);
+        gl_Position = projectionMatrix * mvPosition;
+      }
+    `;
+
+    const ANIME_FRAGMENT_SHADER = `
+      uniform vec3 uBaseColor;
+      uniform vec3 uShadeColor;
+      uniform vec3 uAccentColor;
+      uniform vec3 uLightDir;
+      uniform vec3 uRimColor;
+      uniform float uRimIntensity;
+      uniform float uFlatNormalMix;
+      uniform int uRenderMode;
+      uniform int uPatternType; // 0: none, 1: Akatsuki clouds, 2: Shukaku cursed seal, 3: Matatabi blue fire
+      uniform float uTime;
+      uniform sampler2D uMap;
+      uniform bool uUseMap;
+
+      varying vec3 vNormal;
+      varying vec3 vWorldPos;
+      varying vec3 vLocalPos;
+      varying vec3 vViewDir;
+      varying vec2 vUv;
+
+      void main() {
+        // Compute Proxy Flat Face Normal (simulates spherical Normal Transfer for anime faces)
+        vec3 proxyNormal = normalize(vec3(vLocalPos.x * 0.45, vLocalPos.y * 0.25, 1.0));
+        vec3 blendedNormal = normalize(mix(vNormal, proxyNormal, uFlatNormalMix));
+
+        // Mode 1: Normal Inspector
+        if (uRenderMode == 1) {
+          gl_FragColor = vec4(blendedNormal * 0.5 + 0.5, 1.0);
+          return;
+        }
+
+        vec3 baseCol = uBaseColor;
+        vec3 shadeCol = uShadeColor;
+
+        if (uUseMap) {
+          vec4 texCol = texture2D(uMap, vUv);
+          baseCol = texCol.rgb;
+          shadeCol = texCol.rgb * 0.72;
+        }
+
+        // Procedural Pattern Overlays (Akatsuki Red Clouds, Shukaku Tattoos, Matatabi Flames)
+        if (uPatternType == 1) {
+          // Akatsuki red cloud motif with white outline
+          float p1 = sin(vLocalPos.x * 4.5 + 1.2) * cos(vLocalPos.y * 3.8 + vLocalPos.z * 3.0);
+          if (p1 > 0.46) {
+            baseCol = uAccentColor;
+            shadeCol = uAccentColor * 0.7;
+          } else if (p1 > 0.41) {
+            baseCol = vec3(0.95);
+            shadeCol = vec3(0.75);
+          }
+        } else if (uPatternType == 2) {
+          // Shukaku cursed seal wavy bands
+          float wave = sin(vLocalPos.y * 6.5 + sin(vLocalPos.x * 5.0) * 1.5);
+          if (wave > 0.58) {
+            baseCol = uAccentColor;
+            shadeCol = uAccentColor * 0.65;
+          }
+        } else if (uPatternType == 3) {
+          // Matatabi swirling blue hellfire
+          float fire = sin(vLocalPos.y * 9.0 - uTime * 4.5 + sin(vLocalPos.x * 8.0));
+          baseCol = mix(uBaseColor, vec3(0.75, 0.96, 1.0), smoothstep(0.3, 0.8, fire));
+          shadeCol = mix(uShadeColor, uAccentColor, smoothstep(-0.5, 0.2, fire));
+        }
+
+        // 2-Tone Stepped Anime Cel-Shading
+        float NdotL = dot(blendedNormal, normalize(uLightDir));
+        float toonStep = smoothstep(-0.025, 0.025, NdotL);
+        vec3 finalColor = mix(shadeCol, baseCol, toonStep);
+
+        // Crisp Stepped Anime Rim Light (Chakra Aura / Backlight)
+        float rimDot = 1.0 - max(dot(normalize(vViewDir), vNormal), 0.0);
+        float rimMask = smoothstep(0.68, 0.73, rimDot * max(0.25, NdotL + 0.35));
+        finalColor += uRimColor * rimMask * uRimIntensity;
+
+        gl_FragColor = vec4(finalColor, 1.0);
+      }
+    `;
+
+    const OUTLINE_VERTEX_SHADER = `
+      uniform float uOutlineThickness;
+      uniform float uWeight;
+
+      void main() {
+        vec3 displaced = position + normal * (uOutlineThickness * uWeight);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(displaced, 1.0);
+      }
+    `;
+
+    const OUTLINE_FRAGMENT_SHADER = `
+      uniform vec3 uOutlineColor;
+      void main() {
+        gl_FragColor = vec4(uOutlineColor, 1.0);
+      }
+    `;
+
+    /***************************************************************************
+     * 4. MATERIAL & PROCEDURAL TEXTURE HELPERS
+     ***************************************************************************/
+    function getLightDirectionVector() {
+      const azDeg = parseFloat(document.getElementById('sliderLightAzimuth')?.value || 35);
+      const elDeg = parseFloat(document.getElementById('sliderLightElevation')?.value || 40);
+      const az = THREE.MathUtils.degToRad(azDeg);
+      const el = THREE.MathUtils.degToRad(elDeg);
+      return new THREE.Vector3(
+        Math.cos(el) * Math.sin(az),
+        Math.sin(el),
+        Math.cos(el) * Math.cos(az)
+      ).normalize();
+    }
+
+    function createCelMesh(geometry, opts = {}) {
+      const outlineThickness = parseFloat(document.getElementById('sliderOutline')?.value || 0.018);
+      const rimIntensity = dojutsuActive ? parseFloat(document.getElementById('sliderRim')?.value || 0.65) : 0.1;
+      const flatNormalSlider = parseFloat(document.getElementById('sliderFlatNormal')?.value || 0.85);
+
+      const celMat = new THREE.ShaderMaterial({
+        vertexShader: ANIME_VERTEX_SHADER,
+        fragmentShader: ANIME_FRAGMENT_SHADER,
+        wireframe: currentRenderMode === 2,
+        uniforms: {
+          uBaseColor: { value: new THREE.Color(opts.baseColor || '#ffffff') },
+          uShadeColor: { value: new THREE.Color(opts.shadeColor || '#b0b0b0') },
+          uAccentColor: { value: new THREE.Color(opts.accentColor || '#ff0000') },
+          uLightDir: { value: getLightDirectionVector() },
+          uRimColor: { value: new THREE.Color(opts.rimColor || '#ff6600') },
+          uRimIntensity: { value: opts.forceRim ?? rimIntensity },
+          uFlatNormalMix: { value: opts.isFace ? flatNormalSlider : 0.0 },
+          uRenderMode: { value: currentRenderMode },
+          uPatternType: { value: opts.patternType || 0 },
+          uTime: { value: 0 },
+          uMap: { value: opts.map || null },
+          uUseMap: { value: !!opts.map }
+        }
+      });
+      celMat.userData = { isFace: !!opts.isFace };
+      allCelMaterials.push(celMat);
+
+      const mesh = new THREE.Mesh(geometry, celMat);
+
+      if (opts.outline !== false) {
+        const outMat = new THREE.ShaderMaterial({
+          vertexShader: OUTLINE_VERTEX_SHADER,
+          fragmentShader: OUTLINE_FRAGMENT_SHADER,
+          side: THREE.BackSide,
+          uniforms: {
+            uOutlineThickness: { value: outlineThickness },
+            uWeight: { value: opts.outlineWeight ?? 1.0 },
+            uOutlineColor: { value: new THREE.Color(opts.outlineColor || '#101218') }
+          }
+        });
+        allOutlineMaterials.push(outMat);
+        const outlineMesh = new THREE.Mesh(geometry, outMat);
+        outlineMesh.name = 'outlinePass';
+        mesh.add(outlineMesh);
+      }
+
+      return mesh;
+    }
+
+    // Generate Procedural Eye Canvas Texture (Rinnegan, Sharingan, Byakugan, Sage, etc.)
+    function createDojutsuEyeTexture(type) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      const cx = 128, cy = 128;
+
+      // Sclera background
+      ctx.fillStyle = (type === 'rinnegan' || type === 'rinnegan_tomoe') ? '#9B8DA6'
+                    : (type === 'rinne_sharingan') ? '#DC2626'
+                    : (type === 'shukaku') ? '#111318'
+                    : '#F8FAFC';
+      ctx.fillRect(0, 0, 256, 256);
+
+      if (type === 'rinnegan' || type === 'rinnegan_tomoe' || type === 'rinne_sharingan') {
+        // Concentric ripple rings
+        const rings = [24, 48, 74, 102];
+        ctx.strokeStyle = '#18151C';
+        ctx.lineWidth = 5;
+        rings.forEach(r => {
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.stroke();
+        });
+        // Central pupil
+        ctx.fillStyle = '#141218';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (type === 'rinnegan_tomoe' || type === 'rinne_sharingan') {
+          const ringList = type === 'rinne_sharingan' ? [48, 74, 102] : [48, 74];
+          ringList.forEach(r => {
+            for (let i = 0; i < 3; i++) {
+              const ang = (i * Math.PI * 2) / 3 - Math.PI / 2;
+              const tx = cx + Math.cos(ang) * r;
+              const ty = cy + Math.sin(ang) * r;
+              ctx.fillStyle = '#141218';
+              ctx.beginPath();
+              ctx.arc(tx, ty, 6.5, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          });
+        }
+      } else if (type === 'sharingan' || type === 'mangekyo') {
+        // Red iris
+        ctx.fillStyle = '#D91C24';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 82, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = '#161215';
+        ctx.stroke();
+
+        if (type === 'mangekyo') {
+          // Itachi / Sasuke Mangekyo 3 curved blades
+          ctx.fillStyle = '#121014';
+          for (let i = 0; i < 3; i++) {
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate((i * Math.PI * 2) / 3);
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.quadraticCurveTo(38, -28, 0, -76);
+            ctx.quadraticCurveTo(-22, -32, 0, 0);
+            ctx.fill();
+            ctx.restore();
+          }
+          ctx.fillStyle = '#D91C24';
+          ctx.beginPath();
+          ctx.arc(cx, cy, 13, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // Standard 3-Tomoe Sharingan
+          ctx.strokeStyle = '#52090C';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(cx, cy, 48, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.fillStyle = '#141013';
+          ctx.beginPath();
+          ctx.arc(cx, cy, 16, 0, Math.PI * 2);
+          ctx.fill();
+          for (let i = 0; i < 3; i++) {
+            const ang = (i * Math.PI * 2) / 3;
+            const tx = cx + Math.cos(ang) * 48;
+            const ty = cy + Math.sin(ang) * 48;
+            ctx.beginPath();
+            ctx.arc(tx, ty, 8.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      } else if (type === 'byakugan') {
+        // Lavender-white pupilless iris with delicate radial lines
+        const grad = ctx.createRadialGradient(cx, cy, 10, cx, cy, 85);
+        grad.addColorStop(0, '#F3EFFB');
+        grad.addColorStop(0.75, '#D7CEEC');
+        grad.addColorStop(1, '#9E91BD');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 84, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(130, 115, 165, 0.35)';
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 16; i++) {
+          const a = (i * Math.PI * 2) / 16;
+          ctx.beginPath();
+          ctx.moveTo(cx + Math.cos(a) * 22, cy + Math.sin(a) * 22);
+          ctx.lineTo(cx + Math.cos(a) * 80, cy + Math.sin(a) * 80);
+          ctx.stroke();
+        }
+      } else if (type === 'kurama_sage' || type === 'kurama_eye') {
+        // Fiery orange/red iris with vertical slit
+        ctx.fillStyle = type === 'kurama_eye' ? '#DC2626' : '#F97316';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 84, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#141215';
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, 12, 66, 0, 0, Math.PI * 2);
+        ctx.fill();
+        if (type === 'kurama_sage') {
+          ctx.fillRect(cx - 56, cy - 11, 112, 22);
+        }
+      } else if (type === 'shukaku') {
+        // Yellow iris + black 4-pointed star pupil
+        ctx.fillStyle = '#FACC15';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 82, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#111318';
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - 48);
+        ctx.lineTo(cx + 15, cy - 15);
+        ctx.lineTo(cx + 48, cy);
+        ctx.lineTo(cx + 15, cy + 15);
+        ctx.lineTo(cx, cy + 48);
+        ctx.lineTo(cx - 15, cy + 15);
+        ctx.lineTo(cx - 48, cy);
+        ctx.lineTo(cx - 15, cy - 15);
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        // Standard Anime Iris (Blue for Naruto, Emerald Green for Sakura, etc.)
+        const color = type === 'sakura' ? '#3B9E78' : type === 'blue' ? '#2B76C9' : type === 'yellow' ? '#EAB308' : '#1F2937';
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 80, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#111827';
+        ctx.lineWidth = 6;
+        ctx.stroke();
+        ctx.fillStyle = '#0F172A';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 32, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Crisp Anime Eye Specular Highlight
+      ctx.fillStyle = 'rgba(255,255,255,0.92)';
+      ctx.beginPath();
+      ctx.arc(cx - 28, cy - 28, 16, 0, Math.PI * 2);
+      ctx.fill();
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.needsUpdate = true;
+      return texture;
+    }
+
+    /***************************************************************************
+     * 5. PROCEDURAL SHINOBI BUILDER (6 MAIN CHARACTERS)
+     ***************************************************************************/
+    function buildShinobiModel(spec) {
+      const group = new THREE.Group();
+      const id = spec.id;
+
+      // --- A. HEAD & ANIME JAWLINE TOPOLOGY ---
+      const headGroup = new THREE.Group();
+      headGroup.position.set(0, 1.92, 0);
+      group.add(headGroup);
+
+      const headGeo = new THREE.SphereGeometry(0.46, 32, 28);
+      const pos = headGeo.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        let x = pos.getX(i);
+        let y = pos.getY(i);
+        let z = pos.getZ(i);
+
+        // Taper lower face into anime chin based on character's jawWidth & chinSharpness
+        if (y < 0) {
+          const factor = Math.abs(y) / 0.46;
+          const taperX = 1.0 - factor * (0.58 / spec.jawWidth) * 0.55;
+          x *= Math.max(0.22, taperX);
+          z *= 1.0 - factor * 0.18;
+          if (y < -0.25) {
+            y *= spec.chinSharpness * 0.96;
+            z += factor * 0.06; // subtle forward anime chin point
+          }
+        }
+        // Flatten front cheek plane slightly for clean 2D anime lighting
+        if (z > 0.15) {
+          z = 0.15 + (z - 0.15) * 0.78;
+        }
+        pos.setXYZ(i, x, y, z);
+      }
+      headGeo.computeVertexNormals();
+
+      const headMesh = createCelMesh(headGeo, {
+        baseColor: spec.skinBase,
+        shadeColor: spec.skinShade,
+        rimColor: spec.rimHex,
+        isFace: true,
+        outlineWeight: 0.65
+      });
+      headGroup.add(headMesh);
+
+      // Sharp Anime Nose Bridge
+      const noseGeo = new THREE.ConeGeometry(0.048, 0.16, 4);
+      noseGeo.rotateX(Math.PI * 0.42);
+      const noseMesh = createCelMesh(noseGeo, {
+        baseColor: spec.skinBase,
+        shadeColor: spec.skinShade,
+        rimColor: spec.rimHex,
+        isFace: true,
+        outlineWeight: 0.35
+      });
+      noseMesh.position.set(0, -0.04, 0.41);
+      headGroup.add(noseMesh);
+
+      // Anime Ears
+      [-1, 1].forEach(side => {
+        const earGeo = new THREE.BoxGeometry(0.08, 0.22, 0.12);
+        const earMesh = createCelMesh(earGeo, {
+          baseColor: spec.skinBase,
+          shadeColor: spec.skinShade,
+          rimColor: spec.rimHex,
+          isFace: true,
+          outlineWeight: 0.5
+        });
+        earMesh.position.set(side * 0.43, -0.03, -0.02);
+        earMesh.rotation.z = side * -0.15;
+        headGroup.add(earMesh);
+      });
+
+      // Mouth / Jaw Expression Line
+      jawGroup = new THREE.Group();
+      jawGroup.position.set(0, -0.24, 0.365);
+      const mouthLine = new THREE.Mesh(
+        new THREE.BoxGeometry(0.14, 0.016, 0.02),
+        new THREE.MeshBasicMaterial({ color: 0x2a1818 })
+      );
+      jawGroup.add(mouthLine);
+      headGroup.add(jawGroup);
+
+      // --- B. EYES, EYELASHES & DOJUTSU ---
+      [-1, 1].forEach(side => {
+        let eyeType = 'blue';
+        if (id === 'pain') eyeType = 'rinnegan';
+        else if (id === 'naruto') eyeType = dojutsuActive ? 'kurama_sage' : 'blue';
+        else if (id === 'itachi') eyeType = dojutsuActive ? 'mangekyo' : 'sharingan';
+        else if (id === 'sakura') eyeType = 'sakura';
+        else if (id === 'hinata') eyeType = 'byakugan';
+        else if (id === 'sasuke') {
+          eyeType = dojutsuActive ? (side === -1 ? 'mangekyo' : 'rinnegan_tomoe') : 'sharingan';
+        }
+
+        const eyeTex = createDojutsuEyeTexture(eyeType);
+        const eyeGeo = new THREE.SphereGeometry(0.095, 20, 20);
+        eyeGeo.scale(1.15, 0.88, 0.35);
+        const eyeMat = new THREE.MeshBasicMaterial({ map: eyeTex });
+        const eyeMesh = new THREE.Mesh(eyeGeo, eyeMat);
+        eyeMesh.position.set(side * 0.165, 0.03, 0.365);
+        eyeMesh.rotation.y = side * 0.16;
+        headGroup.add(eyeMesh);
+        animatedEyes.push({ mesh: eyeMesh, canSpin: (eyeType === 'mangekyo' || eyeType === 'sharingan') });
+
+        // Upper Eyelash Line (Crisp black anime lash)
+        const lashGeo = new THREE.BoxGeometry(0.19, id === 'itachi' ? 0.042 : 0.028, 0.04);
+        const lashMesh = new THREE.Mesh(lashGeo, new THREE.MeshBasicMaterial({ color: 0x111216 }));
+        lashMesh.position.set(side * 0.165, id === 'itachi' ? 0.068 : 0.085, 0.388);
+        lashMesh.rotation.z = side * (id === 'sasuke' ? 0.14 : id === 'hinata' ? -0.06 : 0.06);
+        headGroup.add(lashMesh);
+
+        // Sakura's signature outer winged eyelashes
+        if (id === 'sakura') {
+          const wingGeo = new THREE.ConeGeometry(0.018, 0.06, 4);
+          const wingMesh = new THREE.Mesh(wingGeo, new THREE.MeshBasicMaterial({ color: 0x111216 }));
+          wingMesh.position.set(side * 0.255, 0.095, 0.37);
+          wingMesh.rotation.z = side * -0.9;
+          headGroup.add(wingMesh);
+        }
+
+        // Eyebrow
+        const browColor = id === 'naruto' ? 0xd99b16 : id === 'pain' ? 0xc85214 : id === 'sakura' ? 0xc47286 : 0x14161f;
+        const browGeo = new THREE.BoxGeometry(0.19, 0.026, 0.035);
+        const browMesh = new THREE.Mesh(browGeo, new THREE.MeshBasicMaterial({ color: browColor }));
+        const baseRotZ = side * (id === 'pain' || id === 'sasuke' ? -0.22 : -0.08);
+        browMesh.position.set(side * 0.165, 0.155, 0.39);
+        browMesh.rotation.z = baseRotZ;
+        browMesh.userData = { side, baseY: 0.155, baseRotZ };
+        headGroup.add(browMesh);
+        browMeshes.push(browMesh);
+      });
+
+      // --- C. CHARACTER-SPECIFIC FACIAL FEATURES & HAIR ---
+      if (id === 'pain') {
+        // 16 Black Chakra Receivers (Hắc Trượng):
+        const rodMat = new THREE.MeshStandardMaterial({ color: 0x151519, roughness: 0.25, metalness: 0.8 });
+        // 1) 6 studs (3 pairs) along the nose bridge
+        for (let row = 0; row < 3; row++) {
+          [-1, 1].forEach(side => {
+            const stud = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.03, 8), rodMat);
+            stud.rotation.z = Math.PI / 2;
+            stud.position.set(side * 0.036, 0.03 - row * 0.038, 0.435 + row * 0.01);
+            headGroup.add(stud);
+          });
+        }
+        // 2) 2 vertical black rods under the lower lip on the chin
+        [-1, 1].forEach(side => {
+          const chinRod = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.013, 0.075, 8), rodMat);
+          chinRod.position.set(side * 0.038, -0.31, 0.375);
+          headGroup.add(chinRod);
+        });
+        // 3) 7 ear piercings per ear (6 studs along outer helix + 1 horizontal bar through earlobe)
+        [-1, 1].forEach(side => {
+          for (let k = 0; k < 6; k++) {
+            const earStud = new THREE.Mesh(new THREE.TorusGeometry(0.018, 0.005, 6, 12), rodMat);
+            earStud.position.set(side * 0.47, 0.07 - k * 0.032, -0.02);
+            headGroup.add(earStud);
+          }
+          const earBar = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.13, 8), rodMat);
+          earBar.rotation.z = Math.PI / 2;
+          earBar.position.set(side * 0.46, -0.14, -0.01);
+          headGroup.add(earBar);
+        });
+
+        // Amegakure Forehead Protector
+        addHeadband(headGroup, 0.21, '#333842', '#94A3B8', 'rain_scratched');
+
+        // 15 Spiky Orange Hair Cones swept upward & back
+        for (let i = 0; i < 15; i++) {
+          const angle = (i / 15) * Math.PI * 1.6 - Math.PI * 0.8;
+          const ring = i % 2 === 0 ? 0.28 : 0.16;
+          const spikeGeo = new THREE.ConeGeometry(0.14, 0.56, 5);
+          const spike = createCelMesh(spikeGeo, {
+            baseColor: spec.hairBase,
+            shadeColor: spec.hairShade,
+            rimColor: spec.rimHex,
+            outlineWeight: 0.85
+          });
+          spike.position.set(Math.sin(angle) * ring, 0.46 + (i % 3) * 0.06, Math.cos(angle) * ring - 0.08);
+          spike.rotation.x = -0.38 - (i % 3) * 0.12;
+          spike.rotation.z = -Math.sin(angle) * 0.48;
+          headGroup.add(spike);
+        }
+      } else if (id === 'naruto') {
+        // 3 Raised Whisker Marks on each cheek (0.5mm relief)
+        [-1, 1].forEach(side => {
+          for (let w = 0; w < 3; w++) {
+            const whisker = new THREE.Mesh(
+              new THREE.BoxGeometry(0.13, 0.013, 0.015),
+              new THREE.MeshBasicMaterial({ color: 0x2b1d12 })
+            );
+            whisker.position.set(side * 0.24, -0.06 - w * 0.042, 0.355 - w * 0.015);
+            whisker.rotation.y = side * 0.48;
+            whisker.rotation.z = side * (0.08 - w * 0.06);
+            headGroup.add(whisker);
+          }
+        });
+
+        // Konoha Forehead Protector with trailing black band ties
+        addHeadband(headGroup, 0.21, '#1E232B', '#CBD5E1', 'konoha');
+
+        // 360-degree radiating spiky yellow hair (18 spikes)
+        for (let i = 0; i < 18; i++) {
+          const a = (i / 18) * Math.PI * 2;
+          const spikeGeo = new THREE.ConeGeometry(0.135, 0.46, 5);
+          const spike = createCelMesh(spikeGeo, {
+            baseColor: spec.hairBase,
+            shadeColor: spec.hairShade,
+            rimColor: spec.rimHex,
+            outlineWeight: 0.8
+          });
+          spike.position.set(Math.sin(a) * 0.34, 0.38 + (i % 2) * 0.08, Math.cos(a) * 0.34 - 0.03);
+          spike.rotation.z = -Math.sin(a) * 0.72;
+          spike.rotation.x = Math.cos(a) * 0.65;
+          headGroup.add(spike);
+        }
+      } else if (id === 'itachi') {
+        // CRITICAL: Two 35-degree tear-trough creases (Rãnh lệ) from inner eye corners down cheeks
+        [-1, 1].forEach(side => {
+          const creaseGeo = new THREE.BoxGeometry(0.015, 0.21, 0.018);
+          const crease = new THREE.Mesh(creaseGeo, new THREE.MeshBasicMaterial({ color: 0x16141a }));
+          crease.position.set(side * 0.115, -0.065, 0.392);
+          crease.rotation.z = side * -0.58; // ~35 degrees diagonal
+          headGroup.add(crease);
+        });
+
+        // Scratched Konoha Headband
+        addHeadband(headGroup, 0.22, '#1E232B', '#94A3B8', 'konoha_scratched');
+
+        // Sleek dark hair dome + two long cheek-framing locks + low ponytail
+        const hairCap = createCelMesh(new THREE.SphereGeometry(0.48, 24, 20, 0, Math.PI * 2, 0, Math.PI * 0.58), {
+          baseColor: spec.hairBase,
+          shadeColor: spec.hairShade,
+          rimColor: spec.rimHex
+        });
+        hairCap.position.y = 0.04;
+        headGroup.add(hairCap);
+
+        [-1, 1].forEach(side => {
+          const lockGeo = new THREE.ConeGeometry(0.095, 0.76, 5);
+          lockGeo.rotateX(Math.PI);
+          const lock = createCelMesh(lockGeo, {
+            baseColor: spec.hairBase,
+            shadeColor: spec.hairShade,
+            rimColor: spec.rimHex
+          });
+          lock.position.set(side * 0.34, -0.26, 0.22);
+          lock.rotation.z = side * 0.12;
+          headGroup.add(lock);
+          animatedCloakOrHair.push({ mesh: lock, baseRotZ: lock.rotation.z, speed: 1.8 });
+        });
+      } else if (id === 'sakura') {
+        // Purple Diamond Byakugou Seal on Forehead (#6D4C82)
+        const sealGeo = new THREE.BoxGeometry(0.055, 0.055, 0.015);
+        sealGeo.rotateZ(Math.PI / 4);
+        const sealMesh = new THREE.Mesh(sealGeo, new THREE.MeshBasicMaterial({ color: 0x6D4C82 }));
+        sealMesh.position.set(0, 0.24, 0.435);
+        headGroup.add(sealMesh);
+
+        // Byakugou Unleashed Curse Markings (visible when Dojutsu/Chakra is active)
+        const byakugouLines = new THREE.Group();
+        [-1, 1].forEach(side => {
+          const bLine1 = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.018, 0.015), new THREE.MeshBasicMaterial({ color: 0x18121e }));
+          bLine1.position.set(side * 0.13, 0.24, 0.425);
+          bLine1.rotation.y = side * 0.3;
+          byakugouLines.add(bLine1);
+
+          const bLine2 = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.32, 0.015), new THREE.MeshBasicMaterial({ color: 0x18121e }));
+          bLine2.position.set(side * 0.25, 0.02, 0.37);
+          byakugouLines.add(bLine2);
+        });
+        byakugouLines.visible = dojutsuActive;
+        headGroup.add(byakugouLines);
+        dojutsuDependentMeshes.push(byakugouLines);
+
+        // Pink chin-length hair parted in middle + red headband worn on top
+        const hairCap = createCelMesh(new THREE.SphereGeometry(0.485, 24, 20, 0, Math.PI * 2, 0, Math.PI * 0.62), {
+          baseColor: spec.hairBase,
+          shadeColor: spec.hairShade,
+          rimColor: spec.rimHex
+        });
+        hairCap.position.y = 0.04;
+        headGroup.add(hairCap);
+
+        const topBand = createCelMesh(new THREE.TorusGeometry(0.46, 0.045, 10, 28, Math.PI * 1.15), {
+          baseColor: '#B81D2E',
+          shadeColor: '#7A111D',
+          rimColor: spec.rimHex
+        });
+        topBand.rotation.x = Math.PI * 0.18;
+        topBand.position.set(0, 0.16, -0.02);
+        headGroup.add(topBand);
+
+        [-1, 1].forEach(side => {
+          const bangGeo = new THREE.ConeGeometry(0.11, 0.62, 5);
+          bangGeo.rotateX(Math.PI);
+          const bang = createCelMesh(bangGeo, {
+            baseColor: spec.hairBase,
+            shadeColor: spec.hairShade,
+            rimColor: spec.rimHex
+          });
+          bang.position.set(side * 0.33, -0.10, 0.22);
+          bang.rotation.z = side * 0.16;
+          headGroup.add(bang);
+        });
+      } else if (id === 'hinata') {
+        // Dark Indigo Hime-cut Hair: Blunt bangs + squared cheek-length side locks + long back hair
+        const hairCap = createCelMesh(new THREE.SphereGeometry(0.49, 24, 20, 0, Math.PI * 2, 0, Math.PI * 0.6), {
+          baseColor: spec.hairBase,
+          shadeColor: spec.hairShade,
+          rimColor: spec.rimHex
+        });
+        hairCap.position.y = 0.05;
+        headGroup.add(hairCap);
+
+        // Blunt straight bangs
+        const bluntBangs = createCelMesh(new THREE.BoxGeometry(0.48, 0.18, 0.12), {
+          baseColor: spec.hairBase,
+          shadeColor: spec.hairShade,
+          rimColor: spec.rimHex
+        });
+        bluntBangs.position.set(0, 0.25, 0.38);
+        headGroup.add(bluntBangs);
+
+        // Squared cheek-length Hime side locks
+        [-1, 1].forEach(side => {
+          const himeLock = createCelMesh(new THREE.BoxGeometry(0.11, 0.48, 0.14), {
+            baseColor: spec.hairBase,
+            shadeColor: spec.hairShade,
+            rimColor: spec.rimHex
+          });
+          himeLock.position.set(side * 0.37, -0.08, 0.22);
+          headGroup.add(himeLock);
+        });
+
+        // Long straight back hair
+        const backHair = createCelMesh(new THREE.BoxGeometry(0.76, 1.15, 0.26), {
+          baseColor: spec.hairBase,
+          shadeColor: spec.hairShade,
+          rimColor: spec.rimHex
+        });
+        backHair.position.set(0, -0.35, -0.32);
+        headGroup.add(backHair);
+
+        // Byakugan Temple Veins (nổi gân máu thái dương khi khai mở Bạch Nhãn)
+        const veinsGroup = new THREE.Group();
+        [-1, 1].forEach(side => {
+          for (let v = 0; v < 3; v++) {
+            const vein = new THREE.Mesh(
+              new THREE.BoxGeometry(0.12, 0.014, 0.015),
+              new THREE.MeshBasicMaterial({ color: 0xb998ab })
+            );
+            vein.position.set(side * 0.31, 0.06 - v * 0.04, 0.33);
+            vein.rotation.z = side * (0.25 - v * 0.2);
+            veinsGroup.add(vein);
+          }
+        });
+        veinsGroup.visible = dojutsuActive;
+        headGroup.add(veinsGroup);
+        dojutsuDependentMeshes.push(veinsGroup);
+      } else if (id === 'sasuke') {
+        // Duckbutt spiky black hair: 7 large spikes angled 45 degrees upward at the back
+        const hairCap = createCelMesh(new THREE.SphereGeometry(0.48, 24, 20, 0, Math.PI * 2, 0, Math.PI * 0.56), {
+          baseColor: spec.hairBase,
+          shadeColor: spec.hairShade,
+          rimColor: spec.rimHex
+        });
+        hairCap.position.y = 0.05;
+        headGroup.add(hairCap);
+
+        for (let i = 0; i < 7; i++) {
+          const spread = (i - 3) * 0.22;
+          const duckSpike = createCelMesh(new THREE.ConeGeometry(0.16, 0.58, 5), {
+            baseColor: spec.hairBase,
+            shadeColor: spec.hairShade,
+            rimColor: spec.rimHex
+          });
+          duckSpike.position.set(spread * 0.7, 0.25 + (i % 2) * 0.1, -0.38);
+          duckSpike.rotation.x = -Math.PI * 0.32; // ~45 deg upward-back tilt
+          duckSpike.rotation.z = -spread * 0.55;
+          headGroup.add(duckSpike);
+        }
+
+        // Two long side bangs framing cheekbones
+        [-1, 1].forEach(side => {
+          const sideBangGeo = new THREE.ConeGeometry(0.12, 0.64, 5);
+          sideBangGeo.rotateX(Math.PI);
+          const sideBang = createCelMesh(sideBangGeo, {
+            baseColor: spec.hairBase,
+            shadeColor: spec.hairShade,
+            rimColor: spec.rimHex
+          });
+          sideBang.position.set(side * 0.31, -0.06, 0.25);
+          sideBang.rotation.z = side * 0.18;
+          headGroup.add(sideBang);
+        });
+      }
+
+      // --- D. NECK, TORSO & SIGNATURE OUTFIT / WEAPONS ---
+      const neckMesh = createCelMesh(new THREE.CylinderGeometry(0.14, 0.16, 0.26, 16), {
+        baseColor: spec.skinBase,
+        shadeColor: spec.skinShade,
+        rimColor: spec.rimHex
+      });
+      neckMesh.position.set(0, 1.46, 0);
+      group.add(neckMesh);
+
+      if (id === 'pain' || id === 'itachi') {
+        // High-Collared Akatsuki Cloak with Red Clouds
+        const collarMesh = createCelMesh(new THREE.CylinderGeometry(0.36, 0.28, 0.36, 20, 1, true), {
+          baseColor: spec.outfitBase,
+          shadeColor: spec.outfitShade,
+          rimColor: spec.rimHex
+        });
+        collarMesh.position.set(0, 1.54, 0);
+        group.add(collarMesh);
+
+        const cloakGeo = new THREE.ConeGeometry(0.82, 1.65, 24, 1, false);
+        const cloakMesh = createCelMesh(cloakGeo, {
+          baseColor: spec.outfitBase,
+          shadeColor: spec.outfitShade,
+          accentColor: '#B81D24',
+          rimColor: spec.rimHex,
+          patternType: 1 // Procedural Akatsuki Red Clouds
+        });
+        cloakMesh.position.set(0, 0.68, 0);
+        group.add(cloakMesh);
+      } else {
+        // Standard Shinobi Torso + Arms + Outfit Details
+        const torsoMesh = createCelMesh(new THREE.CylinderGeometry(0.38, 0.31, 0.95, 20), {
+          baseColor: spec.outfitBase,
+          shadeColor: spec.outfitShade,
+          rimColor: spec.rimHex
+        });
+        torsoMesh.position.set(0, 0.95, 0);
+        group.add(torsoMesh);
+
+        // Arms
+        [-1, 1].forEach(side => {
+          const armGroup = new THREE.Group();
+          armGroup.position.set(side * 0.46, 1.28, 0);
+          armGroup.rotation.z = side * 0.22;
+          const armMesh = createCelMesh(new THREE.CylinderGeometry(0.11, 0.095, 0.72, 14), {
+            baseColor: id === 'sakura' ? spec.skinBase : spec.outfitBase,
+            shadeColor: id === 'sakura' ? spec.skinShade : spec.outfitShade,
+            rimColor: spec.rimHex
+          });
+          armMesh.position.y = -0.32;
+          armGroup.add(armMesh);
+
+          const handMesh = createCelMesh(new THREE.SphereGeometry(0.1, 12, 12), {
+            baseColor: spec.skinBase,
+            shadeColor: spec.skinShade,
+            rimColor: spec.rimHex
+          });
+          handMesh.position.y = -0.72;
+          armGroup.add(handMesh);
+
+          // Naruto's Rasengan on Right Hand
+          if (id === 'naruto' && side === 1) {
+            const rasenganGroup = new THREE.Group();
+            rasenganGroup.position.set(0, -0.78, 0.16);
+            const core = new THREE.Mesh(
+              new THREE.SphereGeometry(0.18, 20, 20),
+              new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.88 })
+            );
+            const shell = new THREE.Mesh(
+              new THREE.SphereGeometry(0.25, 16, 16),
+              new THREE.MeshBasicMaterial({ color: 0xbae6fd, wireframe: true, transparent: true, opacity: 0.45 })
+            );
+            rasenganGroup.add(core, shell);
+            rasenganGroup.visible = dojutsuActive;
+            armGroup.add(rasenganGroup);
+            dojutsuDependentMeshes.push(rasenganGroup);
+            animatedCloakOrHair.push({ mesh: shell, spinY: 6.0 });
+          }
+
+          // Hinata's Twin Lion Fists Chakra Aura on Both Hands
+          if (id === 'hinata') {
+            const lionAura = new THREE.Mesh(
+              new THREE.DodecahedronGeometry(0.19, 1),
+              new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true, transparent: true, opacity: 0.65 })
+            );
+            lionAura.position.set(0, -0.75, 0.06);
+            lionAura.visible = dojutsuActive;
+            armGroup.add(lionAura);
+            dojutsuDependentMeshes.push(lionAura);
+            animatedCloakOrHair.push({ mesh: lionAura, spinY: 4.0 });
+          }
+
+          // Sasuke's Chidori Lightning on Left Hand
+          if (id === 'sasuke' && side === -1) {
+            const chidori = new THREE.Mesh(
+              new THREE.OctahedronGeometry(0.22, 1),
+              new THREE.MeshBasicMaterial({ color: 0x60a5fa, wireframe: true })
+            );
+            chidori.position.set(0, -0.76, 0.12);
+            chidori.visible = dojutsuActive;
+            armGroup.add(chidori);
+            dojutsuDependentMeshes.push(chidori);
+            animatedCloakOrHair.push({ mesh: chidori, spinY: 9.0 });
+          }
+
+          group.add(armGroup);
+        });
+
+        // Sasuke's Purple Rope Belt (Shimenawa) & Sword of Kusanagi
+        if (id === 'sasuke') {
+          const ropeBelt = createCelMesh(new THREE.TorusGeometry(0.33, 0.065, 10, 24), {
+            baseColor: '#6B5B95',
+            shadeColor: '#473B66',
+            rimColor: spec.rimHex
+          });
+          ropeBelt.rotation.x = Math.PI / 2;
+          ropeBelt.position.set(0, 0.56, 0);
+          group.add(ropeBelt);
+
+          const swordKusanagi = createCelMesh(new THREE.BoxGeometry(0.06, 0.08, 1.15), {
+            baseColor: '#1E2028',
+            shadeColor: '#0D0E12',
+            rimColor: spec.rimHex
+          });
+          swordKusanagi.position.set(0.38, 0.52, -0.15);
+          swordKusanagi.rotation.x = 0.25;
+          group.add(swordKusanagi);
+        }
+
+        // Lower Tunic / Legs
+        [-1, 1].forEach(side => {
+          const leg = createCelMesh(new THREE.CylinderGeometry(0.14, 0.11, 0.75, 14), {
+            baseColor: '#1E232E',
+            shadeColor: '#0F1218',
+            rimColor: spec.rimHex
+          });
+          leg.position.set(side * 0.17, 0.18, 0);
+          group.add(leg);
+        });
+      }
+
+      return group;
+    }
+
+    // Helper to build Forehead Protector (Hitai-ate)
+    function addHeadband(parent, yPos, clothHex, plateHex, symbolType) {
+      const bandMesh = createCelMesh(new THREE.CylinderGeometry(0.468, 0.468, 0.15, 28, 1, true), {
+        baseColor: clothHex,
+        shadeColor: '#0D1017',
+        outlineWeight: 0.4
+      });
+      bandMesh.position.set(0, yPos, 0);
+      parent.add(bandMesh);
+
+      const plateMesh = createCelMesh(new THREE.BoxGeometry(0.34, 0.11, 0.04), {
+        baseColor: plateHex,
+        shadeColor: '#64748B',
+        outlineWeight: 0.4
+      });
+      plateMesh.position.set(0, yPos, 0.45);
+      parent.add(plateMesh);
+
+      if (symbolType.includes('scratched')) {
+        // Horizontal rogue ninja scratch across the metal plate
+        const scratch = new THREE.Mesh(
+          new THREE.BoxGeometry(0.31, 0.016, 0.048),
+          new THREE.MeshBasicMaterial({ color: 0x0f172a })
+        );
+        scratch.position.set(0, yPos, 0.452);
+        parent.add(scratch);
+      }
+    }
+
+    /***************************************************************************
+     * 6. PROCEDURAL TAILED BEAST BUILDER (10 BIJUU: SHUKAKU TO JUUBI)
+     ***************************************************************************/
+    function buildBijuuModel(spec) {
+      const group = new THREE.Group();
+      const id = spec.id;
+      const numTails = spec.tails;
+
+      // Determine body posture & proportions per Bijuu
+      const isQuadruped = (id === 'matatabi' || id === 'kokuo' || id === 'isobu');
+      const patternMode = id === 'shukaku' ? 2 : id === 'matatabi' ? 3 : 0;
+
+      // --- A. TORSO / SHELL / BODY ---
+      const torsoGroup = new THREE.Group();
+      torsoGroup.position.set(0, 1.15, 0);
+      group.add(torsoGroup);
+
+      if (id === 'shukaku') {
+        // Round pot-bellied Tanuki sand body
+        const belly = createCelMesh(new THREE.SphereGeometry(0.88, 28, 24), {
+          baseColor: spec.baseHex,
+          shadeColor: spec.shadeHex,
+          accentColor: spec.accentHex,
+          rimColor: spec.rimHex,
+          patternType: 2
+        });
+        belly.scale.set(1.05, 0.95, 1.0);
+        torsoGroup.add(belly);
+      } else if (id === 'isobu') {
+        // Spiky Armored Turtle Shell + Crimson Underside
+        const shell = createCelMesh(new THREE.SphereGeometry(0.92, 24, 20), {
+          baseColor: spec.baseHex,
+          shadeColor: spec.shadeHex,
+          rimColor: spec.rimHex
+        });
+        shell.scale.set(1.1, 0.78, 1.2);
+        torsoGroup.add(shell);
+
+        for (let s = 0; s < 10; s++) {
+          const spk = createCelMesh(new THREE.ConeGeometry(0.16, 0.42, 5), {
+            baseColor: spec.baseHex,
+            shadeColor: spec.shadeHex,
+            rimColor: spec.rimHex
+          });
+          const ang = (s / 10) * Math.PI * 2;
+          spk.position.set(Math.sin(ang) * 0.55, 0.55, Math.cos(ang) * 0.65);
+          spk.rotation.z = -Math.sin(ang) * 0.5;
+          spk.rotation.x = Math.cos(ang) * 0.5;
+          torsoGroup.add(spk);
+        }
+      } else if (id === 'chomei') {
+        // Armored Rhinoceros Beetle Carapace
+        const carapace = createCelMesh(new THREE.SphereGeometry(0.72, 24, 20), {
+          baseColor: spec.baseHex,
+          shadeColor: spec.shadeHex,
+          rimColor: spec.rimHex
+        });
+        carapace.scale.set(0.85, 0.75, 1.35);
+        torsoGroup.add(carapace);
+      } else {
+        // Muscular / Hybrid Torso
+        const torsoGeo = new THREE.SphereGeometry(0.75, 28, 24);
+        torsoGeo.scale(id === 'songoku' || id === 'gyuki' ? 1.22 : 0.92, isQuadruped ? 0.78 : 1.12, isQuadruped ? 1.28 : 0.88);
+        const torsoMesh = createCelMesh(torsoGeo, {
+          baseColor: spec.baseHex,
+          shadeColor: spec.shadeHex,
+          accentColor: spec.accentHex,
+          rimColor: spec.rimHex,
+          patternType: patternMode
+        });
+        torsoGroup.add(torsoMesh);
+      }
+
+      // Juubi's Iconic Spiral Wooden Flower-Bud Dorsal Spikes
+      if (id === 'juubi') {
+        for (let j = 0; j < 7; j++) {
+          const budSpike = createCelMesh(new THREE.ConeGeometry(0.22, 0.85, 6), {
+            baseColor: '#57473E',
+            shadeColor: '#362B25',
+            rimColor: spec.rimHex
+          });
+          budSpike.position.set((j % 2 === 0 ? 1 : -1) * 0.18, 0.55 + (3 - Math.abs(j - 3)) * 0.12, -0.25 - j * 0.12);
+          budSpike.rotation.x = -0.55;
+          budSpike.rotation.z = (j - 3) * 0.18;
+          torsoGroup.add(budSpike);
+        }
+      }
+
+      // --- B. BIJUU HEAD, HORNS, EARS & EYES ---
+      const headGroup = new THREE.Group();
+      headGroup.position.set(0, isQuadruped ? 0.45 : 0.88, isQuadruped ? 0.88 : 0.35);
+      torsoGroup.add(headGroup);
+
+      const headMesh = createCelMesh(new THREE.SphereGeometry(0.45, 24, 20), {
+        baseColor: id === 'songoku' ? '#526B56' : spec.baseHex,
+        shadeColor: spec.shadeHex,
+        accentColor: spec.accentHex,
+        rimColor: spec.rimHex,
+        patternType: patternMode
+      });
+      if (id === 'kurama' || id === 'matatabi' || id === 'kokuo') {
+        headMesh.scale.set(0.92, 0.85, 1.28);
+      }
+      headGroup.add(headMesh);
+
+      // Eyes per Bijuu
+      if (id === 'juubi') {
+        // Single Giant Central Rinne Sharingan Eye (4 rings + 9 Tomoe)
+        const juubiEyeTex = createDojutsuEyeTexture('rinne_sharingan');
+        const juubiEye = new THREE.Mesh(
+          new THREE.SphereGeometry(0.24, 24, 24),
+          new THREE.MeshBasicMaterial({ map: juubiEyeTex })
+        );
+        juubiEye.scale.set(1.0, 1.0, 0.4);
+        juubiEye.position.set(0, 0.06, 0.38);
+        headGroup.add(juubiEye);
+        animatedEyes.push({ mesh: juubiEye, canSpin: true });
+      } else if (id === 'saiken') {
+        // 2 Feeler Eye Stalks on top of slug head
+        [-1, 1].forEach(side => {
+          const stalk = createCelMesh(new THREE.CylinderGeometry(0.045, 0.065, 0.38, 12), {
+            baseColor: spec.baseHex,
+            shadeColor: spec.shadeHex,
+            rimColor: spec.rimHex
+          });
+          stalk.position.set(side * 0.2, 0.48, 0.08);
+          stalk.rotation.z = side * -0.2;
+          const orb = new THREE.Mesh(new THREE.SphereGeometry(0.075, 12, 12), new THREE.MeshBasicMaterial({ color: 0x1e293b }));
+          orb.position.y = 0.2;
+          stalk.add(orb);
+          headGroup.add(stalk);
+        });
+      } else {
+        [-1, 1].forEach(side => {
+          // Isobu keeps right eye closed
+          if (id === 'isobu' && side === -1) return;
+
+          let bEyeType = 'kurama_eye';
+          if (id === 'shukaku') bEyeType = 'shukaku';
+          else if (id === 'matatabi') bEyeType = side === -1 ? 'yellow' : 'sakura'; // Heterochromia: Right Yellow, Left Green
+          else if (id === 'kokuo') bEyeType = 'blue';
+          else if (id === 'gyuki') bEyeType = 'byakugan';
+
+          const bEyeTex = createDojutsuEyeTexture(bEyeType);
+          const bEye = new THREE.Mesh(
+            new THREE.SphereGeometry(0.095, 16, 16),
+            new THREE.MeshBasicMaterial({ map: bEyeTex })
+          );
+          bEye.scale.set(1.1, 0.85, 0.4);
+          bEye.position.set(side * 0.21, 0.08, 0.42);
+          bEye.rotation.y = side * 0.28;
+          headGroup.add(bEye);
+        });
+      }
+
+      // Specific Horns / Ears for Bijuu
+      if (id === 'kurama' || id === 'matatabi' || id === 'shukaku') {
+        // Fox / Cat / Tanuki Ears
+        [-1, 1].forEach(side => {
+          const earLen = id === 'kurama' ? 0.65 : 0.34;
+          const ear = createCelMesh(new THREE.ConeGeometry(0.14, earLen, 5), {
+            baseColor: spec.baseHex,
+            shadeColor: spec.shadeHex,
+            rimColor: spec.rimHex,
+            patternType: patternMode
+          });
+          ear.position.set(side * 0.32, 0.44, -0.05);
+          ear.rotation.z = side * -0.45; // 25 degree outward tilt for Kurama
+          ear.rotation.x = -0.25;
+          headGroup.add(ear);
+        });
+      } else if (id === 'songoku') {
+        // 2 Curved Golden Crown Horns + Glowing Lava Mouth
+        [-1, 1].forEach(side => {
+          const horn = createCelMesh(new THREE.ConeGeometry(0.09, 0.48, 6), {
+            baseColor: '#EAB308',
+            shadeColor: '#A16207',
+            rimColor: spec.rimHex
+          });
+          horn.position.set(side * 0.22, 0.48, 0.12);
+          horn.rotation.z = side * -0.35;
+          headGroup.add(horn);
+        });
+        const lavaMouth = new THREE.Mesh(
+          new THREE.SphereGeometry(0.16, 14, 12),
+          new THREE.MeshBasicMaterial({ color: 0xff4500 })
+        );
+        lavaMouth.scale.set(1.3, 0.55, 0.6);
+        lavaMouth.position.set(0, -0.14, 0.38);
+        headGroup.add(lavaMouth);
+      } else if (id === 'kokuo') {
+        // 4 Swept-back Steam Horns (2 long upper, 2 short lower)
+        [-1, 1].forEach(side => {
+          const h1 = createCelMesh(new THREE.ConeGeometry(0.075, 0.56, 6), {
+            baseColor: spec.baseHex,
+            shadeColor: spec.shadeHex,
+            rimColor: spec.rimHex
+          });
+          h1.position.set(side * 0.18, 0.38, -0.15);
+          h1.rotation.x = -0.85;
+          headGroup.add(h1);
+
+          const h2 = createCelMesh(new THREE.ConeGeometry(0.055, 0.34, 6), {
+            baseColor: spec.baseHex,
+            shadeColor: spec.shadeHex,
+            rimColor: spec.rimHex
+          });
+          h2.position.set(side * 0.26, 0.14, -0.12);
+          h2.rotation.x = -0.85;
+          headGroup.add(h2);
+        });
+      } else if (id === 'chomei') {
+        // Long Rhino Beetle Horn
+        const beetleHorn = createCelMesh(new THREE.ConeGeometry(0.09, 0.72, 5), {
+          baseColor: spec.baseHex,
+          shadeColor: spec.shadeHex,
+          rimColor: spec.rimHex
+        });
+        beetleHorn.position.set(0, 0.32, 0.48);
+        beetleHorn.rotation.x = 0.75;
+        headGroup.add(beetleHorn);
+      } else if (id === 'gyuki') {
+        // 4 Bull Horns: Left upper horn cleanly severed flat, right upper intact
+        const rightHorn = createCelMesh(new THREE.ConeGeometry(0.09, 0.52, 8), {
+          baseColor: '#D6C7B2',
+          shadeColor: '#8C7A65',
+          rimColor: spec.rimHex
+        });
+        rightHorn.position.set(-0.34, 0.38, 0.05);
+        rightHorn.rotation.z = 0.65;
+        headGroup.add(rightHorn);
+
+        // Severed Left Upper Horn (Flat cylinder stump)
+        const severedLeftHorn = createCelMesh(new THREE.CylinderGeometry(0.075, 0.09, 0.22, 8), {
+          baseColor: '#D6C7B2',
+          shadeColor: '#8C7A65',
+          rimColor: spec.rimHex
+        });
+        severedLeftHorn.position.set(0.32, 0.28, 0.05);
+        severedLeftHorn.rotation.z = -0.65;
+        headGroup.add(severedLeftHorn);
+      }
+
+      // --- C. LIMBS (ARMS & LEGS) ---
+      [-1, 1].forEach(side => {
+        const frontLimb = createCelMesh(new THREE.CylinderGeometry(0.18, 0.14, 0.85, 14), {
+          baseColor: spec.baseHex,
+          shadeColor: spec.shadeHex,
+          accentColor: spec.accentHex,
+          rimColor: spec.rimHex,
+          patternType: patternMode
+        });
+        frontLimb.position.set(side * 0.72, -0.35, 0.35);
+        frontLimb.rotation.z = side * 0.22;
+        torsoGroup.add(frontLimb);
+
+        if (id !== 'gyuki') {
+          const backLimb = createCelMesh(new THREE.CylinderGeometry(0.2, 0.15, 0.75, 14), {
+            baseColor: spec.baseHex,
+            shadeColor: spec.shadeHex,
+            accentColor: spec.accentHex,
+            rimColor: spec.rimHex,
+            patternType: patternMode
+          });
+          backLimb.position.set(side * 0.62, -0.65, -0.35);
+          torsoGroup.add(backLimb);
+        }
+      });
+
+      // --- D. PROCEDURAL ANIMATED TAIL CHAINS (1 TO 10 TAILS) ---
+      for (let t = 0; t < numTails; t++) {
+        const tailRoot = new THREE.Group();
+        const spreadAngle = numTails === 1 ? 0 : ((t / (numTails - 1)) - 0.5) * Math.PI * 0.88;
+        tailRoot.position.set(Math.sin(spreadAngle) * 0.45, -0.15 + (t % 2) * 0.12, -0.62);
+        tailRoot.rotation.y = Math.PI + spreadAngle * 0.75;
+        torsoGroup.add(tailRoot);
+
+        // Chomei special rule: 6 glowing orange insect wings + 1 green abdomen tail
+        if (id === 'chomei' && t < 6) {
+          const wingGeo = new THREE.ConeGeometry(0.24, 1.45, 4);
+          wingGeo.scale(0.35, 1.0, 1.0);
+          const wingMesh = createCelMesh(wingGeo, {
+            baseColor: '#F97316',
+            shadeColor: '#C2410C',
+            rimColor: '#FDBA74',
+            forceRim: 0.9
+          });
+          wingMesh.position.set(0, 0.55, 0.35);
+          wingMesh.rotation.x = 1.1;
+          tailRoot.add(wingMesh);
+          animatedTailChains.push([tailRoot]);
+          continue;
+        }
+
+        const chainBones = [];
+        let parentNode = tailRoot;
+        const segments = 6;
+
+        for (let s = 0; s < segments; s++) {
+          const segPivot = new THREE.Group();
+          segPivot.position.set(0, 0, s === 0 ? 0 : 0.34);
+          parentNode.add(segPivot);
+
+          const progress = s / (segments - 1);
+          // Kurama tails swell in the middle and taper to a sharp tip
+          const radius = id === 'kurama'
+            ? Math.sin(progress * Math.PI * 0.85 + 0.25) * 0.24
+            : (1.0 - progress * 0.68) * (id === 'shukaku' ? 0.36 : 0.20);
+
+          const segGeo = new THREE.CylinderGeometry(radius * 0.82, radius, 0.38, 12);
+          segGeo.rotateX(Math.PI / 2);
+          const segMesh = createCelMesh(segGeo, {
+            baseColor: spec.baseHex,
+            shadeColor: spec.shadeHex,
+            accentColor: spec.accentHex,
+            rimColor: spec.rimHex,
+            patternType: patternMode
+          });
+          segMesh.position.z = 0.18;
+          segPivot.add(segMesh);
+
+          // Juubi's 10th-Tail Hand Tips: Each of the 10 tails ends in a humanoid 5-fingered hand
+          if (id === 'juubi' && s === segments - 1) {
+            for (let f = -2; f <= 2; f++) {
+              const finger = createCelMesh(new THREE.ConeGeometry(0.03, 0.18, 5), {
+                baseColor: spec.baseHex,
+                shadeColor: spec.shadeHex,
+                rimColor: spec.rimHex
+              });
+              finger.position.set(f * 0.042, 0.03, 0.38);
+              finger.rotation.x = Math.PI / 2;
+              finger.rotation.z = -f * 0.2;
+              segPivot.add(finger);
+            }
+          }
+
+          chainBones.push(segPivot);
+          parentNode = segPivot;
+        }
+        animatedTailChains.push(chainBones);
+      }
+
+      return group;
+    }
+
+    /***************************************************************************
+     * 7. SCENE INITIALIZATION & REAL-TIME ANIMATION LOOP
+     ***************************************************************************/
+    function initThreeScene() {
+      const container = document.getElementById('canvasContainer');
+      const w = container.clientWidth || 800;
+      const h = container.clientHeight || 600;
+
+      scene = new THREE.Scene();
+      clock = new THREE.Clock();
+
+      camera = new THREE.PerspectiveCamera(38, w / h, 0.1, 100);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(w, h);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
+
+      // Lighting for standard meshes (Pain's metallic chakra rods)
+      const dirLight = new THREE.DirectionalLight(0xffffff, 1.3);
+      dirLight.position.set(3, 5, 4);
+      scene.add(dirLight);
+      scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+
+      // Stylised Anime Chakra Ground Pedestal Ring
+      const floorGroup = new THREE.Group();
+      floorGroup.position.y = -0.22;
+      const ring1 = new THREE.Mesh(
+        new THREE.RingGeometry(1.15, 1.22, 48),
+        new THREE.MeshBasicMaterial({ color: 0xf97316, side: THREE.DoubleSide, transparent: true, opacity: 0.45 })
+      );
+      ring1.rotation.x = -Math.PI / 2;
+      const ring2 = new THREE.Mesh(
+        new THREE.RingGeometry(1.65, 1.68, 48),
+        new THREE.MeshBasicMaterial({ color: 0x64748b, side: THREE.DoubleSide, transparent: true, opacity: 0.25 })
+      );
+      ring2.rotation.x = -Math.PI / 2;
+      floorGroup.add(ring1, ring2);
+      scene.add(floorGroup);
+
+      rootGroup = new THREE.Group();
+      scene.add(rootGroup);
+
+      // Setup Mouse & Touch Camera Controls
+      setupOrbitInteractions(renderer.domElement);
+
+      window.addEventListener('resize', onWindowResize);
+      renderUIEntityList();
+      loadEntity(currentCategory, currentEntityId);
+      animateLoop();
+    }
+
+    function loadEntity(category, entityId) {
+      currentCategory = category;
+      currentEntityId = entityId;
+
+      // Clear previous meshes & arrays
+      if (characterMeshGroup) {
+        rootGroup.remove(characterMeshGroup);
+      }
+      animatedTailChains = [];
+      animatedEyes = [];
+      animatedCloakOrHair = [];
+      dojutsuDependentMeshes = [];
+      allCelMaterials = [];
+      allOutlineMaterials = [];
+      browMeshes = [];
+      jawGroup = null;
+
+      const list = CHARACTER_SPECS[category];
+      const spec = list.find(item => item.id === entityId) || list[0];
+
+      characterMeshGroup = category === 'shinobi' ? buildShinobiModel(spec) : buildBijuuModel(spec);
+      rootGroup.add(characterMeshGroup);
+
+      // Update Top & Bottom HUD Specs
+      document.getElementById('hudBadgeType').textContent = spec.badge;
+      document.getElementById('hudCharName').textContent = spec.name;
+      document.getElementById('hudCharSubtitle').textContent = spec.subtitle;
+      document.getElementById('specHeightRatio').textContent = spec.heightRatio;
+      document.getElementById('specJawAngle').textContent = spec.jawAngle;
+      document.getElementById('specEyeFeature').textContent = spec.eyeFeature;
+      document.getElementById('specTopologyNote').textContent = spec.topologyNote;
+
+      // Render Hex Color Swatches
+      const swatchContainer = document.getElementById('specColorSwatches');
+      swatchContainer.innerHTML = spec.colors.map(c => `
+        <div class="flex items-center gap-1 bg-slate-900 px-2 py-0.5 rounded border border-slate-700/80">
+          <span class="w-3 h-3 rounded-sm border border-white/20" style="background-color: ${c.hex};"></span>
+          <span class="text-[10px] text-slate-300">${c.label}</span>
+          <span class="text-[10px] font-mono-code text-orange-300">${c.hex}</span>
+        </div>
+      `).join('');
+
+      setExpression(currentExpression);
+      renderUIEntityList();
+
+      // Adjust default camera framing for Shinobi vs Giant Bijuu
+      if (category === 'bijuu') {
+        camState.targetLookAt.set(0, 1.2, 0);
+        camState.targetRadius = 6.2;
+      } else {
+        camState.targetLookAt.set(0, 1.38, 0);
+        camState.targetRadius = 4.6;
+      }
+    }
+
+    function animateLoop() {
+      requestAnimationFrame(animateLoop);
+      const elapsed = clock.getElapsedTime();
+      const waveSpeed = parseFloat(document.getElementById('sliderWaveSpeed')?.value || 1.0);
+
+      // Smoothly damp camera orbit
+      camState.theta += (camState.targetTheta - camState.theta) * 0.12;
+      camState.phi += (camState.targetPhi - camState.phi) * 0.12;
+      camState.radius += (camState.targetRadius - camState.radius) * 0.12;
+      camState.target.lerp(camState.targetLookAt, 0.12);
+
+      camera.position.x = camState.target.x + camState.radius * Math.sin(camState.phi) * Math.sin(camState.theta);
+      camera.position.y = camState.target.y + camState.radius * Math.cos(camState.phi);
+      camera.position.z = camState.target.z + camState.radius * Math.sin(camState.phi) * Math.cos(camState.theta);
+      camera.lookAt(camState.target);
+
+      // Update Shader Uniform Time (for Matatabi flames)
+      allCelMaterials.forEach(mat => {
+        mat.uniforms.uTime.value = elapsed * waveSpeed;
+      });
+
+      // Subtle breathing motion on root character
+      if (characterMeshGroup) {
+        characterMeshGroup.position.y = Math.sin(elapsed * 2.0) * 0.025;
+      }
+
+      // Spin Mangekyo / Sharingan / Rinne Sharingan Eyes when Dojutsu is active
+      if (dojutsuActive) {
+        animatedEyes.forEach(item => {
+          if (item.canSpin) {
+            item.mesh.rotation.z = elapsed * 1.5;
+          }
+        });
+      }
+
+      // Procedural Sine-Wave Kinematics for Tailed Beast Tails
+      animatedTailChains.forEach((chain, tailIdx) => {
+        const phaseOffset = tailIdx * 0.65;
+        chain.forEach((bone, segIdx) => {
+          const weight = (segIdx + 1) / chain.length;
+          bone.rotation.y = Math.sin(elapsed * 2.4 * waveSpeed - segIdx * 0.5 + phaseOffset) * 0.26 * weight;
+          bone.rotation.x = Math.cos(elapsed * 1.8 * waveSpeed - segIdx * 0.4 + phaseOffset) * 0.16 * weight;
+        });
+      });
+
+      // Hair locks / Rasengan / Chidori animations
+      animatedCloakOrHair.forEach(item => {
+        if (item.spinY) {
+          item.mesh.rotation.y = elapsed * item.spinY;
+          item.mesh.rotation.x = elapsed * item.spinY * 0.6;
+        } else if (item.baseRotZ !== undefined) {
+          item.mesh.rotation.z = item.baseRotZ + Math.sin(elapsed * 2.2 * waveSpeed) * 0.04;
+        }
+      });
+
+      renderer.render(scene, camera);
+    }
+
+    /***************************************************************************
+     * 8. UI CONTROLS, SHADER UPDATES & CAMERA PRESETS
+     ***************************************************************************/
+    function switchCategory(cat) {
+      currentCategory = cat;
+      const btnShinobi = document.getElementById('tabBtnShinobi');
+      const btnBijuu = document.getElementById('tabBtnBijuu');
+
+      if (cat === 'shinobi') {
+        btnShinobi.className = 'py-2 px-2 rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center justify-center gap-1.5 bg-orange-500 text-slate-950 shadow-md shadow-orange-500/20';
+        btnBijuu.className = 'py-2 px-2 rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center justify-center gap-1.5 bg-slate-800 text-slate-300 hover:bg-slate-700';
+        loadEntity('shinobi', CHARACTER_SPECS.shinobi[0].id);
+      } else {
+        btnBijuu.className = 'py-2 px-2 rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center justify-center gap-1.5 bg-orange-500 text-slate-950 shadow-md shadow-orange-500/20';
+        btnShinobi.className = 'py-2 px-2 rounded-lg text-xs font-bold uppercase tracking-wider transition flex items-center justify-center gap-1.5 bg-slate-800 text-slate-300 hover:bg-slate-700';
+        loadEntity('bijuu', CHARACTER_SPECS.bijuu[8].id); // Default to 9-Tails Kurama when clicking Bijuu tab!
+      }
+    }
+
+    function renderUIEntityList() {
+      const container = document.getElementById('EntityListContainer');
+      const list = CHARACTER_SPECS[currentCategory];
+      container.innerHTML = list.map(item => {
+        const active = item.id === currentEntityId;
+        const swatchHex = currentCategory === 'shinobi' ? item.hairBase : item.baseHex;
+        return `
+          <button onclick="loadEntity('${currentCategory}', '${item.id}')"
+            class="w-full p-2.5 rounded-xl border text-left transition flex items-center gap-3 ${
+              active
+                ? 'bg-orange-500/15 border-orange-500 text-white shadow-lg shadow-orange-500/10'
+                : 'bg-slate-900/60 border-slate-800/90 text-slate-300 hover:bg-slate-800/70 hover:border-slate-700'
+            }">
+            <div class="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center font-display font-bold text-xs border border-white/20 shadow-inner"
+                 style="background-color: ${swatchHex}; color: #0f172a;">
+              ${item.tails ? item.tails + '★' : item.name.slice(0, 2).toUpperCase()}
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="font-semibold text-xs truncate ${active ? 'text-orange-300' : 'text-slate-100'}">${item.name}</div>
+              <div class="text-[10px] text-slate-400 truncate mt-0.5">${item.eyeFeature}</div>
+            </div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function setRenderMode(mode) {
+      currentRenderMode = mode;
+      const modes = [
+        { id: 'modeBtnCel', m: 0 },
+        { id: 'modeBtnNormals', m: 1 },
+        { id: 'modeBtnWire', m: 2 }
+      ];
+      modes.forEach(btn => {
+        const el = document.getElementById(btn.id);
+        const dot = el.querySelector('span:last-child');
+        if (btn.m === mode) {
+          el.className = 'px-3 py-2 rounded-lg text-xs font-medium text-left border transition flex items-center justify-between bg-orange-500/15 border-orange-500 text-orange-300';
+          dot.className = 'w-2 h-2 rounded-full bg-orange-400';
+        } else {
+          el.className = 'px-3 py-2 rounded-lg text-xs font-medium text-left border border-slate-700/80 bg-slate-800/60 text-slate-300 hover:bg-slate-800 transition flex items-center justify-between';
+          dot.className = 'w-2 h-2 rounded-full bg-slate-600';
+        }
+      });
+
+      allCelMaterials.forEach(mat => {
+        mat.wireframe = (mode === 2);
+        mat.uniforms.uRenderMode.value = mode;
+      });
+    }
+
+    function toggleDojutsuState() {
+      dojutsuActive = !dojutsuActive;
+      const btn = document.getElementById('btnToggleDojutsu');
+      if (dojutsuActive) {
+        btn.textContent = 'ĐANG BẬT';
+        btn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-orange-500 text-slate-950 shadow-md shadow-orange-500/20 transition';
+      } else {
+        btn.textContent = 'ĐANG TẮT';
+        btn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-slate-700 text-slate-300 transition';
+      }
+      // Reload current entity so eye textures (e.g. Naruto Sage vs Blue) and Byakugou/Byakugan veins refresh cleanly
+      loadEntity(currentCategory, currentEntityId);
+      updateShaderParams();
+    }
+
+    function updateShaderParams() {
+      const rimVal = parseFloat(document.getElementById('sliderRim').value);
+      const flatVal = parseFloat(document.getElementById('sliderFlatNormal').value);
+      const outVal = parseFloat(document.getElementById('sliderOutline').value);
+      const azVal = parseFloat(document.getElementById('sliderLightAzimuth').value);
+      const elVal = parseFloat(document.getElementById('sliderLightElevation').value);
+      const waveVal = parseFloat(document.getElementById('sliderWaveSpeed').value);
+
+      document.getElementById('valRimIntensity').textContent = rimVal.toFixed(2);
+      document.getElementById('valFlatNormal').textContent = Math.round(flatVal * 100) + '%';
+      document.getElementById('valOutline').textContent = outVal.toFixed(3);
+      document.getElementById('valLightAzimuth').textContent = azVal + '°';
+      document.getElementById('valLightElevation').textContent = elVal + '°';
+      document.getElementById('valWaveSpeed').textContent = waveVal.toFixed(1) + 'x';
+
+      const lightVec = getLightDirectionVector();
+      allCelMaterials.forEach(mat => {
+        mat.uniforms.uLightDir.value.copy(lightVec);
+        mat.uniforms.uRimIntensity.value = dojutsuActive ? rimVal : 0.08;
+        if (mat.userData.isFace) {
+          mat.uniforms.uFlatNormalMix.value = flatVal;
+        }
+      });
+
+      allOutlineMaterials.forEach(mat => {
+        mat.uniforms.uOutlineThickness.value = outVal;
+      });
+    }
+
+    function setExpression(expr) {
+      currentExpression = expr;
+      ['Calm', 'Glare', 'Roar'].forEach(name => {
+        const el = document.getElementById('expr' + name);
+        if (name.toLowerCase() === expr) {
+          el.className = 'py-1.5 px-2 rounded text-[11px] font-bold bg-orange-500 text-slate-950';
+        } else {
+          el.className = 'py-1.5 px-2 rounded text-[11px] font-medium bg-slate-800 text-slate-300 hover:bg-slate-700';
+        }
+      });
+
+      browMeshes.forEach(b => {
+        if (expr === 'calm') {
+          b.position.y = b.userData.baseY;
+          b.rotation.z = b.userData.baseRotZ;
+        } else if (expr === 'glare') {
+          b.position.y = b.userData.baseY - 0.024;
+          b.rotation.z = b.userData.side * -0.34;
+        } else if (expr === 'roar') {
+          b.position.y = b.userData.baseY + 0.015;
+          b.rotation.z = b.userData.side * -0.42;
+        }
+      });
+
+      if (jawGroup) {
+        jawGroup.scale.y = expr === 'roar' ? 4.2 : expr === 'glare' ? 1.5 : 1.0;
+      }
+    }
+
+    function setCameraPreset(preset) {
+      if (preset === 'full') {
+        camState.targetTheta = 0.25;
+        camState.targetPhi = 1.35;
+        camState.targetRadius = currentCategory === 'bijuu' ? 6.2 : 4.6;
+        camState.targetLookAt.set(0, 1.25, 0);
+      } else if (preset === 'face45') {
+        camState.targetTheta = 0.62;
+        camState.targetPhi = 1.42;
+        camState.targetRadius = currentCategory === 'bijuu' ? 3.4 : 2.15;
+        camState.targetLookAt.set(0, currentCategory === 'bijuu' ? 1.75 : 1.92, 0.1);
+      } else if (preset === 'eyes') {
+        camState.targetTheta = 0.0;
+        camState.targetPhi = 1.48;
+        camState.targetRadius = currentCategory === 'bijuu' ? 2.5 : 1.45;
+        camState.targetLookAt.set(0, currentCategory === 'bijuu' ? 1.82 : 1.95, 0.15);
+      } else if (preset === 'side') {
+        camState.targetTheta = 1.48;
+        camState.targetPhi = 1.42;
+        camState.targetRadius = currentCategory === 'bijuu' ? 5.8 : 3.6;
+        camState.targetLookAt.set(0, 1.45, 0);
+      }
+    }
+
+    function resetInspector() {
+      document.getElementById('sliderRim').value = 0.65;
+      document.getElementById('sliderFlatNormal').value = 0.85;
+      document.getElementById('sliderOutline').value = 0.018;
+      document.getElementById('sliderLightAzimuth').value = 35;
+      document.getElementById('sliderLightElevation').value = 40;
+      document.getElementById('sliderWaveSpeed').value = 1.0;
+      setRenderMode(0);
+      setExpression('calm');
+      updateShaderParams();
+      setCameraPreset('full');
+    }
+
+    /***************************************************************************
+     * 9. ORBIT CAMERA INTERACTIONS (MOUSE & TOUCH)
+     ***************************************************************************/
+    function setupOrbitInteractions(domEl) {
+      domEl.addEventListener('contextmenu', e => e.preventDefault());
+
+      domEl.addEventListener('mousedown', e => {
+        if (e.button === 0) camState.isDragging = true;
+        if (e.button === 2) camState.isPanning = true;
+        camState.prevX = e.clientX;
+        camState.prevY = e.clientY;
+      });
+
+      window.addEventListener('mousemove', e => {
+        if (!camState.isDragging && !camState.isPanning) return;
+        const dx = e.clientX - camState.prevX;
+        const dy = e.clientY - camState.prevY;
+        camState.prevX = e.clientX;
+        camState.prevY = e.clientY;
+
+        if (camState.isDragging) {
+          camState.targetTheta -= dx * 0.008;
+          camState.targetPhi = Math.max(0.25, Math.min(Math.PI - 0.25, camState.targetPhi - dy * 0.008));
+        } else if (camState.isPanning) {
+          camState.targetLookAt.y += dy * 0.004;
+          camState.targetLookAt.x -= dx * 0.004;
+        }
+      });
+
+      window.addEventListener('mouseup', () => {
+        camState.isDragging = false;
+        camState.isPanning = false;
+      });
+
+      domEl.addEventListener('wheel', e => {
+        e.preventDefault();
+        camState.targetRadius = Math.max(1.1, Math.min(11.0, camState.targetRadius + e.deltaY * 0.003));
+      }, { passive: false });
+
+      // Touch support
+      domEl.addEventListener('touchstart', e => {
+        if (e.touches.length === 1) {
+          camState.isDragging = true;
+          camState.prevX = e.touches[0].clientX;
+          camState.prevY = e.touches[0].clientY;
+        }
+      }, { passive: true });
+
+      domEl.addEventListener('touchmove', e => {
+        if (!camState.isDragging || e.touches.length !== 1) return;
+        const dx = e.touches[0].clientX - camState.prevX;
+        const dy = e.touches[0].clientY - camState.prevY;
+        camState.prevX = e.touches[0].clientX;
+        camState.prevY = e.touches[0].clientY;
+        camState.targetTheta -= dx * 0.008;
+        camState.targetPhi = Math.max(0.25, Math.min(Math.PI - 0.25, camState.targetPhi - dy * 0.008));
+      }, { passive: true });
+
+      domEl.addEventListener('touchend', () => {
+        camState.isDragging = false;
+      });
+    }
+
+    function onWindowResize() {
+      const container = document.getElementById('canvasContainer');
+      if (!container || !renderer) return;
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    }
+
+    /***************************************************************************
+     * 10. PROMPT GENERATOR FOR EXTERNAL AI AGENTS (COPYABLE PROMPTS)
+     ***************************************************************************/
+    function generatePromptText(type) {
+      const list = CHARACTER_SPECS[currentCategory];
+      const spec = list.find(i => i.id === currentEntityId) || list[0];
+      const paletteStr = spec.colors.map(c => `${c.label}: ${c.hex}`).join(' | ');
+
+      if (type === 'current') {
+        return `### SYSTEM PROMPT CHO AI AGENT: THIẾT KẾ MÔ HÌNH 3D CHUẨN 1:1 HOẠT HÌNH NARUTO
+Bạn là Principal 3D Character & Technical Artist chuyên về đồ họa Anime Cel-Shading (chuẩn CyberConnect2 - dòng game Naruto: Ultimate Ninja Storm).
+Hãy thiết kế và viết code/tài nguyên 3D chi tiết tỷ lệ 1:1 với nguyên tác hoạt hình cho nhân vật/Vĩ thú sau:
+
+1. ĐỐI TƯỢNG MỤC TIÊU: ${spec.name} (${spec.badge})
+- Chiều cao / Tỷ lệ giải phẫu: ${spec.heightRatio}
+- Góc xương hàm & Khung mặt: ${spec.jawAngle}
+- Nhãn thuật & Đặc trưng mắt: ${spec.eyeFeature}
+- Chi tiết góc cạnh & Topology bắt buộc: ${spec.topologyNote}
+- Bảng mã màu Cel-Shader (Base & Shadow Tone): ${paletteStr}
+
+2. QUY TẮC TOPOLOGY & PHÁP TUYẾN MẶT PHẲNG (CUSTOM SPLIT NORMALS):
+- Tuyệt đối KHÔNG dùng PBR bóng đổ mượt mặc định trên khuôn mặt vì sẽ làm gãy bóng đen ở sống mũi và gò má.
+- Áp dụng kỹ thuật Spherical Normal Proxy (Normal Transfer): Là phẳng 85%–100% hướng pháp tuyến (Vertex Normals) vùng má, mũi, cằm theo mặt cầu dẹt phía trước mặt để bóng đổ cắt ngang phẳng phiu chuẩn tranh vẽ 2D.
+- Mọi chi tiết đường nét trên mặt (sống mũi, rãnh lệ của Itachi, râu cáo của Naruto, viền mí mắt, Hắc Trượng của Pain) phải dựng bằng hình học 3D nổi (Line Mesh / Sub-mesh) có Vertex Color khóa bóng.
+
+3. QUY TẮC ANIME CEL-SHADER 2 TẦNG SÁNG & VIỀN ĐEN INVERTED HULL:
+- Fragment Shader: Dùng hàm cắt bậc sắc nét smoothstep(-0.02, 0.02, dot(blendedNormal, lightDir)) để phân tách đúng 2 vùng Base Color và Shade Color.
+- Thêm lớp Stepped Chakra Rim Light ở rìa nhân vật với ngưỡng smoothstep(0.68, 0.73, rimDot).
+- Viền đen (Inverted Hull Outline): Nhân bản pass thứ 2 với Cull Front (THREE.BackSide), đẩy đỉnh dọc theo normal một khoảng uOutlineThickness * vertexColor.r (mảnh 0.4x ở mũi/mắt/miệng và dày 1.0x ở đường viền cơ thể/tóc/đuôi).
+
+4. HỆ THỐNG RIGGING & CHUYỂN ĐỘNG THỜI GIAN THỰC:
+- Nhãn thuật (Dojutsu Rig): Mặt phẳng mắt hơi cong nhẹ, điều khiển hướng nhìn và hiệu ứng xoay Sharingan/Rinnegan bằng ma trận xoay UV 2D trong Shader.
+- Hệ thống BlendShapes nét mặt: Tối thiểu 3 trạng thái chính (Điềm tĩnh / Chiến đấu nhíu mày / Bùng nổ Chakra mở rộng khớp hàm).
+- Động học đuôi Vĩ Thú / Tóc / Áo choàng: Sử dụng chuỗi xương động học (Spline IK / Sine-Wave Bone Chain) lệch pha theo công thức: angle(i, t) = A * sin(omega * t - i * phaseOffset) * weight.`;
+      }
+
+      if (type === 'master') {
+        return `### MASTER PROMPT TOÀN DIỆN CHO AI AGENT: XÂY DỰNG HỆ THỐNG 16 NHÂN VẬT & VĨ THÚ NARUTO 3D (1:1 ANIME SPEC)
+Bạn là Lead 3D Anime Technical Artist & Graphics Programmer. Hãy xây dựng trọn bộ 6 nhân vật chính (Shinobi) và 10 Vĩ Thú (Bijuu) trong Naruto Shippuden đạt tỷ lệ 1:1 với hoạt hình Studio Pierrot / CyberConnect2.
+
+I. THÔNG SỐ KỸ THUẬT 6 NHÂN VẬT CHÍNH (SHINOBI):
+1. Pain (Thiên Đạo - Yahiko): Cao 176.5cm (1:7.5), góc hàm 115° sắc nhọn. Tóc cam (#E86A24) dựng 15 khối chóp nhọn vát về sau, băng trán Làng Mưa gạch ngang. Mắt Rinnegan tím xám (#9B8DA6) 4 vòng đồng tâm. Gắn chính xác 16 thanh Hắc Trượng (#1A1A1D): 6 đinh tán chia 3 cặp dọc sống mũi, 2 thanh trụ dọc dưới môi dưới, mỗi tai gồm 6 khuyên tròn dọc vành ngoài + 1 thanh trụ ngang xuyên dái tai. Áo choàng Akatsuki đen cổ cao có mây đỏ (#B81D24).
+2. Naruto Uzumaki (Shippuden): Cao 166.0cm (1:7.0), góc hàm 125°. Tóc vàng (#FAD02C) chóp nhọn tỏa 360°, băng trán Konoha. Mỗi bên má có 3 vệt râu cáo dựng nổi 0.5mm. Mắt xanh lam (#2B76C9) chuyển sang mắt Cửu Vĩ Tiên Nhân đỏ cam chữ thập khi bật Chakra, tay phải cầm Rasengan.
+3. Itachi Uchiha: Cao 178.0cm (1:7.5), mặt thon dài tỷ lệ 1.45, góc hàm 112°. Bắt buộc dựng 2 đường rãnh lệ (tear-trough creases) vát góc 35° từ khóe mắt xuống giữa má bằng Line Mesh đen. Mí mắt trên hạ thấp che 30% con ngươi, mắt Mangekyo Sharingan (#C81D25) 3 cánh xoay tròn. Tóc đen (#1C202B) có 2 lọn mai dài qua xương đòn, buộc thấp sau gáy trong cổ áo Akatsuki.
+4. Sakura Haruno: Cao 161.0cm (1:6.8), mặt trái xoan 130°. Trán cao có ấn Bách Hào hình thoi tím (#6D4C82); khi kích hoạt Bách Hào Chi Thuật, hoa văn đen lan qua má và cổ. Mắt lục bảo (#3B9E78) có 2 gai lông mi vểnh ở đuôi mắt. Tóc hồng (#F4A6B8) cắt ngắn ngang cằm, mái rẽ ngôi bất đối xứng, băng trán đỏ cài trên đỉnh đầu.
+5. Hinata Hyuga: Cao 160.0cm (1:6.8), mặt bầu bĩnh 135°. Đôi mắt Bạch Nhãn (Byakugan) trắng tím (#E2DCF0) không có con ngươi; khi khai mở Bạch Nhãn, nổi rõ các đường gân máu 3D ở hai bên thái dương và hiệu ứng Song Sư Quyền xanh lam ở hai bàn tay. Tóc tím than (#2A2B4A) cắt chuẩn Hime-cut (mái bằng, 2 lọn mai cắt vuông ngang cằm, tóc sau thẳng dài).
+6. Sasuke Uchiha: Cao 168.0cm (1:7.2), góc hàm 118° sắc lạnh, đuôi mắt xếch nhẹ, vùng dưới mắt phẳng lỳ. Mắt phải Eternal Mangekyo Sharingan (#C81D25), mắt trái Rinnegan 6 Tomoe (#9B8DA6). Tóc đen (#181C26) kiểu đuôi vịt gồm 7 khối chóp nhọn lớn vểnh ngược góc 45° phía sau gáy + 2 mảng tóc mái dài ôm gò má. Trang phục kèm đai dây thừng tím (#6B5B95), kiếm Kusanagi bên hông và Chidori ở tay trái.
+
+II. THÔNG SỐ GIẢI PHẪU & ĐUÔI CỦA 10 VĨ THÚ (BIJUU):
+1. Nhất Vĩ Shukaku: Khối lửng chó (Tanuki) bụng phệ bằng cát vàng (#D2B48C), hoa văn nguyền ấn xanh tím (#2E3B6E) khắp thân, hốc mắt đen với đồng tử hình sao 4 cánh đen trên nền vàng, 1 đuôi gai khổng lồ nhiều đốt.
+2. Nhị Vĩ Matatabi: Mèo lớn mảnh khảnh dựng từ 2 lớp Mesh lồng nhau (lõi xanh đen #0A1931 + vỏ lửa xanh lam #00BFFF cuộn sóng bằng Vertex Shader), mắt dị sắc (phải vàng #FFD700, trái lục #00E676), 2 đuôi lửa dài.
+3. Tam Vĩ Isobu: Rùa giáp xác nhiều gai sừng xám nâu (#7A7571) che lớp cơ thịt đỏ sẫm (#8C2D38), 2 tay trước 5 ngón có màng bơi, mắt phải nhắm kín, mắt trái đỏ-vàng, 3 đuôi tôm có vây.
+4. Tứ Vĩ Son Goku: Khỉ đột Gorilla ngực rộng lông đỏ thẫm (#8B1E1E), da mặt/ngực xanh lục xám (#526B56), 2 sừng vàng uốn cong như vương miện, miệng phát sáng dung nham (#FF4500), 4 đuôi gai.
+5. Ngũ Vĩ Kokuo: Thân ngựa trắng (#F5F7FA) móng guốc kết hợp đầu cá heo có 4 sừng thoát hơi nước vuốt ngược về sau, mắt lam viền xanh đen, 5 đuôi trắng mượt.
+6. Lục Vĩ Saiken: Sên khổng lồ đứng thẳng màu trắng hồng (#F2E6EA) bật Subsurface Scattering (SSS) bóng ướt, 2 râu mắt tròn trên đỉnh đầu, 6 đuôi mập trơn.
+7. Thất Vĩ Chomei: Bọ cánh cứng giáp xanh lục kim loại (#3E6B64), đầu có sừng dài, mắt kép màu cam, hệ thống 7 đuôi gồm 6 cánh côn trùng màu cam phát sáng (#F97316) + 1 đuôi thật màu lục ở chóp bụng.
+8. Bát Vĩ Gyuki: Thân trên trâu cơ bắp màu hồng nâu (#9C5B5B), 4 sừng (sừng trên bên trái bị chém cụt phẳng, sừng dưới cằm bị gãy), thân dưới là 8 xúc tu bạch tuộc có giác hút.
+9. Cửu Vĩ Kurama: Hồ ly cam rực (#E05A19) có khung vai/ngực người và bàn tay 5 ngón móng vuốt, tai dài vát góc 25°, viền mắt đen kéo tới gốc tai, mắt đỏ con ngươi dọc, 9 đuôi lớn phồng ở giữa.
+10. Thập Vĩ Juubi: Quái vật gỗ đá bất đối xứng (#6E5D53), lưng mọc gai xoắn ốc như nụ Thần Thụ, 1 con mắt độc nhất Rinne Sharingan (4 vòng + 9 Tomoe), 10 đuôi có chóp xòe ra thành hình bàn tay người 5 ngón.
+
+III. KIẾN TRÚC SHADER & RIGGING BẮT BUỘC:
+- Sử dụng GLSL Stepped Toon Shader 2 lớp sắc độ + Pháp tuyến mặt phẳng (Flat Face Normals Proxy) + Viền đen Inverted Hull (BackSide) + Chuyển động đuôi Vĩ Thú theo hàm sóng sin lệch pha thời gian thực.`;
+      }
+
+      return `### PROMPT VIẾT CODE THREE.JS / BLENDER PYTHON TỰ ĐỘNG HÓA PIPELINE ANIME 1:1
+Hãy viết script hoàn chỉnh (Three.js WebGL hoặc Blender Python bpy) thực hiện tự động 4 tác vụ kỹ thuật sau cho mô hình ${spec.name}:
+1. Khởi tạo Mesh với cấu trúc tỷ lệ: ${spec.heightRatio}, góc hàm ${spec.jawAngle}, đầy đủ chi tiết đặc trưng (${spec.topologyNote}).
+2. Tự động tính toán Spherical Normal Proxy cho các đỉnh thuộc vùng mặt (Face Vertices) để triệt tiêu bóng đổ gãy khúc ở mũi và má.
+3. Gắn ShaderMaterial 2 tầng sáng (uBaseColor, uShadeColor) theo đúng bảng mã màu: ${paletteStr}, kèm lớp Outline BackSide có trọng số độ dày theo từng vùng giải phẫu.
+4. Thiết lập hàm cập nhật Animation Loop điều khiển xoay UV mắt Nhãn thuật (${spec.eyeFeature}) và chuỗi xương đuôi/tóc theo sóng hình sin mượt mà ở 60 FPS.`;
+    }
+
+    function openPromptModal() {
+      const modal = document.getElementById('promptModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      switchPromptType(currentPromptTab);
+    }
+
+    function closePromptModal() {
+      const modal = document.getElementById('promptModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function switchPromptType(type) {
+      currentPromptTab = type;
+      const tabs = [
+        { id: 'promptTabCurrent', t: 'current' },
+        { id: 'promptTabMaster', t: 'master' },
+        { id: 'promptTabBlender', t: 'blender' }
+      ];
+      tabs.forEach(item => {
+        const el = document.getElementById(item.id);
+        if (item.t === type) {
+          el.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-orange-500 text-slate-950';
+        } else {
+          el.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700';
+        }
+      });
+      document.getElementById('promptOutputTextarea').value = generatePromptText(type);
+    }
+
+    function copyPromptToClipboard() {
+      const textarea = document.getElementById('promptOutputTextarea');
+      textarea.select();
+      textarea.setSelectionRange(0, 99999);
+      document.execCommand('copy');
+
+      const label = document.getElementById('copyBtnLabel');
+      const original = label.textContent;
+      label.textContent = 'Đã Sao Chép Thành Công!';
+      setTimeout(() => {
+        label.textContent = original;
+      }, 2000);
+    }
+
+    window.onload = function () {
+      initThreeScene();
+    };
+  </script>
+</body>
+</html>

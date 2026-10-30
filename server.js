@@ -750,7 +750,12 @@ if (url.pathname === "/events") return sse(req, res, clients, snapshot());
   if (!p.startsWith(path.join(ROOT, "public"))) { res.writeHead(403); return res.end(); }
   fs.readFile(p, (err, buf) => {
     if (err) { res.writeHead(404); return res.end("không có"); }
-    res.writeHead(200, { "Content-Type": MIME[path.extname(p)] || "application/octet-stream", "Cache-Control": "no-cache" }); res.end(buf);
+    res.writeHead(200, {
+      "Content-Type": MIME[path.extname(p)] || "application/octet-stream",
+      "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+      "Pragma": "no-cache",
+      "Expires": "0"
+    }); res.end(buf);
   });
 }).listen(PORT, CFG.host, () => {
   console.log(`\n  ${CFG.title} đang chạy`);
