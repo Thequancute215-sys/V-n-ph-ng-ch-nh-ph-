@@ -13,6 +13,9 @@ tailwind.config = {
   darkMode: 'class',
   theme: {
     extend: {
+      // Đo bằng trình duyệt: tiêu đề 530px + nhãn phụ 216px + 5 nút nhãn đầy đủ 1063px + lề ≈ 1940px.
+      // Hẹp hơn thì nút dùng nhãn ngắn / chỉ biểu tượng để đầu trang không bị ép xuống nhiều dòng (P7-M01).
+      screens: { wide: '1940px' },
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'monospace'],
@@ -29,51 +32,57 @@ body { background: #040711; color: #f8fafc; font-family: "Plus Jakarta Sans", sa
 .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 999px; }
 @keyframes pulseGlow { 0%, 100% { opacity: 0.8; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
 .chakra-glow { animation: pulseGlow 2.5s ease-in-out infinite; }
+/* P7-M01: dưới 1024px danh sách nhân vật thành dải cuộn ngang nằm giữa khung 3D và hồ sơ */
+@media (max-width: 1023px) {
+  #charList { flex-direction: row; overflow-x: auto; overflow-y: hidden; }
+  #charList > * { flex: 0 0 auto; width: 230px; }
+}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head>
-<body class="h-screen w-screen overflow-hidden flex flex-col select-none">
+<body class="min-h-screen lg:h-screen w-full overflow-x-hidden lg:overflow-hidden flex flex-col select-none">
 
 <!-- Header -->
-<header class="h-16 border-b border-white/10 glass-panel px-6 flex items-center justify-between shrink-0 z-20">
-  <div class="flex items-center gap-3">
-    <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-red-600 flex items-center justify-center text-white font-extrabold shadow-lg shadow-orange-500/25">
+<header class="min-h-16 py-2 border-b border-white/10 glass-panel px-3 sm:px-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 shrink-0 z-20">
+  <div class="flex items-center gap-3 min-w-[13rem] flex-1"><!-- bề rộng tối thiểu: hẹp hơn thì các nút tự xuống hàng dưới thay vì ép tiêu đề -->
+    <div class="w-10 h-10 shrink-0 rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-red-600 flex items-center justify-center text-white font-extrabold shadow-lg shadow-orange-500/25">
       <i data-lucide="flame" class="w-5 h-5 text-amber-200"></i>
     </div>
-    <div>
-      <h1 class="text-base font-extrabold font-chibi tracking-wide text-white flex items-center gap-2">
-        HỒ SƠ NHÂN SỰ CHUẨN NGUYÊN TÁC MANGA NARUTO & 10 VĨ THÚ
-        <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30">Nét Mặt & Trang Phục Chuẩn 100%</span>
+    <div class="min-w-0">
+      <h1 class="text-sm wide:text-base leading-tight font-extrabold font-chibi tracking-wide text-white flex items-center gap-2">
+        <span class="hidden lg:inline">HỒ SƠ NHÂN SỰ CHUẨN NGUYÊN TÁC MANGA NARUTO & 10 VĨ THÚ</span>
+        <span class="lg:hidden">HỒ SƠ NHẪN GIẢ & VĨ THÚ</span>
+        <span class="hidden wide:inline-block whitespace-nowrap text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30">Nét Mặt & Trang Phục Chuẩn 100%</span>
       </h1>
-      <p class="text-xs text-slate-400">Rõ từng nét vẽ mắt, ấn ký, chữ Hán, hoa văn trang phục & hiệu ứng Chakra</p>
+      <p class="hidden xl:block truncate text-xs text-slate-400">Rõ từng nét vẽ mắt, ấn ký, chữ Hán, hoa văn trang phục & hiệu ứng Chakra</p>
     </div>
   </div>
 
-  <div class="flex items-center gap-2.5">
-    <a href="https://www.meshy.ai/vi/tags/naruto" target="_blank" class="px-3.5 py-2 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 text-xs font-bold flex items-center gap-1.5 transition">
-      <i data-lucide="external-link" class="w-4 h-4"></i> Mẫu Meshy.ai Naruto
+  <div class="flex flex-wrap items-center justify-end gap-2 wide:gap-2.5">
+    <a href="https://www.meshy.ai/vi/tags/naruto" title="Mẫu Meshy.ai Naruto" aria-label="Mẫu Meshy.ai Naruto" target="_blank" class="whitespace-nowrap px-3.5 py-2 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 text-xs font-bold flex items-center gap-1.5 transition">
+      <i data-lucide="external-link" class="w-4 h-4"></i> <span class="hidden wide:inline">Mẫu Meshy.ai Naruto</span>
     </a>
-    <button onclick="document.getElementById('glbFileInput').click()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:brightness-110 text-white text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-sky-500/25 transition">
-      <i data-lucide="upload-cloud" class="w-4 h-4 text-cyan-200"></i> Nạp Model 3D (.glb) Meshy.ai
+    <button onclick="document.getElementById('glbFileInput').click()" title="Nạp Model 3D (.glb) Meshy.ai" aria-label="Nạp Model 3D (.glb) Meshy.ai" class="whitespace-nowrap px-4 py-2 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:brightness-110 text-white text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-sky-500/25 transition">
+      <i data-lucide="upload-cloud" class="w-4 h-4 text-cyan-200"></i> <span class="hidden wide:inline">Nạp Model 3D (.glb) Meshy.ai</span><span class="hidden sm:inline wide:hidden">Nạp .glb</span>
     </button>
     <input type="file" id="glbFileInput" accept=".glb,.gltf" style="display:none">
-    <button onclick="location.href='anime-studio.html'" class="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:brightness-110 text-xs font-bold text-white border border-purple-400/30 flex items-center gap-1.5 shadow-lg shadow-purple-500/25 transition">
-      <i data-lucide="zap" class="w-4 h-4 text-amber-300"></i> Studio Anime CC2 1:1
+    <button onclick="location.href='anime-studio.html'" title="Studio Anime CC2 1:1" aria-label="Studio Anime CC2 1:1" class="whitespace-nowrap px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:brightness-110 text-xs font-bold text-white border border-purple-400/30 flex items-center gap-1.5 shadow-lg shadow-purple-500/25 transition">
+      <i data-lucide="zap" class="w-4 h-4 text-amber-300"></i> <span class="hidden wide:inline">Studio Anime CC2 1:1</span><span class="hidden sm:inline wide:hidden">Studio</span>
     </button>
-    <button onclick="location.href='index.html'" class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-200 border border-white/10 flex items-center gap-1.5 transition">
-      <i data-lucide="arrow-left" class="w-4 h-4"></i> Về Văn Phòng 3D
+    <button onclick="location.href='index.html'" title="Về Văn Phòng 3D" aria-label="Về Văn Phòng 3D" class="whitespace-nowrap px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-200 border border-white/10 flex items-center gap-1.5 transition">
+      <i data-lucide="arrow-left" class="w-4 h-4"></i> <span class="hidden wide:inline">Về Văn Phòng 3D</span><span class="hidden sm:inline wide:hidden">Văn phòng</span>
     </button>
-    <button onclick="approveAll()" class="px-5 py-2 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-amber-400 hover:brightness-110 text-black text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-orange-500/25 transition">
-      <i data-lucide="check-check" class="w-4 h-4"></i> DUYỆT TẤT CẢ TẠO HÌNH NGUYÊN TÁC
+    <button onclick="approveAll()" title="DUYỆT TẤT CẢ TẠO HÌNH NGUYÊN TÁC" aria-label="DUYỆT TẤT CẢ TẠO HÌNH NGUYÊN TÁC" class="whitespace-nowrap px-5 py-2 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-amber-400 hover:brightness-110 text-black text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-orange-500/25 transition">
+      <i data-lucide="check-check" class="w-4 h-4"></i> <span class="hidden wide:inline">DUYỆT TẤT CẢ TẠO HÌNH NGUYÊN TÁC</span><span class="hidden sm:inline wide:hidden">Duyệt tất cả</span>
     </button>
   </div>
 </header>
 
 <!-- Main Gallery Layout -->
-<main class="flex-1 flex overflow-hidden">
+<main class="flex-1 flex flex-col lg:flex-row lg:overflow-hidden lg:min-h-0">
   
   <!-- Left Column: Character List Selector -->
-  <aside class="w-80 border-r border-white/10 bg-[#060914]/95 flex flex-col shrink-0 custom-scroll overflow-y-auto p-3 gap-2">
+  <aside id="charList" class="order-2 lg:order-none w-full lg:w-72 xl:w-80 border-y lg:border-y-0 lg:border-r border-white/10 bg-[#060914]/95 flex flex-col lg:shrink-0 custom-scroll lg:overflow-y-auto p-3 gap-2">
     
     <!-- 5 Shinobi Pillars -->
     <div class="text-[11px] font-bold text-orange-400 uppercase tracking-wider px-2 py-1 flex items-center justify-between">
@@ -239,7 +248,7 @@ body { background: #040711; color: #f8fafc; font-family: "Plus Jakarta Sans", sa
   </aside>
 
   <!-- Center Stage: 3D Spotlight Canvas -->
-  <div class="flex-1 h-full relative flex flex-col items-center justify-center bg-gradient-to-b from-[#080e22] via-[#040712] to-[#010206]">
+  <div class="order-1 lg:order-none h-[62vh] min-h-[360px] lg:h-full lg:flex-1 lg:min-w-0 relative flex flex-col items-center justify-center bg-gradient-to-b from-[#080e22] via-[#040712] to-[#010206]">
     
     <div id="charCanvasBox" class="w-full h-full relative">
       <div id="charGl" class="w-full h-full"></div>
@@ -254,7 +263,7 @@ body { background: #040711; color: #f8fafc; font-family: "Plus Jakarta Sans", sa
       </div>
 
       <!-- Guide Pill: Meshy Tag Link & Reset (Placed at bottom-right to prevent any top bar collision) -->
-      <div id="meshyGuidePill" class="absolute bottom-6 right-6 z-10 glass-panel px-3.5 py-2 rounded-2xl border border-sky-500/30 text-xs text-sky-200 flex items-center gap-2.5 shadow-xl">
+      <div id="meshyGuidePill" class="absolute bottom-3 right-3 sm:bottom-6 sm:right-6 max-w-[calc(100%-1.5rem)] z-10 glass-panel px-3.5 py-2 rounded-2xl border border-sky-500/30 text-xs text-sky-200 flex items-center gap-2.5 shadow-xl">
         <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
         <span>Kéo & thả <b>.glb</b> tải từ <a href="https://www.meshy.ai/vi/tags/naruto" target="_blank" class="underline text-amber-300 font-bold hover:text-white">meshy.ai/vi/tags/naruto</a></span>
         <button onclick="resetProceduralChar()" id="btnResetProcedural" class="hidden ml-1 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[11px] font-bold border border-white/10">
@@ -263,12 +272,12 @@ body { background: #040711; color: #f8fafc; font-family: "Plus Jakarta Sans", sa
       </div>
 
       <!-- Floating 3D Badge Controls -->
-      <div class="absolute bottom-6 left-6 z-10 glass-panel px-4 py-2 rounded-2xl flex items-center gap-3 shadow-xl">
+      <div class="absolute bottom-6 left-6 z-10 glass-panel px-4 py-2 rounded-2xl hidden 2xl:flex items-center gap-3 shadow-xl">
         <div class="w-3 h-3 rounded-full bg-amber-400 animate-ping"></div>
         <span class="text-xs font-mono font-bold text-slate-200">Xoay 360° · Cuộn chuột soi sát nét mặt & hoa văn</span>
       </div>
 
-      <div class="absolute top-6 right-6 z-10 flex gap-2">
+      <div class="absolute top-3 right-3 sm:top-6 sm:right-6 z-10 flex flex-wrap justify-end gap-2">
         <button onclick="toggleChakraFx()" id="btnChakraFx" class="px-3.5 py-1.5 rounded-xl bg-orange-500/20 text-orange-300 border border-orange-500/30 text-xs font-bold hover:bg-orange-500/30 flex items-center gap-1.5 transition">
           <i data-lucide="zap" class="w-3.5 h-3.5"></i> Hào quang Chakra: BẬT
         </button>
@@ -286,7 +295,7 @@ body { background: #040711; color: #f8fafc; font-family: "Plus Jakarta Sans", sa
   </div>
 
   <!-- Right Column: Character Dossier -->
-  <aside class="w-96 border-l border-white/10 bg-[#060914] p-6 flex flex-col justify-between shrink-0 custom-scroll overflow-y-auto">
+  <aside class="order-3 lg:order-none w-full lg:w-80 xl:w-96 lg:border-l border-white/10 bg-[#060914] p-4 sm:p-6 flex flex-col justify-between gap-6 lg:shrink-0 custom-scroll lg:overflow-y-auto">
     <div class="space-y-4">
       <div>
         <div class="flex items-center justify-between">
@@ -1809,11 +1818,14 @@ window.addEventListener("hashchange", () => {
 });
 animate();
 
-window.addEventListener("resize", () => {
+function fitCanvas() {
+  if (!container.clientWidth || !container.clientHeight) return;
   camera.aspect = container.clientWidth / container.clientHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(container.clientWidth, container.clientHeight);
-});
+}
+window.addEventListener("resize", fitCanvas);
+new ResizeObserver(fitCanvas).observe(container);
 </script>
 </body>
 </html>
