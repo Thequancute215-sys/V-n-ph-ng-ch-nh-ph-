@@ -119,6 +119,14 @@ Dữ liệu của ctl nằm ở `~/.van-phong-ao/` (`ctl.db`, `logs/`, `ctl-toke
 
 > **Lưu ý thật:** lệnh trong danh sách cho phép như `npm test` vẫn chạy script của chính dự án. Ranh giới của Controller là workspace đã đăng ký, quyền của từng CLI, nhật ký và phanh khẩn cấp. Antigravity có CLI chạy nền `agy`; cài và đăng nhập trước khi giao lượt SPEC tự động.
 
+## Chọn repo GitHub trong app
+
+Ở trang Tổng quan (`prototype.html`), bấm **Chọn repo GitHub**, tìm repo rồi bấm **Mở repo**. Danh sách lấy trực tiếp từ tài khoản GitHub đã đăng nhập trong Git Credential Manager trên máy, gồm cả repo riêng tư và repo được cộng tác; có tải thêm khi danh sách dài. Không cần nhập token vào văn phòng.
+
+Văn phòng nhận diện bản sao đã đăng ký hoặc nằm ngay dưới `~/Projects` qua remote `origin` (HTTPS/SSH). Bản sao có sẵn được giữ nguyên nhánh và các thay đổi chưa commit. Repo chưa có được clone vào `~/Projects/<chủ-repo>/<tên-repo>` rồi đăng ký và chọn làm dự án; lựa chọn được khôi phục khi bật lại app. Nếu thư mục đích có dữ liệu khác, văn phòng báo lỗi và giữ nguyên dữ liệu. Tác vụ clone có nhật ký, giới hạn 10 phút và dừng được bằng bảng điều khiển máy/Kill-All.
+
+Chọn repo chỉ tải mã về máy, không push, merge hoặc phát hành. Repo chưa có `agent.md` vẫn mở được, nhưng nút giao việc tự động tạm khóa và giao diện báo cần thiết lập sổ đội AI. Văn phòng không tự ghi đè hướng dẫn hoặc tự khởi tạo giao thức trong repo vừa chọn. Nếu đăng nhập hết hạn, đăng nhập lại qua Git Credential Manager rồi tải lại danh sách.
+
 ## Sổ điều phối `data/` và công cụ `vp`
 
 Sổ của đội nằm trong `data/`. Thư mục này đã có trong `.gitignore`, mỗi máy một bộ riêng. Agent ghi sổ bằng `node tools/vp.js …`, gõ `node tools/vp.js giup` để xem đủ lệnh:

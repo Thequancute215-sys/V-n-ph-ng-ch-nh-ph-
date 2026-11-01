@@ -16,7 +16,7 @@
 <a class="skip" href="#main">Đến nội dung chính</a>
 <header class="app-header">
   <div class="brand"><img src="icon.svg" width="40" height="40" alt=""><div><strong>Văn phòng AI Chibi</strong><span>Protocol v2.2 · Tổng quan trực tiếp</span></div></div>
-  <label class="workspace"><span>DỰ ÁN ĐANG XEM</span><select id="workspace" disabled><option>Đang tải dự án…</option></select></label>
+  <div class="workspace"><label for="workspace">DỰ ÁN ĐANG XEM</label><div class="workspace-picker"><select id="workspace" disabled><option>Đang tải dự án…</option></select><button id="githubChoose" type="button">Chọn repo GitHub</button></div></div>
   <div class="header-actions"><span id="connection" class="badge">Đang kết nối…</span><button id="refresh" type="button">Làm mới</button><a class="button" href="/">Văn phòng 3D ↗</a></div>
 </header>
 <section class="protocol" aria-label="Trạng thái điều phối">
@@ -45,5 +45,6 @@
 </main>
 <footer><span id="updated">Đang đồng bộ…</span><span>Dữ liệu cục bộ · <a href="noiquy.html">Nội quy & bài học</a></span></footer>
 <dialog id="approveDialog" aria-labelledby="approveTitle"><form method="dialog"><div class="dialog-heading"><h2 id="approveTitle">Duyệt chuyển lượt</h2><button value="cancel" aria-label="Đóng">✕</button></div><div id="approveSummary"></div><p class="muted">Xác nhận sẽ ghi lượt mới vào agent.md và tạo commit cục bộ.</p><p id="approveError" class="error" role="alert"></p><div class="dialog-actions"><button value="cancel">Để sau</button><button id="confirmApproval" type="button" class="primary">Xác nhận chuyển lượt</button></div></form></dialog>
+<dialog id="githubDialog" aria-labelledby="githubTitle"><div class="dialog-heading"><h2 id="githubTitle">Chọn repo làm việc</h2><button id="githubClose" type="button" aria-label="Đóng">✕</button></div><p id="githubAccount" class="muted">Đang kết nối GitHub…</p><p class="muted">Repo có sẵn được mở tại chỗ. Repo chưa có được tải vào Projects khi bạn bấm Mở repo.</p><label class="repo-search" for="githubSearch">Tìm repo<input id="githubSearch" type="search" placeholder="Tên repo hoặc mô tả…" autocomplete="off"></label><div class="repo-toolbar"><button id="githubRefresh" type="button">Tải lại danh sách</button><span id="githubCount" class="muted"></span></div><p id="githubMessage" class="muted" role="status" aria-live="polite"></p><div id="githubRepos" aria-busy="true"><p class="skeleton">Đang tải repo từ GitHub…</p></div><button id="githubMore" type="button" hidden>Tải thêm repo</button></dialog>
 </body>
 </html>
