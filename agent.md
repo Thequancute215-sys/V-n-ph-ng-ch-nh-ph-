@@ -110,8 +110,8 @@
 
 ## [4] KHÓA LƯỢT & NHẬT KÝ
 - CURRENT_PHASE: Phase 7 - Vận hành hằng ngày
-- LAST_UPDATED_BY: CODEX_ASTRA_DEV (Claude làm thay theo ĐC-06)
-- NEXT_OWNER (MUTEX LOCK): CLAUDE_AUDITOR
+- LAST_UPDATED_BY: CLAUDE_AUDITOR
+- NEXT_OWNER (MUTEX LOCK): SPEC_ARCHITECT
 
 ### [4.1] NHẬT KÝ PHASE HIỆN TẠI (tối đa 25 dòng)
 - Đặc cách ĐC-06 (CEO, 01/11/2026): Claude làm thay việc đóng Phase của CODEX_ASTRA_DEV và P2-M09 của SPEC_ARCHITECT, sau đó nghiệm thu như bình thường.
@@ -123,18 +123,12 @@
 - Phase 2–6: OS Controller (ctl/) + vá bảo mật P2 (CSRF, Kill-Switch thật, dữ liệu giả), PASS vòng 2/3, PR #1–#3, 55 test Linux + Windows (CLAUDE_AUDITOR, đặc cách ĐC-01..05).
 
 ## [5] CHỐT CHẶN CLAUDE: KIỂM DUYỆT & BLOCKER (Chỉ CLAUDE_AUDITOR)
-- AUDIT_STATUS: PASS (Phase 2–6, OS Controller). Phase 2–6 được phép đóng.
-- REVIEW_ROUND: 2/3
-- LAST_AUDITED_COMMIT: f91a6cf (+ vòng 2 của Claude trên claude/ctl-hoan-chinh)
+- AUDIT_STATUS: PASS (đóng Phase 2–6; Phase 7 mở, không còn blocker chặn)
+- REVIEW_ROUND: 1/3 (Phase 7)
+- LAST_AUDITED_COMMIT: da30252
 - Phản biện kiến trúc & chống over-engineering: "Toàn quyền điều khiển máy + AI tự chỉ huy nhau" bị thay bằng Kiến trúc A (Vùng [3]): một prompt injection qua README/issue/log không được phép thành lệnh xóa file hay đẩy secret ra ngoài. Không multi-agent tự động: mọi lần chuyển lượt có CEO bấm duyệt.
-- Ghi chú nghiệm thu: C03–C06 do Claude sửa và Claude nghiệm thu (đặc cách ĐC-02/ĐC-05), đã kiểm chéo trên 2 máy (Linux Codespace + Windows của CEO); Sol chưa đọc chéo.
+- Nghiệm thu da30252 (ĐC-06, Claude làm thay rồi tự nghiệm thu, đã báo CEO): nén log đúng luật ([4.1] 3 dòng, [4.2] 2 dòng); tăng Phase hợp lệ (chỉ còn mục MEDIUM). P2-M09: Chromium thật bấm đủ 6 nhẫn giả + 10 vĩ thú × 6 nút trên characters.html, 0 lỗi console; văn phòng 3D 6 nhân vật đúng Vùng [2.3]; nhánh mặt bị xóa trong index.html là mã chết (khóa antigravity/sol/claude đã khớp nhánh hinata/itachi/sakura phía trên); npm test 55/55.
 - Blocker (chỉ CLAUDE_AUDITOR đổi [ ] OPEN thành [x] RESOLVED):
-  - [x] RESOLVED P2-C01 [CRITICAL - quy trình]: SPEC_ARCHITECT commit code khi không giữ lượt. Đã có chore(agent-sync) đã push (f26202f), từ đó mọi chuyển lượt đi qua commit trên GitHub; SPEC chỉ ghi Vùng [2].
-  - [x] RESOLVED P2-C03 [CRITICAL - Kill-Switch]: dừng thật theo PID qua lib/proc.killTree và ctl (chờ exit trên Windows). Test proc/ctl/tat-ctl.
-  - [x] RESOLVED P2-C04 [CRITICAL - broadcast]: bỏ lời duyệt chéo viết cứng và task giả; peerReview rỗng, ghi "gợi ý theo từ khóa".
-  - [x] RESOLVED P2-C05 [CRITICAL - CSRF/DNS rebinding]: lib/guard.checkWrite + checkHost cho mọi yêu cầu; khóa lưu ~/.van-phong-ao/keys.json. Test guard/keys.
-  - [x] RESOLVED P2-C06 [CRITICAL - email cứng]: đã bỏ khỏi mã; email còn trong lịch sử git, CEO chọn giữ (repo riêng tư).
-  - [x] RESOLVED P2-H02 [HIGH - tên nhân vật]: server.js theo Vùng [2.3] (Hinata, Itachi, Sasuke, Sakura; Claude = Lục Vĩ Saiken). Phần còn lại tách thành P2-M09.
-  - [x] RESOLVED P2-H07 [HIGH - BAI-HOC]: mau/BAI-HOC.md sửa 3 cái chặn ghi sai, thêm FAKE-GUARDRAIL, LOCALHOST-CSRF, WINDOWS-SIGNAL, DEAD-SECURITY-CHECK. data/BAI-HOC.md trên máy CEO cần chép lại từ mau/.
-  - [x] RESOLVED P2-M08 [MEDIUM - innerHTML]: index.html thoát HTML (escH) cho tiêu đề task, người nhận, linh vật, nhận xét, id nút dừng.
-  - [ ] OPEN P2-M09 [MEDIUM - Vùng [2.1] F2 + public/characters.html, chủ: SPEC_ARCHITECT]: còn tên cũ Kakashi/Shikamaru/Gaara → đổi theo Vùng [2.3]. MEDIUM: không chặn đóng Phase.
+  - [x] RESOLVED P2-C01, C03, C04, C05, C06, H02, H07, M08 (chi tiết đã nén: xem commit e4bf8cb và [4.2] Phase 2–6).
+  - [x] RESOLVED P2-M09 [MEDIUM - đội hình nhân vật]: characters.html, index.html, agent.md [2.1] F2, docs/SPEC-VUNG-2.md theo Vùng [2.3]; link cũ chuyển sang nhân vật mới (da30252).
+  - [ ] OPEN P7-M01 [MEDIUM - public/characters.html, chủ: SPEC_ARCHITECT]: bố cục 3 cột vỡ khi màn hình hẹp hơn ~1100px (cột giữa bị bóp, chữ đè lên mô hình). Có từ trước, không do da30252. Không chặn Phase.
