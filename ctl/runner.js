@@ -26,13 +26,17 @@ const SETTINGS_DEFAULT = { autoDispatch: false, maxTurns: 5, maxRework: 2 };
 const CLAUDE = ["claude", "-p", "{prompt}", "--output-format", "json", "--max-turns", "30", "--permission-mode", "acceptEdits",
   "--allowedTools", "Read", "Grep", "Glob", "Edit", "Write", "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git show:*)", "Bash(npm test:*)", "Bash(node --test:*)"];
 const CODEX = ["codex", "exec", "--json", "--sandbox", "workspace-write", "{prompt}"];
+// Antigravity CLI (agy, kiểm trên máy CEO 02/11/2026): chạy nền bằng --print; headless tự chặn lệnh terminal, chỉ mở git chỉ đọc.
+// Máy cài agy từ trong app Codex thì agy.exe nằm ở thư mục ảo của gói Codex: đặt đường dẫn tuyệt đối trong ctl-agents.json.
+const AGY = ["agy", "--print", "{prompt}", "--output-format", "json", "--mode", "accept-edits", "--sandbox",
+  "--settings", JSON.stringify({ permissions: { allow: ["command(git status)", "command(git diff)", "command(git log)"] } })];
 
 const AGENTS = {
   CLAUDE_AUDITOR: { argv: CLAUDE, timeoutMs: 20 * MIN, prompt: "Bạn là CLAUDE_AUDITOR (Đội trưởng kiểm duyệt). Đọc toàn bộ ./agent.md và data/BAI-HOC.md nếu có. Thẩm định diff từ LAST_AUDITED_COMMIT đến HEAD (git diff), đối chiếu Vùng [2], [3] và các CLAIM_FIXED ở [4.1]. Chỉ được sửa Vùng [5] và 2 dòng LAST_UPDATED_BY/NEXT_OWNER của Vùng [4]; không sửa code. Lỗi mới ghi theo mẫu `- [ ] OPEN P{phase}-C{số} [...]`." },
   SOL_ARCHITECT_PLANNER: { argv: CODEX, timeoutMs: 30 * MIN, prompt: "Bạn là SOL_ARCHITECT_PLANNER (GPT Sol). Đọc ./agent.md. Thiết kế/cập nhật Vùng [3]: cây thư mục, schema DB kèm lý do từng index, API contract đủ method/path/request/response/mã lỗi, lộ trình Phase có điều kiện nghiệm thu đo được. Không viết code. next_owner thường là CLAUDE_AUDITOR." },
   SOL_ARCHITECT_ADVISOR: { argv: CODEX, timeoutMs: 30 * MIN, prompt: "Bạn là SOL_ARCHITECT_ADVISOR (GPT Sol). Đọc ./agent.md. Đối chiếu code hiện tại với Vùng [3], ghi nhận xét và đề xuất ngắn vào [4.1]. Không sửa Vùng [3], không viết code. next_owner là CLAUDE_AUDITOR." },
   CODEX_ASTRA_DEV: { argv: CODEX, timeoutMs: 30 * MIN, prompt: "Bạn là CODEX_ASTRA_DEV (Codex Astra). Đọc ./agent.md: Vùng [1], [3] và các blocker [ ] OPEN ở [5]. Viết code chuẩn production (cấm TODO/placeholder), chạy `npm test` nếu có. Ghi danh sách file và `CLAIM_FIXED: [ID] -> [file]` vào [4.1]. Không sửa [3], [5]. Được commit cục bộ, không push. next_owner là SOL_ARCHITECT_ADVISOR, hoặc CLAUDE_AUDITOR nếu đang trả bài blocker." },
-  SPEC_ARCHITECT: { argv: null, prompt: "" }, // Antigravity chạy trong IDE, chưa có CLI chạy nền: giao việc qua hòm thư văn phòng.
+  SPEC_ARCHITECT: { argv: AGY, timeoutMs: 20 * MIN, prompt: "Bạn là SPEC_ARCHITECT (Antigravity / Hinata). Đọc ./agent.md. Viết/cập nhật Vùng [2]: phạm vi MVP, luồng người dùng, luồng AI Agent, thiết kế UI/UX (Design Tokens, Component Tree, 5 trạng thái), trường hợp biên. Không viết code, không sửa Vùng [3], [5]. next_owner thường là SOL_ARCHITECT_PLANNER." },
 };
 const RETRYABLE = /rate.?limit|\b429\b|overloaded|ECONNRESET|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|socket hang up/i;
 const err = (code, msg) => Object.assign(new Error(msg), { code });
@@ -92,7 +96,7 @@ function createRunner({ jobs, ws, audit, db, dir }) {
     const root = ws.find(workspace).path;
     const a = AGENTS[role];
     if (!a) throw err("BAD_REQUEST", "Vai không hợp lệ: " + role);
-    if (!a.argv) throw err("NO_CLI", role + " (Antigravity) chưa có CLI chạy nền: gửi việc qua Hòm thư văn phòng");
+    if (!a.argv) throw err("NO_CLI", role + " chưa có CLI chạy nền: gửi việc qua Hòm thư văn phòng");
     const turn = readTurn(root);
     if (turn.nextOwner !== role) throw err("NOT_YOUR_TURN", `Đang là lượt của ${turn.nextOwner}, không phải ${role}`);
     if (jobs.aiBusy(root)) throw err("AI_BUSY", "Workspace này đang có 1 lượt AI chạy hoặc chờ duyệt");
