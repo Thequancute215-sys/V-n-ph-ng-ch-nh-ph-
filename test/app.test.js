@@ -49,6 +49,7 @@ test("tìm trình duyệt Chromium để mở cửa sổ app", () => {
   assert.strictEqual(app.findBrowser(env, "win32", (f) => f === chrome), chrome);
   assert.strictEqual(app.findBrowser(env, "win32", () => false), null);
   assert.strictEqual(app.findBrowser({ PATH: "/usr/bin" }, "linux", (f) => f === "/usr/bin/chromium"), "/usr/bin/chromium");
+  assert.strictEqual(app.findBrowser({ PATH: "/usr/local/bin:/usr/bin" }, "linux", (f) => f === "/usr/bin/chromium"), "/usr/bin/chromium");
 });
 
 test("mở cửa sổ app không đi qua shell", () => {

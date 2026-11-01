@@ -65,7 +65,7 @@ pre{margin:8px 0 0;background:var(--panel2);border:1px solid var(--line);border-
   <div class="brand"><div class="logo">⌘</div><div><b>Điều khiển máy</b><small>OS Controller · chỉ trên máy này</small></div></div>
   <button data-cai-app hidden title="Cài Văn phòng AI thành app có cửa sổ và biểu tượng riêng">⬇ Cài app</button>
   <button class="brake" id="brake">⏹ PHANH KHẨN CẤP</button>
-  <div class="views"><a href="/">Văn phòng 3D</a><a href="tongquan.html">Tổng quan</a><a href="hopthu.html">Hòm thư</a><a href="board.html">Bảng điều hành</a></div>
+  <div class="views"><a href="prototype.html#board">Claude báo cáo & tự động</a><a href="/">Văn phòng 3D</a><a href="tongquan.html">Tổng quan</a><a href="hopthu.html">Hòm thư</a><a href="board.html">Bảng điều hành</a></div>
 </div>
 
 <main>
@@ -91,12 +91,11 @@ pre{margin:8px 0 0;background:var(--panel2);border:1px solid var(--line);border-
     <div id="turnBox"><div class="skel"></div></div>
     <textarea id="aiTask" rows="3" placeholder="Việc giao thêm cho AI đang giữ lượt (không bắt buộc)" style="margin-top:10px"></textarea>
     <div class="row" style="margin-top:8px"><button class="gold" id="aiRun" disabled>Chạy lượt</button>
-      <label class="mono" style="display:flex;gap:6px;align-items:center;font-size:12px"><input type="checkbox" id="autoOn" style="width:auto"> Chế độ tự hành (tối đa <span id="autoMax">5</span> lượt)</label></div>
+      <a href="prototype.html#board" class="mono" style="font-size:12px">Giao việc tự động hoàn toàn →</a></div>
     <div class="msg" id="aiMsg"></div>
-    <div class="msg" id="autoBox"></div>
     <h2 style="margin-top:14px">Chờ duyệt chuyển lượt</h2>
     <div id="handoffs"></div>
-    <p class="note">AI xong lượt thì in dòng JSON bàn giao. Duyệt tay: bấm "Duyệt chuyển lượt" thì ctl mới ghi agent.md và commit <span class="mono">chore(agent-sync)</span> trên máy này (không push). Tự hành: ctl tự duyệt và chạy vai kế tiếp, dừng lại báo anh khi lượt lỗi, bàn giao sai, đủ số lượt, Codex sửa quá 2 lần, xung đột git, log lộ khóa, hoặc Claude nghiệm thu xong. Đủ 4 vai đều chạy nền: Antigravity (agy), Sol và Astra (codex), Claude (claude). Phanh khẩn cấp dừng cả chu trình.</p>
+    <p class="note">Chạy tay từng lượt: AI xong thì in dòng JSON bàn giao, bấm "Duyệt chuyển lượt" thì ctl mới ghi agent.md và commit <span class="mono">chore(agent-sync)</span> trên máy này (không push). Tự động hoàn toàn: giao việc ở trang "Claude báo cáo & tự động" — ctl tự duyệt và chạy vai kế tiếp, dừng lại báo anh khi lượt lỗi, bàn giao sai, hết lượt/thời gian, Codex sửa quá 2 lần, xung đột git, log lộ khóa, hoặc Claude hỏi anh / báo cáo xong. Đủ 4 vai đều chạy nền: Antigravity (agy), Sol và Astra (codex), Claude (claude). Phanh khẩn cấp dừng cả luồng.</p>
   </section>
 
   <section class="panel full">
@@ -220,28 +219,9 @@ async function loadTurn() {
     <tr><td class="z">Cập nhật cuối</td><td class="mono">${esc(s.turn.lastUpdatedBy || "–")}</td></tr>
     <tr><td class="z">Trạng thái</td><td>${s.aiBusy ? '<b class="y">Đang có lượt AI chạy</b>' : s.handoffPending ? '<b class="y">Chờ CEO duyệt hoặc từ chối bàn giao bên dưới</b>' : s.runnable ? '<span class="g">Sẵn sàng</span>' : '<span class="y">Vai này chưa có CLI chạy nền: giao qua Hòm thư</span>'}</td></tr></table>`;
   $("aiRun").disabled = s.aiBusy || !s.runnable;
-  $("aiRun").textContent = (s.auto && s.auto.enabled ? "Giao việc, tự hành từ " : "Chạy lượt ") + s.turn.nextOwner;
+  $("aiRun").textContent = "Chạy lượt " + s.turn.nextOwner;
   $("aiRun").dataset.role = s.turn.nextOwner;
-  showAuto(s.auto);
 }
-// Chu trình tự hành: anh chỉ theo dõi ở đây; dừng/ngắt mạch thì hiện lý do.
-function showAuto(a) {
-  if (!a) return;
-  $("autoOn").checked = a.enabled; $("autoMax").textContent = a.maxTurns;
-  const c = a.chain;
-  if (!c) return say("autoBox", a.enabled ? "Tự hành đang bật: bấm Giao việc để mở chu trình." : "");
-  const path = c.roles.join(" → ") || "–";
-  if (!c.stopped) return say("autoBox", `Chu trình đang chạy · lượt ${c.turns}/${a.maxTurns} · ${path}`, "y");
-  if (c.stopped.waiting) return say("autoBox", `⏸ Chu trình chờ anh quyết (${path}): Claude có câu hỏi ở mục "Chờ duyệt chuyển lượt" bên dưới.`, "y");
-  say("autoBox", `${c.stopped.finished ? "✔ Chu trình hoàn tất" : "■ Chu trình dừng"} sau ${c.turns} lượt (${path}): ${c.stopped.reason}`, c.stopped.finished ? "g" : "r");
-}
-$("autoOn").onchange = async () => {
-  const on = $("autoOn").checked;
-  if (on && !confirm("Bật CHẾ ĐỘ TỰ HÀNH cho mọi repo?\nBàn giao hợp lệ sẽ được ctl tự duyệt (commit agent.md) và tự chạy AI kế tiếp, tối đa " + $("autoMax").textContent + " lượt mỗi chu trình. Phanh khẩn cấp dừng được bất cứ lúc nào.")) { $("autoOn").checked = false; return; }
-  const r = await api("POST", "/settings", { autoDispatch: on });
-  say("aiMsg", r.ok ? (on ? "Đã bật tự hành." : "Đã tắt tự hành: bàn giao từ nay chờ duyệt tay.") : r.error, r.ok ? "g" : "r");
-  loadTurn();
-};
 $("aiRun").onclick = async () => {
   const role = $("aiRun").dataset.role;
   if (!confirm("Chạy lượt " + role + " trong " + active + "?\nAI sẽ đọc agent.md và làm việc trong thư mục này (tối đa 20–30 phút, dừng được bằng Phanh khẩn cấp).")) return;
@@ -278,9 +258,9 @@ $("handoffs").addEventListener("click", async (e) => {
   const ok = e.target.dataset.hok, no = e.target.dataset.hno, lg = e.target.dataset.log, ans = e.target.dataset.hans;
   if (ans) {
     const opt = e.target.dataset.opt;
-    if (!confirm("Chọn phương án " + opt + " cho câu hỏi của Claude?\nLượt chuyển sang vai của phương án này" + ($("autoOn").checked ? " và chu trình tự hành chạy tiếp ngay." : "."))) return;
+    if (!confirm("Chọn phương án " + opt + " cho câu hỏi của Claude?\nLượt chuyển sang vai của phương án này.")) return;
     const r = await api("POST", `/handoffs/${encodeURIComponent(ans)}/answer`, { option: opt });
-    say("aiMsg", r.ok ? `Đã chọn ${opt}: lượt sang ${r.handoff.next}` + (r.handoff.commit ? ", commit " + r.handoff.commit : "") + (r.handoff.job ? ". Đang chạy " + r.handoff.job.id : "") + (r.handoff.runError ? ". Chưa chạy được: " + r.handoff.runError : "") : r.error, r.ok && !r.handoff.runError ? "g" : "r");
+    say("aiMsg", r.ok ? `Đã chọn ${opt}: lượt sang ${r.handoff.next}` + (r.handoff.commit ? ", commit " + r.handoff.commit : "") + ". Bấm Chạy lượt để vai đó làm theo quyết định." : r.error, r.ok ? "g" : "r");
     refresh(); loadTurn();
   }
   if (ok) { const r = await api("POST", `/handoffs/${encodeURIComponent(ok)}/approve`, {}); say("aiMsg", r.ok ? (r.handoff.commit ? "Đã chuyển lượt, commit " + r.handoff.commit : r.handoff.message) : r.error, r.ok ? "g" : "r"); refresh(); loadTurn(); }
