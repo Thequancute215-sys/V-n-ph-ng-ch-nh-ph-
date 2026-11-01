@@ -110,13 +110,15 @@
 
 ## [4] KHÓA LƯỢT & NHẬT KÝ
 - CURRENT_PHASE: Phase 7 - Vận hành hằng ngày
-- LAST_UPDATED_BY: CLAUDE_AUDITOR
-- NEXT_OWNER (MUTEX LOCK): SPEC_ARCHITECT
+- LAST_UPDATED_BY: SPEC_ARCHITECT (Claude làm thay theo ĐC-07)
+- NEXT_OWNER (MUTEX LOCK): CLAUDE_AUDITOR
 
 ### [4.1] NHẬT KÝ PHASE HIỆN TẠI (tối đa 25 dòng)
 - Đặc cách ĐC-06 (CEO, 01/11/2026): Claude làm thay việc đóng Phase của CODEX_ASTRA_DEV và P2-M09 của SPEC_ARCHITECT, sau đó nghiệm thu như bình thường.
 - File đã sửa (nhánh claude/dong-phase-m09): agent.md ([2.1] F2, [3] lộ trình, [4]), docs/SPEC-VUNG-2.md (bảng nhân vật), public/characters.html (hồ sơ + mô hình 3D Hinata, Itachi, Sakura, Pain; link cũ chuyển sang nhân vật mới; bỏ mô hình Kakashi/Shikamaru/Gaara), public/index.html (bỏ băng trán Kakashi, tấm tay Shikamaru, áo Gaara còn sót; Hinata đeo băng cổ, Itachi băng trán gạch, màu áo theo [2.3]).
 - CLAIM_FIXED: P2-M09 -> claude/dong-phase-m09 (ảnh chụp trình duyệt thật cả 6 nhân vật ở characters.html và văn phòng 3D; npm test xanh).
+- Đặc cách ĐC-07 (CEO, 01/11/2026): Claude sửa P7-M01 thay SPEC_ARCHITECT. public/characters.html: đầu trang xuống hàng + nhãn nút ngắn dưới 1940px (đo: nhãn đầy đủ cần ≈1940px), dưới 1024px xếp 1 cột (khung 3D → dải nhân vật cuộn ngang → hồ sơ), khung 3D đổi cỡ theo khung chứa (ResizeObserver).
+- CLAIM_FIXED: P7-M01 -> claude/p7-m01 (ảnh chụp 1960/1440/1280/1024/768/390px; không tràn ngang; 16 nhân vật × 6 nút ở 390 và 1440px không lỗi console; npm test 55/55).
 
 ### [4.2] LƯU TRỮ PHASE ĐÃ XONG (tối đa 5 dòng, 1 dòng/Phase)
 - Phase 1: Hoàn tất đặc tả Vùng [2] và Interactive Prototype Chibi Edition (SPEC_ARCHITECT).
