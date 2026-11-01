@@ -21,7 +21,9 @@ $dirs = @{ desktop = [Environment]::GetFolderPath('Desktop'); menu = [Environmen
 foreach ($where in $env:VP_WHERE.Split(',')) {
   $lnk = Join-Path $dirs[$where] ($env:VP_NAME + '.lnk')
   if ($env:VP_MODE -eq 'remove') { if (Test-Path -LiteralPath $lnk) { Remove-Item -LiteralPath $lnk; Write-Output ('removed ' + $lnk) }; continue }
-  $s = $shell.CreateShortcut($lnk)
+  # WScript có thể làm mất ký tự ngoài bảng mã hệ thống khi Save: lưu tên ASCII rồi đổi bằng API Unicode.
+  $temp = Join-Path $dirs[$where] ('vp-' + [Guid]::NewGuid().ToString('N') + '.lnk')
+  $s = $shell.CreateShortcut($temp)
   $s.TargetPath = $env:VP_NODE
   $s.Arguments = '"' + $env:VP_SCRIPT + '"' + $(if ($where -eq 'startup') { ' --nen' } else { '' })
   $s.WorkingDirectory = $env:VP_ROOT
@@ -29,6 +31,7 @@ foreach ($where in $env:VP_WHERE.Split(',')) {
   $s.WindowStyle = 7
   $s.Description = 'Văn phòng 3D của đội AI và bảng điều khiển máy'
   $s.Save()
+  Move-Item -LiteralPath $temp -Destination $lnk -Force
   Write-Output ('created ' + $lnk)
 }
 `;
