@@ -735,13 +735,13 @@ http.createServer((req, res) => {
       if (!data) return json(res, { ok: false, error: "Thân yêu cầu không phải JSON hợp lệ" }, 400);
       const taskText = String(data.text || data.title || "").trim().slice(0, 500);
       if (!taskText) return json(res, { ok: false, error: "Chưa có nội dung task" }, 400);
-      let bestKey = "codex", bestName = "Codex Astra (Sasuke)", reason = "Từ khóa thuộc lập trình fullstack", beast = "Thất Vĩ Chomei (7-Tails)";
+      let bestKey = "codex", bestName = "Codex Astra (Sasuke Uchiha)", reason = "Từ khóa thuộc lập trình fullstack", beast = "Thất Vĩ Chomei (7-Tails)";
       if (/giao diện|ui|ux|mẫu|css|html|mặt bằng|chibi|naruto|vĩ thú|màu|ấn tượng/i.test(taskText)) {
-        bestKey = "antigravity"; bestName = "Antigravity (Kakashi)"; reason = "Từ khóa thuộc Thiết kế UI/UX & Đặc tả Vùng [2]"; beast = "Nhị Vĩ Matatabi (2-Tails)";
+        bestKey = "antigravity"; bestName = "Antigravity (Hinata Hyuga)"; reason = "Từ khóa thuộc Thiết kế UI/UX & Đặc tả Vùng [2]"; beast = "Nhị Vĩ Matatabi (2-Tails)";
       } else if (/database|sqlite|db|api|hợp đồng|kiến trúc|schema|bản vẽ|backend/i.test(taskText)) {
-        bestKey = "sol"; bestName = "GPT 6.1 Sol (Shikamaru)"; reason = "Từ khóa thuộc Kiến trúc, Schema & Hợp đồng Vùng [3]"; beast = "Tứ Vĩ Son Goku (4-Tails)";
+        bestKey = "sol"; bestName = "GPT 6.1 Sol (Itachi Uchiha)"; reason = "Từ khóa thuộc Kiến trúc, Schema & Hợp đồng Vùng [3]"; beast = "Tứ Vĩ Son Goku (4-Tails)";
       } else if (/test|kiểm thử|bảo mật|security|lộ|token|secret|blocker|audit|an toàn/i.test(taskText)) {
-        bestKey = "claude"; bestName = "Claude Captain (Gaara)"; reason = "Từ khóa thuộc Kiểm duyệt QA & Bảo mật Vùng [5]"; beast = "Tam Vĩ Isobu (3-Tails)";
+        bestKey = "claude"; bestName = "Claude Captain (Sakura Haruno)"; reason = "Từ khóa thuộc Kiểm duyệt QA & Bảo mật Vùng [5]"; beast = "Lục Vĩ Saiken (6-Tails)";
       }
       const busy = activeTasks.filter(t => t.assigneeKey === bestKey && t.status === "running").length;
       json(res, { ok: true, consensus: {
@@ -763,7 +763,7 @@ http.createServer((req, res) => {
         id: "task-" + Date.now().toString(36) + crypto.randomBytes(2).toString("hex"),
         title: str(data.title, "Task mới"),
         assigneeKey: str(data.assigneeKey, "codex"),
-        assigneeName: str(data.assigneeName, "Codex Astra (Sasuke)"),
+        assigneeName: str(data.assigneeName, "Codex Astra (Sasuke Uchiha)"),
         beast: str(data.beast, "Cửu Vĩ Kurama (9-Tails)"),
         startedAt: Date.now(),
         status: "running",
