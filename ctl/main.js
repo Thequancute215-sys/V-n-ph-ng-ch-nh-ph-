@@ -24,7 +24,7 @@ const HTTP_CODE = {
   BAD_REQUEST: 400, NOT_DIR: 400, NOT_FILE: 400, BAD_CONFIG: 400, NO_AGENT_MD: 422, BAD_AGENT_MD: 422, INVALID_HANDOFF: 422, NO_CLI: 422,
   WORKSPACE_DENIED: 403, PATH_ESCAPE: 403, PATH_DENIED: 403, TOO_BROAD: 403, TOO_SENSITIVE: 403, COMMAND_DENIED: 403,
   NOT_FOUND: 404, TOO_LARGE: 413,
-  CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409, HANDOFF_PENDING: 409,
+  CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409, HANDOFF_PENDING: 409, NEEDS_ANSWER: 409, NO_QUESTION: 422, BAD_OPTION: 400,
 };
 
 function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex") } = {}) {
@@ -101,6 +101,7 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     ["GET", "/handoffs/:id", (p) => { const h = runner.get(p.id); if (!h) throw Object.assign(new Error("Chưa có bàn giao của " + p.id), { code: "NOT_FOUND" }); return { handoff: h }; }],
     ["POST", "/handoffs/:id/approve", (p) => ({ handoff: runner.approve(p.id, "ceo") })],
     ["POST", "/handoffs/:id/reject", (p) => ({ handoff: runner.reject(p.id, "ceo") })],
+    ["POST", "/handoffs/:id/answer", (p, qs, b) => ({ handoff: runner.answer(p.id, b.option, "ceo") })],
     ["GET", "/settings", () => ({ settings: runner.settings() })],
     ["POST", "/settings", (p, qs, b) => ({ settings: runner.setSettings(b, "ceo") })],
   ];

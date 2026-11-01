@@ -226,6 +226,7 @@ function showAuto(a) {
   if (!c) return say("autoBox", a.enabled ? "Tự hành đang bật: bấm Giao việc để mở chu trình." : "");
   const path = c.roles.join(" → ") || "–";
   if (!c.stopped) return say("autoBox", `Chu trình đang chạy · lượt ${c.turns}/${a.maxTurns} · ${path}`, "y");
+  if (c.stopped.waiting) return say("autoBox", `⏸ Chu trình chờ anh quyết (${path}): Claude có câu hỏi ở mục "Chờ duyệt chuyển lượt" bên dưới.`, "y");
   say("autoBox", `${c.stopped.finished ? "✔ Chu trình hoàn tất" : "■ Chu trình dừng"} sau ${c.turns} lượt (${path}): ${c.stopped.reason}`, c.stopped.finished ? "g" : "r");
 }
 $("autoOn").onchange = async () => {
@@ -251,12 +252,31 @@ async function loadHandoffs() {
     <div class="row"><b class="mono">${esc(h.role)}</b> → <b class="mono" style="color:var(--gold)">${esc(h.next_owner || "?")}</b><span class="z mono" style="margin-left:auto">${esc(h.job_id)}</span></div>
     ${h.payload ? `<div class="z" style="font-size:12px;margin-top:4px">File: ${esc((h.payload.files || []).join(", ") || "–")} · CLAIM_FIXED: ${esc((h.payload.claim_fixed || []).join(", ") || "–")}</div>` : ""}
     ${h.problems.length ? `<div class="r" style="font-size:12px;margin-top:4px">✖ ${h.problems.map(esc).join("<br>✖ ")}</div>` : ""}
-    <div class="row" style="margin-top:8px"><button class="ok" data-hok="${esc(h.job_id)}" ${h.problems.length ? "disabled" : ""}>Duyệt chuyển lượt</button><button class="bad" data-hno="${esc(h.job_id)}">Từ chối</button><button data-log="${esc(h.job_id)}">Xem log</button></div></div>`).join("")
+    ${askBox(h)}
+    <div class="row" style="margin-top:8px">${h.payload && h.payload.ask_ceo && !h.problems.length ? "" : `<button class="ok" data-hok="${esc(h.job_id)}" ${h.problems.length ? "disabled" : ""}>Duyệt chuyển lượt</button>`}<button class="bad" data-hno="${esc(h.job_id)}">Từ chối</button><button data-log="${esc(h.job_id)}">Xem log</button></div></div>`).join("")
     : `<div class="z">Không có bàn giao nào chờ duyệt.</div>`;
   return r.handoffs.length;
 }
+// Claude (đội trưởng) phản biện và hỏi anh trước khi bắt sửa: mỗi phương án là một nút; chọn xong lượt sang vai của phương án.
+function askBox(h) {
+  const a = h.payload && h.payload.ask_ceo;
+  if (!a || h.problems.length) return "";
+  return `<div style="margin-top:8px;padding:10px;border:1px solid var(--gold);border-radius:10px">
+    <div style="font-size:12px;color:var(--gold);font-weight:700">❓ Claude hỏi anh</div>
+    <div style="margin:6px 0;white-space:pre-wrap">${esc(a.question)}</div>
+    ${a.options.map((o) => `<div class="row" style="margin-top:6px"><button class="gold" data-hans="${esc(h.job_id)}" data-opt="${esc(o.id)}">${esc(o.id)}</button>
+      <span>${esc(o.label)}${o.next_owner ? ` <span class="z mono">→ ${esc(o.next_owner)}</span>` : ""}${o.task ? `<br><span class="z" style="font-size:12px">Lệnh: ${esc(o.task)}</span>` : ""}</span></div>`).join("")}
+  </div>`;
+}
 $("handoffs").addEventListener("click", async (e) => {
-  const ok = e.target.dataset.hok, no = e.target.dataset.hno, lg = e.target.dataset.log;
+  const ok = e.target.dataset.hok, no = e.target.dataset.hno, lg = e.target.dataset.log, ans = e.target.dataset.hans;
+  if (ans) {
+    const opt = e.target.dataset.opt;
+    if (!confirm("Chọn phương án " + opt + " cho câu hỏi của Claude?\nLượt chuyển sang vai của phương án này" + ($("autoOn").checked ? " và chu trình tự hành chạy tiếp ngay." : "."))) return;
+    const r = await api("POST", `/handoffs/${encodeURIComponent(ans)}/answer`, { option: opt });
+    say("aiMsg", r.ok ? `Đã chọn ${opt}: lượt sang ${r.handoff.next}` + (r.handoff.commit ? ", commit " + r.handoff.commit : "") + (r.handoff.job ? ". Đang chạy " + r.handoff.job.id : "") + (r.handoff.runError ? ". Chưa chạy được: " + r.handoff.runError : "") : r.error, r.ok && !r.handoff.runError ? "g" : "r");
+    refresh(); loadTurn();
+  }
   if (ok) { const r = await api("POST", `/handoffs/${encodeURIComponent(ok)}/approve`, {}); say("aiMsg", r.ok ? (r.handoff.commit ? "Đã chuyển lượt, commit " + r.handoff.commit : r.handoff.message) : r.error, r.ok ? "g" : "r"); refresh(); loadTurn(); }
   if (no) { const r = await api("POST", `/handoffs/${encodeURIComponent(no)}/reject`, {}); say("aiMsg", r.ok ? "Đã từ chối bàn giao, lượt giữ nguyên." : r.error, r.ok ? "" : "r"); refresh(); }
   if (lg) openLog(lg);

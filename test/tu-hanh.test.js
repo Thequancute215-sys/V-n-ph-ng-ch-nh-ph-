@@ -117,6 +117,46 @@ test("tắt tự hành: bàn giao chờ duyệt tay như cũ; cài đặt sai b�
   assert.strictEqual((await call("GET", "/settings")).json.settings.autoDispatch, false);
 });
 
+// Claude là đội trưởng (CEO giao 02/11/2026): phản biện AI khác, muốn bắt sửa thì hỏi CEO ở phần theo dõi chu trình.
+test("Claude hỏi CEO: chu trình chờ, CEO chọn phương án → lượt sang vai đó kèm lệnh, chạy tiếp tới khi xong", async () => {
+  reset();
+  const ask = { question: "Sol thêm hàng đợi Redis không cần thiết: đốt chi phí, khó bảo trì.", options: [
+    { id: "A", label: "Bắt Sol cắt hàng đợi", next_owner: "SOL_ARCHITECT_PLANNER", task: "Cắt hàng đợi Redis khỏi Vùng [3]" },
+    { id: "B", label: "Giữ hướng hiện tại", next_owner: "CODEX_ASTRA_DEV" }] };
+  const claudeAsk = [process.execPath, "-e", `const fs=require("fs"),f=${JSON.stringify(counter)};const n=(fs.existsSync(f)?+fs.readFileSync(f,"utf8"):0)+1;fs.writeFileSync(f,String(n));
+if(n===1&&!process.argv[1].includes('"ask_ceo"'))process.exit(4);
+console.log(JSON.stringify(Object.assign({role:"CLAUDE_AUDITOR",next_owner:"CODEX_ASTRA_DEV",files:[],claim_fixed:[]},n===1?{ask_ceo:${JSON.stringify(ask)}}:{done:true})))`, "{prompt}"];
+  const sol = [process.execPath, "-e", `if(!process.argv[1].includes("Cắt hàng đợi Redis"))process.exit(3);console.log(JSON.stringify({role:"SOL_ARCHITECT_PLANNER",next_owner:"CLAUDE_AUDITOR",files:["agent.md"],claim_fixed:[]}))`, "{prompt}"];
+  agents({ CLAUDE_AUDITOR: claudeAsk, SOL_ARCHITECT_PLANNER: sol });
+  await call("POST", "/ai/run", { workspace: repo, role: "CLAUDE_AUDITOR" });
+  const waiting = await chainEnd();
+  assert.strictEqual(waiting.stopped.waiting, true, waiting.stopped.reason);
+  const [h] = (await call("GET", "/handoffs")).json.handoffs;
+  assert.strictEqual(h.payload.ask_ceo.options.length, 2);
+  assert.strictEqual((await call("POST", `/handoffs/${h.job_id}/approve`, {})).json.code, "NEEDS_ANSWER", "phải chọn phương án, không duyệt thẳng");
+  assert.strictEqual((await call("POST", `/handoffs/${h.job_id}/answer`, { option: "Z" })).status, 400);
+  const a = await call("POST", `/handoffs/${h.job_id}/answer`, { option: "A" });
+  assert.strictEqual(a.status, 200, a.text);
+  assert.strictEqual(a.json.handoff.next, "SOL_ARCHITECT_PLANNER");
+  assert.ok(a.json.handoff.job, "đang tự hành thì chạy ngay vai của phương án");
+  assert.match(git(repo, "log", "--format=%s"), /CLAUDE_AUDITOR -> NEXT: SOL_ARCHITECT_PLANNER — CEO chọn A/);
+  const c = await chainEnd();
+  assert.strictEqual(c.stopped.finished, true, c.stopped.reason);
+  assert.deepStrictEqual(c.roles, ["SOL_ARCHITECT_PLANNER", "CLAUDE_AUDITOR"]);
+  assert.ok(ctl.audit.recent(100).some((x) => x.action === "handoff.answer"));
+});
+
+test("schema câu hỏi CEO: chỉ CLAUDE_AUDITOR được hỏi, 2–4 phương án hợp lệ", () => {
+  const { checkHandoff } = require("../ctl/handoff");
+  const base = { next_owner: "CODEX_ASTRA_DEV", files: [], claim_fixed: [] };
+  const ok = { question: "Q?", options: [{ id: "A", label: "x", next_owner: "SOL_ARCHITECT_PLANNER" }, { id: "B", label: "y" }] };
+  assert.deepStrictEqual(checkHandoff({ role: "CLAUDE_AUDITOR", ...base, ask_ceo: ok }, "CLAUDE_AUDITOR"), []);
+  assert.ok(checkHandoff({ role: "CODEX_ASTRA_DEV", ...base, next_owner: "CLAUDE_AUDITOR", ask_ceo: ok }, "CODEX_ASTRA_DEV").some((p) => /chỉ CLAUDE_AUDITOR/.test(p)));
+  for (const bad of [{ question: "Q", options: [ok.options[0]] }, { question: "", options: ok.options }, { question: "Q", options: [ok.options[0], { id: "A", label: "trùng" }] },
+    { question: "Q", options: [ok.options[0], { id: "B", label: "z", next_owner: "CLAUDE_AUDITOR" }] }])
+    assert.ok(checkHandoff({ role: "CLAUDE_AUDITOR", ...base, ask_ceo: bad }, "CLAUDE_AUDITOR").length, JSON.stringify(bad));
+});
+
 test("nạp repo chưa có agent.md: tự tạo theo mẫu v2.2, lượt đầu cho Claude, lần duyệt đầu commit luôn agent.md", async () => {
   const fresh = path.join(tmp, "repo-moi");
   fs.mkdirSync(fresh);

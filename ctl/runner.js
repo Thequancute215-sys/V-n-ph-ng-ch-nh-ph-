@@ -21,6 +21,10 @@ Không push, không merge, không release. Không in secret/token/API key. Khôn
 const AUTO_NOTE = (role) => `\n\nCHẾ ĐỘ TỰ HÀNH: CEO không duyệt từng bước; bàn giao hợp lệ sẽ được chạy tiếp ngay cho vai trong next_owner.` +
   (role === "CLAUDE_AUDITOR" ? ` Nếu nghiệm thu đạt và không còn việc trong chu trình này, thêm "done":true vào dòng JSON để dừng chu trình và báo CEO.` : "");
 const SETTINGS_DEFAULT = { autoDispatch: false, maxTurns: 5, maxRework: 2 };
+// Claude là đội trưởng kiểm soát mọi repo (CEO giao 02/11/2026): được phản biện AI khác, nhưng muốn bắt sửa / đổi hướng thì hỏi CEO trước.
+const CAPTAIN = `\n\nQUYỀN ĐỘI TRƯỞNG: bạn được phản biện Antigravity, Sol, Codex khi thấy hướng đi sai. Muốn bắt sửa hoặc đổi hướng thì KHÔNG tự ra lệnh: ` +
+  `thêm vào dòng JSON trường "ask_ceo":{"question":"<vì sao hướng hiện tại hỏng, hướng mới tốt hơn thế nào>","options":[{"id":"A","label":"<phương án đề xuất>","next_owner":"<VAI sẽ làm>","task":"<lệnh cụ thể cho vai đó>"},{"id":"B","label":"Giữ hướng hiện tại","next_owner":"<VAI>"}]} ` +
+  `(2–4 phương án). CEO trả lời trên trang Điều khiển, chu trình chạy tiếp theo phương án CEO chọn.`;
 
 // Lệnh mặc định: cờ của từng CLI cần kiểm chứng trên máy thật (phiên bản CLI thay đổi); sai thì sửa ở ctl-agents.json.
 const CLAUDE = ["claude", "-p", "{prompt}", "--output-format", "json", "--max-turns", "30", "--permission-mode", "acceptEdits",
@@ -109,7 +113,7 @@ function createRunner({ jobs, ws, audit, db, dir }) {
       chain = { id: null, task: String(task).trim().slice(0, 4000), turns: 0, roles: [], rework: 0, stopped: null };
       chains.set(root, chain);
     }
-    const prompt = a.prompt + (String(task).trim() ? "\n\nViệc Giám đốc giao thêm: " + String(task).trim().slice(0, 4000) : "") + END(role) + (chain ? AUTO_NOTE(role) : "");
+    const prompt = a.prompt + (String(task).trim() ? "\n\nViệc Giám đốc giao thêm: " + String(task).trim().slice(0, 4000) : "") + END(role) + (chain ? AUTO_NOTE(role) : "") + (role === "CLAUDE_AUDITOR" ? CAPTAIN : "");
     const argv = argvFor(role).map((x) => (x === "{prompt}" ? prompt : x));
     audit.log(actor, "ai.run", root, { role, retried, task: String(task).slice(0, 500), chain: chain ? chain.id : null });
     const job = jobs.start({ kind: "ai", agent: role, workspace: root, argv, timeoutMs: a.timeoutMs, onExit: (j) => done(j, { workspace: root, role, task, retried, chain }) });
@@ -144,6 +148,8 @@ function createRunner({ jobs, ws, audit, db, dir }) {
     let conflicts = "";
     try { conflicts = git(root, ["diff", "--name-only", "--diff-filter=U"]).trim(); } catch {}
     if (conflicts) return stop("Xung đột git: " + conflicts.split(/\r?\n/).join(", "));
+    // Claude hỏi CEO: không tự duyệt, chu trình chờ CEO chọn phương án ở phần theo dõi (answer() chạy tiếp).
+    if (h.ask_ceo) { stop("Claude hỏi CEO: " + h.ask_ceo.question); chain.stopped.waiting = true; return; }
     try { approve(job.id, "auto-dispatch"); } catch (e) { return stop("Không tự duyệt được bàn giao: " + e.message); }
     if (role === "CLAUDE_AUDITOR" && h.done === true) return stop("Claude nghiệm thu đạt: chu trình hoàn tất", true);
     // Claude trả việc về Codex sau khi Codex đã làm trong chu trình = một lần sửa lại; quá maxRework lần thì CEO quyết.
@@ -162,15 +168,19 @@ function createRunner({ jobs, ws, audit, db, dir }) {
   }
 
   // CEO bấm "Duyệt chuyển lượt": ghi agent.md (nếu AI chưa tự ghi) rồi commit cục bộ.
-  function approve(jobId, actor = "ceo") {
+  // Bàn giao có câu hỏi của Claude (ask_ceo) chỉ duyệt qua answer(): CEO chọn phương án nào thì lượt sang vai của phương án đó.
+  function approve(jobId, actor = "ceo", { nextOwner, why = "" } = {}) {
     const h = view(q.get.get(jobId));
     if (!h) throw err("NOT_FOUND", "Không có bàn giao của " + jobId);
     if (h.decided) throw err("DECIDED", "Bàn giao này đã " + h.decided);
     if (h.problems.length) throw err("INVALID_HANDOFF", "Bàn giao không hợp lệ: " + h.problems.join("; "));
+    if (h.payload && h.payload.ask_ceo && !nextOwner) throw err("NEEDS_ANSWER", "Claude đang hỏi CEO: chọn một phương án thay vì duyệt thẳng");
+    const target = nextOwner || h.next_owner;
     const turn = readTurn(h.workspace);
-    if (turn.nextOwner === h.role) setTurn(h.workspace, h.role, h.next_owner);
-    else if (turn.nextOwner !== h.next_owner) throw err("TURN_CHANGED", `agent.md đang ghi NEXT_OWNER: ${turn.nextOwner}, không khớp bàn giao`);
-    const msg = `chore(agent-sync): ${h.role} -> NEXT: ${h.next_owner}`;
+    // AI có thể đã tự ghi NEXT_OWNER = vai nó đề xuất; CEO chọn vai khác thì ghi đè đúng 2 dòng khóa lượt.
+    if (turn.nextOwner === h.role || (nextOwner && turn.nextOwner === h.next_owner)) setTurn(h.workspace, h.role, target);
+    else if (turn.nextOwner !== target) throw err("TURN_CHANGED", `agent.md đang ghi NEXT_OWNER: ${turn.nextOwner}, không khớp bàn giao`);
+    const msg = `chore(agent-sync): ${h.role} -> NEXT: ${target}` + (why ? " — " + why : "");
     let commit = null, note = "agent.md đã đúng, không cần commit";
     let isRepo = true;
     try { git(h.workspace, ["rev-parse", "--is-inside-work-tree"]); } catch { isRepo = false; note = "Workspace không phải repo git: đã ghi agent.md, không commit"; }
@@ -181,8 +191,33 @@ function createRunner({ jobs, ws, audit, db, dir }) {
       if (st) { git(h.workspace, ["commit", "-m", msg, "--", "agent.md"]); commit = git(h.workspace, ["rev-parse", "--short", "HEAD"]).trim(); }
     }
     q.decide.run("approved", Date.now(), jobId);
-    audit.log(actor, "handoff.approve", jobId, { role: h.role, next: h.next_owner, commit }, "approved");
+    audit.log(actor, "handoff.approve", jobId, { role: h.role, next: target, commit }, "approved");
     return { ...view(q.get.get(jobId)), commit, message: commit ? msg : note };
+  }
+
+  // CEO trả lời câu hỏi của Claude ở phần theo dõi chu trình: duyệt bàn giao theo phương án đã chọn; đang bật tự hành thì
+  // chạy ngay vai của phương án, kèm lệnh của phương án. CEO vừa quyết nên đếm lượt / số lần sửa của chu trình tính lại từ đầu.
+  function answer(jobId, optionId, actor = "ceo") {
+    const h = view(q.get.get(jobId));
+    if (!h) throw err("NOT_FOUND", "Không có bàn giao của " + jobId);
+    const ask = h.payload && h.payload.ask_ceo;
+    if (!ask) throw err("NO_QUESTION", "Bàn giao này không có câu hỏi cho CEO");
+    const opt = ask.options.find((o) => o.id === String(optionId));
+    if (!opt) throw err("BAD_OPTION", "Không có phương án " + optionId);
+    const next = opt.next_owner || h.next_owner;
+    const r = approve(jobId, actor, { nextOwner: next, why: `CEO chọn ${opt.id}: ${opt.label}`.slice(0, 120) });
+    audit.log(actor, "handoff.answer", jobId, { question: ask.question.slice(0, 500), option: opt.id, label: opt.label, next }, "approved");
+    let job = null, runError = null;
+    if (settings().autoDispatch) {
+      const prev = chains.get(h.workspace);
+      const chain = prev && prev.stopped && prev.stopped.jobId === jobId ? prev : { id: null, task: "", turns: 0, roles: [], rework: 0, stopped: null };
+      Object.assign(chain, { stopped: null, turns: 0, rework: 0, roles: [] });
+      chains.set(h.workspace, chain);
+      const decision = `Quyết định của CEO cho câu hỏi của Claude ("${ask.question.slice(0, 600)}"): chọn ${opt.id} — ${opt.label}.` + (opt.task ? " Lệnh: " + opt.task : "");
+      try { job = run({ workspace: h.workspace, role: next, task: [chain.task, decision].filter(Boolean).join("\n"), chain }, actor); }
+      catch (e) { runError = e.message; chain.stopped = { reason: "Không chạy được lượt " + next + " sau khi CEO chọn: " + e.message, finished: false, at: Date.now(), jobId }; }
+    }
+    return { ...r, option: opt, next, job, runError };
   }
 
   function reject(jobId, actor = "ceo") {
@@ -193,7 +228,7 @@ function createRunner({ jobs, ws, audit, db, dir }) {
     return view(q.get.get(jobId));
   }
 
-  return { run, status, approve, reject, settings, setSettings, get: (id) => view(q.get.get(id)), pending: () => q.open.all().map(view), AGENTS };
+  return { run, status, approve, answer, reject, settings, setSettings, get: (id) => view(q.get.get(id)), pending: () => q.open.all().map(view), AGENTS };
 }
 
 module.exports = { createRunner, AGENTS };
