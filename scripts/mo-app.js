@@ -17,7 +17,9 @@ const background = process.argv.includes("--nen");
   if (!cfg) { console.error("Chưa có config.json: chạy `npm run setup` trước."); process.exit(1); }
   const port = Number(process.env.PORT || cfg.port);
   const host = app.officeHost(cfg);
-  const url = host === "127.0.0.1" ? `http://localhost:${port}/` : `http://${host.includes(":") ? `[${host}]` : host}:${port}/`;
+  const baseUrl = host === "127.0.0.1" ? `http://localhost:${port}/` : `http://${host.includes(":") ? `[${host}]` : host}:${port}/`;
+  const target = new URL(String(cfg.appStartPath || "/"), baseUrl);
+  const url = target.origin === new URL(baseUrl).origin ? target.href : baseUrl;
 
   if (await app.isUp(port, { host })) {
     console.log("Văn phòng đang chạy tại " + url);
