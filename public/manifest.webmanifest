@@ -1,0 +1,23 @@
+{
+  "name": "Văn phòng AI",
+  "short_name": "Văn phòng AI",
+  "description": "Văn phòng 3D của đội AI và bảng điều khiển máy, chạy tại máy của bạn.",
+  "lang": "vi",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#06080d",
+  "theme_color": "#06080d",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Điều khiển máy", "url": "/dieukhien.html", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
+    { "name": "Bảng điều hành", "url": "/board.html", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
+    { "name": "Hồ sơ nhân vật", "url": "/characters.html", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] }
+  ]
+}

@@ -36,6 +36,7 @@
   - F8 (CEO Override & Smooth Room Zoom Navigation): Cơ chế phân việc ngoài lề cho phép Giám đốc chỉ định ngoại lệ (ví dụ cấp quyền code trực tiếp cho 6.1 Sol); kèm thanh điều hướng lướt phòng (Glide Focus), slider thu phóng và thao tác cuộn/di chuột êm dịu.
   - F9 (All-Hands Broadcast & Self-Assignment Dispatch): Phát loa toàn thể nhân viên khi CEO có task chưa biết giao ai; các AI tự động rà soát ai đang rảnh và phù hợp nhất, tự check chéo lẫn nhau rồi báo cáo đề xuất người nhận việc lên CEO duyệt 1-click.
   - F10 (Active Tasks Monitor & Emergency Kill Switch): Bảng nhắc nhở thời gian thực danh sách task/subagent đang chạy ngầm kèm thời lượng; cảnh báo task chạy quá lâu và cung cấp nút dừng từng task hoặc dừng tất cả để CEO kiểm soát tài nguyên máy tính.
+  - F11 (App trên máy, Phase 7): Bấm biểu tượng "Văn phòng AI" trên Desktop/Start Menu là tự bật văn phòng + OS Controller chạy ngầm và mở cửa sổ app riêng (Edge/Chrome chế độ app); cài được dạng PWA; tùy chọn tự bật khi đăng nhập Windows; văn phòng tắt thì app hiện trang hướng dẫn. Không thư viện ngoài, không lưu đệm dữ liệu.
 - Out-of-Scope: Không can thiệp mã nhị phân VS Code, không đẩy dữ liệu ra Internet công cộng.
 
 ### [2.2] LUỒNG NGƯỜI DÙNG ĐẦU-CUỐI (E2E USER FLOW)
@@ -106,12 +107,12 @@
   - [x] Phase 4 (Claude đã làm, PR #3): Workspace + đọc/ghi file + lệnh theo danh sách cho phép + duyệt từng lệnh. Nghiệm thu: test `..\..\Windows`, symlink ra ngoài, `git push --force` đều bị chặn hoặc chờ duyệt.
   - [x] Phase 5 (Claude đã làm, PR #3; đã chạy thật trên Windows: f91a6cf): Runner AI + nút chuyển lượt trên giao diện 3D. Nghiệm thu: 1 vòng thật Sol → Astra → Claude trên một repo thử, log đã mask, đo token/độ trễ thật ghi vào [4.1].
   - [x] Phase 6 (Claude đã soát trên Linux + Windows, PR #3): Thẩm định bảo mật tổng & đưa vào dùng hằng ngày.
-  - [ ] Phase 7: Vận hành hằng ngày. Việc mới đi theo vòng Spec [2] → Sol [3] → Astra → Claude nghiệm thu, chạy lượt AI qua trang Điều khiển (OS Controller).
+  - [ ] Phase 7: Vận hành hằng ngày. F11 app trên máy: `public/manifest.webmanifest` + `sw.js` (chỉ giữ `offline.html`) + `app.js` (đăng ký SW, nút Cài app); `lib/app.js` + `scripts/mo-app.js` (bật ngầm, PID ở `~/.van-phong-ao/app.pid`, mở `--app=`), `tat-app.js`, `cai-app.js` (lối tắt qua WScript.Shell, đường dẫn truyền bằng biến môi trường). Nghiệm thu: Chromium báo 0 lỗi cài đặt (cả khi bật khóa xem); bật/tắt không để tiến trình mồ côi; văn phòng tắt hiện trang hướng dẫn rồi tự mở lại. Việc mới đi theo vòng Spec [2] → Sol [3] → Astra → Claude nghiệm thu, chạy lượt AI qua trang Điều khiển (OS Controller).
 
 ## [4] KHÓA LƯỢT & NHẬT KÝ
 - CURRENT_PHASE: Phase 7 - Vận hành hằng ngày
-- LAST_UPDATED_BY: CLAUDE_AUDITOR
-- NEXT_OWNER (MUTEX LOCK): SPEC_ARCHITECT
+- LAST_UPDATED_BY: CODEX_ASTRA_DEV (Claude làm thay theo ĐC-09)
+- NEXT_OWNER (MUTEX LOCK): CLAUDE_AUDITOR
 
 ### [4.1] NHẬT KÝ PHASE HIỆN TẠI (tối đa 25 dòng)
 - Đặc cách ĐC-06 (CEO, 01/11/2026): Claude làm thay việc đóng Phase của CODEX_ASTRA_DEV và P2-M09 của SPEC_ARCHITECT, sau đó nghiệm thu như bình thường.
@@ -119,6 +120,8 @@
 - CLAIM_FIXED: P2-M09 -> claude/dong-phase-m09 (ảnh chụp trình duyệt thật cả 6 nhân vật ở characters.html và văn phòng 3D; npm test xanh).
 - Đặc cách ĐC-07 (CEO, 01/11/2026): Claude sửa P7-M01 thay SPEC_ARCHITECT. public/characters.html: đầu trang xuống hàng + nhãn nút ngắn dưới 1940px (đo: nhãn đầy đủ cần ≈1940px), dưới 1024px xếp 1 cột (khung 3D → dải nhân vật cuộn ngang → hồ sơ), khung 3D đổi cỡ theo khung chứa (ResizeObserver).
 - CLAIM_FIXED: P7-M01 -> claude/p7-m01 (ảnh chụp 1960/1440/1280/1024/768/390px; không tràn ngang; 16 nhân vật × 6 nút ở 390 và 1440px không lỗi console; npm test 55/55).
+- Đặc cách ĐC-09 (CEO, 02/11/2026: "làm luôn đi, nghiệm thu bình thường, phát triển thành app"): Claude làm thay SPEC (F11 ở [2.1]) và ASTRA (code) trên nhánh claude/app-cai-dat. Chọn PWA + bộ khởi chạy thay Electron vì CLAUDE.md cấm thư viện ngoài.
+- CLAIM: F11 -> claude/app-cai-dat (npm test 63/63 Linux; Chromium: 0 lỗi cài đặt có/không khóa xem, 14 trang 0 lỗi console, bật/tắt sạch, trang hướng dẫn tự mở lại). CHƯA chạy trên Windows: lối tắt .lnk, cửa sổ Edge --app, tự khởi động.
 
 ### [4.2] LƯU TRỮ PHASE ĐÃ XONG (tối đa 5 dòng, 1 dòng/Phase)
 - Phase 1: Hoàn tất đặc tả Vùng [2] và Interactive Prototype Chibi Edition (SPEC_ARCHITECT).

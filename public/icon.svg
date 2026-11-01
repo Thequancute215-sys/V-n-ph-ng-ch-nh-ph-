@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Biểu tượng app Văn phòng AI: nền tối của văn phòng, xoáy Chakra vàng. Hình nằm trong vùng an toàn 80% để dùng được cả dạng maskable. -->
+  <rect width="512" height="512" rx="112" fill="#06080d"/>
+  <circle cx="256" cy="256" r="168" fill="none" stroke="#ecc970" stroke-width="22" opacity="0.35"/>
+  <path d="M256 256 m0 -18 a18 18 0 1 1 -18 18 a36 36 0 0 1 36 -36 a54 54 0 0 1 54 54 a72 72 0 0 1 -72 72 a90 90 0 0 1 -90 -90 a108 108 0 0 1 108 -108 a126 126 0 0 1 126 126"
+        fill="none" stroke="#ecc970" stroke-width="22" stroke-linecap="round"/>
+  <circle cx="256" cy="256" r="12" fill="#ecc970"/>
+</svg>

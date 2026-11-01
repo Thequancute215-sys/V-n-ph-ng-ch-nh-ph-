@@ -52,6 +52,21 @@ Mở **http://localhost:7788**.
 
 Xong, máy ghi `config.json` và tạo sổ `data/` từ khung mẫu `mau/`.
 
+## Dùng như app trên máy
+
+```bash
+npm run cai-app                 # Windows: tạo lối tắt "Văn phòng AI" trên Desktop và Start Menu
+npm run cai-app -- --tu-khoi-dong   # thêm: tự bật ngầm mỗi khi đăng nhập Windows
+npm run app                     # mở app (tự bật văn phòng + OS Controller chạy ngầm nếu chưa chạy)
+npm run tat-app                 # tắt văn phòng đã bật bằng app
+npm run cai-app -- --go         # gỡ mọi lối tắt
+```
+
+- Bấm **Văn phòng AI** trên Desktop: văn phòng bật ngầm (không cửa sổ đen, log ở `~/.van-phong-ao/logs/app.log`), rồi mở cửa sổ app riêng bằng Edge/Chrome (không thanh địa chỉ). Không có Edge/Chrome thì mở bằng trình duyệt mặc định.
+- Hoặc trong văn phòng bấm **⬇ Cài app** (Edge/Chrome): có biểu tượng trên thanh tác vụ, lối tắt nhanh tới Điều khiển máy, Bảng điều hành, Hồ sơ nhân vật.
+- Mở app khi văn phòng đang tắt: hiện trang hướng dẫn, tự mở lại khi văn phòng bật. App không lưu đệm dữ liệu văn phòng.
+- Không cần cài thêm gì: không Electron, không thư viện ngoài.
+
 ## Các màn hình
 
 | Màn | Có gì |
@@ -65,6 +80,7 @@ Xong, máy ghi `config.json` và tạo sổ `data/` từ khung mẫu `mau/`.
 | **Đánh giá nhân sự** | Token theo giờ và ngày, quỹ Codex tuần, xếp loại A/B/C/D theo việc xong, lỗi lệnh, lượt DEV, giờ làm, độ tiết kiệm |
 | **Tin nhắn** | Toàn bộ tin 24 giờ, lọc theo người |
 | **Sơ đồ 2D** | Bản nhẹ cho điện thoại yếu: mặt bằng, người, tin bay, cảnh báo, dòng thời gian |
+| **App trên máy** | Lối tắt Desktop / Start Menu, cửa sổ riêng, tự bật ngầm khi đăng nhập Windows (xem mục "Dùng như app trên máy") |
 | **Điều khiển máy** | CPU/RAM trực tiếp, phanh khẩn cấp, workspace, chạy lệnh (chờ duyệt nếu ngoài danh sách), lượt AI theo `agent.md` + duyệt chuyển lượt, sửa file, nhật ký kiểm toán. Chỉ mở được trên chính máy này |
 | **Nhắn tin cho agent** | Bấm vào một người trên văn phòng hoặc bảng điều hành, gõ tin. Tin vào hòm thư của người đó; từ xa phải nhập **PIN 6 số**, mã chỉ hiện trên chính máy bạn |
 
@@ -140,6 +156,7 @@ Luật đội để dán vào dự án nằm ở `data/DOAN-CHEN-VAO-AGENTS.md`,
 | Văn phòng trống | Mở phiên AI **trong đúng thư mục dự án** đã chọn; kiểm `projects` (dùng dấu `/`). |
 | `EADDRINUSE` | Cổng 7788 đang bận: đổi `port`. |
 | Màn 3D đen | Trình duyệt chặn WebGL hoặc máy không tải được three.js. Thử Chrome/Edge mới, hoặc dùng Sơ đồ 2D. |
+| Bấm lối tắt mà không thấy cửa sổ | Xem `~/.van-phong-ao/logs/app.log`; thường do thiếu `config.json` (chạy `npm run setup`) hoặc cổng 7788 đang bận. |
 | `OS Controller chưa chạy` trên màn Điều khiển | Chạy `npm run ctl` (hoặc `npm run all` thay cho `npm start`). |
 | `Bảng điều khiển máy chỉ dùng được trên chính máy này` | Đúng thiết kế: không điều khiển máy qua điện thoại / máy khác. Mở bằng `http://localhost:7788` trên chính máy. |
 | Lượt AI báo `Không tìm thấy chương trình claude/codex` hoặc lỗi cờ CLI | Cài CLI và đăng nhập (`claude login`, `codex login`), hoặc sửa lệnh trong `~/.van-phong-ao/ctl-agents.json`. |
@@ -150,14 +167,14 @@ Luật đội để dán vào dự án nằm ở `data/DOAN-CHEN-VAO-AGENTS.md`,
 ```
 server.js              máy chủ: tìm phiên, đọc nhật ký + sổ, đẩy trạng thái mỗi giây
 lib/                   perf (token, điểm, tiền) · docs (sổ sách) · hopthu · tongquan · chat (PIN) · mailbox · config
-                       guard (chặn CSRF/DNS rebinding) · proc (dừng cây tiến trình) · keys · mask · ctlbridge (cầu nối tới ctl)
+                       guard (chặn CSRF/DNS rebinding) · proc (dừng cây tiến trình) · keys · mask · ctlbridge (cầu nối tới ctl) · app (mở app, lối tắt)
 ctl/                   OS Controller: main (HTTP) · jobs · policy · workspaces · files · runner (lượt AI) · handoff · monitor · audit · db
 test/                  node --test (npm test)
 tools/vp.js            công cụ ghi sổ cho agent
 setup.js               cài đặt (hỏi–đáp hoặc --yes cho agent)
 mau/                   khung mẫu sổ điều phối + đoạn luật đội cho AGENTS.md / CLAUDE.md
 public/                giao diện: index (3D), board, congviec, noiquy, tongquan, hopthu, hieusuat, tinnhan, 2d, dieukhien
-scripts/               mở đường hầm xem trên điện thoại · chay-tat-ca.js (npm run all)
+scripts/               mở đường hầm xem trên điện thoại · chay-tat-ca.js (npm run all) · mo-app / tat-app / cai-app (app trên máy)
 HUONG-DAN-CHO-AGENT.md hướng dẫn để agent tự cài từ link này
 ```
 

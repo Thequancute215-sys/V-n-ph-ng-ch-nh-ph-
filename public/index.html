@@ -228,6 +228,11 @@ body.hide-bubbles .req-bubble {
 .hint { position: fixed; left: 16px; bottom: 16px; font-size: 11px; color: var(--mute2); z-index: 20; pointer-events: none; }
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">
+<meta name="theme-color" content="#06080d">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="app.js" defer></script>
 </head>
 <body>
 
@@ -697,6 +702,7 @@ body.hide-bubbles .req-bubble {
 <div class="hint" id="hint">Cuộn chuột để zoom sát từng phòng · Kéo chuột để xoay · Click vào phòng để lướt tới</div>
 <div class="links">
   <a href="dieukhien.html">⌘ Điều khiển máy</a>
+  <a href="#" data-cai-app hidden onclick="return false" title="Cài Văn phòng AI thành app có cửa sổ và biểu tượng riêng">⬇ Cài app</a>
   <a href="noiquy.html?tab=bai" target="_blank" style="color:var(--gold);border-color:rgba(236,201,112,0.5);font-weight:700">🧠 Sổ Bài Học & Tự Học</a>
   <a href="prototype.html">Bản Prototype Chibi</a>
   <a href="tongquan.html">Tổng quan</a>
