@@ -2039,7 +2039,9 @@ $("sendBroadcastBtn").addEventListener("click", async () => {
       $("bPropIcon").textContent = iconMap[c.proposedAssignee.key] || "🍥";
 
       // Render Peer Reviews
-      $("peerReviewContainer").innerHTML = c.peerReview.map(pr => `
+      $("peerReviewContainer").innerHTML = !c.peerReview.length
+        ? `<div style="font-size:11.5px;color:var(--mute)">Gợi ý theo từ khóa — chưa có AI nào được hỏi ý kiến thật.</div>`
+        : c.peerReview.map(pr => `
         <div style="font-size:11.5px;display:flex;gap:8px;align-items:flex-start">
           <b style="color:var(--gold);white-space:nowrap">${pr.who}:</b>
           <span style="color:#cbd5e1">“${pr.comment}”</span>
@@ -2165,10 +2167,8 @@ window.killSingleTask = async (taskId) => {
       body: JSON.stringify({ taskId })
     });
     const d = await res.json();
-    if (d.ok) {
-      refreshRunningTasks();
-      alert(d.message);
-    }
+    refreshRunningTasks();
+    alert(d.message || d.error);
   } catch (err) {
     alert("Lỗi dừng task: " + err.message);
   }
@@ -2183,11 +2183,9 @@ $("killAllTasksBtn").addEventListener("click", async () => {
       body: JSON.stringify({ all: true })
     });
     const d = await res.json();
-    if (d.ok) {
-      refreshRunningTasks();
-      runningTasksModal.classList.remove("open");
-      alert(d.message);
-    }
+    refreshRunningTasks();
+    if (d.ok) runningTasksModal.classList.remove("open");
+    alert(d.message || d.error);
   } catch (err) {
     alert("Lỗi dừng tất cả task: " + err.message);
   }
@@ -2263,7 +2261,8 @@ window.saveApiKey = async (provider) => {
       body: JSON.stringify({ provider, apiKey: key })
     });
     const d = await res.json();
-    alert(d.message || "Đã lưu API Key an toàn!");
+    alert(d.message || d.error);
+    if (!d.ok) return;
     inp.value = "";
     $(provider + "ApiKeyRow").style.display = "none";
     refreshAccounts();

@@ -15,6 +15,9 @@ const docs = require("./lib/docs");
 const hopthu = require("./lib/hopthu");
 const tongquan = require("./lib/tongquan");
 const { loadConfig } = require("./lib/config");
+const guard = require("./lib/guard");
+const proc = require("./lib/proc");
+const keys = require("./lib/keys");
 
 const ROOT = __dirname;
 const CFG = loadConfig(ROOT);
@@ -588,42 +591,16 @@ const LOGIN = `<!doctype html><meta charset="utf-8"><meta name="viewport" conten
 <input name="key" type="password" autofocus style="padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#eee;font-size:16px">
 <button style="padding:12px;border-radius:10px;border:0;background:#ecc970;font-weight:700;font-size:15px">Vào xem</button></form></body>`;
 const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon" };
-const json = (res, body) => { res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-cache" }); res.end(typeof body === "string" ? body : JSON.stringify(body)); };
+const json = (res, body, code = 200) => { res.writeHead(code, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-cache" }); res.end(typeof body === "string" ? body : JSON.stringify(body)); };
 function sse(req, res, set, first) {
   res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive", "X-Accel-Buffering": "no" });
   res.write("data: " + JSON.stringify(first) + "\n\n"); set.add(res); req.on("close", () => set.delete(res));
 }
 
 // ---------- Quản lý Task Đang Chạy (Running Tasks) & Phát Loa (Broadcast) ----------
-let activeTasks = [
-  {
-    id: "task-sub-research",
-    title: "Nghiên cứu tài liệu tham khảo & kiến trúc Vùng [2]",
-    assigneeKey: "antigravity",
-    assigneeName: "Antigravity (Kakashi)",
-    beast: "Nhất Vĩ Shukaku (1-Tail)",
-    startedAt: Date.now() - 14 * 60 * 1000,
-    status: "running"
-  },
-  {
-    id: "task-sub-ui",
-    title: "Dựng Prototype & Design Tokens Naruto 3D",
-    assigneeKey: "antigravity",
-    assigneeName: "Antigravity (Kakashi)",
-    beast: "Nhị Vĩ Matatabi (2-Tails)",
-    startedAt: Date.now() - 4 * 60 * 1000,
-    status: "running"
-  },
-  {
-    id: "task-sub-db",
-    title: "Kiểm thử schema và kết nối SQLite cục bộ",
-    assigneeKey: "sol",
-    assigneeName: "GPT 6.1 Sol (Shikamaru)",
-    beast: "Tứ Vĩ Son Goku (4-Tails)",
-    startedAt: Date.now() - 2 * 60 * 1000,
-    status: "running"
-  }
-];
+// Chỉ chứa việc Giám đốc giao thật qua Phát loa. Việc có "pid" là tiến trình thật trên máy: nút Dừng sẽ dừng cả cây tiến trình.
+// Việc không có pid chỉ là ghi chép giao việc: nút Dừng đánh dấu đã dừng và nói rõ là không có tiến trình nào để dừng.
+let activeTasks = [];
 
 // ---------- Quản Lý & Đăng Nhập Tài Khoản AI (Claude, GPT Codex, Gemini) ----------
 function getAccountsStatus() {
@@ -646,7 +623,7 @@ function getAccountsStatus() {
       }
     } catch (e) {}
   }
-  if (process.env.ANTHROPIC_API_KEY || (CFG.anthropicApiKey && CFG.anthropicApiKey.length > 5)) {
+  if (process.env.ANTHROPIC_API_KEY || keys.has("claude")) {
     claudeConnected = true;
     claudeAuthMode = "Anthropic API Key";
   }
@@ -672,7 +649,7 @@ function getAccountsStatus() {
       }
     } catch (e) {}
   }
-  if (process.env.OPENAI_API_KEY || (CFG.openaiApiKey && CFG.openaiApiKey.length > 5)) {
+  if (process.env.OPENAI_API_KEY || keys.has("gpt")) {
     gptConnected = true;
     gptAuthMode = "OpenAI API Key";
   }
@@ -693,10 +670,10 @@ function getAccountsStatus() {
 
   // 3. Antigravity / Gemini
   const geminiStatus = {
-    connected: true,
-    engine: "Google Gemini 3.8 (DeepMind)",
+    connected: null, // máy chủ không đọc được phiên đăng nhập trong IDE Antigravity nên không khẳng định
+    engine: "Google Gemini (Antigravity IDE)",
     role: "Kiến trúc sư Đặc tả & Fullstack UI/UX (BCC v2.2)",
-    account: "haphuongied@haphuongied.com.vn"
+    account: null
   };
 
   return {
@@ -707,7 +684,7 @@ function getAccountsStatus() {
       sessionsCount: claudeSessionsCount,
       path: path.join(home, ".claude"),
       loginCmd: "claude login",
-      hasApiKey: !!(process.env.ANTHROPIC_API_KEY || CFG.anthropicApiKey)
+      hasApiKey: !!(process.env.ANTHROPIC_API_KEY || keys.has("claude"))
     },
     gpt: {
       connected: gptConnected,
@@ -716,7 +693,7 @@ function getAccountsStatus() {
       sessionsCount: gptSessionsCount,
       path: path.join(home, ".codex"),
       loginCmd: "codex login",
-      hasApiKey: !!(process.env.OPENAI_API_KEY || CFG.openaiApiKey)
+      hasApiKey: !!(process.env.OPENAI_API_KEY || keys.has("gpt"))
     },
     gemini: geminiStatus
   };
@@ -726,6 +703,8 @@ http.createServer((req, res) => {
   const url = new URL(req.url, "http://x");
   if (!authed(req, url)) { res.writeHead(401, { "Content-Type": "text/html; charset=utf-8" }); return res.end(LOGIN); }
   if (KEY && url.searchParams.has("key")) { res.writeHead(302, { "Set-Cookie": `vpk=${keyHash}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000`, Location: url.pathname }); return res.end(); }
+  const deny = guard.checkWrite(req, { hasKey: !!KEY });
+  if (deny) { res.writeHead(403, { "Content-Type": "application/json; charset=utf-8" }); return res.end(JSON.stringify({ ok: false, error: deny })); }
   
   // API: Lấy danh sách task đang chạy & nhắc nhở
   if (url.pathname === "/api/running-tasks" && req.method === "GET") {
@@ -738,96 +717,78 @@ http.createServer((req, res) => {
     return json(res, { ok: true, tasks: list, runningCount: list.filter(t => t.status === "running").length });
   }
 
-  // API: Phát loa toàn thể nhân viên (Broadcast Directive & Cross-check)
+  // API: Phát loa toàn thể nhân viên. Hiện mới GỢI Ý người nhận theo từ khóa; chưa hỏi AI nào thật,
+  // nên không trả về lời "duyệt chéo" nào (peerReview rỗng) để không mạo danh ý kiến của AI.
   if (url.pathname === "/api/broadcast" && req.method === "POST") {
-    let body = "";
-    req.on("data", c => body += c);
-    req.on("end", () => {
-      let data = {};
-      try { data = JSON.parse(body); } catch {}
-      const taskText = (data.text || data.title || "Task mới từ Thế Quân CEO").trim();
-      const lower = taskText.toLowerCase();
-
-      let bestKey = "codex";
-      let bestName = "Codex Astra (Sasuke)";
-      let reason = "Phù hợp kỹ năng lập trình fullstack & đang rảnh";
-      let beast = "Thất Vĩ Chomei (7-Tails)";
-
-      if (/giao diện|ui|ux|mẫu|css|html|mặt bằng|chibi|naruto|vĩ thú|màu|ấn tượng/i.test(lower)) {
-        bestKey = "antigravity";
-        bestName = "Antigravity (Kakashi)";
-        reason = "Chuyên môn sâu về Thiết kế UI/UX & Đặc tả sản phẩm Vùng [2]";
-        beast = "Nhị Vĩ Matatabi (2-Tails)";
-      } else if (/database|sqlite|db|api|hợp đồng|kiến trúc|schema|bản vẽ|backend/i.test(lower)) {
-        bestKey = "sol";
-        bestName = "GPT 6.1 Sol (Shikamaru)";
-        reason = "Chuyên gia quy hoạch Kiến trúc, Database Schema & Hợp đồng Vùng [3]";
-        beast = "Tứ Vĩ Son Goku (4-Tails)";
-      } else if (/test|kiểm thử|bảo mật|security|lộ|token|secret|blocker|audit|an toàn/i.test(lower)) {
-        bestKey = "claude";
-        bestName = "Claude Captain (Gaara)";
-        reason = "Chốt chặn Kiểm duyệt QA & Bảo mật Zero-Leak Vùng [5]";
-        beast = "Tam Vĩ Isobu (3-Tails)";
+    guard.readJson(req).then((data) => {
+      if (!data) return json(res, { ok: false, error: "Thân yêu cầu không phải JSON hợp lệ" }, 400);
+      const taskText = String(data.text || data.title || "").trim().slice(0, 500);
+      if (!taskText) return json(res, { ok: false, error: "Chưa có nội dung task" }, 400);
+      let bestKey = "codex", bestName = "Codex Astra (Sasuke)", reason = "Từ khóa thuộc lập trình fullstack", beast = "Thất Vĩ Chomei (7-Tails)";
+      if (/giao diện|ui|ux|mẫu|css|html|mặt bằng|chibi|naruto|vĩ thú|màu|ấn tượng/i.test(taskText)) {
+        bestKey = "antigravity"; bestName = "Antigravity (Kakashi)"; reason = "Từ khóa thuộc Thiết kế UI/UX & Đặc tả Vùng [2]"; beast = "Nhị Vĩ Matatabi (2-Tails)";
+      } else if (/database|sqlite|db|api|hợp đồng|kiến trúc|schema|bản vẽ|backend/i.test(taskText)) {
+        bestKey = "sol"; bestName = "GPT 6.1 Sol (Shikamaru)"; reason = "Từ khóa thuộc Kiến trúc, Schema & Hợp đồng Vùng [3]"; beast = "Tứ Vĩ Son Goku (4-Tails)";
+      } else if (/test|kiểm thử|bảo mật|security|lộ|token|secret|blocker|audit|an toàn/i.test(taskText)) {
+        bestKey = "claude"; bestName = "Claude Captain (Gaara)"; reason = "Từ khóa thuộc Kiểm duyệt QA & Bảo mật Vùng [5]"; beast = "Tam Vĩ Isobu (3-Tails)";
       }
-
-      const consensus = {
+      const busy = activeTasks.filter(t => t.assigneeKey === bestKey && t.status === "running").length;
+      json(res, { ok: true, consensus: {
         taskTitle: taskText,
-        proposedAssignee: {
-          key: bestKey,
-          name: bestName,
-          beast: beast,
-          reason: reason,
-          isIdle: true,
-          activeTaskCount: activeTasks.filter(t => t.assigneeKey === bestKey && t.status === "running").length
-        },
-        peerReview: [
-          { who: "Shikamaru (Sol)", comment: (bestKey === "sol" ? "Kế hoạch này nằm trong khả năng, tôi sẽ thiết kế schema và khởi chạy ngay!" : "Đã rà soát: Giao việc này cho " + bestName + " là hợp lý nhất!") },
-          { who: "Sasuke (Codex)", comment: (bestKey === "codex" ? "Tôi đang rảnh 100%, sẵn sàng viết code và triển khai tức thì." : "Tôi sẽ chờ hợp đồng để phối hợp triển khai tiếp.") },
-          { who: "Gaara (Claude Captain)", comment: "ĐÃ DUYỆT CHÉO: Không xung đột tài nguyên, an toàn tuyệt đối. Đề xuất Thế Quân CEO phê duyệt!" }
-        ]
-      };
-
-      return json(res, { ok: true, consensus });
+        method: "keyword",
+        proposedAssignee: { key: bestKey, name: bestName, beast, reason: reason + " (gợi ý theo từ khóa, chưa hỏi AI)", isIdle: busy === 0, activeTaskCount: busy },
+        peerReview: []
+      } });
     });
     return;
   }
 
   // API: Chấp thuận giao task sau khi thảo luận
   if (url.pathname === "/api/accept-broadcast" && req.method === "POST") {
-    let body = "";
-    req.on("data", c => body += c);
-    req.on("end", () => {
-      let data = {};
-      try { data = JSON.parse(body); } catch {}
+    guard.readJson(req).then((data) => {
+      if (!data) return json(res, { ok: false, error: "Thân yêu cầu không phải JSON hợp lệ" }, 400);
+      const str = (v, d) => String(v || d).slice(0, 200);
       const newTask = {
-        id: "task-" + Date.now().toString(36),
-        title: data.title || "Task mới",
-        assigneeKey: data.assigneeKey || "codex",
-        assigneeName: data.assigneeName || "Codex Astra (Sasuke)",
-        beast: data.beast || "Cửu Vĩ Kurama (9-Tails)",
+        id: "task-" + Date.now().toString(36) + crypto.randomBytes(2).toString("hex"),
+        title: str(data.title, "Task mới"),
+        assigneeKey: str(data.assigneeKey, "codex"),
+        assigneeName: str(data.assigneeName, "Codex Astra (Sasuke)"),
+        beast: str(data.beast, "Cửu Vĩ Kurama (9-Tails)"),
         startedAt: Date.now(),
-        status: "running"
+        status: "running",
+        pid: null
       };
       activeTasks.unshift(newTask);
-      return json(res, { ok: true, task: newTask });
+      if (activeTasks.length > 200) activeTasks.length = 200;
+      json(res, { ok: true, task: newTask });
     });
     return;
   }
 
-  // API: Dừng task (Kill Switch)
+  // API: Dừng task (Kill Switch). Task có pid: dừng thật cả cây tiến trình và kiểm tra lại. Không có pid: chỉ đánh dấu, nói rõ.
   if (url.pathname === "/api/kill-task" && req.method === "POST") {
-    let body = "";
-    req.on("data", c => body += c);
-    req.on("end", () => {
-      let data = {};
-      try { data = JSON.parse(body); } catch {}
-      if (data.all) {
-        activeTasks.forEach(t => t.status = "stopped");
-        return json(res, { ok: true, message: "Đã dừng khẩn cấp toàn bộ các task đang chạy!" });
+    guard.readJson(req).then(async (data) => {
+      if (!data) return json(res, { ok: false, error: "Thân yêu cầu không phải JSON hợp lệ" }, 400);
+      const targets = data.all ? activeTasks.filter(t => t.status === "running") : activeTasks.filter(t => t.id === data.taskId);
+      if (!data.all && !targets.length) return json(res, { ok: false, error: "Không có task " + data.taskId }, 404);
+      const results = [];
+      for (const t of targets) {
+        if (t.pid) {
+          const r = await proc.killTree(t.pid);
+          if (r.ok) t.status = "stopped";
+          results.push({ id: t.id, pid: t.pid, killed: r.ok, error: r.error || null });
+        } else {
+          t.status = "stopped";
+          results.push({ id: t.id, pid: null, killed: false, error: null });
+        }
       }
-      const t = activeTasks.find(x => x.id === data.taskId);
-      if (t) t.status = "stopped";
-      return json(res, { ok: true, message: "Đã dừng task " + data.taskId + " an toàn!" });
+      const failed = results.filter(r => r.pid && !r.killed);
+      const killed = results.filter(r => r.killed).length;
+      const marked = results.filter(r => !r.pid).length;
+      const message = failed.length
+        ? "KHÔNG dừng được " + failed.length + " tiến trình: " + failed.map(r => r.error).join("; ")
+        : "Đã dừng " + killed + " tiến trình thật" + (marked ? ", đánh dấu dừng " + marked + " việc không gắn tiến trình nào" : "") + ".";
+      json(res, { ok: !failed.length, message, results }, failed.length ? 500 : 200);
     });
     return;
   }
@@ -837,27 +798,16 @@ http.createServer((req, res) => {
     return json(res, { ok: true, accounts: getAccountsStatus() });
   }
 
-  // API: Lưu cấu hình / API Key tài khoản AI
+  // API: Lưu API Key tài khoản AI (vào ~/.van-phong-ao/keys.json, không vào config.json, không trả khóa về)
   if (url.pathname === "/api/accounts/save" && req.method === "POST") {
-    let body = "";
-    req.on("data", c => body += c);
-    req.on("end", () => {
-      let data = {};
-      try { data = JSON.parse(body); } catch {}
-      if (data.provider === "claude" && data.apiKey) {
-        CFG.anthropicApiKey = data.apiKey;
-      } else if (data.provider === "gpt" && data.apiKey) {
-        CFG.openaiApiKey = data.apiKey;
-      }
-      try {
-        const cfgPath = path.join(ROOT, "config.json");
-        fs.writeFileSync(cfgPath, JSON.stringify(CFG, null, 2), "utf8");
-      } catch (e) {}
-      return json(res, { ok: true, message: "Đã lưu thông tin tài khoản AI an toàn!", accounts: getAccountsStatus() });
+    guard.readJson(req).then((data) => {
+      if (!data) return json(res, { ok: false, error: "Thân yêu cầu không phải JSON hợp lệ" }, 400);
+      const r = keys.save(data.provider, data.apiKey);
+      json(res, { ok: r.ok, message: r.ok ? "Đã lưu khóa vào " + keys.file() : r.error, accounts: getAccountsStatus() }, r.ok ? 200 : 400);
     });
     return;
   }
-if (url.pathname === "/events") return sse(req, res, clients, snapshot());
+  if (url.pathname === "/events") return sse(req, res, clients, snapshot());
   if (url.pathname === "/state") return json(res, snapshot());
   if (url.pathname === "/perf-events") return sse(req, res, perfClients, perfNow());
   if (url.pathname === "/perf") return json(res, perfNow());
