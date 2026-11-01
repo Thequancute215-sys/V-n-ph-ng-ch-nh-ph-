@@ -111,8 +111,8 @@
 
 ## [4] KHÓA LƯỢT & NHẬT KÝ
 - CURRENT_PHASE: Phase 7 - Vận hành hằng ngày
-- LAST_UPDATED_BY: CLAUDE_AUDITOR
-- NEXT_OWNER (MUTEX LOCK): SPEC_ARCHITECT
+- LAST_UPDATED_BY: CODEX_ASTRA_DEV
+- NEXT_OWNER (MUTEX LOCK): CLAUDE_AUDITOR
 
 ### [4.1] NHẬT KÝ PHASE HIỆN TẠI (tối đa 25 dòng)
 - Đặc cách ĐC-06 (CEO, 01/11/2026): Claude làm thay việc đóng Phase của CODEX_ASTRA_DEV và P2-M09 của SPEC_ARCHITECT, sau đó nghiệm thu như bình thường.
@@ -123,6 +123,10 @@
 - Đặc cách ĐC-10 (CEO, 02/11/2026; commit message ghi nhầm ĐC-09, trùng số với PR #7 Hinata: "làm luôn đi, nghiệm thu bình thường, phát triển thành app"): Claude làm thay SPEC (F11 ở [2.1]) và ASTRA (code) trên nhánh claude/app-cai-dat. Chọn PWA + bộ khởi chạy thay Electron vì CLAUDE.md cấm thư viện ngoài.
 - CLAIM: F11 -> claude/app-cai-dat (npm test 63/63 Linux; Chromium: 0 lỗi cài đặt có/không khóa xem, 14 trang 0 lỗi console, bật/tắt sạch, trang hướng dẫn tự mở lại). CHƯA chạy trên Windows: lối tắt .lnk, cửa sổ Edge --app, tự khởi động.
 - CLAIM_FIXED: P7-H02, P7-M03, P7-M04 -> claude/app-cai-dat (lib/app.isAppProcess + officeHost, scripts/tat-app.js, scripts/mo-app.js, README; test fail khi bỏ bản sửa P7-H02; npm test 66/66).
+
+- FORCE_OVERRIDE (CEO, 02/11/2026): cho CODEX_ASTRA_DEV sửa lỗi và tiếp tục kiểm thử Windows của F11; cài tại worktree VanPhongAI-app, giữ nguyên main.
+- CLAIM_FIXED: WIN-APP-01, WIN-APP-02 -> codex/windows-app-verification (lib/app.js: đường dẫn Linux độc lập hệ điều hành chạy test; scripts/cai-app.js: lưu lối tắt tạm tên ASCII rồi đổi tên Unicode; test/app.test.js: PATH Linux nhiều thư mục).
+- Kiểm Windows thật: npm test 66/66; Desktop + Start Menu mở Edge --app; lối tắt Startup --nen bật văn phòng và ctl, không mở cửa sổ; tat-app dừng đúng cha/con, xóa app.pid, giữ nguyên văn phòng cũ trên 7788; PID cũ thuộc tiến trình khác không bị dừng (test). Bản app dùng 7789 vì 7788 đã bận; ctl 7790 health 200. Chưa đăng xuất/khởi động lại Windows; đã kiểm lối tắt Startup và không có mục StartupApproved vô hiệu hóa.
 
 ### [4.2] LƯU TRỮ PHASE ĐÃ XONG (tối đa 5 dòng, 1 dòng/Phase)
 - Phase 1: Hoàn tất đặc tả Vùng [2] và Interactive Prototype Chibi Edition (SPEC_ARCHITECT).
