@@ -37,6 +37,7 @@ function checkHandoff(h, role) {
   if (h.next_owner === role) bad.push("next_owner không được trùng vai hiện tại");
   if (!Array.isArray(h.files) || !h.files.every((x) => typeof x === "string")) bad.push("files phải là mảng chuỗi");
   if (!Array.isArray(h.claim_fixed) || !h.claim_fixed.every((x) => typeof x === "string" && /^P\d+-[CHM]\d+/.test(x))) bad.push("claim_fixed phải là mảng ID dạng P2-C01");
+  if (h.done !== undefined && typeof h.done !== "boolean") bad.push("done (nếu có) phải là true/false");
   return bad;
 }
 

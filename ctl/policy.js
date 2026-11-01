@@ -8,7 +8,10 @@
 const fs = require("fs");
 const path = require("path");
 
-const SHELLS = /^(cmd|powershell|pwsh|bash|sh|zsh|fish|wsl|python\d*|py|perl|ruby|cscript|wscript|mshta|rundll32|regsvr32|reg|certutil|bitsadmin)(\.exe)?$/i;
+const SHELLS = /^(cmd|powershell|pwsh|bash|sh|zsh|fish|wsl|perl|ruby|cscript|wscript|mshta|rundll32|regsvr32|reg|certutil|bitsadmin)(\.exe)?$/i;
+const PYTHON = /^(python\d*(\.\d+)?|py)$/i;
+// Script nằm trong workspace: đường dẫn tương đối, không "..", không ổ đĩa / UNC (cwd của việc luôn là gốc workspace).
+const inWorkspace = (p) => !!p && !/^([a-z]:|[\\/])/i.test(p) && !String(p).split(/[\\/]/).includes("..");
 
 const GIT_ALLOW = new Set(["status", "diff", "log", "show", "fetch", "add", "commit", "stash", "blame", "rev-parse", "ls-files", "remote", "tag", "switch"]);
 const GIT_DANGER = [
@@ -50,8 +53,22 @@ function classify(argv) {
   }
   if (prog === "node") {
     if (a[0] === "--test" || a[0] === "--version" || a[0] === "-v") return { decision: "allow", reason: "node " + a[0] };
+    if (a[0] && /\.(c|m)?js$/i.test(a[0]) && inWorkspace(a[0])) return { decision: "allow", reason: "chạy script node trong workspace: " + a[0] };
     return { decision: "approve", reason: "node chạy mã tùy ý cần duyệt" };
   }
+  if (PYTHON.test(prog)) {
+    if (!a.length) return { decision: "deny", reason: "python không đối số là shell tương tác: không chạy qua ctl" };
+    // Chỉ xét cờ đứng TRƯỚC script/module; đối số sau script là của script. -c (chuỗi mã) và -i (tương tác) bị chặn kể cả gộp như -ic.
+    let i = 0;
+    for (; i < a.length && a[i].startsWith("-") && a[i] !== "-m"; i++)
+      if (/^-[^-]*[ci]/.test(a[i]) || /^--(command|interactive)/.test(a[i])) return { decision: "deny", reason: "python " + a[i] + " (chạy chuỗi mã / tương tác) bị chặn" };
+    if (a[i] === "-m") return ["pytest", "unittest"].includes(a[i + 1]) ? { decision: "allow", reason: "python -m " + a[i + 1] + " (kiểm thử)" } : { decision: "approve", reason: "python -m " + (a[i + 1] || "") + " cần duyệt" };
+    if (i === 0 && a[0] && /\.pyw?$/i.test(a[0]) && inWorkspace(a[0])) return { decision: "allow", reason: "chạy script python trong workspace: " + a[0] };
+    return { decision: "approve", reason: "lệnh python ngoài danh sách cần duyệt" };
+  }
+  if (prog === "pytest" || prog === "py.test") return { decision: "allow", reason: "pytest (kiểm thử)" };
+  if (prog === "cargo" && ["test", "build", "check", "fmt", "clippy"].includes(a[0])) return { decision: "allow", reason: "cargo " + a[0] };
+  if (prog === "go" && ["test", "build", "vet", "fmt"].includes(a[0])) return { decision: "allow", reason: "go " + a[0] };
   if (prog === "gh") {
     const sub = a.slice(0, 2).join(" ");
     if (GH_ALLOW.some((r) => r.test(sub))) return { decision: "allow", reason: "gh " + sub + " (chỉ đọc)" };
@@ -74,7 +91,12 @@ function resolveProgram(name, env = process.env) {
   for (const dir of String(env.PATH || env.Path || "").split(path.delimiter).filter(Boolean)) {
     for (const ext of win && path.extname(name) ? [""] : exts) {
       const f = path.join(dir, name + ext);
-      try { if (fs.statSync(f).isFile()) return fromFile(f); } catch {}
+      try { if (fs.statSync(f).isFile()) return fromFile(f); }
+      catch (e) {
+        // Windows: python/winget cài từ Microsoft Store là "App Execution Alias" trong WindowsApps; statSync báo EACCES
+        // nhưng lstat đọc được và spawn chạy được bình thường.
+        if (win && e.code === "EACCES" && /\.exe$/i.test(f)) { try { fs.lstatSync(f); return [f]; } catch {} }
+      }
     }
   }
   throw new Error("Không tìm thấy chương trình " + name + " trong PATH");
