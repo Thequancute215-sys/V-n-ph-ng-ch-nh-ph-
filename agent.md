@@ -36,6 +36,7 @@
   - F8 (CEO Override & Smooth Room Zoom Navigation): Cơ chế phân việc ngoài lề cho phép Giám đốc chỉ định ngoại lệ (ví dụ cấp quyền code trực tiếp cho 6.1 Sol); kèm thanh điều hướng lướt phòng (Glide Focus), slider thu phóng và thao tác cuộn/di chuột êm dịu.
   - F9 (All-Hands Broadcast & Self-Assignment Dispatch): Phát loa toàn thể nhân viên khi CEO có task chưa biết giao ai; các AI tự động rà soát ai đang rảnh và phù hợp nhất, tự check chéo lẫn nhau rồi báo cáo đề xuất người nhận việc lên CEO duyệt 1-click.
   - F10 (Active Tasks Monitor & Emergency Kill Switch): Bảng nhắc nhở thời gian thực danh sách task/subagent đang chạy ngầm kèm thời lượng; cảnh báo task chạy quá lâu và cung cấp nút dừng từng task hoặc dừng tất cả để CEO kiểm soát tài nguyên máy tính.
+  - F11 (Local Autonomous OS Controller & Captain Claude Master Hub): Xây dựng ứng dụng điều khiển máy tính cục bộ (Local Desktop / OS Daemon) cho phép Đội trưởng Claude Code nắm toàn quyền điều hành hệ thống máy tính của Thế Quân CEO. Claude tiếp nhận chỉ thị trực tiếp từ CEO, tự động phân rã nhiệm vụ và điều phối các AI cấp dưới (Sol, Codex, Antigravity, Pain) thi công tự động theo tinh thần Protocol agent.md trên mọi dự án, sau đó tự động tổng hợp kết quả báo cáo trực tiếp lên CEO.
 - Out-of-Scope: Không can thiệp mã nhị phân VS Code, không đẩy dữ liệu ra Internet công cộng.
 
 ### [2.2] LUỒNG NGƯỜI DÙNG ĐẦU-CUỐI (E2E USER FLOW)
@@ -46,12 +47,12 @@
 5. Khi cần hội ý liên AI -> Mở Phòng Họp Ban -> Xuất tài liệu HOI-CHAN-TONG-THE.md.
 
 ### [2.3] LUỒNG AI AGENT, HỆ THỐNG NHẪN GIẢ & 10 VĨ THÚ
-- Thế Quân CEO: Naruto Uzumaki (Chủ Tịch Tối Cao / Hokage Tiên Nhân / Rasengan 2 lớp). Thú bảo hộ: Cửu Vĩ Kurama.
-- Tổng Quản Lý: Pain Thiên Đạo Yahiko (Quản Lý Điều Hành / 16 Hắc Trượng / Rinnegan 4 vòng / Áo Akatsuki).
-- GPT 6.1 Sol: Itachi Uchiha (Quân Sư Chiến Lược & SOL_PLANNER / Mangekyo Sharingan / Rãnh lệ 35°). Vệ tinh: Tam Vĩ Isobu & Tứ Vĩ Son Goku.
-- Codex / Astra: Sasuke Uchiha (Kỹ Sư Trưởng Code & CODEX_DEV / EMS & Rinnegan 6 Tomoe / Chidori / Kiếm Kusanagi). Vệ tinh: Bát Vĩ Gyuki & Thất Vĩ Chomei.
-- Claude Captain: Sakura Haruno (Chốt Chặn Kiểm Duyệt & CLAUDE_AUDITOR / Ấn Bách Hào tím / Y thuật QA / Zero-Leak). Vệ tinh: Lục Vĩ Saiken & Ngũ Vĩ Kokuo.
-- Antigravity (Gemini 3.8): Hinata Hyuga (Thư Ký Trợ Lý Giám Đốc & SPEC_ARCHITECT / Bạch Nhãn tím trắng / Song Sư Quyền). Vệ tinh: Nhất Vĩ Shukaku & Nhị Vĩ Matatabi.
+- Thế Quân CEO: Naruto Uzumaki (Chủ Tịch Tối Cao / Hokage Tiên Nhân / Rasengan 2 lớp). Thú bảo hộ: Cửu Vĩ Kurama. Là người ra quyết định tối cao, giao nhiệm vụ trực tiếp cho Đội Trưởng Claude và nhận báo cáo tổng thể.
+- Đội Trưởng Tối Cao (Master Captain): Claude Code (Sakura Haruno - Chốt Chặn Kiểm Duyệt & CLAUDE_AUDITOR & CAPTAIN). Nhận quyền toàn quyền điều khiển máy tính từ CEO; chịu trách nhiệm điều hành, giao việc tự động cho toàn đội AI, kiểm tra chéo và báo cáo trực tiếp kết quả lên Thế Quân CEO. Vệ tinh: Lục Vĩ Saiken & Ngũ Vĩ Kokuo.
+- Tổng Quản Lý Vận Hành: Pain Thiên Đạo Yahiko (Quản Lý Điều Hành / 16 Hắc Trượng / Rinnegan 4 vòng / Áo Akatsuki). Giám sát tiến độ, tài nguyên CPU/RAM, điều phối phòng ban.
+- GPT 6.1 Sol: Itachi Uchiha (Quân Sư Chiến Lược & SOL_PLANNER / Mangekyo Sharingan / Rãnh lệ 35°). Lập kế hoạch kiến trúc, DB Schema, API contracts. Vệ tinh: Tam Vĩ Isobu & Tứ Vĩ Son Goku.
+- Codex / Astra: Sasuke Uchiha (Kỹ Sư Trưởng Code & CODEX_DEV / EMS & Rinnegan 6 Tomoe / Chidori / Kiếm Kusanagi). Viết code fullstack, thực thi script tự động hóa. Vệ tinh: Bát Vĩ Gyuki & Thất Vĩ Chomei.
+- Antigravity (Gemini 3.8): Hinata Hyuga (Thư Ký Trợ Lý Giám Đốc & SPEC_ARCHITECT / Bạch Nhãn tím trắng / Song Sư Quyền). Đặc tả sản phẩm, thiết kế UI/UX, Design Tokens & Prototype tương tác. Vệ tinh: Nhất Vĩ Shukaku & Nhị Vĩ Matatabi.
 - Phòng Họp Ban Hội Chẩn: Thập Vĩ Juubi (Cội nguồn Chakra Ban Hội Chẩn Đa AI).
 
 ### [2.4] THIẾT KẾ FULLSTACK FRONTEND & UI/UX DESIGN SYSTEM
@@ -76,14 +77,15 @@
   - [ ] Phase 5: Thẩm định Bảo mật, Zero-Leak Audit & Sẵn sàng Sử dụng (Claude Captain)
 
 ## [4] KHÓA LƯỢT & NHẬT KÝ
-- CURRENT_PHASE: Phase 2 - Lập Kế Hoạch & Kiến Trúc Backend
+- CURRENT_PHASE: Phase 2 - Lập Kế Hoạch & Kiến Trúc Backend (Bàn Giao Claude Captain)
 - LAST_UPDATED_BY: SPEC_ARCHITECT
-- NEXT_OWNER (MUTEX LOCK): SOL_ARCHITECT_PLANNER
+- NEXT_OWNER (MUTEX LOCK): CLAUDE_AUDITOR
 
 ### [4.1] NHẬT KÝ PHASE HIỆN TẠI (tối đa 25 dòng)
-- File đã tạo: ./agent.md, ai-office-prototype.html, spec-vung-2-ai-office.md.
-- Hoàn tất Vùng [2]: Bổ sung tính năng chọn GitHub Repo, Chibi Cute Avatar (AI to, subagent nhỏ), Bàn Họp Hội Chẩn Tổng Thể và Cơ chế Duyệt Chuyển Lượt 1-Click.
-- Chuyển giao khóa MUTEX sang SOL_ARCHITECT_PLANNER để thiết kế kiến trúc Backend và API Contracts.
+- Theo chỉ thị trực tiếp từ Thế Quân CEO: Bàn giao toàn quyền điều khiển máy tính và chỉ huy tự động toàn đội AI cho Đội Trưởng Claude Code (CLAUDE_AUDITOR & CAPTAIN).
+- Hoàn tất Vùng [2.1] F11: Đặc tả ứng dụng Local OS Controller & Captain Claude Master Hub.
+- Hoàn tất Vùng [2.3]: Xác lập vai trò Master Captain cho Claude Code, nhận lệnh trực tiếp từ Thế Quân CEO, tự động phân rã nhiệm vụ cho Sol, Codex, Antigravity, Pain và báo cáo trực tiếp về CEO.
+- Chuyển giao khóa MUTEX sang CLAUDE_AUDITOR để Claude tiếp quản điều hành toàn diện ngay lập tức.
 - CLAIM_FIXED: [Chưa có]
 
 ### [4.2] LƯU TRỮ PHASE ĐÃ XONG (tối đa 5 dòng, 1 dòng/Phase)
