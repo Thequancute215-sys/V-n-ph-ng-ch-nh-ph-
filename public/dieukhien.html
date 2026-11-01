@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Điều khiển máy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#000;--panel:#070707;--panel2:#0b0b0b;--line:#1a1a1a;--line2:#242424;--text:#f2f2f2;--mute:#a6a6a6;--mute2:#6b6b6b;--gold:#ecc970;--ok:#7ccf9b;--warn:#ecc970;--bad:#e8a39b;--red:#ef4444;--claude:#d9734a;--codex:#3f8fd9;--mono:"JetBrains Mono",ui-monospace,monospace}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:"Be Vietnam Pro",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.head{display:flex;flex-wrap:wrap;gap:14px;align-items:center;padding:10px 18px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#0a0a0a,#050505)}
+.brand{display:flex;align-items:center;gap:12px;margin-right:auto}.logo{width:34px;height:34px;border-radius:10px;background:var(--gold);color:#000;display:grid;place-items:center;font-weight:800;font-size:18px}
+.brand b{font-size:16px;display:block}.brand small{font-size:10px;color:var(--mute2);letter-spacing:.18em;text-transform:uppercase}
+.views{display:flex;gap:6px;flex-wrap:wrap}.views a{font-size:11px;color:var(--mute);text-decoration:none;border:1px solid var(--line2);border-radius:999px;padding:4px 11px}.views a:hover{color:var(--text)}
+main{padding:12px 18px 32px;display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.full{grid-column:1/-1}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px 13px}
+.kpi small{display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute2);font-weight:700}
+.kpi b{display:block;font-size:24px;margin-top:4px;font-family:var(--mono)}
+.kpi span{display:block;font-size:11px;color:var(--mute);margin-top:2px}
+.kpi.bad b{color:var(--bad)}.kpi.warn b{color:var(--warn)}.kpi.ok b{color:var(--ok)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;min-width:0}
+.panel h2{margin:0 0 10px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);display:flex;justify-content:space-between;gap:10px;align-items:center}
+.panel h2 em{font-style:normal;letter-spacing:0;text-transform:none;color:var(--mute2);font-weight:500}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute2);padding:6px 8px;border-bottom:1px solid var(--line2);white-space:nowrap}
+td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+input,textarea,select{background:var(--panel2);color:var(--text);border:1px solid var(--line2);border-radius:9px;padding:8px 10px;font:inherit;font-size:13px;min-width:0}
+input{flex:1}
+textarea{width:100%;font-family:var(--mono);font-size:12px;line-height:1.5}
+button{background:#151515;color:var(--text);border:1px solid var(--line2);border-radius:9px;padding:7px 12px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+button:hover{border-color:#3a3a3a}button:disabled{opacity:.45;cursor:not-allowed}
+button.gold{background:var(--gold);color:#000;border-color:var(--gold)}
+button.ok{border-color:#2f6b47;color:var(--ok)}
+button.bad{border-color:#6b2f2f;color:var(--bad)}
+button.brake{background:rgba(239,68,68,.18);border:1px solid var(--red);color:#fecaca;font-size:13px;padding:9px 16px}
+.tag{display:inline-block;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:6px;border:1px solid var(--line2);font-family:var(--mono)}
+.s-running{color:var(--ok);border-color:#2f6b47}.s-pending_approval{color:var(--warn);border-color:#6b5a2f}.s-done{color:var(--mute)}
+.s-failed,.s-killed,.s-timeout,.s-rejected{color:var(--bad);border-color:#6b2f2f}
+.z{color:var(--mute2)}.r{color:var(--bad)}.y{color:var(--warn)}.g{color:var(--ok)}
+.note{font-size:11.5px;color:var(--mute2);line-height:1.6;margin:8px 0 0}
+.banner{grid-column:1/-1;border-radius:12px;padding:10px 14px;font-size:13px;border:1px solid #6b2f2f;background:rgba(232,163,155,.08);color:var(--bad)}
+.msg{font-size:12px;margin-top:8px;min-height:1em}
+pre{margin:8px 0 0;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px;font-family:var(--mono);font-size:11.5px;line-height:1.5;max-height:320px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.files a{color:var(--text);text-decoration:none;cursor:pointer}.files a:hover{color:var(--gold)}
+.skel{height:14px;border-radius:6px;background:linear-gradient(90deg,#0d0d0d,#171717,#0d0d0d);background-size:200% 100%;animation:sk 1.2s infinite}
+@keyframes sk{to{background-position:-200% 0}}
+.live{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--mute2);margin-right:6px}.live.on{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+@media (max-width:900px){main{grid-template-columns:1fr;padding:12px 16px}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.brand small{display:none}}
+</style>
+</head>
+<body>
+<div class="head">
+  <div class="brand"><div class="logo">⌘</div><div><b>Điều khiển máy</b><small>OS Controller · chỉ trên máy này</small></div></div>
+  <button class="brake" id="brake">⏹ PHANH KHẨN CẤP</button>
+  <div class="views"><a href="/">Văn phòng 3D</a><a href="tongquan.html">Tổng quan</a><a href="hopthu.html">Hòm thư</a><a href="board.html">Bảng điều hành</a></div>
+</div>
+
+<main>
+  <div class="banner" id="offline" hidden></div>
+
+  <div class="kpis full">
+    <div class="kpi" id="kCpu"><small><span class="live" id="live"></span>CPU máy</small><b>–</b><span>cập nhật mỗi giây</span></div>
+    <div class="kpi" id="kMem"><small>RAM máy</small><b>–</b><span></span></div>
+    <div class="kpi" id="kJobs"><small>Việc đang chạy</small><b>–</b><span></span></div>
+    <div class="kpi" id="kPend"><small>Chờ CEO duyệt</small><b>–</b><span>lệnh + chuyển lượt</span></div>
+  </div>
+
+  <section class="panel">
+    <h2>Workspace <em id="wsActive"></em></h2>
+    <div id="wsList"><div class="skel"></div></div>
+    <div class="row" style="margin-top:10px"><input id="wsPath" placeholder="Đường dẫn thư mục dự án, ví dụ C:\Users\ban\Documents\du-an"><button id="wsAdd">Đăng ký</button></div>
+    <p class="note">Chỉ trong workspace đã đăng ký mới chạy lệnh và đọc/ghi file được. Không đăng ký được cả ổ đĩa, thư mục người dùng, hay thư mục ẩn như .ssh/.claude.</p>
+    <div class="msg" id="wsMsg"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Lượt AI <em id="turnInfo"></em></h2>
+    <div id="turnBox"><div class="skel"></div></div>
+    <textarea id="aiTask" rows="3" placeholder="Việc giao thêm cho AI đang giữ lượt (không bắt buộc)" style="margin-top:10px"></textarea>
+    <div class="row" style="margin-top:8px"><button class="gold" id="aiRun" disabled>Chạy lượt</button></div>
+    <div class="msg" id="aiMsg"></div>
+    <h2 style="margin-top:14px">Chờ duyệt chuyển lượt</h2>
+    <div id="handoffs"></div>
+    <p class="note">AI xong lượt thì in dòng JSON bàn giao. Bấm "Duyệt chuyển lượt" thì ctl mới ghi agent.md và commit <span class="mono">chore(agent-sync)</span> trên máy này (không push). Không có AI nào tự gọi AI khác.</p>
+  </section>
+
+  <section class="panel full">
+    <h2>Chạy lệnh <em>trong workspace đang chọn · không qua shell</em></h2>
+    <div class="row"><input id="cmd" class="mono" placeholder='git status   ·   npm test   ·   git commit -m "sửa lỗi"'><button class="gold" id="cmdRun">Chạy</button></div>
+    <div class="msg" id="cmdMsg"></div>
+    <p class="note">Danh sách cho phép (chạy ngay): git status/diff/log/add/commit/fetch/pull --ff-only…, npm test/ci/run, node --test, gh … list/view. Lệnh khác (git push, npm install, xóa file…) vào hàng <b class="y">chờ duyệt</b>. Shell (cmd, PowerShell, bash, python…) bị từ chối.</p>
+  </section>
+
+  <section class="panel full">
+    <h2>Việc <em>mới nhất trước</em></h2>
+    <div class="scroll"><table><thead><tr><th>Trạng thái</th><th>Ai</th><th>Lệnh</th><th>PID</th><th>Thời gian</th><th></th></tr></thead><tbody id="jobs"><tr><td colspan="6"><div class="skel"></div></td></tr></tbody></table></div>
+    <div id="logBox" hidden><h2 style="margin-top:12px">Log <em id="logTitle"></em><button id="logClose">Đóng</button></h2><pre id="log"></pre></div>
+  </section>
+
+  <section class="panel full">
+    <h2>File <em id="fsPath">.</em></h2>
+    <div class="files scroll"><table><tbody id="fsList"></tbody></table></div>
+    <div id="editor" hidden>
+      <h2 style="margin-top:12px">Sửa <em id="edName"></em></h2>
+      <textarea id="edText" rows="18" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:8px"><button class="gold" id="edSave">Lưu</button><button id="edClose">Đóng</button></div>
+      <div class="msg" id="edMsg"></div>
+    </div>
+  </section>
+
+  <section class="panel full">
+    <h2>Nhật ký kiểm toán <em>chỉ thêm, không sửa được</em></h2>
+    <div class="scroll"><table><thead><tr><th>Lúc</th><th>Ai</th><th>Hành động</th><th>Đối tượng</th><th>Kết quả</th></tr></thead><tbody id="audit"></tbody></table></div>
+  </section>
+</main>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const say = (id, text, cls = "") => { const el = $(id); el.className = "msg " + cls; el.textContent = text || ""; };
+const dur = (s) => (s >= 3600 ? Math.floor(s / 3600) + "g " : "") + (s >= 60 ? Math.floor((s % 3600) / 60) + "p " : "") + (s % 60) + "s";
+const tm = (ms) => (ms ? new Date(ms).toLocaleString("vi-VN") : "–");
+let active = null, fsDir = ".", edit = null, logJob = null, logFrom = 0;
+
+async function api(method, path, body) {
+  const r = await fetch("/ctl" + path, { method, cache: "no-store", headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined });
+  if ((r.headers.get("content-type") || "").includes("application/json")) {
+    const j = await r.json();
+    if (r.status === 503 || j.code === "REMOTE_DENIED") offline(j.error); else online();
+    return { status: r.status, ...j };
+  }
+  return { status: r.status, text: await r.text(), next: Number(r.headers.get("x-next-offset") || 0) };
+}
+function offline(msg) { $("offline").hidden = false; $("offline").textContent = "⚠ " + msg; $("live").classList.remove("on"); }
+function online() { $("offline").hidden = true; }
+
+// Chia dòng lệnh thành argv (hỗ trợ "..." và '...'); không có shell nào diễn giải chuỗi này.
+function argvOf(line) {
+  const out = []; let cur = "", q = null, has = false;
+  for (const c of line) {
+    if (q) { if (c === q) q = null; else cur += c; }
+    else if (c === '"' || c === "'") { q = c; has = true; }
+    else if (/\s/.test(c)) { if (cur || has) out.push(cur); cur = ""; has = false; }
+    else cur += c;
+  }
+  if (cur || has) out.push(cur);
+  return out;
+}
+
+// ---- giám sát (SSE) ----
+function monitor() {
+  const es = new EventSource("/ctl/monitor/stream");
+  es.onmessage = (e) => {
+    const m = JSON.parse(e.data); online(); $("live").classList.add("on");
+    const cpu = $("kCpu"); cpu.className = "kpi " + (m.cpuPct > 85 ? "bad" : m.cpuPct > 60 ? "warn" : "ok"); cpu.querySelector("b").textContent = m.cpuPct.toFixed(1) + "%";
+    const pct = m.memUsedMb / m.memTotalMb * 100, mem = $("kMem");
+    mem.className = "kpi " + (pct > 90 ? "bad" : pct > 75 ? "warn" : "ok");
+    mem.querySelector("b").textContent = (m.memUsedMb / 1024).toFixed(1) + " GB"; mem.querySelector("span").textContent = "/ " + (m.memTotalMb / 1024).toFixed(1) + " GB (" + pct.toFixed(0) + "%)";
+    const long = m.jobs.filter((j) => j.runningS > 600).length, kj = $("kJobs");
+    kj.className = "kpi " + (long ? "warn" : ""); kj.querySelector("b").textContent = m.jobs.length;
+    kj.querySelector("span").textContent = long ? long + " việc chạy quá 10 phút" : m.jobs.map((j) => j.agent + (j.memMb != null ? " " + j.memMb + "MB" : "")).join(" · ") || "máy rảnh";
+  };
+  es.onerror = () => { $("live").classList.remove("on"); es.close(); setTimeout(monitor, 3000); fetch("/ctl/health").then((r) => r.json()).then((j) => { if (!j.ok) offline(j.error); }).catch(() => offline("Mất kết nối văn phòng")); };
+}
+
+// ---- workspace ----
+async function loadWs() {
+  const r = await api("GET", "/workspaces");
+  if (!r.ok) { $("wsList").innerHTML = `<div class="r">${esc(r.error)}</div>`; return; }
+  active = r.active; $("wsActive").textContent = active || "chưa chọn";
+  $("wsList").innerHTML = r.workspaces.length ? `<table>${r.workspaces.map((w) => `<tr><td>${w.active ? '<b class="g">● </b>' : ""}<b>${esc(w.name)}</b><div class="z mono" style="font-size:11px">${esc(w.path)}</div></td>
+    <td style="text-align:right;white-space:nowrap">${w.active ? "" : `<button data-sw="${esc(w.path)}">Chuyển sang</button> `}<button class="bad" data-rm="${esc(w.path)}">Gỡ</button></td></tr>`).join("")}</table>`
+    : `<div class="z">Chưa có workspace nào. Thêm thư mục dự án ở dưới.</div>`;
+  fsDir = "."; edit = null; $("editor").hidden = true;
+  await Promise.all([loadTurn(), loadFs()]);
+}
+$("wsList").addEventListener("click", async (e) => {
+  const sw = e.target.dataset.sw, rm = e.target.dataset.rm;
+  if (sw) { const r = await api("POST", "/workspaces/switch", { path: sw }); say("wsMsg", r.ok ? "" : r.error, r.ok ? "" : "r"); loadWs(); }
+  if (rm && confirm("Gỡ workspace " + rm + " khỏi danh sách? (không xóa file)")) { const r = await api("POST", "/workspaces/remove", { path: rm }); say("wsMsg", r.ok ? "Đã gỡ." : r.error, r.ok ? "g" : "r"); loadWs(); }
+});
+$("wsAdd").onclick = async () => {
+  const p = $("wsPath").value.trim(); if (!p) return;
+  const r = await api("POST", "/workspaces", { path: p });
+  say("wsMsg", r.ok ? "Đã đăng ký " + r.workspace.path : r.error, r.ok ? "g" : "r");
+  if (r.ok) { $("wsPath").value = ""; loadWs(); }
+};
+
+// ---- lượt AI ----
+async function loadTurn() {
+  if (!active) { $("turnBox").innerHTML = `<div class="z">Chọn workspace trước.</div>`; $("aiRun").disabled = true; return; }
+  const s = await api("GET", "/ai/status?workspace=" + encodeURIComponent(active));
+  if (!s.ok) { $("turnBox").innerHTML = `<div class="r">${esc(s.error)}</div>`; return; }
+  if (!s.turn) { $("turnBox").innerHTML = `<div class="y">${esc(s.problem)}</div>`; $("aiRun").disabled = true; $("turnInfo").textContent = ""; return; }
+  $("turnInfo").textContent = s.turn.phase || "";
+  $("turnBox").innerHTML = `<table><tr><td class="z">Đang giữ lượt</td><td><b class="mono" style="color:var(--gold)">${esc(s.turn.nextOwner)}</b></td></tr>
+    <tr><td class="z">Cập nhật cuối</td><td class="mono">${esc(s.turn.lastUpdatedBy || "–")}</td></tr>
+    <tr><td class="z">Trạng thái</td><td>${s.aiBusy ? '<b class="y">Đang có lượt AI chạy</b>' : s.runnable ? '<span class="g">Sẵn sàng</span>' : '<span class="y">Vai này chưa có CLI chạy nền: giao qua Hòm thư</span>'}</td></tr></table>`;
+  $("aiRun").disabled = s.aiBusy || !s.runnable;
+  $("aiRun").textContent = "Chạy lượt " + s.turn.nextOwner;
+  $("aiRun").dataset.role = s.turn.nextOwner;
+}
+$("aiRun").onclick = async () => {
+  const role = $("aiRun").dataset.role;
+  if (!confirm("Chạy lượt " + role + " trong " + active + "?\nAI sẽ đọc agent.md và làm việc trong thư mục này (tối đa 20–30 phút, dừng được bằng Phanh khẩn cấp).")) return;
+  $("aiRun").disabled = true;
+  const r = await api("POST", "/ai/run", { workspace: active, role, task: $("aiTask").value });
+  say("aiMsg", r.ok ? "Đã bắt đầu " + r.job.id + ". Theo dõi ở bảng Việc." : r.error, r.ok ? "g" : "r");
+  if (r.ok) $("aiTask").value = "";
+  refresh();
+};
+async function loadHandoffs() {
+  const r = await api("GET", "/handoffs");
+  if (!r.ok) return 0;
+  $("handoffs").innerHTML = r.handoffs.length ? r.handoffs.map((h) => `<div class="panel" style="background:var(--panel2);margin-bottom:8px">
+    <div class="row"><b class="mono">${esc(h.role)}</b> → <b class="mono" style="color:var(--gold)">${esc(h.next_owner || "?")}</b><span class="z mono" style="margin-left:auto">${esc(h.job_id)}</span></div>
+    ${h.payload ? `<div class="z" style="font-size:12px;margin-top:4px">File: ${esc((h.payload.files || []).join(", ") || "–")} · CLAIM_FIXED: ${esc((h.payload.claim_fixed || []).join(", ") || "–")}</div>` : ""}
+    ${h.problems.length ? `<div class="r" style="font-size:12px;margin-top:4px">✖ ${h.problems.map(esc).join("<br>✖ ")}</div>` : ""}
+    <div class="row" style="margin-top:8px"><button class="ok" data-hok="${esc(h.job_id)}" ${h.problems.length ? "disabled" : ""}>Duyệt chuyển lượt</button><button class="bad" data-hno="${esc(h.job_id)}">Từ chối</button><button data-log="${esc(h.job_id)}">Xem log</button></div></div>`).join("")
+    : `<div class="z">Không có bàn giao nào chờ duyệt.</div>`;
+  return r.handoffs.length;
+}
+$("handoffs").addEventListener("click", async (e) => {
+  const ok = e.target.dataset.hok, no = e.target.dataset.hno, lg = e.target.dataset.log;
+  if (ok) { const r = await api("POST", `/handoffs/${encodeURIComponent(ok)}/approve`, {}); say("aiMsg", r.ok ? (r.handoff.commit ? "Đã chuyển lượt, commit " + r.handoff.commit : r.handoff.message) : r.error, r.ok ? "g" : "r"); refresh(); loadTurn(); }
+  if (no) { const r = await api("POST", `/handoffs/${encodeURIComponent(no)}/reject`, {}); say("aiMsg", r.ok ? "Đã từ chối bàn giao, lượt giữ nguyên." : r.error, r.ok ? "" : "r"); refresh(); }
+  if (lg) openLog(lg);
+});
+
+// ---- chạy lệnh ----
+$("cmdRun").onclick = async () => {
+  const argv = argvOf($("cmd").value.trim());
+  if (!argv.length) return;
+  if (!active) return say("cmdMsg", "Chọn workspace trước.", "r");
+  const r = await api("POST", "/jobs", { workspace: active, argv });
+  if (r.status === 201) { say("cmdMsg", "Đang chạy " + r.job.id, "g"); $("cmd").value = ""; openLog(r.job.id); }
+  else if (r.status === 202) say("cmdMsg", "Chờ duyệt: " + r.policy.reason + ". Bấm Duyệt ở bảng Việc.", "y");
+  else say("cmdMsg", r.error, "r");
+  refresh();
+};
+$("cmd").addEventListener("keydown", (e) => { if (e.key === "Enter") $("cmdRun").click(); });
+
+// ---- việc ----
+async function loadJobs() {
+  const r = await api("GET", "/jobs");
+  if (!r.ok) { $("jobs").innerHTML = `<tr><td colspan="6" class="r">${esc(r.error)}</td></tr>`; return 0; }
+  $("jobs").innerHTML = r.jobs.length ? r.jobs.map((j) => `<tr><td><span class="tag s-${esc(j.status)}">${esc(j.status)}</span>${j.kind === "ai" ? ' <span class="tag">AI</span>' : ""}</td>
+    <td class="mono">${esc(j.agent)}</td><td class="mono" style="max-width:520px;word-break:break-all">${esc(j.kind === "ai" ? j.argv[0] + " … (prompt " + j.agent + ")" : j.argv.join(" "))}<div class="z" style="font-size:10.5px">${esc(j.workspace || "")}</div></td>
+    <td class="mono">${esc(j.pid ?? "–")}</td><td class="mono" style="white-space:nowrap">${j.status === "pending_approval" ? tm(j.started_at) : dur(j.runningS)}${j.exit_code != null ? " · mã " + j.exit_code : ""}</td>
+    <td style="white-space:nowrap;text-align:right">${j.status === "pending_approval" ? `<button class="ok" data-ok="${esc(j.id)}">Duyệt</button> <button class="bad" data-no="${esc(j.id)}">Từ chối</button>` : ""}
+    ${j.status === "running" ? `<button class="bad" data-kill="${esc(j.id)}">Dừng</button> ` : ""}${j.status !== "pending_approval" && j.status !== "rejected" ? `<button data-log="${esc(j.id)}">Log</button>` : ""}</td></tr>`).join("")
+    : `<tr><td colspan="6" class="z">Chưa có việc nào.</td></tr>`;
+  return r.jobs.filter((j) => j.status === "pending_approval").length;
+}
+$("jobs").addEventListener("click", async (e) => {
+  const d = e.target.dataset;
+  if (d.ok) {
+    const j = (await api("GET", "/jobs/" + encodeURIComponent(d.ok))).job;
+    if (!confirm("Duyệt chạy lệnh NGOÀI danh sách cho phép?\n\n" + j.argv.join(" ") + "\n\ntrong " + j.workspace)) return;
+    const r = await api("POST", `/jobs/${encodeURIComponent(d.ok)}/approve`, {}); say("cmdMsg", r.ok ? "Đã duyệt, đang chạy." : r.error, r.ok ? "g" : "r"); if (r.ok) openLog(d.ok);
+  }
+  if (d.no) { const r = await api("POST", `/jobs/${encodeURIComponent(d.no)}/reject`, {}); say("cmdMsg", r.ok ? "Đã từ chối." : r.error, r.ok ? "" : "r"); }
+  if (d.kill) { const r = await api("POST", `/jobs/${encodeURIComponent(d.kill)}/kill`, {}); say("cmdMsg", r.ok ? "Đã dừng " + d.kill : "KHÔNG dừng được: " + r.error, r.ok ? "g" : "r"); }
+  if (d.log) openLog(d.log);
+  refresh();
+});
+function openLog(id) { logJob = id; logFrom = 0; $("log").textContent = ""; $("logTitle").textContent = id; $("logBox").hidden = false; pollLog(); }
+$("logClose").onclick = () => { logJob = null; $("logBox").hidden = true; };
+async function pollLog() {
+  if (!logJob) return;
+  const id = logJob, r = await api("GET", `/jobs/${encodeURIComponent(id)}/log?from=${logFrom}`);
+  if (id !== logJob || r.status !== 200) return;
+  if (r.text) { const pre = $("log"), end = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 4; pre.textContent += r.text; if (end) pre.scrollTop = pre.scrollHeight; }
+  logFrom = r.next;
+}
+
+// ---- file ----
+async function loadFs() {
+  if (!active) { $("fsList").innerHTML = ""; return; }
+  const r = await api("GET", `/fs/list?workspace=${encodeURIComponent(active)}&path=${encodeURIComponent(fsDir)}`);
+  $("fsPath").textContent = fsDir;
+  if (!r.ok) { $("fsList").innerHTML = `<tr><td class="r">${esc(r.error)}</td></tr>`; return; }
+  const up = fsDir !== "." ? `<tr><td><a data-dir="..">⬆ ..</a></td><td></td></tr>` : "";
+  $("fsList").innerHTML = up + (r.items.length ? r.items.map((i) => `<tr><td><a ${i.dir ? `data-dir="${esc(i.name)}"` : `data-file="${esc(i.name)}"`}>${i.dir ? "📁" : "📄"} ${esc(i.name)}${i.link ? ' <span class="z">(liên kết)</span>' : ""}</a></td>
+    <td class="mono z" style="text-align:right">${i.size != null ? (i.size / 1024).toFixed(1) + " KB" : ""}</td></tr>`).join("") : `<tr><td class="z">Thư mục trống.</td></tr>`);
+}
+const join = (a, b) => (b === ".." ? a.split("/").slice(0, -1).join("/") || "." : a === "." ? b : a + "/" + b);
+$("fsList").addEventListener("click", async (e) => {
+  const a = e.target.closest("a"); if (!a) return;
+  if (a.dataset.dir) { fsDir = join(fsDir, a.dataset.dir); loadFs(); }
+  if (a.dataset.file) {
+    const p = join(fsDir, a.dataset.file), r = await api("GET", `/fs/read?workspace=${encodeURIComponent(active)}&path=${encodeURIComponent(p)}`);
+    if (!r.ok) return alert(r.error);
+    edit = { path: p, sha: r.sha256 }; $("edName").textContent = p; $("edText").value = r.content; $("editor").hidden = false; say("edMsg", "");
+  }
+});
+$("edSave").onclick = async () => {
+  const r = await api("POST", "/fs/write", { workspace: active, path: edit.path, content: $("edText").value, expectSha256: edit.sha });
+  if (r.ok) { edit.sha = r.sha256; say("edMsg", "Đã lưu " + r.path, "g"); }
+  else say("edMsg", r.code === "CHANGED" ? "File đã bị sửa ở nơi khác từ lúc mở. Đóng và mở lại để lấy bản mới (bản đang gõ chưa lưu)." : r.error, "r");
+};
+$("edClose").onclick = () => { edit = null; $("editor").hidden = true; };
+
+// ---- kiểm toán ----
+async function loadAudit() {
+  const r = await api("GET", "/audit?limit=60");
+  if (!r.ok) return;
+  $("audit").innerHTML = r.audit.map((a) => `<tr><td class="mono z" style="white-space:nowrap">${tm(a.at)}</td><td class="mono">${esc(a.actor)}</td><td class="mono">${esc(a.action)}</td>
+    <td class="mono" style="word-break:break-all;max-width:420px">${esc(a.target || "")}${a.detail ? `<div class="z" style="font-size:10.5px">${esc(a.detail.slice(0, 240))}</div>` : ""}</td>
+    <td class="${a.decision === "denied" || a.decision === "failed" || a.decision === "rejected" ? "r" : a.decision === "pending" ? "y" : ""}">${esc(a.decision || "")}</td></tr>`).join("");
+}
+
+// ---- phanh khẩn cấp ----
+$("brake").onclick = async () => {
+  if (!confirm("⚠ PHANH KHẨN CẤP\nDừng NGAY mọi việc và lượt AI do OS Controller đang chạy (cả tiến trình con)?")) return;
+  const r = await api("POST", "/kill-all", {});
+  alert(r.ok ? "Đã dừng " + r.results.length + " việc." : "KHÔNG dừng được hết: " + r.error);
+  refresh();
+};
+
+async function refresh() {
+  const [a, b] = await Promise.all([loadJobs(), loadHandoffs()]);
+  $("kPend").querySelector("b").textContent = a + b;
+  $("kPend").className = "kpi " + (a + b ? "warn" : "");
+  loadAudit(); pollLog();
+}
+(async () => {
+  const h = await api("GET", "/health");
+  if (!h.ok) { $("wsList").innerHTML = $("turnBox").innerHTML = `<div class="z">OS Controller chưa chạy.</div>`; $("jobs").innerHTML = ""; }
+  monitor(); await loadWs(); await refresh();
+  setInterval(refresh, 2000);
+  setInterval(loadTurn, 5000);
+})();
+</script>
+</body>
+</html>

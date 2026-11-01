@@ -73,10 +73,11 @@
   - `test/*.test.js`: `node --test`, chạy bằng `npm test`; bắt buộc xanh trước mỗi commit.
 - Bảo mật `ctl/`: mỗi lần khởi động sinh token 32 byte ngẫu nhiên, ghi vào `~/.van-phong-ao/ctl-token` (quyền 600); mọi yêu cầu cần header `Authorization: Bearer <token>` + `lib/guard.checkWrite`. `server.js` đọc token đó và làm cầu nối cho giao diện; token không bao giờ xuống trình duyệt. Tiến trình con nhận biến môi trường đã lọc (bỏ `*_KEY`, `*_TOKEN`, `*SECRET*`), log đi qua `mask()`.
 - Schema DB (`node:sqlite`, file `~/.van-phong-ao/ctl.db`, WAL):
-  - `jobs(id TEXT PK, kind TEXT CHECK(kind IN('cmd','ai')), agent TEXT, workspace TEXT, argv TEXT/*JSON*/, pid INTEGER, status TEXT CHECK(status IN('pending_approval','running','done','failed','killed','timeout')), exit_code INTEGER, started_at INTEGER, ended_at INTEGER, timeout_ms INTEGER, log_path TEXT)`
+  - `jobs(id TEXT PK, kind TEXT CHECK(kind IN('cmd','ai')), agent TEXT, workspace TEXT, argv TEXT/*JSON*/, pid INTEGER, status TEXT CHECK(status IN('pending_approval','rejected','running','done','failed','killed','timeout')), exit_code INTEGER, started_at INTEGER, ended_at INTEGER, timeout_ms INTEGER, log_path TEXT)`
     - `INDEX jobs_status(status)`: bảng giám sát và Kill-All chỉ lấy `running`/`pending_approval` mỗi 1s.
     - `INDEX jobs_agent_started(agent, started_at DESC)`: xem lịch sử theo từng AI, giới hạn chạy cùng lúc theo AI.
   - `audit(id INTEGER PK AUTOINCREMENT, at INTEGER, actor TEXT, action TEXT, target TEXT, detail TEXT /*đã mask*/, decision TEXT)`: chỉ INSERT, không UPDATE/DELETE. `INDEX audit_at(at)`: xem theo thời gian, dọn bản ghi > 90 ngày.
+  - `handoffs(job_id TEXT PK, workspace, role, next_owner, payload /*JSON bàn giao*/, problems /*JSON lỗi schema*/, decided CHECK IN('approved','rejected'), decided_at)`. `INDEX handoffs_open(decided)`: bảng "chờ duyệt chuyển lượt" chỉ lấy bản chưa quyết.
   - `workspaces(path TEXT PK /*đã realpath*/, name TEXT, added_at INTEGER)`: không cần thêm index (ít dòng).
 - API Contract `ctl/` (JSON; lỗi luôn `{ok:false, error:string, code:string}`):
   - `GET /health` → `{ok, version, pid, uptimeS}`.
@@ -87,8 +88,10 @@
   - `POST /jobs/:id/kill`, `POST /kill-all` → `200 {results:[{id,pid,killed,error}]}`; `500 KILL_FAILED` nếu PID còn sống sau 3s.
   - `GET /jobs/:id/log?from=<byte>` → `text/plain` (đã mask), SSE `GET /jobs/:id/log/stream`.
   - `GET /fs/read?workspace&path` → `{content, size, sha256}`, giới hạn 2 MB; `POST /fs/write {workspace, path, content, expectSha256}` → `200 {sha256}`; `409 CHANGED` nếu file đã đổi; `403 PATH_ESCAPE` nếu realpath ra ngoài workspace (chặn `..`, symlink, ổ khác).
-  - `GET /workspaces`, `POST /workspaces {path}` (chỉ CEO), `POST /workspaces/switch {path}` → `{active}`.
-  - Danh sách lệnh cho phép (mặc định): `git` (trừ `push --force`, `reset --hard`, `clean -fd`), `node`, `npm` (`test`, `run`, `ci`), `npx` theo tên gói được duyệt, `gh` (chỉ đọc). Mọi thứ khác là `pending_approval`.
+  - `GET /workspaces`, `POST /workspaces {path}` (chỉ CEO), `POST /workspaces/remove {path}`, `POST /workspaces/switch {path}` → `{active}`. `GET /fs/list?workspace&path` → `{path, items:[{name, dir, link, size}]}`.
+  - Lượt AI: `GET /ai/status?workspace` → `{turn:{phase,lastUpdatedBy,nextOwner}, aiBusy, runnable}`; `POST /ai/run {workspace, role, task}` → `201 {job}`; `409 NOT_YOUR_TURN | AI_BUSY`, `422 NO_CLI` (SPEC_ARCHITECT). `GET /handoffs`; `POST /handoffs/:jobId/approve` → `{handoff, commit}`, `422 INVALID_HANDOFF`, `409 TURN_CHANGED | DECIDED`; `POST /handoffs/:jobId/reject`.
+  - `GET /audit?limit`. Cầu nối giao diện: `server.js` chuyển `/ctl/*` → ctl, chỉ khi trình duyệt ở chính máy (403 `REMOTE_DENIED`), ctl tắt → 503 `CTL_OFFLINE`.
+  - Danh sách lệnh cho phép (mặc định, `ctl/policy.js`): `git status/diff/log/show/fetch/add/commit/stash/switch/branch…` và `pull --ff-only` (mọi `push`, `reset --hard`, `clean`, `checkout --`, `-C`, `--git-dir`, `--output` → chờ duyệt), `npm test/ci/run <script>`, `node --test`, `gh … list/view/status`. Shell/trình thông dịch (cmd, PowerShell, bash, python…) → `403 COMMAND_DENIED`. Mọi thứ khác là `pending_approval`. Chạy không qua shell; `.cmd` (npm, CLI cài bằng npm) được đổi thành `node <file.js>`.
 - Luồng AI Agent (`ctl/runner.js`): mỗi lượt là 1 job `kind:'ai'`, tối đa 1 job AI cùng lúc mỗi workspace (khớp Mutex `NEXT_OWNER`).
   - Claude (CLAUDE_AUDITOR): `claude -p <prompt> --output-format json --max-turns 30`; prompt chính: "Đọc ./agent.md, thẩm định diff từ LAST_AUDITED_COMMIT theo /tester, chỉ ghi Vùng [5]". Timeout 20 phút.
   - Codex Astra (CODEX_ASTRA_DEV) và Sol (SOL_*): `codex exec --json <prompt>` (vai Sol/Astra khác nhau ở prompt + vùng được ghi). Timeout 30 phút.
@@ -98,11 +101,11 @@
   - Ước tính chi phí mỗi lượt: 30–150 nghìn token, 3–20 phút (cần đo thật ở Phase 5). Chạy bằng gói thuê bao cá nhân (OAuth sẵn có), không dùng API key nếu không cần.
 - Lộ trình Phase (mỗi Phase có điều kiện nghiệm thu đo được):
   - [x] Phase 1: Đặc tả Sản phẩm & Thiết kế UI/UX (Antigravity).
-  - [ ] Phase 2: Vá lỗi nền tảng + chốt kiến trúc. Nghiệm thu: `npm test` xanh; POST từ Origin lạ / text/plain / Host lạ → 403; không còn dữ liệu giả, email cứng.
-  - [ ] Phase 3: `ctl/` lõi: sổ tiến trình, Kill-Switch, giám sát CPU/RAM, nhật ký kiểm toán. Nghiệm thu: dừng cây 3 tiến trình < 2s trên Windows; job quá timeout tự `timeout`; thiếu token → 401.
-  - [ ] Phase 4: Workspace + đọc/ghi file + lệnh theo danh sách cho phép + duyệt từng lệnh. Nghiệm thu: test `..\..\Windows`, symlink ra ngoài, `git push --force` đều bị chặn hoặc chờ duyệt.
-  - [ ] Phase 5: Runner AI + nút chuyển lượt trên giao diện 3D. Nghiệm thu: 1 vòng thật Sol → Astra → Claude trên một repo thử, log đã mask, đo token/độ trễ thật ghi vào [4.1].
-  - [ ] Phase 6: Thẩm định bảo mật tổng (Claude) & đưa vào dùng hằng ngày.
+  - [ ] Phase 2 (Claude đã làm, PR #1): Vá lỗi nền tảng + chốt kiến trúc. Nghiệm thu: `npm test` xanh; POST từ Origin lạ / text/plain / Host lạ → 403; không còn dữ liệu giả, email cứng.
+  - [ ] Phase 3 (Claude đã làm, PR #2): `ctl/` lõi: sổ tiến trình, Kill-Switch, giám sát CPU/RAM, nhật ký kiểm toán. Nghiệm thu: dừng cây 3 tiến trình < 2s trên Windows; job quá timeout tự `timeout`; thiếu token → 401.
+  - [ ] Phase 4 (Claude đã làm, PR #3): Workspace + đọc/ghi file + lệnh theo danh sách cho phép + duyệt từng lệnh. Nghiệm thu: test `..\..\Windows`, symlink ra ngoài, `git push --force` đều bị chặn hoặc chờ duyệt.
+  - [ ] Phase 5 (Claude đã làm, PR #3; còn thiếu vòng thật trên máy CEO): Runner AI + nút chuyển lượt trên giao diện 3D. Nghiệm thu: 1 vòng thật Sol → Astra → Claude trên một repo thử, log đã mask, đo token/độ trễ thật ghi vào [4.1].
+  - [ ] Phase 6 (Claude đã tự soát, PR #3; cần Sol đọc chéo + test Windows): Thẩm định bảo mật tổng & đưa vào dùng hằng ngày.
 
 ## [4] KHÓA LƯỢT & NHẬT KÝ
 - CURRENT_PHASE: Phase 2 - Vá lỗi nền tảng & Chốt kiến trúc OS Controller
@@ -115,7 +118,9 @@
 - CLAIM_FIXED: P2-C03, P2-C04, P2-C05, P2-C06 -> nhánh claude/va-loi-p2 (chờ Sol đọc chéo vì người sửa cũng là người nghiệm thu).
 - Đặc cách ĐC-04 (01/11/2026): Claude dựng ctl/ Phase 3 trên nhánh claude/ctl-phase3 (tách từ claude/va-loi-p2): ctl/main.js, db.js, jobs.js, audit.js, monitor.js, lib/mask.js, test/ctl.test.js; `npm run ctl`. 25/25 test đạt trên Linux, CHƯA chạy trên Windows.
 - Giới hạn Phase 3 đã biết: giám sát từng việc chỉ tính tiến trình gốc; Windows hỏi PowerShell mỗi 5s; chưa nối vào giao diện 3D (để Phase 5); chưa có route chạy lệnh (để Phase 4).
-- Việc cho SOL_ARCHITECT_ADVISOR: (1) đọc chéo diff 2 nhánh claude/va-loi-p2 và claude/ctl-phase3; (2) phản biện Vùng [3] bản nháp; ghi ý kiến tại đây rồi đặt NEXT_OWNER: CLAUDE_AUDITOR.
+- Đặc cách ĐC-05 (01/11/2026): Claude làm trọn app (Phase 4–6) trên nhánh claude/ctl-hoan-chinh: ctl/policy.js, workspaces.js, files.js, runner.js, handoff.js, lib/ctlbridge.js, public/dieukhien.html, scripts/chay-tat-ca.js (`npm run all`), README. 38/38 test + chạy thật đầu-cuối qua văn phòng đạt trên Linux.
+- Tự soát Phase 6 đã vá: git -C/--output thoát workspace; DNS rebinding với GET (guard.checkHost cho mọi yêu cầu); spam auth.fail. Còn lại đã biết: CLI flag của claude/codex cần kiểm chứng trên máy thật; xem file .env trong workspace sẽ hiện khóa (máy CEO, không qua mạng).
+- Việc cho SOL_ARCHITECT_ADVISOR: (1) đọc chéo diff 3 nhánh claude/va-loi-p2, claude/ctl-phase3, claude/ctl-hoan-chinh; (2) phản biện Vùng [3] bản nháp; ghi ý kiến tại đây rồi đặt NEXT_OWNER: CLAUDE_AUDITOR.
 
 ### [4.2] LƯU TRỮ PHASE ĐÃ XONG (tối đa 5 dòng, 1 dòng/Phase)
 - Phase 1: Hoàn tất đặc tả Vùng [2] và Interactive Prototype Chibi Edition (SPEC_ARCHITECT).

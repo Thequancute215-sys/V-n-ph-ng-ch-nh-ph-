@@ -51,8 +51,8 @@ test("POST từ trang lạ → 403 dù có token", async () => {
   assert.strictEqual((await call("POST", "/kill-all", { body: {}, headers: { "content-type": "text/plain" } })).status, 403);
 });
 
-test("chưa có route chạy lệnh qua HTTP ở Phase 3", async () => {
-  assert.strictEqual((await call("POST", "/jobs", { body: { argv: ["node", "-v"] } })).status, 404);
+test("chạy lệnh khi chưa đăng ký workspace nào → 403", async () => {
+  assert.strictEqual((await call("POST", "/jobs", { body: { argv: ["node", "-v"] } })).status, 403);
 });
 
 test("Kill-All dừng cả cây 3 tiến trình dưới 2 giây", async () => {

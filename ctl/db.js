@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS jobs (
   workspace TEXT,
   argv TEXT NOT NULL,
   pid INTEGER,
-  status TEXT NOT NULL CHECK (status IN ('pending_approval','running','done','failed','killed','timeout')),
+  status TEXT NOT NULL CHECK (status IN ('pending_approval','rejected','running','done','failed','killed','timeout')),
   exit_code INTEGER,
   started_at INTEGER,
   ended_at INTEGER,
@@ -43,6 +43,20 @@ CREATE TRIGGER IF NOT EXISTS audit_no_update BEFORE UPDATE ON audit BEGIN SELECT
 CREATE TRIGGER IF NOT EXISTS audit_no_delete BEFORE DELETE ON audit
   WHEN old.at > (CAST(strftime('%s','now') AS INTEGER) - 7776000) * 1000
   BEGIN SELECT RAISE(ABORT, 'chỉ xóa được bản ghi quá 90 ngày'); END;
+
+-- Kết quả bàn giao của mỗi lượt AI, chờ CEO duyệt chuyển lượt.
+CREATE TABLE IF NOT EXISTS handoffs (
+  job_id TEXT PRIMARY KEY,
+  workspace TEXT NOT NULL,
+  role TEXT NOT NULL,
+  next_owner TEXT,
+  payload TEXT,
+  problems TEXT NOT NULL,
+  decided TEXT CHECK (decided IN ('approved','rejected')),
+  decided_at INTEGER
+);
+-- Bảng "chờ duyệt chuyển lượt" chỉ lấy bàn giao chưa quyết.
+CREATE INDEX IF NOT EXISTS handoffs_open ON handoffs(decided);
 
 CREATE TABLE IF NOT EXISTS workspaces (
   path TEXT PRIMARY KEY,
