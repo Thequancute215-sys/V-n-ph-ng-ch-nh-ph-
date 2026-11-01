@@ -1,9 +1,19 @@
-# Bài học của đội
+# Sổ Bài Học & Ngân Hàng Lỗi Dự Án Của Đội AI (Continuous Self-Learning Knowledge Base)
 
-Gặp lỗi mới mất ≥ 20 phút hoặc làm hỏng một lượt DEV thì thêm một dòng, kèm cái chặn tự động (test, kiểm tra, công cụ) để lỗi không lặp lại.
-Ghi bằng: vp baihoc --the "<thẻ>" "bài học" --chan "cái chặn". Trước mỗi gói, đọc các bài học cùng thẻ.
+Gặp lỗi mới mất ≥ 20 phút hoặc làm hỏng một lượt DEV thì bắt buộc thêm một dòng, kèm **cái chặn tự động** (test, kiểm tra cú pháp, rule linter, guardrail) để lỗi không bao giờ lặp lại.
+Ghi bằng: `node tools/vp.js baihoc --the "<thẻ>" "bài học" --chan "<cái chặn>"`. Trước mỗi gói việc mới, AI phải đọc các bài học cùng thẻ để không đi vào vết xe đổ.
 
-## Bảng bài học
+## Bảng bài học & Cái chặn tự động
 
-| Ngày | Thẻ | Bài học | Cái chặn |
+| Ngày | Thẻ | Bài học & Nguyên nhân gốc rễ | Cái chặn tự động (Automated Guardrail) |
 |---|---|---|---|
+| 01/11/2026 | BROWSER-CACHE | Khi cập nhật mã nguồn HTML/JS/CSS, trình duyệt Chromium/Edge lưu đệm (HTTP 304/Disk Cache) khiến người dùng F5 link vẫn hiển thị giao diện cũ hoặc không thấy nhân vật mới. | Máy chủ `server.js` bắt buộc đặt header `Cache-Control: no-store, no-cache, must-revalidate, max-age=0`, `Pragma: no-cache`. Khuyến nghị người dùng ấn `Ctrl + F5` khi kiểm thử. |
+| 01/11/2026 | POWERSHELL-CLI | Trên hệ điều hành Windows PowerShell, toán tử `&&` không được hỗ trợ mặc định như Bash, gây ra lỗi cú pháp `The token '&&' is not a valid statement separator`. | Sử dụng dấu chấm phẩy `;` để ngăn cách các lệnh hoặc viết script Node.js runner trung gian thay vì viết chuỗi lệnh inline. |
+| 01/11/2026 | STREAMING-TIMEOUT | Kết nối Server-Sent Events (`EventSource("/events")`) giữ đường truyền mở liên tục làm công cụ chụp màn hình headless Edge (`--virtual-time-budget` hoặc `--screenshot`) bị treo vĩnh viễn chờ Network Idle. | Sử dụng kết nối WebSocket qua Chrome DevTools Protocol (CDP) trực tiếp, đặt timeout chủ động 3.5s rồi gửi lệnh `Page.captureScreenshot` và đóng kết nối. |
+| 01/11/2026 | SHADERS-CEL | Vật liệu PBR mặc định (`MeshStandardMaterial`) của Three.js tạo bóng đổ gradient tròn làm biến dạng sống mũi và má nhân vật Anime 3D, xuất hiện các vệt bóng tam giác lem nhem. | Sử dụng Spherical Normal Transfer (Flat Face Normals Proxy) làm phẳng 85%-100% vector pháp tuyến mặt, kết hợp 2-Tone Stepped Cel-Shader `smoothstep(-0.025, 0.025, dot(n, l))`. |
+| 01/11/2026 | SECURITY-ZERO-LEAK | Khóa API key, Access Token hoặc Cookie phiên làm việc bị in ra console hoặc vô tình commit lên Git repository công khai. | Hàm `mask()` tự động che chuỗi nhạy cảm trước khi truyền qua SSE/WebSocket; đưa `config.json`, `data/`, `.env` vào `.gitignore`; chỉ đọc xác thực nội bộ từ `~/.claude` và `~/.codex`. |
+| 01/11/2026 | MULTI-AI-ROLE | Sự chồng lấn vai trò: Sol tự ý viết code đè lên phạm vi của Codex, hoặc Codex tự ý sửa kiến trúc DB/Schema của Sol mà không qua thỏa thuận. | Hiến pháp Protocol v2.2 khóa quyền Vùng [3] cho Sol và Vùng [3]/[4.1] cho Codex. Sol chỉ được lập trình khi Thế Quân CEO cấp quyền đặc cách qua nút "CEO Override" (`permCode`). |
+| 01/11/2026 | MESH-ORIENTATION | Khi dùng Canvas 2D vẽ Texture mặt nhân vật dán vào `THREE.SphereGeometry`, nếu không chỉnh góc thì tâm mặt (u=0.5) bị quay lệch 90 độ sang mạn sườn thay vì quay ra phía trước. | Bắt buộc đặt `headMesh.rotation.y = -Math.PI / 2` để tâm mặt luôn hướng chuẩn xác theo trục dương +Z về phía camera quan sát. |
+| 01/11/2026 | TASK-ACCUMULATION | Các sub-agents hoặc background tasks chạy ngầm quá lâu mà không có cơ chế giám sát gây nghẽn RAM, CPU của máy tính. | Bảng giám sát thời gian thực cảnh báo đỏ task > 10 phút tại `runningTasksModal` kèm nút bấm phanh khẩn cấp toàn bộ (`kill-all-tasks`). |
+| 01/11/2026 | IMPORTMAP-MODULE | Khi load Three.js addons từ CDN hiện đại, thẻ `<script type="importmap">` phải đứng trước tất cả các thẻ module, nếu sai thứ tự sẽ ném lỗi "Bare specifier 'three'". | Runner kiểm tra tự động `scratch/test_index_err.js` quét lỗi Console trước mỗi commit. |
+| 01/11/2026 | INVERTED-HULL | Kỹ thuật làm viền nét Inverted Hull Outline bằng `BackSide` nếu nhân vật cử động có thể bị xé lưới ở các khớp nối. | Tách Outline thành Group riêng, áp dụng độ dày viền tỷ lệ nghịch với khoảng cách camera và gắn liên kết khung xương. |
