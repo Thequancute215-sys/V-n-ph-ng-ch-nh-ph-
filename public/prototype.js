@@ -14,6 +14,7 @@
   let jobs = [], handoffs = [], autoRuns = [], controller = false, selected = "spec", view = "office", pendingApproval = null;
   let loading = false, switching = false, controlError = "", stateError = "", accountError = "", source = null, streaming = false;
   let docText = null, docError = "", signatures = {}, lastRefresh = null, logSequence = 0;
+  let githubRepos = [], githubPage = 0, githubHasMore = false, githubLoading = false, githubOpening = false;
   const setMarkup = (id, html) => { if (signatures[id] !== html) { $(id).innerHTML = html; signatures[id] = html; } };
   const badge = (text, kind = "") => `<span class="badge ${kind}">${esc(text)}</span>`;
   const avatar = (r) => `<div class="avatar-wrap" aria-hidden="true"><div class="chibi" style="--accent:${r.color}"><span>${r.symbol}</span></div></div>`;
@@ -22,12 +23,57 @@
   const ownHandoffs = () => handoffs.filter((h) => h.workspace === active);
   const isOwner = (r) => !!turn && [r.role, ...(r.aliases || [])].includes(turn.nextOwner);
 
-  async function request(path, body) {
-    const res = await fetch(path, { method: body ? "POST" : "GET", cache: "no-store", signal: AbortSignal.timeout(8000), ...(body ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {}) });
-    if (res.status === 401) throw new Error("Phiên xem đã hết hạn. Mở lại văn phòng để đăng nhập.");
+  async function request(path, body, timeout = 8000) {
+    const res = await fetch(path, { method: body ? "POST" : "GET", cache: "no-store", signal: AbortSignal.timeout(timeout), ...(body ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {}) });
+    if (res.status === 401 && !res.headers.get("content-type")?.includes("application/json")) throw new Error("Phiên xem đã hết hạn. Mở lại văn phòng để đăng nhập.");
     const data = await res.json();
     if (!res.ok || data.ok === false) throw new Error(data.error || "Không đọc được dữ liệu (HTTP " + res.status + ").");
     return data;
+  }
+
+  function renderGitHub() {
+    const query = $("githubSearch").value.trim().toLocaleLowerCase();
+    const shown = githubRepos.filter((r) => (r.fullName + " " + r.description).toLocaleLowerCase().includes(query));
+    $("githubCount").textContent = shown.length + "/" + githubRepos.length + " repo";
+    $("githubRefresh").disabled = githubLoading || githubOpening;
+    $("githubMore").hidden = !githubHasMore;
+    $("githubMore").disabled = githubLoading || githubOpening;
+    $("githubRepos").setAttribute("aria-busy", String(githubLoading || githubOpening));
+    setMarkup("githubRepos", githubLoading && !githubRepos.length ? '<p class="skeleton">Đang tải repo từ GitHub…</p>' : shown.length ? shown.map((r) => `<article class="entry repo"><div><strong class="mono">${esc(r.fullName)}</strong><p>${badge(r.private ? "Riêng tư" : "Công khai")}${r.archived ? " " + badge("Lưu trữ") : ""} · Nhánh ${esc(r.defaultBranch || "chưa có")}</p>${r.description ? `<p>${esc(r.description)}</p>` : ""}</div><button class="primary" data-github-open="${esc(r.fullName)}" ${githubOpening || githubLoading ? "disabled" : ""}>Mở repo</button></article>`).join("") : `<p class="muted">${query ? "Không có repo khớp tìm kiếm trong danh sách đã tải." : "Chưa có repo để hiển thị."}</p>`);
+  }
+  async function loadGitHub(more = false) {
+    if (githubLoading || githubOpening) return;
+    githubLoading = true; $("githubMessage").textContent = "";
+    if (!more) { githubRepos = []; githubPage = 0; githubHasMore = false; }
+    renderGitHub();
+    try {
+      const result = await request("/ctl/github/repos?page=" + (githubPage + 1), undefined, 35000);
+      githubRepos = [...new Map([...githubRepos, ...result.repositories].map((r) => [r.fullName, r])).values()];
+      githubPage = result.page; githubHasMore = result.hasMore;
+      $("githubAccount").textContent = "Đã kết nối GitHub: " + result.account.login;
+    } catch (e) { $("githubAccount").textContent = "Chưa kết nối được GitHub"; $("githubMessage").textContent = e.message; }
+    finally { githubLoading = false; renderGitHub(); }
+  }
+  async function openGitHub(fullName) {
+    if (githubOpening) return;
+    githubOpening = true; renderGitHub();
+    $("githubMessage").textContent = "Đang mở " + fullName + "…";
+    try {
+      let { operation } = await request("/ctl/github/open", { fullName });
+      while (operation.status === "running") {
+        $("githubMessage").textContent = operation.message + (operation.jobId ? " Bạn có thể dừng tải trong bảng điều khiển máy." : "");
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        ({ operation } = await request("/ctl/github/operations/" + encodeURIComponent(operation.id)));
+      }
+      if (operation.status !== "done") throw new Error(operation.message);
+      active = operation.workspace; turn = null; blockerLines = null; docText = null;
+      $("logJob").value = ""; $("jobLog").textContent = "Chọn công việc để đọc nhật ký.";
+      $("githubMessage").textContent = operation.message;
+      $("autoMessage").textContent = operation.message;
+      setView("board"); await refresh();
+      if (operation.hasAgent) $("githubDialog").close();
+    } catch (e) { $("githubMessage").textContent = e.message; }
+    finally { githubOpening = false; renderGitHub(); }
   }
 
   function setView(name) {
@@ -90,7 +136,7 @@
   function renderBoard() {
     const currentRuns = autoRuns.filter((r) => r.workspace === active);
     const busy = currentRuns.some((r) => ["running", "reporting", "awaiting_approval", "attention"].includes(r.status));
-    $("autoStart").disabled = !controller || !active || busy;
+    $("autoStart").disabled = !controller || !active || !turn || busy;
     const statuses = { running: "Đội đang làm việc", reporting: "Claude đang tổng hợp", awaiting_approval: "Chờ bạn duyệt báo cáo", approved: "Bạn đã duyệt", acknowledged: "Bạn đã nhận báo cáo lỗi", rejected: "Đã từ chối", attention: "Claude chưa gửi được báo cáo", stopped: "Đã dừng" };
     setMarkup("autoRuns", !controller ? '<p class="muted">Chưa kết nối được OS Controller.</p>' : currentRuns.length ? currentRuns.slice(0, 8).map((r) => `<article class="entry"><div class="entry-head"><strong>${esc(r.task)}</strong>${badge(statuses[r.status] || r.status, ["awaiting_approval", "attention"].includes(r.status) ? "warn" : r.status === "approved" ? "good" : "")}</div><p>${esc(r.steps.length)}/${esc(r.maxSteps)} lượt · ${esc(r.steps.at(-1)?.role || "Đang chuẩn bị")}</p>${r.problem ? `<p class="error">${esc(r.problem)}</p>` : ""}${r.report ? `<pre>${esc(r.report)}</pre>` : ""}<div class="actions">${["running", "reporting"].includes(r.status) ? `<button data-auto-stop="${esc(r.id)}">Dừng luồng này</button>` : ""}${["awaiting_approval", "attention"].includes(r.status) ? `<button class="primary" data-auto-approve="${esc(r.id)}">${r.status === "attention" ? "Đã xem lỗi" : r.problem ? "Đã nhận báo cáo" : "Duyệt báo cáo Claude"}</button><button data-auto-reject="${esc(r.id)}">Từ chối</button>` : ""}</div></article>`).join("") : '<p class="muted">Chưa có việc tự động nào cho dự án này. Giao một việc ở trên để bắt đầu.</p>');
     const unavailable = !controller ? `<p class="muted">${esc(controlError || "OS Controller chưa kết nối.")}</p>` : !active ? '<p class="muted">Chọn dự án để xem bàn giao.</p>' : null;
@@ -168,6 +214,12 @@
   document.querySelector(".tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-view]"); if (b) setView(b.dataset.view); });
   $("rooms").addEventListener("click", (e) => { const b = e.target.closest("[data-detail]"); if (b) { selected = b.dataset.detail; renderOffice(); if (matchMedia("(max-width:800px)").matches) $("detail").scrollIntoView({ block: "nearest" }); } });
   $("refresh").onclick = refresh;
+  $("githubChoose").onclick = () => { $("githubDialog").showModal(); loadGitHub(); };
+  $("githubClose").onclick = () => $("githubDialog").close();
+  $("githubSearch").oninput = renderGitHub;
+  $("githubRefresh").onclick = () => loadGitHub();
+  $("githubMore").onclick = () => loadGitHub(true);
+  $("githubRepos").onclick = (e) => { const button = e.target.closest("[data-github-open]"); if (button) openGitHub(button.dataset.githubOpen); };
   $("autoForm").onsubmit = async (e) => {
     e.preventDefault();
     if (!active || !controller) return;

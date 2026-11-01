@@ -17,6 +17,7 @@ const { createWorkspaces } = require("./workspaces");
 const { createFiles } = require("./files");
 const { createRunner } = require("./runner");
 const { createAutopilot } = require("./autopilot");
+const { createGitHub } = require("./github");
 const { classify } = require("./policy");
 
 const VERSION = "1.0.0";
@@ -25,10 +26,11 @@ const HTTP_CODE = {
   BAD_REQUEST: 400, NOT_DIR: 400, NOT_FILE: 400, BAD_CONFIG: 400, NO_AGENT_MD: 422, BAD_AGENT_MD: 422, INVALID_HANDOFF: 422, NO_CLI: 422,
   WORKSPACE_DENIED: 403, PATH_ESCAPE: 403, PATH_DENIED: 403, TOO_BROAD: 403, TOO_SENSITIVE: 403, COMMAND_DENIED: 403,
   NOT_FOUND: 404, TOO_LARGE: 413,
+  GITHUB_AUTH: 401, GITHUB_LIMIT: 429, GITHUB_OFFLINE: 502, GITHUB_CLONE: 502,
   CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409, HANDOFF_PENDING: 409,
 };
 
-function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex") } = {}) {
+function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {} } = {}) {
   const db = open(dir);
   const audit = createAudit(db);
   const jobs = createJobs(db, audit, path.join(dir, "logs"));
@@ -38,6 +40,12 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
   const files = createFiles(ws, audit);
   const runner = createRunner({ jobs, ws, audit, db, dir });
   const autopilot = createAutopilot({ runner, jobs, ws, audit, dir });
+  const selectWorkspace = (p) => {
+    const active = ws.switchTo(p, "ceo").path;
+    fs.writeFileSync(activeFile + ".tmp", JSON.stringify({ path: active }), { mode: 0o600 }); fs.renameSync(activeFile + ".tmp", activeFile);
+    return active;
+  };
+  const github = createGitHub({ ...githubOptions, ws, jobs, audit, select: selectWorkspace });
   const monitor = createMonitor();
   const tokenBuf = Buffer.from(token);
   const streams = new Set();
@@ -93,12 +101,13 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     }],
 
     ["GET", "/workspaces", () => ({ workspaces: ws.list(), active: ws.current() })],
+    ["GET", "/github/repos", (p, qs) => github.list(qs.get("page") || 1)],
+    ["POST", "/github/open", (p, qs, b) => [202, { operation: github.open(b.fullName) }]],
+    ["GET", "/github/operations/:id", (p) => ({ operation: github.get(p.id) })],
     ["POST", "/workspaces", (p, qs, b) => [201, { workspace: ws.add(b.path, "ceo") }]],
     ["POST", "/workspaces/remove", (p, qs, b) => { ws.remove(b.path, "ceo"); return { workspaces: ws.list() }; }],
     ["POST", "/workspaces/switch", (p, qs, b) => {
-      const active = ws.switchTo(b.path, "ceo").path;
-      fs.writeFileSync(activeFile + ".tmp", JSON.stringify({ path: active }), { mode: 0o600 }); fs.renameSync(activeFile + ".tmp", activeFile);
-      return { active };
+      return { active: selectWorkspace(b.path) };
     }],
 
     ["GET", "/fs/list", (p, qs) => files.list(wsOf(qs.get("workspace")), qs.get("path") || ".")],
@@ -173,6 +182,7 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
   });
 
   async function close() {
+    github.close();
     autopilot.close();
     clearInterval(tick);
     for (const r of streams) r.end();
@@ -182,7 +192,7 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     db.close();
   }
 
-  return { server, jobs, ws, files, runner, autopilot, audit, token, close };
+  return { server, jobs, ws, files, runner, autopilot, github, audit, token, close };
 }
 
 if (require.main === module) {
