@@ -57,9 +57,9 @@ test("tìm dòng bàn giao trong văn bản thường, JSON claude và JSONL cod
   assert.ok(checkHandoff(h, "CODEX_ASTRA_DEV").length, "role phải khớp vai đang chạy");
 });
 
-test("không phải lượt của vai → 409; Antigravity không có CLI → 422", async () => {
+test("không phải lượt của vai → 409, kể cả Antigravity có CLI", async () => {
   assert.strictEqual((await call("POST", "/ai/run", { workspace: repo, role: "CLAUDE_AUDITOR" })).status, 409);
-  assert.strictEqual((await call("POST", "/ai/run", { workspace: repo, role: "SPEC_ARCHITECT" })).status, 422);
+  assert.strictEqual((await call("POST", "/ai/run", { workspace: repo, role: "SPEC_ARCHITECT" })).status, 409);
   const s = (await call("GET", "/ai/status?workspace=" + encodeURIComponent(repo))).json;
   assert.strictEqual(s.turn.nextOwner, "CODEX_ASTRA_DEV");
   assert.strictEqual(s.runnable, true);

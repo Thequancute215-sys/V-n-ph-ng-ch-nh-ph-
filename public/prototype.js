@@ -11,7 +11,7 @@
     { key: "pain", name: "Pain · Điều hành", room: "PHÒNG DEV & DỊCH VỤ", role: "OS Controller", color: "#e07a5f", symbol: "◎", char: "pain_quanly", description: "Theo dõi công việc và tiến trình chạy trên máy." },
   ];
   let snapshot = null, accounts = null, active = "", workspaces = [], turn = null, blockerLines = null;
-  let jobs = [], handoffs = [], controller = false, selected = "spec", view = "office", pendingApproval = null;
+  let jobs = [], handoffs = [], autoRuns = [], controller = false, selected = "spec", view = "office", pendingApproval = null;
   let loading = false, switching = false, controlError = "", stateError = "", accountError = "", source = null, streaming = false;
   let docText = null, docError = "", signatures = {}, lastRefresh = null, logSequence = 0;
   const setMarkup = (id, html) => { if (signatures[id] !== html) { $(id).innerHTML = html; signatures[id] = html; } };
@@ -74,7 +74,9 @@
     $("blockers").textContent = blockerLines === null ? "Chưa đọc chốt chặn" : blockerLines.length + " lỗi OPEN";
     $("blockers").className = "badge " + (blockerLines === null || blockerLines.length ? "warn" : "good");
     const count = controller ? ownHandoffs().length : null;
-    $("handoffButton").textContent = count === null ? "Xem bàn giao" : count ? "Bàn giao chờ duyệt (" + count + ")" : "Xem bàn giao";
+    const reports = autoRuns.filter((r) => r.workspace === active && r.status === "awaiting_approval").length;
+    const attention = autoRuns.some((r) => r.workspace === active && r.status === "attention");
+    $("handoffButton").textContent = attention ? "Luồng cần xử lý" : reports ? "Claude chờ duyệt (" + reports + ")" : count ? "Bàn giao chờ duyệt (" + count + ")" : "Claude báo cáo";
     $("connection").textContent = snapshot && controller ? "Đã kết nối" : snapshot ? "Controller chưa kết nối" : stateError ? "Mất kết nối" : "Đang kết nối…";
     $("connection").className = "badge " + (snapshot && controller ? "good" : "warn");
     const errors = [stateError, controlError, accountError].filter(Boolean);
@@ -86,6 +88,11 @@
   }
 
   function renderBoard() {
+    const currentRuns = autoRuns.filter((r) => r.workspace === active);
+    const busy = currentRuns.some((r) => ["running", "reporting", "awaiting_approval", "attention"].includes(r.status));
+    $("autoStart").disabled = !controller || !active || busy;
+    const statuses = { running: "Đội đang làm việc", reporting: "Claude đang tổng hợp", awaiting_approval: "Chờ bạn duyệt báo cáo", approved: "Bạn đã duyệt", acknowledged: "Bạn đã nhận báo cáo lỗi", rejected: "Đã từ chối", attention: "Claude chưa gửi được báo cáo", stopped: "Đã dừng" };
+    setMarkup("autoRuns", !controller ? '<p class="muted">Chưa kết nối được OS Controller.</p>' : currentRuns.length ? currentRuns.slice(0, 8).map((r) => `<article class="entry"><div class="entry-head"><strong>${esc(r.task)}</strong>${badge(statuses[r.status] || r.status, ["awaiting_approval", "attention"].includes(r.status) ? "warn" : r.status === "approved" ? "good" : "")}</div><p>${esc(r.steps.length)}/${esc(r.maxSteps)} lượt · ${esc(r.steps.at(-1)?.role || "Đang chuẩn bị")}</p>${r.problem ? `<p class="error">${esc(r.problem)}</p>` : ""}${r.report ? `<pre>${esc(r.report)}</pre>` : ""}<div class="actions">${["running", "reporting"].includes(r.status) ? `<button data-auto-stop="${esc(r.id)}">Dừng luồng này</button>` : ""}${["awaiting_approval", "attention"].includes(r.status) ? `<button class="primary" data-auto-approve="${esc(r.id)}">${r.status === "attention" ? "Đã xem lỗi" : r.problem ? "Đã nhận báo cáo" : "Duyệt báo cáo Claude"}</button><button data-auto-reject="${esc(r.id)}">Từ chối</button>` : ""}</div></article>`).join("") : '<p class="muted">Chưa có việc tự động nào cho dự án này. Giao một việc ở trên để bắt đầu.</p>');
     const unavailable = !controller ? `<p class="muted">${esc(controlError || "OS Controller chưa kết nối.")}</p>` : !active ? '<p class="muted">Chọn dự án để xem bàn giao.</p>' : null;
     setMarkup("handoffs", unavailable || (ownHandoffs().length ? ownHandoffs().map((h) => `<article class="entry"><strong class="mono">${esc(h.role)} → ${esc(h.next_owner || "Chưa xác định")}</strong><p>File: ${esc((h.payload?.files || []).join(", ") || "Không có file được khai báo")}</p><p class="mono">${esc(h.job_id)}</p>${h.problems.length ? `<p class="error">${h.problems.map(esc).join("; ")}</p>` : ""}<div class="actions"><button class="primary" data-approve="${esc(h.job_id)}" ${h.problems.length ? "disabled" : ""}>Duyệt chuyển lượt</button><button data-job="${esc(h.job_id)}">Xem nhật ký</button></div></article>`).join("") : '<p class="muted">Không có bàn giao chờ duyệt cho dự án này.</p>'));
     setMarkup("blockerList", blockerLines === null ? '<p class="muted">Chưa đọc được chốt chặn từ agent.md.</p>' : blockerLines.length ? blockerLines.map((l) => `<div class="entry error">${esc(l.replace(/^\s*-\s*/, ""))}</div>`).join("") : '<p class="muted">Sổ agent.md không có mục OPEN ở Vùng [5].</p>');
@@ -116,9 +123,9 @@
     $("workspace").disabled = switching || !workspaces.length;
     $("workspace").title = active;
     const target = active;
-    const [health, jobResult, handoffResult] = await Promise.all([request("/ctl/health"), request("/ctl/jobs"), request("/ctl/handoffs")]);
+    const [health, jobResult, handoffResult, autoResult] = await Promise.all([request("/ctl/health"), request("/ctl/jobs"), request("/ctl/handoffs"), request("/ctl/autopilot")]);
     if (target !== active) return;
-    controller = !!health.ok; jobs = jobResult.jobs; handoffs = handoffResult.handoffs;
+    controller = !!health.ok; jobs = jobResult.jobs; handoffs = handoffResult.handoffs; autoRuns = autoResult.runs;
     if (!active) { turn = null; blockerLines = null; return; }
     const q = encodeURIComponent(active);
     const [status, file, meeting] = await Promise.allSettled([request("/ctl/ai/status?workspace=" + q), request("/ctl/fs/read?workspace=" + q + "&path=agent.md"), request("/ctl/fs/read?workspace=" + q + "&path=data%2FHOI-CHAN-TONG-THE.md")]);
@@ -139,7 +146,7 @@
     loading = true; $("refresh").disabled = true;
     await Promise.all([
       request("/state").then((value) => { snapshot = value; stateError = ""; }).catch((e) => { snapshot = null; stateError = "Không đọc được văn phòng: " + e.message; }),
-      loadControl().catch((e) => { controller = false; turn = null; blockerLines = null; jobs = []; handoffs = []; docText = null; docError = "Không đọc được biên bản khi Controller mất kết nối."; controlError = "Không đọc được điều phối: " + e.message; }),
+      loadControl().catch((e) => { controller = false; turn = null; blockerLines = null; jobs = []; handoffs = []; autoRuns = []; docText = null; docError = "Không đọc được biên bản khi Controller mất kết nối."; controlError = "Không đọc được điều phối: " + e.message; }),
       request("/api/accounts").then((value) => { accounts = value.accounts; accountError = ""; }).catch((e) => { accounts = null; accountError = "Không đọc được tài khoản: " + e.message; }),
     ]);
     loading = false; $("refresh").disabled = false; lastRefresh = new Date();
@@ -161,6 +168,23 @@
   document.querySelector(".tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-view]"); if (b) setView(b.dataset.view); });
   $("rooms").addEventListener("click", (e) => { const b = e.target.closest("[data-detail]"); if (b) { selected = b.dataset.detail; renderOffice(); if (matchMedia("(max-width:800px)").matches) $("detail").scrollIntoView({ block: "nearest" }); } });
   $("refresh").onclick = refresh;
+  $("autoForm").onsubmit = async (e) => {
+    e.preventDefault();
+    if (!active || !controller) return;
+    $("autoStart").disabled = true; $("autoMessage").textContent = "Đang giao việc…";
+    try { await request("/ctl/autopilot", { workspace: active, task: $("autoTask").value }); $("autoTask").value = ""; $("autoMessage").textContent = "Đã bắt đầu. Claude sẽ báo cáo tại đây khi xong."; }
+    catch (err) { $("autoMessage").textContent = err.message; }
+    finally { await refresh(); }
+  };
+  $("autoRuns").addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-auto-stop],[data-auto-approve],[data-auto-reject]"); if (!b) return;
+    const action = b.dataset.autoStop ? "stop" : b.dataset.autoApprove ? "approve" : "reject";
+    const id = b.dataset.autoStop || b.dataset.autoApprove || b.dataset.autoReject;
+    b.disabled = true;
+    try { const result = await request("/ctl/autopilot/" + encodeURIComponent(id) + "/" + action, {}); $("autoMessage").textContent = action === "approve" ? result.run.status === "acknowledged" ? "Đã ghi nhận bạn xem lỗi. Công việc chưa được đánh dấu hoàn tất." : "Đã ghi nhận duyệt báo cáo. Không merge hoặc phát hành." : action === "stop" ? "Đã dừng luồng." : "Đã từ chối báo cáo."; }
+    catch (err) { $("autoMessage").textContent = err.message; }
+    finally { await refresh(); b.disabled = false; }
+  });
   $("handoffButton").onclick = () => { setView("board"); $("boardTitle").tabIndex = -1; $("boardTitle").focus(); };
   $("workspace").onchange = async () => {
     const path = $("workspace").value, old = active;

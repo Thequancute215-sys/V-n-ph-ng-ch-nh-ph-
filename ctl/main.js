@@ -16,6 +16,7 @@ const { createMonitor } = require("./monitor");
 const { createWorkspaces } = require("./workspaces");
 const { createFiles } = require("./files");
 const { createRunner } = require("./runner");
+const { createAutopilot } = require("./autopilot");
 const { classify } = require("./policy");
 
 const VERSION = "1.0.0";
@@ -32,8 +33,11 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
   const audit = createAudit(db);
   const jobs = createJobs(db, audit, path.join(dir, "logs"));
   const ws = createWorkspaces(db, audit);
+  const activeFile = path.join(dir, "active-workspace.json");
+  try { ws.switchTo(JSON.parse(fs.readFileSync(activeFile, "utf8")).path, "ctl-restore"); } catch (e) { if (e.code !== "ENOENT") audit.log("ctl", "workspace.restore_skipped", null, e.message); }
   const files = createFiles(ws, audit);
   const runner = createRunner({ jobs, ws, audit, db, dir });
+  const autopilot = createAutopilot({ runner, jobs, ws, audit, dir });
   const monitor = createMonitor();
   const tokenBuf = Buffer.from(token);
   const streams = new Set();
@@ -76,11 +80,13 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     ["POST", "/jobs/:id/approve", (p) => ({ job: jobs.approve(p.id, "ceo") })],
     ["POST", "/jobs/:id/reject", (p) => ({ job: jobs.reject(p.id, "ceo") })],
     ["POST", "/jobs/:id/kill", async (p) => {
+      autopilot.cancelJob(p.id);
       const r = await jobs.kill(p.id, "ceo");
       if (r.code) throw Object.assign(new Error(r.error), { code: r.code });
       return r.killed ? { results: [r] } : [500, { ok: false, code: "KILL_FAILED", error: r.error, results: [r] }];
     }],
     ["POST", "/kill-all", async () => {
+      autopilot.cancelAll();
       const results = await jobs.killAll("ceo");
       const failed = results.filter((r) => !r.killed);
       return failed.length ? [500, { ok: false, code: "KILL_FAILED", error: failed.map((r) => r.error).join("; "), results }] : { results };
@@ -89,14 +95,28 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     ["GET", "/workspaces", () => ({ workspaces: ws.list(), active: ws.current() })],
     ["POST", "/workspaces", (p, qs, b) => [201, { workspace: ws.add(b.path, "ceo") }]],
     ["POST", "/workspaces/remove", (p, qs, b) => { ws.remove(b.path, "ceo"); return { workspaces: ws.list() }; }],
-    ["POST", "/workspaces/switch", (p, qs, b) => ({ active: ws.switchTo(b.path, "ceo").path })],
+    ["POST", "/workspaces/switch", (p, qs, b) => {
+      const active = ws.switchTo(b.path, "ceo").path;
+      fs.writeFileSync(activeFile + ".tmp", JSON.stringify({ path: active }), { mode: 0o600 }); fs.renameSync(activeFile + ".tmp", activeFile);
+      return { active };
+    }],
 
     ["GET", "/fs/list", (p, qs) => files.list(wsOf(qs.get("workspace")), qs.get("path") || ".")],
     ["GET", "/fs/read", (p, qs) => files.read(wsOf(qs.get("workspace")), qs.get("path"))],
     ["POST", "/fs/write", (p, qs, b) => files.write(wsOf(b.workspace), b.path, b.content, b.expectSha256, "ceo")],
 
     ["GET", "/ai/status", (p, qs) => runner.status(wsOf(qs.get("workspace")))],
-    ["POST", "/ai/run", (p, qs, b) => [201, { job: runner.run({ workspace: wsOf(b.workspace), role: b.role, task: b.task }, "ceo") }]],
+    ["POST", "/ai/run", (p, qs, b) => {
+      const workspace = ws.find(wsOf(b.workspace)).path;
+      if (autopilot.busy(workspace)) throw Object.assign(new Error("Dự án đang có luồng tự động hoặc báo cáo chờ duyệt"), { code: "AI_BUSY" });
+      return [201, { job: runner.run({ workspace, role: b.role, task: b.task }, "ceo") }];
+    }],
+    ["GET", "/autopilot", () => ({ runs: autopilot.list() })],
+    ["GET", "/autopilot/:id", (p) => ({ run: autopilot.get(p.id) })],
+    ["POST", "/autopilot", (p, qs, b) => [201, { run: autopilot.start({ workspace: wsOf(b.workspace), task: b.task, maxSteps: b.maxSteps, timeoutMs: b.timeoutMs }) }]],
+    ["POST", "/autopilot/:id/stop", async (p) => ({ run: await autopilot.stop(p.id) })],
+    ["POST", "/autopilot/:id/approve", (p) => ({ run: autopilot.decide(p.id, true) })],
+    ["POST", "/autopilot/:id/reject", (p) => ({ run: autopilot.decide(p.id, false) })],
     ["GET", "/handoffs", () => ({ handoffs: runner.pending() })],
     ["GET", "/handoffs/:id", (p) => { const h = runner.get(p.id); if (!h) throw Object.assign(new Error("Chưa có bàn giao của " + p.id), { code: "NOT_FOUND" }); return { handoff: h }; }],
     ["POST", "/handoffs/:id/approve", (p) => ({ handoff: runner.approve(p.id, "ceo") })],
@@ -153,6 +173,7 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
   });
 
   async function close() {
+    autopilot.close();
     clearInterval(tick);
     for (const r of streams) r.end();
     await jobs.killAll("ctl-shutdown");
@@ -161,7 +182,7 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     db.close();
   }
 
-  return { server, jobs, ws, files, runner, audit, token, close };
+  return { server, jobs, ws, files, runner, autopilot, audit, token, close };
 }
 
 if (require.main === module) {

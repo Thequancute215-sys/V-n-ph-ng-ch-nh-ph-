@@ -69,6 +69,18 @@ npm run cai-app -- --go         # gỡ mọi lối tắt
 
 ## Các màn hình
 
+### Giao việc tự động, Claude báo cáo
+
+Mở `prototype.html#board` → chọn dự án đã đăng ký → nhập việc → **Giao cho cả đội**. Bộ điều phối gọi Antigravity CLI (`agy`) cho SPEC, Codex cho Sol/Astra và Claude Code để kiểm duyệt. Các CLI dùng tài khoản đã đăng nhập và gọi dịch vụ AI tương ứng.
+
+Các bàn giao nội bộ được xử lý tự động trong phạm vi việc bạn vừa giao. Báo cáo cuối của Claude dừng chờ bạn duyệt; duyệt báo cáo không tự push, merge hay phát hành. Mặc định giới hạn 10 lượt và 90 phút. Có nút dừng từng luồng và phanh khẩn cấp. Khi Controller khởi động lại, việc dang dở cần được kiểm tra trước khi giao lại.
+
+Luồng và báo cáo lưu ở `~/.van-phong-ao/autopilot/`, cùng nhật ký kiểm toán của Controller. Nếu CLI thiếu quyền, trả bàn giao sai hoặc hết hạn mức, app hiển thị lỗi và giữ công việc ở trạng thái chưa hoàn tất. **Đã xem lỗi** chỉ đóng thông báo, không xác nhận công việc thành công.
+
+CLI và đường dẫn của từng vai được cấu hình ngoài repo trong `~/.van-phong-ao/ctl-agents.json`. Codex dùng `--approve-for-me` để duyệt các yêu cầu vượt sandbox qua cơ chế automatic review; Antigravity dùng quyền theo từng lệnh. Tài liệu chính thức: [Codex chạy tự động](https://learn.chatgpt.com/docs/non-interactive-mode), [Antigravity headless](https://antigravity.google/docs/cli/headless/), [Claude CLI](https://code.claude.com/docs/en/cli-reference).
+
+Có thể đặt `"appStartPath": "/prototype.html#board"` trong `config.json` để biểu tượng Desktop mở thẳng màn giao việc và báo cáo.
+
 | Màn | Có gì |
 |---|---|
 | **Văn phòng 3D** | 8 phòng: Giám đốc, Quản lý, Điều phối, Kiểm tra & duyệt, Studio Claude, Phòng DEV, Khu Codex, Phòng họp. Robot đi lại, tin bay giữa bàn, họp tự động. Trên cùng có ô **Cần anh** và **Tiền AI hôm nay**, kèm 3 màn hình lớn trên tường |
@@ -105,7 +117,7 @@ Mở `http://localhost:7788/dieukhien.html` (hoặc nút **⌘ Điều khiển m
 
 Dữ liệu của ctl nằm ở `~/.van-phong-ao/` (`ctl.db`, `logs/`, `ctl-token`). Lệnh CLI của từng vai AI đổi được ở `~/.van-phong-ao/ctl-agents.json`, ví dụ `{ "CODEX_ASTRA_DEV": ["codex", "exec", "-m", "<model>", "{prompt}"] }`.
 
-> **Lưu ý thật:** lệnh trong danh sách cho phép như `npm test` vẫn chạy script của chính dự án. Ranh giới an toàn là: chỉ trong workspace + bạn duyệt mọi thứ khác + nhật ký + phanh khẩn cấp, không phải hộp cát. Antigravity chưa có CLI chạy nền nên vẫn giao việc qua Hòm thư.
+> **Lưu ý thật:** lệnh trong danh sách cho phép như `npm test` vẫn chạy script của chính dự án. Ranh giới của Controller là workspace đã đăng ký, quyền của từng CLI, nhật ký và phanh khẩn cấp. Antigravity có CLI chạy nền `agy`; cài và đăng nhập trước khi giao lượt SPEC tự động.
 
 ## Sổ điều phối `data/` và công cụ `vp`
 
@@ -159,7 +171,7 @@ Luật đội để dán vào dự án nằm ở `data/DOAN-CHEN-VAO-AGENTS.md`,
 | Bấm lối tắt mà không thấy cửa sổ | Xem `~/.van-phong-ao/logs/app.log`; thường do thiếu `config.json` (chạy `npm run setup`) hoặc cổng 7788 đang bận. |
 | `OS Controller chưa chạy` trên màn Điều khiển | Chạy `npm run ctl` (hoặc `npm run all` thay cho `npm start`). |
 | `Bảng điều khiển máy chỉ dùng được trên chính máy này` | Đúng thiết kế: không điều khiển máy qua điện thoại / máy khác. Mở bằng `http://localhost:7788` trên chính máy. |
-| Lượt AI báo `Không tìm thấy chương trình claude/codex` hoặc lỗi cờ CLI | Cài CLI và đăng nhập (`claude login`, `codex login`), hoặc sửa lệnh trong `~/.van-phong-ao/ctl-agents.json`. |
+| Lượt AI báo `Không tìm thấy chương trình claude/codex/agy` hoặc lỗi cờ CLI | Cài CLI chính thức và đăng nhập (`claude auth login`, `codex login`, chạy `agy` để đăng nhập), hoặc sửa lệnh trong `~/.van-phong-ao/ctl-agents.json`. |
 | Hòm thư không ai đọc | Phiên AI chưa có luật đội: dán `data/DOAN-CHEN-VAO-AGENTS.md` vào `AGENTS.md` / `CLAUDE.md`, và đặt tên phiên trùng tên vai. |
 
 ## Cấu trúc mã
@@ -168,7 +180,7 @@ Luật đội để dán vào dự án nằm ở `data/DOAN-CHEN-VAO-AGENTS.md`,
 server.js              máy chủ: tìm phiên, đọc nhật ký + sổ, đẩy trạng thái mỗi giây
 lib/                   perf (token, điểm, tiền) · docs (sổ sách) · hopthu · tongquan · chat (PIN) · mailbox · config
                        guard (chặn CSRF/DNS rebinding) · proc (dừng cây tiến trình) · keys · mask · ctlbridge (cầu nối tới ctl) · app (mở app, lối tắt)
-ctl/                   OS Controller: main (HTTP) · jobs · policy · workspaces · files · runner (lượt AI) · handoff · monitor · audit · db
+ctl/                   OS Controller: main (HTTP) · jobs · policy · workspaces · files · runner (lượt AI) · autopilot (giao việc tự động) · handoff · monitor · audit · db
 test/                  node --test (npm test)
 tools/vp.js            công cụ ghi sổ cho agent
 setup.js               cài đặt (hỏi–đáp hoặc --yes cho agent)
