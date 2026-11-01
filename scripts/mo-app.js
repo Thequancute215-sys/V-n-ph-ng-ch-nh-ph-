@@ -16,9 +16,10 @@ const background = process.argv.includes("--nen");
   const cfg = loadConfig(root);
   if (!cfg) { console.error("Chưa có config.json: chạy `npm run setup` trước."); process.exit(1); }
   const port = Number(process.env.PORT || cfg.port);
-  const url = `http://localhost:${port}/`;
+  const host = app.officeHost(cfg);
+  const url = host === "127.0.0.1" ? `http://localhost:${port}/` : `http://${host.includes(":") ? `[${host}]` : host}:${port}/`;
 
-  if (await app.isUp(port)) {
+  if (await app.isUp(port, { host })) {
     console.log("Văn phòng đang chạy tại " + url);
   } else {
     fs.mkdirSync(path.dirname(app.LOG_FILE()), { recursive: true });
@@ -29,7 +30,7 @@ const background = process.argv.includes("--nen");
     fs.writeFileSync(app.PID_FILE(), String(child.pid));
     child.unref();
     console.log("Đang bật văn phòng (chạy ngầm, log: " + app.LOG_FILE() + ")…");
-    if (!(await app.waitUp(port, 30000))) {
+    if (!(await app.waitUp(port, { host, ms: 30000 }))) {
       console.error("Văn phòng không bật lên sau 30 giây. Xem log: " + app.LOG_FILE());
       process.exit(1);
     }

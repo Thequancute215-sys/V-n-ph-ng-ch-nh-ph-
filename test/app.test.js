@@ -81,3 +81,41 @@ test("lối tắt Windows: đường dẫn đi qua biến môi trường, không
   assert.strictEqual(plan(["--tu-khoi-dong"]).env.VP_WHERE, "desktop,menu,startup");
   assert.strictEqual(plan(["--go"]).env.VP_MODE, "remove");
 });
+
+// P7-H02: chỉ coi là văn phòng khi dòng lệnh đúng là scripts/chay-tat-ca.js; PID cũ đã bị chương trình khác dùng lại thì không dừng.
+test("nhận đúng tiến trình văn phòng theo dòng lệnh", async () => {
+  const { spawn } = require("child_process");
+  const idle = "setInterval(()=>{},1e3)";
+  const other = spawn(process.execPath, ["-e", idle], { stdio: "ignore" });
+  const fake = spawn(process.execPath, ["-e", idle, path.join(__dirname, "..", "scripts", "chay-tat-ca.js")], { stdio: "ignore" });
+  try {
+    await new Promise((ok) => setTimeout(ok, 300));
+    assert.strictEqual(app.isAppProcess(other.pid), false, "tiến trình node khác không phải văn phòng");
+    assert.strictEqual(app.isAppProcess(fake.pid), true, "dòng lệnh có scripts/chay-tat-ca.js");
+    assert.strictEqual(app.isAppProcess(999999999), false, "PID không tồn tại");
+    assert.strictEqual(app.isAppProcess("abc"), false);
+  } finally { other.kill(); fake.kill(); }
+});
+
+test("tat-app không giết tiến trình khác khi app.pid đã cũ", async () => {
+  const fsP = require("fs"), os = require("os");
+  const { spawn, execFileSync } = require("child_process");
+  const { alive } = require("../lib/proc");
+  const home = fsP.mkdtempSync(path.join(os.tmpdir(), "vp-tat-"));
+  const victim = spawn(process.execPath, ["-e", "setInterval(()=>{},1e3)"], { stdio: "ignore" });
+  try {
+    fsP.writeFileSync(path.join(home, "app.pid"), String(victim.pid));
+    const out = execFileSync(process.execPath, [path.join(__dirname, "..", "scripts", "tat-app.js")], { env: { ...process.env, VP_HOME: home, PORT: "1" }, encoding: "utf8" });
+    assert.match(out, /thuộc chương trình khác/);
+    assert.ok(alive(victim.pid), "tiến trình không liên quan bị giết nhầm");
+    assert.ok(!fsP.existsSync(path.join(home, "app.pid")), "app.pid cũ phải được xóa");
+  } finally { victim.kill(); fsP.rmSync(home, { recursive: true, force: true }); }
+});
+
+test("địa chỉ gọi văn phòng theo host trong config", () => {
+  assert.strictEqual(app.officeHost({ host: "127.0.0.1" }), "127.0.0.1");
+  assert.strictEqual(app.officeHost({ host: "0.0.0.0" }), "127.0.0.1");
+  assert.strictEqual(app.officeHost({ host: "::" }), "127.0.0.1");
+  assert.strictEqual(app.officeHost({}), "127.0.0.1");
+  assert.strictEqual(app.officeHost({ host: "192.168.1.20" }), "192.168.1.20");
+});

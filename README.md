@@ -62,7 +62,7 @@ npm run tat-app                 # tắt văn phòng đã bật bằng app
 npm run cai-app -- --go         # gỡ mọi lối tắt
 ```
 
-- Bấm **Văn phòng AI** trên Desktop: văn phòng bật ngầm (không cửa sổ đen, log ở `~/.van-phong-ao/logs/app.log`), rồi mở cửa sổ app riêng bằng Edge/Chrome (không thanh địa chỉ). Không có Edge/Chrome thì mở bằng trình duyệt mặc định.
+- Bấm **Văn phòng AI** trên Desktop: một cửa sổ nhỏ thu gọn hiện vài giây trên thanh tác vụ trong lúc bật, văn phòng + OS Controller chạy ngầm không cửa sổ (log ở `~/.van-phong-ao/logs/app.log`), rồi mở cửa sổ app riêng bằng Edge/Chrome (không thanh địa chỉ). Không có Edge/Chrome thì mở bằng trình duyệt mặc định.
 - Hoặc trong văn phòng bấm **⬇ Cài app** (Edge/Chrome): có biểu tượng trên thanh tác vụ, lối tắt nhanh tới Điều khiển máy, Bảng điều hành, Hồ sơ nhân vật.
 - Mở app khi văn phòng đang tắt: hiện trang hướng dẫn, tự mở lại khi văn phòng bật. App không lưu đệm dữ liệu văn phòng.
 - Không cần cài thêm gì: không Electron, không thư viện ngoài.
