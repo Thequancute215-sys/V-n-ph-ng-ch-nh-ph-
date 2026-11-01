@@ -60,9 +60,24 @@ test("đăng ký workspace: chặn ổ đĩa, thư mục người dùng, thư m�
   assert.strictEqual((await call("POST", "/workspaces", { path: os.homedir() })).status, 403);
   assert.strictEqual((await call("POST", "/workspaces", { path: path.dirname(os.homedir()) })).status, 403);
   assert.strictEqual((await call("POST", "/workspaces", { path: path.join(tmp, "khong-co") })).status, 404);
+  // Thư mục ẩn thật trong thư mục người dùng (tên riêng của test, xóa ngay sau): trước đây điều kiện viết ngược nên lọt qua.
+  const hidden = fs.mkdtempSync(path.join(os.homedir(), ".vp-test-an-"));
+  try {
+    fs.mkdirSync(path.join(hidden, "con"));
+    for (const p of [hidden, path.join(hidden, "con")]) {
+      const h = await call("POST", "/workspaces", { path: p });
+      assert.strictEqual(h.status, 403, p + " " + h.text);
+      assert.strictEqual(h.json.code, "TOO_SENSITIVE");
+    }
+  } finally { fs.rmSync(hidden, { recursive: true, force: true }); }
   const r = await call("POST", "/workspaces", { path: wsDir });
   assert.strictEqual(r.status, 201, r.text);
   assert.strictEqual((await call("GET", "/workspaces")).json.active, fs.realpathSync(wsDir));
+  if (process.platform === "win32") {
+    // Gõ khác hoa/thường trên Windows: cùng một workspace, không thêm dòng mới.
+    assert.strictEqual((await call("POST", "/workspaces", { path: wsDir.toUpperCase() })).status, 201);
+    assert.strictEqual((await call("GET", "/workspaces")).json.workspaces.length, 1);
+  }
 });
 
 test("đọc/ghi file: trong workspace được, ra ngoài bị chặn", async () => {

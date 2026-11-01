@@ -27,7 +27,11 @@ function createWorkspaces(db, audit) {
     if (!fs.statSync(real).isDirectory()) throw err("NOT_DIR", real + " không phải thư mục");
     // Chặn cả ổ đĩa, thư mục người dùng và mọi thư mục chứa nó (C:\Users…).
     if (same(real, path.parse(real).root) || inside(real, os.homedir())) throw err("TOO_BROAD", "Không đăng ký cả ổ đĩa hay cả thư mục người dùng");
-    if (inside(real, os.homedir()) && path.relative(os.homedir(), real).split(path.sep)[0].startsWith(".")) throw err("TOO_SENSITIVE", "Không đăng ký thư mục cấu hình ẩn (.ssh, .claude, .codex…)");
+    // Thư mục nằm TRONG thư mục người dùng mà bắt đầu bằng "." (~/.ssh, ~/.claude, ~/.van-phong-ao…) chứa khóa đăng nhập.
+    if (inside(os.homedir(), real) && path.relative(os.homedir(), real).split(path.sep)[0].startsWith(".")) throw err("TOO_SENSITIVE", "Không đăng ký thư mục cấu hình ẩn (.ssh, .claude, .codex…)");
+    // Windows không phân biệt hoa/thường và realpath giữ nguyên cách gõ: dùng lại đường dẫn đã lưu để không sinh 2 dòng cho 1 thư mục.
+    const dup = q.all.all().find((w) => same(w.path, real));
+    if (dup) real = dup.path;
     q.add.run(real, path.basename(real), Date.now());
     audit.log(actor, "workspace.add", real);
     if (!active) active = real;

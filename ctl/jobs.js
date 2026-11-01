@@ -36,6 +36,15 @@ function createJobs(db, audit, logDir) {
   // Lý do dừng ghi TRƯỚC khi gửi tín hiệu: tiến trình có thể thoát trước khi killTree trả về, khi đó sự kiện exit phải ghi đúng 'killed'/'timeout'.
   const stopping = new Map();
   const onExit = new Map(); // id -> hàm gọi khi việc kết thúc (runner AI dùng để đọc kết quả bàn giao)
+  // id -> Promise xong khi sự kiện exit/error của tiến trình đã xử lý xong. Windows: taskkill trả về trước khi Node nhận exit,
+  // nên dừng/tắt ctl phải chờ cái này, nếu không exit đến sau khi db đã đóng ("statement has been finalized").
+  const exits = new Map();
+  const waitExit = (id, ms = 2000) => {
+    const p = exits.get(id);
+    if (!p) return Promise.resolve(true);
+    let t;
+    return Promise.race([p.then(() => true), new Promise((ok) => { t = setTimeout(() => ok(false), ms); t.unref(); })]).finally(() => clearTimeout(t));
+  };
 
   // ctl khởi động lại: việc còn ghi 'running' là của lần chạy trước. Không dừng theo PID cũ (PID có thể đã bị tiến trình khác dùng lại).
   for (const j of q.running.all()) {
@@ -86,15 +95,22 @@ function createJobs(db, audit, logDir) {
     }
     audit.log(j.agent, "job.start", id, { kind: j.kind, argv, workspace: j.workspace, pid: child.pid, timeoutMs: j.timeout_ms }, "allowed");
 
+    let done;
+    exits.set(id, new Promise((ok) => (done = ok)));
+    const settle = () => { exits.delete(id); done(); };
     child.on("error", (e) => {
-      fs.appendFileSync(j.log_path, "\n[ctl] không chạy được: " + e.message + "\n");
-      if (q.finish.run("failed", null, Date.now(), id).changes) audit.log("ctl", "job.error", id, e.message);
-      finished(id, j);
+      try {
+        fs.appendFileSync(j.log_path, "\n[ctl] không chạy được: " + e.message + "\n");
+        if (q.finish.run("failed", null, Date.now(), id).changes) audit.log("ctl", "job.error", id, e.message);
+        finished(id, j);
+      } finally { settle(); }
     });
     child.on("exit", (code) => {
-      const why = stopping.get(id); stopping.delete(id);
-      if (q.finish.run(why || (code === 0 ? "done" : "failed"), code, Date.now(), id).changes) audit.log("ctl", why ? "job." + why : "job.exit", id, { code });
-      finished(id, j);
+      try {
+        const why = stopping.get(id); stopping.delete(id);
+        if (q.finish.run(why || (code === 0 ? "done" : "failed"), code, Date.now(), id).changes) audit.log("ctl", why ? "job." + why : "job.exit", id, { code });
+        finished(id, j);
+      } finally { settle(); }
     });
     const t = setTimeout(async () => {
       stopping.set(id, "timeout");
@@ -146,7 +162,7 @@ function createJobs(db, audit, logDir) {
     if (j.status !== "running") return { id, pid: j.pid, killed: false, error: "Việc không còn chạy (" + j.status + ")", code: "NOT_RUNNING" };
     stopping.set(id, "killed");
     const r = j.pid ? await killTree(j.pid) : { ok: true };
-    if (r.ok) q.finish.run("killed", null, Date.now(), id);
+    if (r.ok) { await waitExit(id); q.finish.run("killed", null, Date.now(), id); }
     else stopping.delete(id);
     audit.log(actor, "job.kill", id, { pid: j.pid, killed: r.ok, error: r.error }, r.ok ? "done" : "failed");
     return { id, pid: j.pid, killed: r.ok, error: r.error || null };
@@ -177,6 +193,8 @@ function createJobs(db, audit, logDir) {
 
   return {
     start, propose, approve, reject, kill, killAll, readLog, rawLog,
+    // Chờ mọi sự kiện exit còn treo (gọi trước khi đóng db).
+    drain: (ms = 3000) => Promise.all([...exits.keys()].map((id) => waitExit(id, ms))),
     get: (id) => row(q.get.get(id)),
     list: (status) => (status ? q.byStatus.all(String(status)) : q.latest.all()).map(row),
     aiBusy: (workspace) => q.runningAi.all(workspace).length > 0,

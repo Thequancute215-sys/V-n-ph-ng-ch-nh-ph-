@@ -134,3 +134,22 @@ test("giới hạn số việc chạy cùng lúc", async () => {
     assert.throws(() => ctl.jobs.start({ agent: "test", argv: [NODE, "-v"] }), /đang chạy/);
   } finally { await ctl.jobs.killAll("test"); }
 });
+
+// Windows: taskkill trả về trước khi Node nhận sự kiện exit. Tắt ctl phải chờ exit rồi mới đóng db,
+// nếu không exit đến muộn ghi vào db đã đóng → "statement has been finalized" (lỗi lúc bấm Ctrl+C).
+test("tắt ctl khi còn việc chạy: chờ tiến trình thoát rồi mới đóng db, trạng thái ghi 'killed'", async () => {
+  const dir2 = fs.mkdtempSync(path.join(os.tmpdir(), "vp-ctl-close-"));
+  const c2 = createCtl({ dir: dir2 });
+  await new Promise((ok) => c2.server.listen(0, "127.0.0.1", ok));
+  const j = c2.jobs.start({ agent: "test", argv: [NODE, "-e", TREE] });
+  await c2.close();
+  assert.ok(!alive(j.pid), "tiến trình còn sống sau khi tắt ctl");
+  await sleep(300); // nếu exit còn treo thì lỗi bắn ra trong khoảng này và test runner báo hỏng
+  const { DatabaseSync } = require("node:sqlite");
+  const db = new DatabaseSync(path.join(dir2, "ctl.db"));
+  try {
+    assert.strictEqual(db.prepare("SELECT status FROM jobs WHERE id = ?").get(j.id).status, "killed");
+    const acts = db.prepare("SELECT action FROM audit WHERE target = ?").all(j.id).map((r) => r.action);
+    assert.ok(acts.includes("job.killed"), "thiếu dòng kiểm toán job.killed từ sự kiện exit: " + acts.join(","));
+  } finally { db.close(); fs.rmSync(dir2, { recursive: true, force: true }); }
+});

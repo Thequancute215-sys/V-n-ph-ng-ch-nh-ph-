@@ -34,6 +34,7 @@ function createRunner({ jobs, ws, audit, db, dir }) {
     put: db.prepare("INSERT OR REPLACE INTO handoffs (job_id, workspace, role, next_owner, payload, problems, decided, decided_at) VALUES (?, ?, ?, ?, ?, ?, NULL, NULL)"),
     get: db.prepare("SELECT job_id, workspace, role, next_owner, payload, problems, decided, decided_at FROM handoffs WHERE job_id = ?"),
     open: db.prepare("SELECT job_id, workspace, role, next_owner, payload, problems, decided, decided_at FROM handoffs WHERE decided IS NULL ORDER BY rowid DESC LIMIT 50"),
+    openFor: db.prepare("SELECT job_id FROM handoffs WHERE decided IS NULL AND workspace = ? LIMIT 1"),
     decide: db.prepare("UPDATE handoffs SET decided = ?, decided_at = ? WHERE job_id = ? AND decided IS NULL"),
   };
   const view = (h) => h && { ...h, payload: h.payload ? JSON.parse(h.payload) : null, problems: JSON.parse(h.problems || "[]") };
@@ -50,7 +51,9 @@ function createRunner({ jobs, ws, audit, db, dir }) {
     const root = ws.find(workspace).path;
     let turn = null, problem = null;
     try { turn = readTurn(root); } catch (e) { problem = e.message; }
-    return { workspace: root, turn, problem, aiBusy: jobs.aiBusy(root), runnable: turn ? !!(AGENTS[turn.nextOwner] && AGENTS[turn.nextOwner].argv) : false };
+    const pending = q.openFor.get(root);
+    return { workspace: root, turn, problem, aiBusy: jobs.aiBusy(root), handoffPending: pending ? pending.job_id : null,
+      runnable: turn && !pending ? !!(AGENTS[turn.nextOwner] && AGENTS[turn.nextOwner].argv) : false };
   }
 
   function run({ workspace, role, task = "", retried = false }, actor = "ceo") {
@@ -61,6 +64,10 @@ function createRunner({ jobs, ws, audit, db, dir }) {
     const turn = readTurn(root);
     if (turn.nextOwner !== role) throw err("NOT_YOUR_TURN", `Đang là lượt của ${turn.nextOwner}, không phải ${role}`);
     if (jobs.aiBusy(root)) throw err("AI_BUSY", "Workspace này đang có 1 lượt AI chạy hoặc chờ duyệt");
+    // AI thường tự sửa NEXT_OWNER trong agent.md trước khi CEO duyệt, nên chỉ đọc agent.md là chưa đủ: còn bàn giao chưa quyết
+    // thì không cho chạy lượt kế tiếp, nếu không thì lượt được chuyển mà CEO chưa bấm duyệt.
+    const pending = q.openFor.get(root);
+    if (pending) throw err("HANDOFF_PENDING", `Bàn giao ${pending.job_id} đang chờ CEO duyệt hoặc từ chối: xử lý xong rồi mới chạy lượt kế tiếp`);
     const prompt = a.prompt + (String(task).trim() ? "\n\nViệc Giám đốc giao thêm: " + String(task).trim().slice(0, 4000) : "") + END(role);
     const argv = argvFor(role).map((x) => (x === "{prompt}" ? prompt : x));
     audit.log(actor, "ai.run", root, { role, retried, task: String(task).slice(0, 500) });

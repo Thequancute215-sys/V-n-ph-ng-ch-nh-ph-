@@ -24,7 +24,7 @@ const HTTP_CODE = {
   BAD_REQUEST: 400, NOT_DIR: 400, NOT_FILE: 400, BAD_CONFIG: 400, NO_AGENT_MD: 422, BAD_AGENT_MD: 422, INVALID_HANDOFF: 422, NO_CLI: 422,
   WORKSPACE_DENIED: 403, PATH_ESCAPE: 403, PATH_DENIED: 403, TOO_BROAD: 403, TOO_SENSITIVE: 403, COMMAND_DENIED: 403,
   NOT_FOUND: 404, TOO_LARGE: 413,
-  CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409,
+  CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409, HANDOFF_PENDING: 409,
 };
 
 function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex") } = {}) {
@@ -156,6 +156,7 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     clearInterval(tick);
     for (const r of streams) r.end();
     await jobs.killAll("ctl-shutdown");
+    await jobs.drain();
     await new Promise((ok) => server.close(ok));
     db.close();
   }
@@ -180,6 +181,9 @@ if (require.main === module) {
   const stop = () => { if (closing) return; closing = true; ctl.close().finally(() => { try { fs.unlinkSync(tokenFile); } catch {} process.exit(0); }); };
   process.on("SIGINT", stop);
   process.on("SIGTERM", stop);
+  process.on("SIGHUP", stop); // Windows: đóng cửa sổ terminal
+  // Chạy dưới `npm run all`: Windows không gửi được SIGTERM thật, nên tiến trình cha báo tắt qua IPC; cha chết thì kênh đứt, cũng tắt.
+  if (process.send) { process.on("message", (m) => { if (m === "stop") stop(); }); process.on("disconnect", stop); }
 }
 
 module.exports = { createCtl };

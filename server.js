@@ -856,3 +856,5 @@ http.createServer((req, res) => {
   console.log(`  Sổ điều phối:     ${DATA}`);
   console.log(`  Khóa xem:         ${KEY ? "đang bật" : "tắt (chỉ máy này xem được nếu host = 127.0.0.1)"}\n`);
 });
+// Chạy dưới `npm run all`: tiến trình cha bị giết cứng (Windows) thì kênh IPC đứt, tắt theo để không thành tiến trình mồ côi.
+if (process.send) process.on("disconnect", () => process.exit(0));

@@ -94,12 +94,38 @@ test("bàn giao sai schema hoặc thiếu → không duyệt được, agent.md 
   assert.ok(h.problems.length);
   assert.strictEqual((await call("POST", `/handoffs/${r.json.job.id}/approve`, {})).status, 422);
   assert.match(fs.readFileSync(path.join(repo, "agent.md"), "utf8"), /NEXT_OWNER \(MUTEX LOCK\): CODEX_ASTRA_DEV/);
+  // Bàn giao hỏng vẫn chờ CEO quyết: chưa từ chối thì không chạy lượt mới được.
+  assert.strictEqual((await call("POST", "/ai/run", { workspace: repo, role: "CODEX_ASTRA_DEV" })).json.code, "HANDOFF_PENDING");
+  assert.strictEqual((await call("POST", `/handoffs/${r.json.job.id}/reject`, {})).status, 200);
 
   setFake("Tôi quên in JSON.");
   const r2 = await call("POST", "/ai/run", { workspace: repo, role: "CODEX_ASTRA_DEV" });
   const h2 = await handoffOf(r2.json.job.id);
   assert.deepStrictEqual(h2.problems, ["Không tìm thấy dòng JSON bàn giao trong log"]);
   assert.strictEqual((await call("POST", `/handoffs/${r2.json.job.id}/reject`, {})).json.handoff.decided, "rejected");
+});
+
+// Lỗi thấy khi chạy thật trên Windows: AI tự sửa NEXT_OWNER trong agent.md trước khi CEO duyệt, nên nút "Chạy lượt <vai kế>"
+// sáng ngay và lượt bị chuyển mà CEO chưa bấm "Duyệt chuyển lượt".
+test("AI tự sửa NEXT_OWNER nhưng bàn giao chưa duyệt → không chạy được lượt kế tiếp (409 HANDOFF_PENDING)", async () => {
+  fs.writeFileSync(path.join(repo, "agent.md"), AGENT_MD); git("commit", "-qam", "trả lượt về Astra để thử", "--allow-empty");
+  const selfEdit = `require("fs").writeFileSync("agent.md", require("fs").readFileSync("agent.md","utf8").replace("NEXT_OWNER (MUTEX LOCK): CODEX_ASTRA_DEV","NEXT_OWNER (MUTEX LOCK): SOL_ARCHITECT_ADVISOR")); console.log(JSON.stringify({role:"CODEX_ASTRA_DEV",next_owner:"SOL_ARCHITECT_ADVISOR",files:["agent.md"],claim_fixed:[]}))`;
+  fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify({ CODEX_ASTRA_DEV: [process.execPath, "-e", selfEdit, "{prompt}"], SOL_ARCHITECT_ADVISOR: [process.execPath, "-e", "1", "{prompt}"] }));
+  const r = await call("POST", "/ai/run", { workspace: repo, role: "CODEX_ASTRA_DEV" });
+  assert.strictEqual(r.status, 201, r.text);
+  assert.deepStrictEqual((await handoffOf(r.json.job.id)).problems, []);
+  const s = (await call("GET", "/ai/status?workspace=" + encodeURIComponent(repo))).json;
+  assert.strictEqual(s.turn.nextOwner, "SOL_ARCHITECT_ADVISOR", "AI đã tự đổi agent.md");
+  assert.strictEqual(s.handoffPending, r.json.job.id);
+  assert.strictEqual(s.runnable, false);
+  const blocked = await call("POST", "/ai/run", { workspace: repo, role: "SOL_ARCHITECT_ADVISOR" });
+  assert.strictEqual(blocked.status, 409, blocked.text);
+  assert.strictEqual(blocked.json.code, "HANDOFF_PENDING");
+  const a = await call("POST", `/handoffs/${r.json.job.id}/approve`, {});
+  assert.strictEqual(a.status, 200, a.text);
+  assert.strictEqual(git("log", "-1", "--format=%s"), "chore(agent-sync): CODEX_ASTRA_DEV -> NEXT: SOL_ARCHITECT_ADVISOR");
+  assert.strictEqual((await call("GET", "/ai/status?workspace=" + encodeURIComponent(repo))).json.runnable, true);
+  fs.writeFileSync(path.join(repo, "agent.md"), AGENT_MD); git("commit", "-qam", "trả lượt về Astra cho test sau");
 });
 
 test("CLI AI không nhận biến môi trường chứa khóa", async () => {
