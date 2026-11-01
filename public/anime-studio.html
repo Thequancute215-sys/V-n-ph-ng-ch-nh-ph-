@@ -1686,19 +1686,6 @@
             animatedCloakOrHair.push({ mesh: shell, spinY: 6.0 });
           }
 
-          // Hinata's Twin Lion Fists Chakra Aura on Both Hands
-          if (id === 'hinata') {
-            const lionAura = new THREE.Mesh(
-              new THREE.DodecahedronGeometry(0.19, 1),
-              new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true, transparent: true, opacity: 0.65 })
-            );
-            lionAura.position.set(0, -0.75, 0.06);
-            lionAura.visible = dojutsuActive;
-            armGroup.add(lionAura);
-            dojutsuDependentMeshes.push(lionAura);
-            animatedCloakOrHair.push({ mesh: lionAura, spinY: 4.0 });
-          }
-
           // Sasuke's Chidori Lightning on Left Hand
           if (id === 'sasuke' && side === -1) {
             const chidori = new THREE.Mesh(
