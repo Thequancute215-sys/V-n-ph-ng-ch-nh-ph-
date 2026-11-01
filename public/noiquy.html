@@ -70,7 +70,7 @@ details{border:1px solid var(--line);border-radius:10px;margin-bottom:7px;backgr
 const $ = (id) => document.getElementById(id);
 const h = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
 const ago = (ms) => { if (!ms) return "–"; const s = Math.max(0, (Date.now() - ms) / 1000); if (s < 3600) return Math.round(s / 60) + " phút"; if (s < 86400) return (s / 3600).toFixed(1).replace(".", ",") + " giờ"; return Math.round(s / 86400) + " ngày"; };
-let D = null, sel = null, tab = "bai";
+let D = null, sel = null, tab = new URLSearchParams(location.search).get("tab") || "bai";
 const isNew = (s) => s.changedAt && Date.now() - s.changedAt < 86400000;
 
 function renderRules() {
