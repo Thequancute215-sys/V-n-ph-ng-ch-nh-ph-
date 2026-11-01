@@ -68,7 +68,7 @@
 > Bản nháp do CLAUDE_AUDITOR soạn theo đặc cách ĐC-03 (CEO cho phép xin đặc cách từng lần). Có hiệu lực khi CEO duyệt merge nhánh `claude/va-loi-p2`. Sol phản biện bằng cách ghi đề xuất vào [4.1], không sửa thẳng mục này.
 - Phạm vi điều khiển máy: **Kiến trúc A**: lệnh theo danh sách cho phép, lệnh ngoài danh sách phải CEO bấm duyệt từng lệnh; đọc/ghi file chỉ trong workspace đã đăng ký. KHÔNG có shell tự do, KHÔNG truy cập từ Internet, AI KHÔNG tự merge/release.
 - Cây thư mục:
-  - `server.js` + `lib/`: văn phòng 3D, chỉ đọc nhật ký + sổ `data/` (giữ nguyên). `lib/guard.js` chặn ghi từ trang lạ, `lib/proc.js` dừng cây tiến trình, `lib/keys.js` khóa API ngoài thư mục mã.
+  - `server.js` + `lib/`: văn phòng 3D, chỉ đọc nhật ký + sổ `data/` (giữ nguyên). `lib/guard.js` chặn ghi từ trang lạ, `lib/proc.js` dừng cây tiến trình, `lib/keys.js` khóa API ngoài thư mục mã. `lib/mask.js` che khóa trong log + lọc biến môi trường cho tiến trình con.
   - `ctl/`: OS Controller, **tiến trình riêng**, cổng 7790, chỉ nghe 127.0.0.1. `ctl/main.js` (HTTP + SSE), `ctl/jobs.js` (sổ tiến trình, kill), `ctl/policy.js` (danh sách lệnh, giới hạn workspace), `ctl/runner.js` (gọi CLI AI), `ctl/audit.js` (nhật ký kiểm toán), `ctl/monitor.js` (CPU/RAM).
   - `test/*.test.js`: `node --test`, chạy bằng `npm test`; bắt buộc xanh trước mỗi commit.
 - Bảo mật `ctl/`: mỗi lần khởi động sinh token 32 byte ngẫu nhiên, ghi vào `~/.van-phong-ao/ctl-token` (quyền 600); mọi yêu cầu cần header `Authorization: Bearer <token>` + `lib/guard.checkWrite`. `server.js` đọc token đó và làm cầu nối cho giao diện; token không bao giờ xuống trình duyệt. Tiến trình con nhận biến môi trường đã lọc (bỏ `*_KEY`, `*_TOKEN`, `*SECRET*`), log đi qua `mask()`.
@@ -113,7 +113,9 @@
 - Đặc cách CEO (01/11/2026): ĐC-01 Claude nhận lượt ghi agent.md; ĐC-02 Claude sửa code thay Astra cho P2-C03/C04/C05; ĐC-03 Claude soạn nháp Vùng [3].
 - File đã sửa (nhánh claude/va-loi-p2): server.js, public/index.html, lib/guard.js, lib/proc.js, lib/keys.js, test/*.test.js, package.json (thêm `npm test`).
 - CLAIM_FIXED: P2-C03, P2-C04, P2-C05, P2-C06 -> nhánh claude/va-loi-p2 (chờ Sol đọc chéo vì người sửa cũng là người nghiệm thu).
-- Việc cho SOL_ARCHITECT_ADVISOR: (1) đọc chéo diff nhánh; (2) phản biện Vùng [3] bản nháp; ghi ý kiến tại đây rồi đặt NEXT_OWNER: CLAUDE_AUDITOR.
+- Đặc cách ĐC-04 (01/11/2026): Claude dựng ctl/ Phase 3 trên nhánh claude/ctl-phase3 (tách từ claude/va-loi-p2): ctl/main.js, db.js, jobs.js, audit.js, monitor.js, lib/mask.js, test/ctl.test.js; `npm run ctl`. 25/25 test đạt trên Linux, CHƯA chạy trên Windows.
+- Giới hạn Phase 3 đã biết: giám sát từng việc chỉ tính tiến trình gốc; Windows hỏi PowerShell mỗi 5s; chưa nối vào giao diện 3D (để Phase 5); chưa có route chạy lệnh (để Phase 4).
+- Việc cho SOL_ARCHITECT_ADVISOR: (1) đọc chéo diff 2 nhánh claude/va-loi-p2 và claude/ctl-phase3; (2) phản biện Vùng [3] bản nháp; ghi ý kiến tại đây rồi đặt NEXT_OWNER: CLAUDE_AUDITOR.
 
 ### [4.2] LƯU TRỮ PHASE ĐÃ XONG (tối đa 5 dòng, 1 dòng/Phase)
 - Phase 1: Hoàn tất đặc tả Vùng [2] và Interactive Prototype Chibi Edition (SPEC_ARCHITECT).
