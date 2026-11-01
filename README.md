@@ -119,6 +119,16 @@ Dữ liệu của ctl nằm ở `~/.van-phong-ao/` (`ctl.db`, `logs/`, `ctl-toke
 
 > **Lưu ý thật:** lệnh trong danh sách cho phép như `npm test` vẫn chạy script của chính dự án. Ranh giới của Controller là workspace đã đăng ký, quyền của từng CLI, nhật ký và phanh khẩn cấp. Antigravity có CLI chạy nền `agy`; cài và đăng nhập trước khi giao lượt SPEC tự động.
 
+## Theo dõi hạn mức từng AI
+
+Trong Tổng quan, bấm **Hạn mức AI** hoặc tab **Hạn mức & tài khoản** để xem phần trăm còn lại/đã dùng, hạn mức 5 giờ và 7 ngày, giờ đặt lại theo múi giờ trên máy và lần cập nhật thành công. Cảnh báo hiện trên thanh đầu và màn Điều hành từ 80% đã dùng; thanh chuyển đỏ từ 95%. Các hạn mức thuộc tài khoản, dùng chung giữa các dự án; Sol/Astra dùng chung Codex. Nhóm Claude/GPT bên trong Antigravity là hạn mức Antigravity, tách khỏi Claude Code và Codex.
+
+Nguồn đọc chỉ dùng chức năng trạng thái của CLI đang đăng nhập: Codex `app-server` qua `account/rateLimits/read`; Claude `-p /usage --output-format json --safe-mode`; Antigravity `-p /usage --output-format json`. Đã kiểm trên Codex 0.163.0, Claude 2.1.309 và agy 1.4.12: các lệnh này không gọi mô hình, không mua thêm lượt, không dùng lượt đặt lại hạn mức, không đổi tài khoản. Bộ theo dõi không đọc hoặc chép credential; dữ liệu trả về chỉ gồm hạn mức đã chuẩn hóa, không có nội dung phiên, mã tài khoản hoặc chi tiết plugin.
+
+Khi app đang mở, số liệu tự cập nhật tối đa mỗi 2 phút; nút Cập nhật cũng tuân theo khoảng chờ này. Lỗi một hãng không làm mất số liệu hãng khác; hãng lỗi chờ ít nhất 5 phút rồi thử lại. Bản đọc cũ được ghi rõ, không tự coi là 0% sử dụng hoặc tự cho rằng hạn mức đã phục hồi khi qua giờ reset. CLI thiếu, chưa đăng nhập hoặc thay đổi định dạng sẽ hiện chưa đọc được số liệu. Các tiến trình đọc có timeout 25 giây và được dừng khi tắt app. API cục bộ `GET /ctl/quotas` và `POST /ctl/quotas/refresh` qua cùng cơ chế token/localhost của Controller.
+
+Tham khảo: [Codex app-server](https://learn.chatgpt.com/docs/app-server), [Claude Code /usage](https://code.claude.com/docs/en/interactive-mode), [Antigravity /usage](https://antigravity.google/docs/cli/commands/usage/).
+
 ## Chọn repo GitHub trong app
 
 Ở trang Tổng quan (`prototype.html`), bấm **Chọn repo GitHub**, tìm repo rồi bấm **Mở repo**. Danh sách lấy trực tiếp từ tài khoản GitHub đã đăng nhập trong Git Credential Manager trên máy, gồm cả repo riêng tư và repo được cộng tác; có tải thêm khi danh sách dài. Không cần nhập token vào văn phòng.

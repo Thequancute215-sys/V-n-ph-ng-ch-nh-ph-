@@ -18,6 +18,7 @@ const { createFiles } = require("./files");
 const { createRunner } = require("./runner");
 const { createAutopilot } = require("./autopilot");
 const { createGitHub } = require("./github");
+const { createQuotas } = require("./quotas");
 const { classify } = require("./policy");
 
 const VERSION = "1.0.0";
@@ -30,7 +31,7 @@ const HTTP_CODE = {
   CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409, HANDOFF_PENDING: 409,
 };
 
-function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {} } = {}) {
+function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {}, quotaOptions = {} } = {}) {
   const db = open(dir);
   const audit = createAudit(db);
   const jobs = createJobs(db, audit, path.join(dir, "logs"));
@@ -46,6 +47,7 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     return active;
   };
   const github = createGitHub({ ...githubOptions, ws, jobs, audit, select: selectWorkspace });
+  const quotas = createQuotas({ ...quotaOptions, dir });
   const monitor = createMonitor();
   const tokenBuf = Buffer.from(token);
   const streams = new Set();
@@ -73,6 +75,8 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
   // Bảng route: [method, mẫu đường dẫn, xử lý(params, query, body)] → trả object (200) hoặc [mã, object].
   const routes = [
     ["GET", "/health", () => ({ version: VERSION, pid: process.pid, uptimeS: Math.round(process.uptime()) })],
+    ["GET", "/quotas", () => quotas.get()],
+    ["POST", "/quotas/refresh", () => { quotas.refresh(); return [202, quotas.snapshot()]; }],
     ["GET", "/monitor", () => snap()],
     ["GET", "/audit", (p, qs) => ({ audit: audit.recent(Number(qs.get("limit")) || 100) })],
 
@@ -184,6 +188,7 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
   async function close() {
     github.close();
     autopilot.close();
+    await quotas.close();
     clearInterval(tick);
     for (const r of streams) r.end();
     await jobs.killAll("ctl-shutdown");
@@ -192,7 +197,7 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     db.close();
   }
 
-  return { server, jobs, ws, files, runner, autopilot, github, audit, token, close };
+  return { server, jobs, ws, files, runner, autopilot, github, quotas, audit, token, close };
 }
 
 if (require.main === module) {
