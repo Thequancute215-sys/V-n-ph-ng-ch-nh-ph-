@@ -8,7 +8,9 @@ Mỗi phiên là một nhân viên robot có bàn riêng:
 - bạn giao việc thì cả nhóm ra phòng họp;
 - ai đang giữ môi trường DEV thì đứng giữa Phòng DEV, ai đang chờ thì xếp hàng.
 
-> **Chỉ đọc, chạy tại máy bạn.** Văn phòng chỉ đọc nhật ký mà Claude Code và Codex vốn tự ghi (`~/.claude`, `~/.codex`) và sổ của đội trong thư mục `data/`. Nó không gửi dữ liệu đi đâu và không cần khóa API. Mọi chuỗi giống khóa đều được che trước khi hiện. Kho không dùng thư viện ngoài nào, nên không cần `npm install`.
+> **Văn phòng chỉ đọc, chạy tại máy bạn.** Văn phòng (`npm start`) chỉ đọc nhật ký mà Claude Code và Codex vốn tự ghi (`~/.claude`, `~/.codex`) và sổ của đội trong thư mục `data/`. Nó không gửi dữ liệu đi đâu và không cần khóa API. Mọi chuỗi giống khóa đều được che trước khi hiện. Kho không dùng thư viện ngoài nào, nên không cần `npm install`.
+>
+> **Điều khiển máy là phần riêng, phải tự bật.** OS Controller (`npm run ctl`) chạy lệnh, dừng tiến trình, đọc/ghi file và chạy lượt AI, nhưng chỉ trong thư mục dự án bạn đã đăng ký và chỉ từ trình duyệt trên chính máy này. Xem mục [Điều khiển máy](#điều-khiển-máy-os-controller).
 
 ---
 
@@ -63,7 +65,31 @@ Xong, máy ghi `config.json` và tạo sổ `data/` từ khung mẫu `mau/`.
 | **Đánh giá nhân sự** | Token theo giờ và ngày, quỹ Codex tuần, xếp loại A/B/C/D theo việc xong, lỗi lệnh, lượt DEV, giờ làm, độ tiết kiệm |
 | **Tin nhắn** | Toàn bộ tin 24 giờ, lọc theo người |
 | **Sơ đồ 2D** | Bản nhẹ cho điện thoại yếu: mặt bằng, người, tin bay, cảnh báo, dòng thời gian |
+| **Điều khiển máy** | CPU/RAM trực tiếp, phanh khẩn cấp, workspace, chạy lệnh (chờ duyệt nếu ngoài danh sách), lượt AI theo `agent.md` + duyệt chuyển lượt, sửa file, nhật ký kiểm toán. Chỉ mở được trên chính máy này |
 | **Nhắn tin cho agent** | Bấm vào một người trên văn phòng hoặc bảng điều hành, gõ tin. Tin vào hòm thư của người đó; từ xa phải nhập **PIN 6 số**, mã chỉ hiện trên chính máy bạn |
+
+## Điều khiển máy (OS Controller)
+
+```bash
+npm run all        # bật cả văn phòng (7788) và OS Controller (7790); Ctrl+C tắt cả hai
+npm run ctl        # chỉ bật OS Controller
+npm test           # bộ test (chạy trước khi dùng trên máy mới)
+```
+
+Mở `http://localhost:7788/dieukhien.html` (hoặc nút **⌘ Điều khiển máy** trên văn phòng 3D).
+
+| Phần | Làm gì | Giới hạn an toàn |
+|---|---|---|
+| Phanh khẩn cấp | Dừng mọi việc và lượt AI do ctl chạy, kể cả tiến trình con (Windows `taskkill /T /F`) | Nút "Dừng tất cả" trên văn phòng 3D cũng gọi cái này. Tắt ctl thì nó tự dừng mọi việc trước khi thoát |
+| Workspace | Đăng ký thư mục dự án, chuyển qua lại | Không đăng ký được cả ổ đĩa, thư mục người dùng, thư mục ẩn (`.ssh`, `.claude`…) |
+| Chạy lệnh | `git status`, `npm test`, `git commit`… chạy ngay | Lệnh khác (`git push`, `npm install`, `git reset --hard`, chương trình lạ) **chờ bạn duyệt**. Shell (cmd, PowerShell, bash, python) bị từ chối. Không qua shell nên không chèn lệnh được |
+| File | Duyệt thư mục, mở, sửa, lưu | Chỉ trong workspace (chặn `..`, symlink ra ngoài, `.git`). Lưu thì kiểm tra file chưa bị ai sửa từ lúc mở |
+| Lượt AI | Chạy AI đang giữ `NEXT_OWNER` trong `agent.md` (Claude: `claude -p`, Sol/Astra: `codex exec`) | Chỉ vai đang giữ lượt, 1 lượt mỗi workspace, có giới hạn thời gian, biến môi trường chứa khóa bị lọc. AI không gọi AI: xong lượt bạn bấm **Duyệt chuyển lượt** thì mới ghi `agent.md` và commit `chore(agent-sync)` (không push) |
+| Nhật ký kiểm toán | Mọi lần chạy, duyệt, từ chối, dừng, ghi file | Không sửa hay xóa được (trigger SQLite), tự dọn bản ghi quá 90 ngày |
+
+Dữ liệu của ctl nằm ở `~/.van-phong-ao/` (`ctl.db`, `logs/`, `ctl-token`). Lệnh CLI của từng vai AI đổi được ở `~/.van-phong-ao/ctl-agents.json`, ví dụ `{ "CODEX_ASTRA_DEV": ["codex", "exec", "-m", "<model>", "{prompt}"] }`.
+
+> **Lưu ý thật:** lệnh trong danh sách cho phép như `npm test` vẫn chạy script của chính dự án. Ranh giới an toàn là: chỉ trong workspace + bạn duyệt mọi thứ khác + nhật ký + phanh khẩn cấp, không phải hộp cát. Antigravity chưa có CLI chạy nền nên vẫn giao việc qua Hòm thư.
 
 ## Sổ điều phối `data/` và công cụ `vp`
 
@@ -114,6 +140,9 @@ Luật đội để dán vào dự án nằm ở `data/DOAN-CHEN-VAO-AGENTS.md`,
 | Văn phòng trống | Mở phiên AI **trong đúng thư mục dự án** đã chọn; kiểm `projects` (dùng dấu `/`). |
 | `EADDRINUSE` | Cổng 7788 đang bận: đổi `port`. |
 | Màn 3D đen | Trình duyệt chặn WebGL hoặc máy không tải được three.js. Thử Chrome/Edge mới, hoặc dùng Sơ đồ 2D. |
+| `OS Controller chưa chạy` trên màn Điều khiển | Chạy `npm run ctl` (hoặc `npm run all` thay cho `npm start`). |
+| `Bảng điều khiển máy chỉ dùng được trên chính máy này` | Đúng thiết kế: không điều khiển máy qua điện thoại / máy khác. Mở bằng `http://localhost:7788` trên chính máy. |
+| Lượt AI báo `Không tìm thấy chương trình claude/codex` hoặc lỗi cờ CLI | Cài CLI và đăng nhập (`claude login`, `codex login`), hoặc sửa lệnh trong `~/.van-phong-ao/ctl-agents.json`. |
 | Hòm thư không ai đọc | Phiên AI chưa có luật đội: dán `data/DOAN-CHEN-VAO-AGENTS.md` vào `AGENTS.md` / `CLAUDE.md`, và đặt tên phiên trùng tên vai. |
 
 ## Cấu trúc mã
@@ -121,11 +150,14 @@ Luật đội để dán vào dự án nằm ở `data/DOAN-CHEN-VAO-AGENTS.md`,
 ```
 server.js              máy chủ: tìm phiên, đọc nhật ký + sổ, đẩy trạng thái mỗi giây
 lib/                   perf (token, điểm, tiền) · docs (sổ sách) · hopthu · tongquan · chat (PIN) · mailbox · config
+                       guard (chặn CSRF/DNS rebinding) · proc (dừng cây tiến trình) · keys · mask · ctlbridge (cầu nối tới ctl)
+ctl/                   OS Controller: main (HTTP) · jobs · policy · workspaces · files · runner (lượt AI) · handoff · monitor · audit · db
+test/                  node --test (npm test)
 tools/vp.js            công cụ ghi sổ cho agent
 setup.js               cài đặt (hỏi–đáp hoặc --yes cho agent)
 mau/                   khung mẫu sổ điều phối + đoạn luật đội cho AGENTS.md / CLAUDE.md
-public/                giao diện: index (3D), board, congviec, noiquy, tongquan, hopthu, hieusuat, tinnhan, 2d
-scripts/               mở đường hầm xem trên điện thoại
+public/                giao diện: index (3D), board, congviec, noiquy, tongquan, hopthu, hieusuat, tinnhan, 2d, dieukhien
+scripts/               mở đường hầm xem trên điện thoại · chay-tat-ca.js (npm run all)
 HUONG-DAN-CHO-AGENT.md hướng dẫn để agent tự cài từ link này
 ```
 

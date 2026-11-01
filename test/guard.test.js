@@ -2,7 +2,7 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert");
-const { checkWrite } = require("../lib/guard");
+const { checkWrite, checkHost } = require("../lib/guard");
 
 const req = (headers, method = "POST") => ({ method, headers: { host: "localhost:7788", "content-type": "application/json", ...headers } });
 
@@ -26,6 +26,14 @@ test("chặn form text/plain (CSRF không cần preflight)", () => {
 });
 test("chặn DNS rebinding: Host lạ khi chưa bật khóa xem", () => {
   assert.ok(checkWrite(req({ host: "evil.example:7788", origin: "http://evil.example:7788" }), { hasKey: false }));
+});
+test("DNS rebinding với GET: tên miền lạ bị chặn khi chưa bật khóa; địa chỉ IP trong LAN vẫn xem được", () => {
+  const get = (host) => ({ method: "GET", headers: { host } });
+  assert.ok(checkHost(get("evil.example:7788"), { hasKey: false }));
+  assert.strictEqual(checkHost(get("localhost:7788"), { hasKey: false }), null);
+  assert.strictEqual(checkHost(get("192.168.1.20:7788"), { hasKey: false }), null);
+  assert.strictEqual(checkHost(get("[::1]:7788"), { hasKey: false }), null);
+  assert.strictEqual(checkHost(get("evil.example:7788"), { hasKey: true }), null);
 });
 test("Host lạ (đường hầm điện thoại) được phép khi đã bật khóa xem và Origin khớp", () => {
   assert.strictEqual(checkWrite(req({ host: "vp.trycloudflare.com", origin: "https://vp.trycloudflare.com" }), { hasKey: true }), null);

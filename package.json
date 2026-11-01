@@ -8,6 +8,7 @@
     "start": "node server.js",
     "vp": "node tools/vp.js",
     "ctl": "node ctl/main.js",
+    "all": "node scripts/chay-tat-ca.js",
     "test": "node --test test/*.test.js"
   },
   "engines": {
