@@ -128,6 +128,10 @@
 - CLAIM_FIXED: WIN-APP-01, WIN-APP-02 -> codex/windows-app-verification (lib/app.js: đường dẫn Linux độc lập hệ điều hành chạy test; scripts/cai-app.js: lưu lối tắt tạm tên ASCII rồi đổi tên Unicode; test/app.test.js: PATH Linux nhiều thư mục).
 - Kiểm Windows thật: npm test 66/66; Desktop + Start Menu mở Edge --app; lối tắt Startup --nen bật văn phòng và ctl, không mở cửa sổ; tat-app dừng đúng cha/con, xóa app.pid, giữ nguyên văn phòng cũ trên 7788; PID cũ thuộc tiến trình khác không bị dừng (test). Bản app dùng 7789 vì 7788 đã bận; ctl 7790 health 200. Chưa đăng xuất/khởi động lại Windows; đã kiểm lối tắt Startup và không có mục StartupApproved vô hiệu hóa.
 
+- CEO cho phép tiếp tục FORCE_OVERRIDE (02/11/2026): sửa giao diện từ ảnh lỗi prototype.html; pull rõ origin/claude/app-cai-dat thành công, đặt tracking cho nhánh local để lần sau pull được.
+- CLAIM_FIXED: UI-OVERVIEW -> 76da487 (public/prototype.html, prototype.css, prototype.js, index.html): bỏ repo/Phase/trạng thái và chuyển lượt giả; đọc workspace, lượt, Vùng [5], bàn giao, việc, nhật ký và tài khoản thật qua API hiện có; thanh đầu tự xuống hàng, 5 không gian dùng được, không hỏi GitHub token. Đã chọn repo văn phòng thật trong Controller, giữ workspace thử.
+- Kiểm UI: Edge thật tại 1920/1440/1280/1024/768/390px không tràn ngang/chồng thanh đầu, 0 lỗi JavaScript; đổi dự án rồi trả về repo chính, highlight đúng lượt, bàn giao rỗng, Gemini chưa xác minh, mất/kết nối lại ctl, bàn giao giả lập HTTP 409 không báo thành công giả. npm test 66/66; đã tải lại cửa sổ app Windows của CEO. Chưa push; NEXT_OWNER giữ CLAUDE_AUDITOR để thẩm định.
+
 ### [4.2] LƯU TRỮ PHASE ĐÃ XONG (tối đa 5 dòng, 1 dòng/Phase)
 - Phase 1: Hoàn tất đặc tả Vùng [2] và Interactive Prototype Chibi Edition (SPEC_ARCHITECT).
 - Phase 2–6: OS Controller (ctl/) + vá bảo mật P2 (CSRF, Kill-Switch thật, dữ liệu giả), PASS vòng 2/3, PR #1–#3, 55 test Linux + Windows (CLAUDE_AUDITOR, đặc cách ĐC-01..05).
