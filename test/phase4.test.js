@@ -49,10 +49,31 @@ test("chính sách lệnh: allow / approve / deny", () => {
     ["git", "branch", "-D", "x"], ["git", "-c", "core.sshCommand=evil", "fetch"], ["git", "pull"], ["npm", "install", "x"], ["npm", "publish"],
     ["node", "-e", "1"], ["git", "-C", "/", "status"], ["git", "-C/", "status"], ["git", "--git-dir=/x", "log"], ["git", "log", "--output=/tmp/x"], ["git", "diff", "--output", "/tmp/x"], ["gh", "pr", "merge", "1"], ["gh", "repo", "delete"], ["rm", "-rf", "/"], ["del", "/s", "C:\\"]])
     assert.strictEqual(d(a), "approve", a.join(" "));
-  for (const a of [["powershell", "-c", "x"], ["cmd.exe", "/c", "x"], ["bash", "-c", "x"], ["C:\\Windows\\System32\\cmd.exe"], ["python3", "x.py"], ["reg", "delete"]])
+  for (const a of [["powershell", "-c", "x"], ["cmd.exe", "/c", "x"], ["bash", "-c", "x"], ["C:\\Windows\\System32\\cmd.exe"], ["reg", "delete"]])
     assert.strictEqual(d(a), "deny", a.join(" "));
   assert.strictEqual(d([]), "deny");
   assert.strictEqual(d(["git", "a\0b"]), "deny");
+});
+
+// CEO quyết 02/11/2026: mở khóa script/test Python và các stack khác để chu trình chạy được trên mọi repo; vẫn chặn eval tự do.
+test("chính sách lệnh đa công nghệ: python/pytest/node/cargo/go", () => {
+  const d = (argv) => classify(argv).decision;
+  for (const a of [["python", "scripts/workflow_map.py", "check"], ["python3", "x.py"], ["py", "tools\\a.py", "-c", "đối số của script"], ["python", "-m", "pytest", "-q"],
+    ["python3.13", "-m", "unittest"], ["pytest", "tests"], ["node", "scripts/build.mjs"], ["cargo", "test"], ["go", "test", "./..."]])
+    assert.strictEqual(d(a), "allow", a.join(" "));
+  for (const a of [["python"], ["python", "-c", "import os"], ["python", "-ic", "x"], ["python", "-Ic", "x"], ["python", "-i", "x.py"], ["python", "--command=1"]])
+    assert.strictEqual(d(a), "deny", a.join(" "));
+  // Ngoài workspace, module lạ, cờ lạ, node -e: vẫn phải CEO duyệt.
+  for (const a of [["python", "../ngoai.py"], ["python", "C:\\ngoai\\x.py"], ["python", "\\\\may\\x.py"], ["python", "-m", "pip", "install", "x"], ["python", "-X", "utf8", "x.py"],
+    ["node", "../x.js"], ["node", "-e", "1"], ["cargo", "install", "x"], ["go", "run", "."]])
+    assert.strictEqual(d(a), "approve", a.join(" "));
+});
+
+test("resolveProgram nhận python bản Microsoft Store (App Execution Alias trong WindowsApps)", (t) => {
+  const alias = path.join(process.env.LOCALAPPDATA || "", "Microsoft", "WindowsApps", "python.exe");
+  if (process.platform !== "win32" || !fs.existsSync(path.dirname(alias)) || !(() => { try { fs.lstatSync(alias); return true; } catch { return false; } })()) return t.skip("máy không có python bản Store");
+  const { resolveProgram } = require("../ctl/policy");
+  assert.deepStrictEqual(resolveProgram("python", { PATH: path.dirname(alias), PATHEXT: ".EXE" }), [alias]);
 });
 
 test("đăng ký workspace: chặn ổ đĩa, thư mục người dùng, thư mục cấu hình ẩn, thư mục không có", async () => {

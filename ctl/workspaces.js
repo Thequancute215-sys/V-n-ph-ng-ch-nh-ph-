@@ -6,6 +6,14 @@ const path = require("path");
 const os = require("os");
 
 const MAX_READ = 2 * 1024 * 1024;
+const TEMPLATE = path.join(__dirname, "agent-template.md");
+// Nhận diện công nghệ theo file đánh dấu ở gốc repo (chỉ để điền Vùng [1]; Sol chốt Tech Stack thật ở Vùng [3]).
+const STACKS = [
+  [["package.json"], "Node.js / TypeScript"], [["pyproject.toml", "requirements.txt", "setup.py"], "Python"],
+  [["Cargo.toml"], "Rust"], [["go.mod"], "Go"], [["CMakeLists.txt", "Makefile"], "C/C++"],
+  [["pom.xml", "build.gradle", "build.gradle.kts"], "Java / Kotlin"],
+];
+const detectStack = (root) => STACKS.filter(([files]) => files.some((f) => fs.existsSync(path.join(root, f)))).map(([, name]) => name);
 const same = (a, b) => (process.platform === "win32" ? a.toLowerCase() === b.toLowerCase() : a === b);
 const inside = (root, p) => { const rel = path.relative(root, p); return rel === "" || (!rel.startsWith("..") && !path.isAbsolute(rel)); };
 const err = (code, msg) => Object.assign(new Error(msg), { code });
@@ -32,10 +40,23 @@ function createWorkspaces(db, audit) {
     // Windows không phân biệt hoa/thường và realpath giữ nguyên cách gõ: dùng lại đường dẫn đã lưu để không sinh 2 dòng cho 1 thư mục.
     const dup = q.all.all().find((w) => same(w.path, real));
     if (dup) real = dup.path;
+    const agentMd = initAgentMd(real, actor);
     q.add.run(real, path.basename(real), Date.now());
     audit.log(actor, "workspace.add", real);
     if (!active) active = real;
-    return list().find((w) => same(w.path, real));
+    return { ...list().find((w) => same(w.path, real)), agentMd };
+  }
+
+  // Repo mới chưa có giao thức: tạo agent.md v2.2 từ mẫu, lượt đầu cho CLAUDE_AUDITOR (CEO quyết 02/11/2026: mọi repo tự chạy chu trình).
+  // Không bao giờ ghi đè agent.md đã có (cờ "wx"). Không tự commit: lần "Duyệt chuyển lượt" đầu tiên sẽ commit cùng lượt.
+  function initAgentMd(root, actor) {
+    const f = path.join(root, "agent.md");
+    if (fs.existsSync(f)) return { created: false };
+    const stack = detectStack(root);
+    const text = fs.readFileSync(TEMPLATE, "utf8").split("{{TEN_DU_AN}}").join(path.basename(root)).split("{{CONG_NGHE}}").join(stack.join(", ") || "chưa nhận diện được");
+    try { fs.writeFileSync(f, text, { flag: "wx" }); } catch (e) { if (e.code === "EEXIST") return { created: false }; throw err("WRITE_FAILED", "Không tạo được agent.md: " + e.message); }
+    audit.log(actor, "workspace.init_agent_md", root, { stack });
+    return { created: true, stack };
   }
 
   function remove(p, actor = "ceo") {

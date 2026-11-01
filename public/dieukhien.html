@@ -84,18 +84,20 @@ pre{margin:8px 0 0;background:var(--panel2);border:1px solid var(--line);border-
     <h2>Lượt AI <em id="turnInfo"></em></h2>
     <div id="turnBox"><div class="skel"></div></div>
     <textarea id="aiTask" rows="3" placeholder="Việc giao thêm cho AI đang giữ lượt (không bắt buộc)" style="margin-top:10px"></textarea>
-    <div class="row" style="margin-top:8px"><button class="gold" id="aiRun" disabled>Chạy lượt</button></div>
+    <div class="row" style="margin-top:8px"><button class="gold" id="aiRun" disabled>Chạy lượt</button>
+      <label class="mono" style="display:flex;gap:6px;align-items:center;font-size:12px"><input type="checkbox" id="autoOn" style="width:auto"> Chế độ tự hành (tối đa <span id="autoMax">5</span> lượt)</label></div>
     <div class="msg" id="aiMsg"></div>
+    <div class="msg" id="autoBox"></div>
     <h2 style="margin-top:14px">Chờ duyệt chuyển lượt</h2>
     <div id="handoffs"></div>
-    <p class="note">AI xong lượt thì in dòng JSON bàn giao. Bấm "Duyệt chuyển lượt" thì ctl mới ghi agent.md và commit <span class="mono">chore(agent-sync)</span> trên máy này (không push). Không có AI nào tự gọi AI khác.</p>
+    <p class="note">AI xong lượt thì in dòng JSON bàn giao. Duyệt tay: bấm "Duyệt chuyển lượt" thì ctl mới ghi agent.md và commit <span class="mono">chore(agent-sync)</span> trên máy này (không push). Tự hành: ctl tự duyệt và chạy vai kế tiếp, dừng lại báo anh khi lượt lỗi, bàn giao sai, đủ số lượt, Codex sửa quá 2 lần, xung đột git, log lộ khóa, tới lượt Antigravity, hoặc Claude nghiệm thu xong. Phanh khẩn cấp dừng cả chu trình.</p>
   </section>
 
   <section class="panel full">
     <h2>Chạy lệnh <em>trong workspace đang chọn · không qua shell</em></h2>
     <div class="row"><input id="cmd" class="mono" placeholder='git status   ·   npm test   ·   git commit -m "sửa lỗi"'><button class="gold" id="cmdRun">Chạy</button></div>
     <div class="msg" id="cmdMsg"></div>
-    <p class="note">Danh sách cho phép (chạy ngay): git status/diff/log/add/commit/fetch/pull --ff-only…, npm test/ci/run, node --test, gh … list/view. Lệnh khác (git push, npm install, xóa file…) vào hàng <b class="y">chờ duyệt</b>. Shell (cmd, PowerShell, bash, python…) bị từ chối.</p>
+    <p class="note">Danh sách cho phép (chạy ngay): git status/diff/log/add/commit/fetch/pull --ff-only…, npm test/ci/run, node --test, node/python &lt;script trong workspace&gt;, pytest, python -m pytest/unittest, cargo/go test·build, gh … list/view. Lệnh khác (git push, npm install, xóa file…) vào hàng <b class="y">chờ duyệt</b>. Shell (cmd, PowerShell, bash…) và python -c / python không đối số bị từ chối.</p>
   </section>
 
   <section class="panel full">
@@ -212,9 +214,27 @@ async function loadTurn() {
     <tr><td class="z">Cập nhật cuối</td><td class="mono">${esc(s.turn.lastUpdatedBy || "–")}</td></tr>
     <tr><td class="z">Trạng thái</td><td>${s.aiBusy ? '<b class="y">Đang có lượt AI chạy</b>' : s.handoffPending ? '<b class="y">Chờ CEO duyệt hoặc từ chối bàn giao bên dưới</b>' : s.runnable ? '<span class="g">Sẵn sàng</span>' : '<span class="y">Vai này chưa có CLI chạy nền: giao qua Hòm thư</span>'}</td></tr></table>`;
   $("aiRun").disabled = s.aiBusy || !s.runnable;
-  $("aiRun").textContent = "Chạy lượt " + s.turn.nextOwner;
+  $("aiRun").textContent = (s.auto && s.auto.enabled ? "Giao việc, tự hành từ " : "Chạy lượt ") + s.turn.nextOwner;
   $("aiRun").dataset.role = s.turn.nextOwner;
+  showAuto(s.auto);
 }
+// Chu trình tự hành: anh chỉ theo dõi ở đây; dừng/ngắt mạch thì hiện lý do.
+function showAuto(a) {
+  if (!a) return;
+  $("autoOn").checked = a.enabled; $("autoMax").textContent = a.maxTurns;
+  const c = a.chain;
+  if (!c) return say("autoBox", a.enabled ? "Tự hành đang bật: bấm Giao việc để mở chu trình." : "");
+  const path = c.roles.join(" → ") || "–";
+  if (!c.stopped) return say("autoBox", `Chu trình đang chạy · lượt ${c.turns}/${a.maxTurns} · ${path}`, "y");
+  say("autoBox", `${c.stopped.finished ? "✔ Chu trình hoàn tất" : "■ Chu trình dừng"} sau ${c.turns} lượt (${path}): ${c.stopped.reason}`, c.stopped.finished ? "g" : "r");
+}
+$("autoOn").onchange = async () => {
+  const on = $("autoOn").checked;
+  if (on && !confirm("Bật CHẾ ĐỘ TỰ HÀNH cho mọi repo?\nBàn giao hợp lệ sẽ được ctl tự duyệt (commit agent.md) và tự chạy AI kế tiếp, tối đa " + $("autoMax").textContent + " lượt mỗi chu trình. Phanh khẩn cấp dừng được bất cứ lúc nào.")) { $("autoOn").checked = false; return; }
+  const r = await api("POST", "/settings", { autoDispatch: on });
+  say("aiMsg", r.ok ? (on ? "Đã bật tự hành." : "Đã tắt tự hành: bàn giao từ nay chờ duyệt tay.") : r.error, r.ok ? "g" : "r");
+  loadTurn();
+};
 $("aiRun").onclick = async () => {
   const role = $("aiRun").dataset.role;
   if (!confirm("Chạy lượt " + role + " trong " + active + "?\nAI sẽ đọc agent.md và làm việc trong thư mục này (tối đa 20–30 phút, dừng được bằng Phanh khẩn cấp).")) return;

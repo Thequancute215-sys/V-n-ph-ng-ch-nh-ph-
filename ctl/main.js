@@ -101,6 +101,8 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     ["GET", "/handoffs/:id", (p) => { const h = runner.get(p.id); if (!h) throw Object.assign(new Error("Chưa có bàn giao của " + p.id), { code: "NOT_FOUND" }); return { handoff: h }; }],
     ["POST", "/handoffs/:id/approve", (p) => ({ handoff: runner.approve(p.id, "ceo") })],
     ["POST", "/handoffs/:id/reject", (p) => ({ handoff: runner.reject(p.id, "ceo") })],
+    ["GET", "/settings", () => ({ settings: runner.settings() })],
+    ["POST", "/settings", (p, qs, b) => ({ settings: runner.setSettings(b, "ceo") })],
   ];
   const match = (pattern, pathname) => {
     const a = pattern.split("/"), b = pathname.split("/");
