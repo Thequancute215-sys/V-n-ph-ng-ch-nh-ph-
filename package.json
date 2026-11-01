@@ -9,6 +9,9 @@
     "vp": "node tools/vp.js",
     "ctl": "node ctl/main.js",
     "all": "node scripts/chay-tat-ca.js",
+    "app": "node scripts/mo-app.js",
+    "tat-app": "node scripts/tat-app.js",
+    "cai-app": "node scripts/cai-app.js",
     "test": "node --test test/*.test.js"
   },
   "engines": {

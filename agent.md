@@ -36,6 +36,7 @@
   - F8 (CEO Override & Smooth Room Zoom Navigation): Cơ chế phân việc ngoài lề cho phép Giám đốc chỉ định ngoại lệ (ví dụ cấp quyền code trực tiếp cho 6.1 Sol); kèm thanh điều hướng lướt phòng (Glide Focus), slider thu phóng và thao tác cuộn/di chuột êm dịu.
   - F9 (All-Hands Broadcast & Self-Assignment Dispatch): Phát loa toàn thể nhân viên khi CEO có task chưa biết giao ai; các AI tự động rà soát ai đang rảnh và phù hợp nhất, tự check chéo lẫn nhau rồi báo cáo đề xuất người nhận việc lên CEO duyệt 1-click.
   - F10 (Active Tasks Monitor & Emergency Kill Switch): Bảng nhắc nhở thời gian thực danh sách task/subagent đang chạy ngầm kèm thời lượng; cảnh báo task chạy quá lâu và cung cấp nút dừng từng task hoặc dừng tất cả để CEO kiểm soát tài nguyên máy tính.
+  - F11 (App trên máy, Phase 7): Bấm biểu tượng "Văn phòng AI" trên Desktop/Start Menu là tự bật văn phòng + OS Controller chạy ngầm và mở cửa sổ app riêng (Edge/Chrome chế độ app); cài được dạng PWA; tùy chọn tự bật khi đăng nhập Windows; văn phòng tắt thì app hiện trang hướng dẫn. Không thư viện ngoài, không lưu đệm dữ liệu.
 - Out-of-Scope: Không can thiệp mã nhị phân VS Code, không đẩy dữ liệu ra Internet công cộng.
 
 ### [2.2] LUỒNG NGƯỜI DÙNG ĐẦU-CUỐI (E2E USER FLOW)
@@ -108,7 +109,7 @@
   - [x] Phase 4 (Claude đã làm, PR #3): Workspace + đọc/ghi file + lệnh theo danh sách cho phép + duyệt từng lệnh. Nghiệm thu: test `..\..\Windows`, symlink ra ngoài, `git push --force` đều bị chặn hoặc chờ duyệt.
   - [x] Phase 5 (Claude đã làm, PR #3; đã chạy thật trên Windows: f91a6cf): Runner AI + nút chuyển lượt trên giao diện 3D. Nghiệm thu: 1 vòng thật Sol → Astra → Claude trên một repo thử, log đã mask, đo token/độ trễ thật ghi vào [4.1].
   - [x] Phase 6 (Claude đã soát trên Linux + Windows, PR #3): Thẩm định bảo mật tổng & đưa vào dùng hằng ngày.
-  - [ ] Phase 7: Vận hành hằng ngày. Việc mới đi theo vòng Spec [2] → Sol [3] → Astra → Claude nghiệm thu, chạy tự hành qua trang Điều khiển (OS Controller); CEO giao việc, theo dõi, phanh khi cần.
+  - [ ] Phase 7: Vận hành hằng ngày. F11 app trên máy: `public/manifest.webmanifest` + `sw.js` (chỉ giữ `offline.html`) + `app.js` (đăng ký SW, nút Cài app); `lib/app.js` + `scripts/mo-app.js` (bật ngầm, PID ở `~/.van-phong-ao/app.pid`, mở `--app=`), `tat-app.js`, `cai-app.js` (lối tắt qua WScript.Shell, đường dẫn truyền bằng biến môi trường). Nghiệm thu: Chromium báo 0 lỗi cài đặt (cả khi bật khóa xem); bật/tắt không để tiến trình mồ côi; văn phòng tắt hiện trang hướng dẫn rồi tự mở lại. Việc mới đi theo vòng Spec [2] → Sol [3] → Astra → Claude nghiệm thu, chạy tự hành qua OS Controller; CEO giao việc, theo dõi, trả lời câu hỏi của Claude, phanh khi cần.
 
 ## [4] KHÓA LƯỢT & NHẬT KÝ
 - CURRENT_PHASE: Phase 7 - Vận hành hằng ngày
@@ -125,18 +126,24 @@
 - Chu trình tự hành (CEO quyết 02/11/2026, PR #9): autoDispatch có ngắt mạch, tự sinh agent.md khi nạp repo, mở khóa Python/pytest/cargo/go; 63 test Windows. Bản đặc tả YEU-CAU-SUA-LOI-CLAUDE.md có 3 chỗ sai đã sửa khi làm (không ngắt mạch thật, mẫu agent.md ghi sai LAST_UPDATED_BY, cun-zoom thêm .cpp vào TEXT_SUFFIXES làm lệch CI Linux).
 - Đặc cách ĐC-11 (CEO, 02/11/2026: "toàn quyền, chu trình tự động hoàn toàn"): Claude cập nhật Vùng [3] sang Kiến trúc B, cho SPEC_ARCHITECT chạy nền qua agy, sửa đường dẫn agy trong ctl-agents.json máy CEO, đặt git identity toàn cục, sửa CRLF cun-zoom trên máy (.git/info/attributes, không đổi repo; check xanh 82 file).
 - CEO giao (02/11/2026): Claude kiểm soát tổng mọi repo dự án, phản biện AI khác, bắt sửa sau khi hỏi CEO qua phần theo dõi chu trình → thêm ask_ceo + POST /handoffs/:id/answer + nút phương án trên dieukhien.html; 65 test Windows.
+- Đặc cách ĐC-10 (CEO, 02/11/2026; commit message ghi nhầm ĐC-09, trùng số với PR #7 Hinata: "làm luôn đi, nghiệm thu bình thường, phát triển thành app"): Claude làm thay SPEC (F11 ở [2.1]) và ASTRA (code) trên nhánh claude/app-cai-dat. Chọn PWA + bộ khởi chạy thay Electron vì CLAUDE.md cấm thư viện ngoài.
+- CLAIM: F11 -> claude/app-cai-dat (npm test 63/63 Linux; Chromium: 0 lỗi cài đặt có/không khóa xem, 14 trang 0 lỗi console, bật/tắt sạch, trang hướng dẫn tự mở lại). CHƯA chạy trên Windows: lối tắt .lnk, cửa sổ Edge --app, tự khởi động.
+- CLAIM_FIXED: P7-H02, P7-M03, P7-M04 -> claude/app-cai-dat (lib/app.isAppProcess + officeHost, scripts/tat-app.js, scripts/mo-app.js, README; test fail khi bỏ bản sửa P7-H02; npm test 66/66).
 
 ### [4.2] LƯU TRỮ PHASE ĐÃ XONG (tối đa 5 dòng, 1 dòng/Phase)
 - Phase 1: Hoàn tất đặc tả Vùng [2] và Interactive Prototype Chibi Edition (SPEC_ARCHITECT).
 - Phase 2–6: OS Controller (ctl/) + vá bảo mật P2 (CSRF, Kill-Switch thật, dữ liệu giả), PASS vòng 2/3, PR #1–#3, 55 test Linux + Windows (CLAUDE_AUDITOR, đặc cách ĐC-01..05).
 
 ## [5] CHỐT CHẶN CLAUDE: KIỂM DUYỆT & BLOCKER (Chỉ CLAUDE_AUDITOR)
-- AUDIT_STATUS: PASS (đóng Phase 2–6; Phase 7 mở, không còn blocker chặn)
-- REVIEW_ROUND: 2/3 (Phase 7)
-- LAST_AUDITED_COMMIT: d7847ed
+- AUDIT_STATUS: PASS (F11 app trên máy + chu trình tự hành; không còn blocker)
+- REVIEW_ROUND: 2/3 (phạm vi F11; P2-M09 và P7-M01 mỗi phạm vi 1 vòng)
+- LAST_AUDITED_COMMIT: c00a001
 - Phản biện kiến trúc & chống over-engineering: CEO quyết chuyển từ Kiến trúc A (CEO duyệt từng lượt) sang Kiến trúc B tự hành (02/11/2026). Rủi ro còn lại đã nêu với CEO: một prompt injection trong README/issue/log có thể kéo chuỗi tối đa `maxTurns` lượt mà không ai xem từng bước. Giới hạn đang giữ: không shell tự do, AI không push/merge/release, mỗi chu trình ≤ 5 lượt, dừng khi log có chuỗi giống khóa hoặc bàn giao sai, Phanh khẩn cấp dừng cả cây tiến trình, mọi bước có nhật ký kiểm toán.
 - Nghiệm thu da30252 (ĐC-06, Claude làm thay rồi tự nghiệm thu, đã báo CEO): nén log đúng luật ([4.1] 3 dòng, [4.2] 2 dòng); tăng Phase hợp lệ (chỉ còn mục MEDIUM). P2-M09: Chromium thật bấm đủ 6 nhẫn giả + 10 vĩ thú × 6 nút trên characters.html, 0 lỗi console; văn phòng 3D 6 nhân vật đúng Vùng [2.3]; nhánh mặt bị xóa trong index.html là mã chết (khóa antigravity/sol/claude đã khớp nhánh hinata/itachi/sakura phía trên); npm test 55/55.
 - Blocker (chỉ CLAUDE_AUDITOR đổi [ ] OPEN thành [x] RESOLVED):
   - [x] RESOLVED P2-C01, C03, C04, C05, C06, H02, H07, M08 (chi tiết đã nén: xem commit e4bf8cb và [4.2] Phase 2–6).
   - [x] RESOLVED P2-M09 [MEDIUM - đội hình nhân vật]: characters.html, index.html, agent.md [2.1] F2, docs/SPEC-VUNG-2.md theo Vùng [2.3]; link cũ chuyển sang nhân vật mới (da30252).
   - [x] RESOLVED P7-M01 [MEDIUM - public/characters.html]: bố cục vỡ ở màn hình hẹp (d7847ed, ĐC-07, Claude làm thay rồi tự nghiệm thu). Đã kiểm bằng Chromium: đầu trang 1 hàng từ 1024px, 2 hàng ở 768/390px; không tràn ngang ở 390–1440px; khung 3D khớp khung chứa; 16 nhân vật × 6 nút không lỗi console ở 390 và 1440px; npm test 55/55. Ghi chú: nhãn "Xoay 360°" ẩn dưới 1536px (đè nhãn Meshy ở 1280px).
+  - [x] RESOLVED P7-H02 [HIGH - scripts/tat-app.js]: giết nhầm khi PID trong app.pid đã bị dùng lại → chỉ dừng khi dòng lệnh là scripts/chay-tat-ca.js (lib/app.isAppProcess), không thì xóa app.pid. Test fail khi bỏ bản sửa (c00a001). Windows: PowerShell đọc không được thì từ chối dừng (an toàn), chưa chạy thật trên Windows.
+  - [x] RESOLVED P7-M03 [MEDIUM - README]: câu chữ đúng với cửa sổ thu nhỏ của bộ khởi chạy (c00a001).
+  - [x] RESOLVED P7-M04 [MEDIUM - scripts/mo-app.js]: gọi văn phòng theo host trong config (lib/app.officeHost), đã chạy thật với host 0.0.0.0 (c00a001).
