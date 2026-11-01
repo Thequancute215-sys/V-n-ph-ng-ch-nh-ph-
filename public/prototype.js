@@ -15,6 +15,7 @@
   let loading = false, switching = false, controlError = "", stateError = "", accountError = "", source = null, streaming = false;
   let docText = null, docError = "", signatures = {}, lastRefresh = null, logSequence = 0;
   let githubRepos = [], githubPage = 0, githubHasMore = false, githubLoading = false, githubOpening = false;
+  let quotaData = null, quotaError = "";
   const setMarkup = (id, html) => { if (signatures[id] !== html) { $(id).innerHTML = html; signatures[id] = html; } };
   const badge = (text, kind = "") => `<span class="badge ${kind}">${esc(text)}</span>`;
   const avatar = (r) => `<div class="avatar-wrap" aria-hidden="true"><div class="chibi" style="--accent:${r.color}"><span>${r.symbol}</span></div></div>`;
@@ -74,6 +75,32 @@
       if (operation.hasAgent) $("githubDialog").close();
     } catch (e) { $("githubMessage").textContent = e.message; }
     finally { githubOpening = false; renderGitHub(); }
+  }
+
+  const pct = (v) => Number.isFinite(v) ? new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 }).format(v) + "%" : "Chưa có số liệu";
+  const dateTime = (v) => v && Number.isFinite(Date.parse(v)) ? new Date(v).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }) : "Chưa rõ";
+  const expired = (b) => b.resetAt && Date.parse(b.resetAt) <= Date.now();
+  const quotaStale = (p) => !!quotaError || p.status === "stale" || (p.lastSuccessAt && Date.now() - Date.parse(p.lastSuccessAt) > 3 * (quotaData?.intervalMs || 120000));
+  function renderQuotas() {
+    const providers = quotaData?.providers || [];
+    const alerts = [];
+    for (const p of providers) if (p.status === "ready" && !quotaStale(p)) for (const b of p.buckets) if (!expired(b) && b.usedPercent >= 80) alerts.push({ provider: p.name, bucket: b.label, used: b.usedPercent });
+    const empty = new Set(alerts.filter((a) => a.used >= 100).map((a) => a.provider));
+    $("quotaSummary").textContent = empty.size ? "Hạn mức · " + empty.size + " AI hết lượt" : alerts.length ? "Hạn mức · Gần hết" : "Hạn mức AI";
+    $("quotaSummary").className = empty.size ? "bad" : alerts.length ? "warn" : "";
+    $("quotaBoardNotice").hidden = !alerts.length;
+    $("quotaBoardNotice").textContent = alerts.map((a) => a.provider + ": " + a.bucket + " đã dùng " + pct(a.used)).join(" · ") + ". Xem Hạn mức & tài khoản để biết giờ đặt lại.";
+    $("quotas").setAttribute("aria-busy", String(!providers.length || providers.some((p) => p.refreshing)));
+    $("quotaRefresh").disabled = !controller || providers.some((p) => p.refreshing);
+    setMarkup("quotas", !providers.length ? `<div class="panel"><p class="muted">${esc(quotaError || "Đang đọc hạn mức từ CLI…")}</p></div>` : providers.map((p) => {
+      const old = quotaStale(p), known = p.status === "ready" && !old, busy = p.refreshing;
+      const status = busy ? "Đang cập nhật" : known ? "Đã đọc hạn mức" : old ? "Số liệu cũ" : p.status === "loading" ? "Đang tải" : "Chưa đọc được";
+      return `<article class="panel"><div class="entry-head"><h2>${esc(p.name)}</h2>${badge(status, known && !busy ? "good" : "warn")}</div>${p.error ? `<p class="error muted">${esc(p.error)}</p>` : ""}${p.buckets.length ? p.buckets.map((b) => {
+        const isOld = old || expired(b), kind = isOld ? "stale" : b.usedPercent >= 95 ? "bad" : b.usedPercent >= 80 ? "warn" : "";
+        return `<div class="quota-window ${kind}"><p class="muted">${esc(b.group)}</p><div class="entry-head"><strong>${esc(b.label)}</strong><strong class="remaining">Còn ${pct(b.remainingPercent)}</strong></div><progress max="100" value="${Math.max(0, Math.min(100, b.remainingPercent))}" aria-label="${esc(p.name + ' · ' + b.group + ' · ' + b.label + ': còn ' + pct(b.remainingPercent))}"></progress><p class="muted">Đã dùng ${pct(b.usedPercent)}${isOld ? " · Bản đọc cũ, chờ xác nhận" : b.usedPercent >= 100 ? " · Đã hết hạn mức này" : ""}</p><p class="muted">${expired(b) ? "Đã qua mốc đặt lại; đang chờ số liệu mới." : b.resetAt ? "Đặt lại lúc " + dateTime(b.resetAt) : b.resetLabel ? "Đặt lại: " + esc(b.resetLabel) : "Chưa có giờ đặt lại."}</p></div>`;
+      }).join("") : `<p class="muted">${busy || p.status === "loading" ? "Đang lấy số liệu từ tài khoản đã đăng nhập…" : "Không suy đoán hạn mức khi chưa có dữ liệu."}</p>`}<div class="quota-foot">${esc(p.source)}${p.plan ? " · Gói " + esc(p.plan) : ""}<br>Cập nhật thành công: ${dateTime(p.lastSuccessAt)}${p.resetCreditsAvailable != null ? "<br>Lượt đặt lại hạn mức sẵn có: " + esc(p.resetCreditsAvailable) : ""}${p.ordinaryUsageAllowed === false ? '<p class="error">Tài khoản hiện chưa được phép dùng hạn mức gói.</p>' : ""}<a href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">Xem tại nhà cung cấp ↗</a></div></article>`;
+    }).join(""));
+    $("quotaMessage").textContent = quotaError || "Tự kiểm tra tối đa mỗi 2 phút khi văn phòng đang mở; lỗi kết nối chờ ít nhất 5 phút. Giờ đặt lại theo múi giờ trên máy. Mốc đã qua cần số liệu mới để xác nhận.";
   }
 
   function setView(name) {
@@ -154,7 +181,9 @@
   function renderAccounts() {
     const defs = [["claude", "Claude Code · Sakura"], ["gpt", "GPT / Codex · Sasuke & Itachi"], ["gemini", "Antigravity · Hinata"]];
     setMarkup("accounts", defs.map(([key, name]) => {
-      const a = accounts?.[key], known = a && typeof a.connected === "boolean";
+      let a = accounts?.[key];
+      if (key === "gemini" && quotaData?.providers.some((p) => p.id === "antigravity" && p.status === "ready" && !quotaStale(p))) a = { ...a, connected: true, authMode: "Antigravity CLI đã xác thực và cung cấp hạn mức." };
+      const known = a && typeof a.connected === "boolean";
       return `<div class="panel"><h2>${name}</h2><div class="account-status">${badge(!a ? "Chưa có dữ liệu" : !known ? "Chưa xác minh được" : a.connected ? "Đã kết nối" : "Chưa kết nối", known && a.connected ? "good" : "")}</div><p class="muted">${esc(!a ? accountError || "Đang đọc trạng thái…" : a.authMode || "Văn phòng chưa đọc được trạng thái đăng nhập bên trong IDE Antigravity.")}</p>${a && Number.isInteger(a.sessionsCount) ? `<p class="muted">${a.sessionsCount} tệp phiên được phát hiện.</p>` : ""}</div>`;
     }).join(""));
   }
@@ -194,9 +223,10 @@
       request("/state").then((value) => { snapshot = value; stateError = ""; }).catch((e) => { snapshot = null; stateError = "Không đọc được văn phòng: " + e.message; }),
       loadControl().catch((e) => { controller = false; turn = null; blockerLines = null; jobs = []; handoffs = []; autoRuns = []; docText = null; docError = "Không đọc được biên bản khi Controller mất kết nối."; controlError = "Không đọc được điều phối: " + e.message; }),
       request("/api/accounts").then((value) => { accounts = value.accounts; accountError = ""; }).catch((e) => { accounts = null; accountError = "Không đọc được tài khoản: " + e.message; }),
+      request("/ctl/quotas").then((value) => { quotaData = value; quotaError = ""; }).catch((e) => { quotaError = "Chưa tải được hạn mức: " + e.message; }),
     ]);
     loading = false; $("refresh").disabled = false; lastRefresh = new Date();
-    renderProtocol(); renderOffice(); renderBoard(); renderAccounts();
+    renderProtocol(); renderOffice(); renderBoard(); renderQuotas(); renderAccounts();
     if (view === "transcript" && $("logJob").value) readLog();
   }
 
@@ -214,6 +244,12 @@
   document.querySelector(".tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-view]"); if (b) setView(b.dataset.view); });
   $("rooms").addEventListener("click", (e) => { const b = e.target.closest("[data-detail]"); if (b) { selected = b.dataset.detail; renderOffice(); if (matchMedia("(max-width:800px)").matches) $("detail").scrollIntoView({ block: "nearest" }); } });
   $("refresh").onclick = refresh;
+  $("quotaSummary").onclick = () => setView("account");
+  $("quotaRefresh").onclick = async () => {
+    $("quotaRefresh").disabled = true;
+    try { quotaData = await request("/ctl/quotas/refresh", {}); quotaError = ""; renderQuotas(); }
+    catch (e) { quotaError = e.message; renderQuotas(); }
+  };
   $("githubChoose").onclick = () => { $("githubDialog").showModal(); loadGitHub(); };
   $("githubClose").onclick = () => $("githubDialog").close();
   $("githubSearch").oninput = renderGitHub;
