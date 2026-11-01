@@ -120,7 +120,7 @@
 - CLAIM_FIXED: P2-M09 -> claude/dong-phase-m09 (ảnh chụp trình duyệt thật cả 6 nhân vật ở characters.html và văn phòng 3D; npm test xanh).
 - Đặc cách ĐC-07 (CEO, 01/11/2026): Claude sửa P7-M01 thay SPEC_ARCHITECT. public/characters.html: đầu trang xuống hàng + nhãn nút ngắn dưới 1940px (đo: nhãn đầy đủ cần ≈1940px), dưới 1024px xếp 1 cột (khung 3D → dải nhân vật cuộn ngang → hồ sơ), khung 3D đổi cỡ theo khung chứa (ResizeObserver).
 - CLAIM_FIXED: P7-M01 -> claude/p7-m01 (ảnh chụp 1960/1440/1280/1024/768/390px; không tràn ngang; 16 nhân vật × 6 nút ở 390 và 1440px không lỗi console; npm test 55/55).
-- Đặc cách ĐC-09 (CEO, 02/11/2026: "làm luôn đi, nghiệm thu bình thường, phát triển thành app"): Claude làm thay SPEC (F11 ở [2.1]) và ASTRA (code) trên nhánh claude/app-cai-dat. Chọn PWA + bộ khởi chạy thay Electron vì CLAUDE.md cấm thư viện ngoài.
+- Đặc cách ĐC-10 (CEO, 02/11/2026; commit message ghi nhầm ĐC-09, trùng số với PR #7 Hinata: "làm luôn đi, nghiệm thu bình thường, phát triển thành app"): Claude làm thay SPEC (F11 ở [2.1]) và ASTRA (code) trên nhánh claude/app-cai-dat. Chọn PWA + bộ khởi chạy thay Electron vì CLAUDE.md cấm thư viện ngoài.
 - CLAIM: F11 -> claude/app-cai-dat (npm test 63/63 Linux; Chromium: 0 lỗi cài đặt có/không khóa xem, 14 trang 0 lỗi console, bật/tắt sạch, trang hướng dẫn tự mở lại). CHƯA chạy trên Windows: lối tắt .lnk, cửa sổ Edge --app, tự khởi động.
 - CLAIM_FIXED: P7-H02, P7-M03, P7-M04 -> claude/app-cai-dat (lib/app.isAppProcess + officeHost, scripts/tat-app.js, scripts/mo-app.js, README; test fail khi bỏ bản sửa P7-H02; npm test 66/66).
 
