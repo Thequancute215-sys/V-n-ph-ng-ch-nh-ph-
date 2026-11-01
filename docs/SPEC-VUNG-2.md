@@ -79,10 +79,11 @@ flowchart TD
 | Nhân sự / AI Engine | Vai trò Protocol v2.2 | Vùng phụ trách | Ngoại hình 3D (Naruto Shippuden) & Hào quang Chakra |
 |---|---|---|---|
 | **Thế Quân CEO** | `CHỦ TỊCH / CEO` | Toàn quyền | **Naruto Uzumaki (Hokage Đệ Thất 80px):** Áo choàng trắng lửa đỏ, tóc gai vàng, Rasengan xoay tít, Hào quang Kurama Chakra vàng kim rực lửa |
-| **Antigravity (Gemini 3.8)** | `SPEC_ARCHITECT & UIUX` | Vùng [2] | **Kakashi Hatake (Hokage Đệ Lục 72px):** Tóc bạc nhọn, mặt nạ đen, Sharingan đỏ thẫm 3 phẩy, Tử Điện Raikiri sét tím phát quang |
-| **GPT 6.1 Sol** | `SOL_ARCHITECT_PLANNER` | Vùng [3] | **Shikamaru Nara (Quân sư IQ 200 72px):** Tóc quả dứa, thế tay suy nghĩ, Trận đồ Kagemane bóng râm, khi có CEO Override bật Hiền Nhân Thuật Sage Mode |
+| **Pain Thiên Đạo** | `TỔNG QUẢN LÝ` | Tiến độ & tải máy | **Pain Thiên Đạo Yahiko (72px):** Tóc cam dựng ngược, Rinnegan tím xám, 16 khuyên đen, áo choàng Akatsuki mây đỏ, vòng Thần La Thiên Chinh |
+| **Antigravity (Gemini 3.8)** | `SPEC_ARCHITECT & UIUX` | Vùng [2] | **Hinata Hyuga (Thư Ký Trợ Lý 72px):** Tóc dài thẳng xanh tím than mái bằng, Bạch Nhãn tím trắng, áo khoác trắng tím, Song Sư Quyền Chakra xanh lam |
+| **GPT 6.1 Sol** | `SOL_ARCHITECT_PLANNER` | Vùng [3] | **Itachi Uchiha (Quân Sư Chiến Lược 72px):** Tóc đen buộc đuôi thấp, Mangekyo Sharingan, rãnh lệ 35°, áo choàng Akatsuki, băng trán gạch ngang, bầy quạ; khi có CEO Override thì được code |
 | **Codex Astra** | `CODEX_ASTRA_DEV` | Vùng [3] & [4.1] | **Sasuke Uchiha (Thiên tài Nhẫn Giả 72px):** Tóc xanh đen chẻ ngôi, kiếm Kusanagi sau lưng, Rinnegan tím & Thiên Điểu Chidori xanh lam chớp giật |
-| **Claude Captain** | `CLAUDE_AUDITOR` | Vùng [5] | **Gaara Sa Mạc (Kazekage Đệ Ngũ 72px):** Tóc đỏ, chữ "Ái" trên trán, Hồ lô cát khổng lồ sau lưng, Khiên Cát Tuyệt Đối (Zero-Leak Defense) |
+| **Claude Captain** | `CLAUDE_AUDITOR` | Vùng [5] | **Sakura Haruno (Chốt Chặn Kiểm Duyệt 72px):** Tóc hồng ngang cằm, Ấn Bách Hào tím trên trán, áo đỏ cổ đứng, Y thuật Chakra xanh lục (Zero-Leak) |
 | **10 Vĩ Thú Subagents** | `Subagents vệ tinh` | Nhiệm vụ chuyên sâu | **Nhất Vĩ Shukaku** (Research), **Nhị Vĩ Matatabi** (UI Gen), **Tam Vĩ Isobu** (Test), **Tứ Vĩ Son Goku** (DB), **Ngũ Vĩ Kokuo** (Network), **Lục Vĩ Saiken** (Cache), **Thất Vĩ Chomei** (Images), **Bát Vĩ Gyuki** (Security), **Cửu Vĩ Kurama** (Cố vấn CEO), **Thập Vĩ Juubi** (Hội Chẩn Ban) |
 
 ### 2. Luồng Hội Chẩn Ban Tổng Thể (Master Revision Flow)

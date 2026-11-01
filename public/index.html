@@ -1244,52 +1244,6 @@ function makeFaceTexture(type) {
     ctx.strokeStyle = "#78350f"; ctx.lineWidth = 5;
     ctx.beginPath(); ctx.arc(256, 365, 32, 0.15, Math.PI - 0.15); ctx.stroke();
 
-  } else if (type === "kakashi" || type === "antigravity") {
-    ctx.fillStyle = "#1e293b";
-    ctx.beginPath(); ctx.moveTo(0, 270); ctx.quadraticCurveTo(256, 290, 512, 270); ctx.lineTo(512, 512); ctx.lineTo(0, 512); ctx.fill();
-    ctx.strokeStyle = "#0f172a"; ctx.lineWidth = 4; ctx.stroke();
-
-    ctx.fillStyle = "#ffffff";
-    ctx.beginPath(); ctx.ellipse(345, 235, 38, 28, 0, 0, Math.PI*2); ctx.fill();
-    ctx.strokeStyle = "#1e293b"; ctx.lineWidth = 4; ctx.stroke();
-    ctx.fillStyle = "#1e293b";
-    ctx.beginPath(); ctx.arc(345, 235, 14, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = "#ffffff";
-    ctx.beginPath(); ctx.arc(340, 230, 4, 0, Math.PI*2); ctx.fill();
-    ctx.strokeStyle = "#0f172a"; ctx.lineWidth = 6;
-    ctx.beginPath(); ctx.arc(345, 230, 40, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke();
-
-    ctx.strokeStyle = "rgba(185, 28, 28, 0.6)"; ctx.lineWidth = 4;
-    ctx.beginPath(); ctx.moveTo(165, 150); ctx.lineTo(165, 300); ctx.stroke();
-
-    ctx.fillStyle = "#ffffff";
-    ctx.beginPath(); ctx.ellipse(165, 235, 38, 30, 0, 0, Math.PI*2); ctx.fill();
-    ctx.strokeStyle = "#0f172a"; ctx.lineWidth = 4; ctx.stroke();
-    ctx.fillStyle = "#dc2626";
-    ctx.beginPath(); ctx.arc(165, 235, 26, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = "#0f172a";
-    ctx.beginPath(); ctx.arc(165, 235, 8, 0, Math.PI*2); ctx.fill();
-    for (let i = 0; i < 3; i++) {
-      const a = (i / 3) * Math.PI * 2;
-      ctx.beginPath(); ctx.arc(165 + Math.cos(a)*16, 235 + Math.sin(a)*16, 4, 0, Math.PI*2); ctx.fill();
-    }
-
-  } else if (type === "shikamaru" || type === "sol") {
-    for (const sx of [170, 342]) {
-      const dir = sx < 256 ? 1 : -1;
-      ctx.fillStyle = "#ffffff";
-      ctx.beginPath(); ctx.ellipse(sx, 245, 38, 26, dir * -0.1, 0, Math.PI*2); ctx.fill();
-      ctx.strokeStyle = "#1e293b"; ctx.lineWidth = 4; ctx.stroke();
-      ctx.fillStyle = "#78350f";
-      ctx.beginPath(); ctx.arc(sx, 245, 15, 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle = "#0f172a";
-      ctx.beginPath(); ctx.arc(sx, 245, 8, 0, Math.PI*2); ctx.fill();
-      ctx.strokeStyle = "#1c1917"; ctx.lineWidth = 7;
-      ctx.beginPath(); ctx.moveTo(sx - 44*dir, 195); ctx.lineTo(sx + 35*dir, 180); ctx.stroke();
-    }
-    ctx.strokeStyle = "#78350f"; ctx.lineWidth = 4;
-    ctx.beginPath(); ctx.moveTo(226, 360); ctx.lineTo(286, 360); ctx.stroke();
-
   } else if (type === "sasuke" || type === "codex") {
     ctx.fillStyle = "#ffffff";
     ctx.beginPath(); ctx.ellipse(345, 240, 42, 30, 0, 0, Math.PI*2); ctx.fill();
@@ -1321,24 +1275,6 @@ function makeFaceTexture(type) {
     ctx.strokeStyle = "#be123c"; ctx.lineWidth = 3.5;
     ctx.beginPath(); ctx.moveTo(236, 355); ctx.lineTo(276, 355); ctx.stroke();
 
-  } else if (type === "gaara" || type === "claude") {
-    ctx.fillStyle = "#dc2626";
-    ctx.font = "bold 56px 'Microsoft YaHei', 'Meiryo', 'MS Gothic', 'SimSun', sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("愛", 170, 180);
-
-    for (const sx of [170, 342]) {
-      ctx.fillStyle = "#0f172a";
-      ctx.beginPath(); ctx.ellipse(sx, 245, 46, 34, 0, 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle = "#f8fafc";
-      ctx.beginPath(); ctx.ellipse(sx, 245, 36, 24, 0, 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle = "#0d9488";
-      ctx.beginPath(); ctx.arc(sx, 245, 14, 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle = "#134e4a";
-      ctx.beginPath(); ctx.arc(sx, 245, 6, 0, Math.PI*2); ctx.fill();
-    }
-    ctx.strokeStyle = "#7c2d12"; ctx.lineWidth = 4;
-    ctx.beginPath(); ctx.moveTo(230, 365); ctx.lineTo(282, 365); ctx.stroke();
   }
 
   const tex = new THREE.CanvasTexture(c);
@@ -1408,16 +1344,17 @@ function makeBot(a) {
   // Body Outfit & Anatomy (Meshy.ai Nendoroid Figurine Proportions)
   let outfitColor = col;
   if (a.key === "ceo") outfitColor = 0x18181b; // Inner black shirt with Hokage Haori!
-  else if (a.key === "antigravity" || a.key === "sol") outfitColor = 0x166534; // Konoha Green Flak Jacket
+  else if (a.key === "antigravity") outfitColor = 0xe9e3f5; // Hinata: áo khoác trắng tím oải hương
+  else if (a.key === "sol" || a.key === "pain") outfitColor = 0x18181b; // Itachi / Pain: áo đen dưới áo choàng Akatsuki
   else if (a.key === "codex") outfitColor = 0xe2e8f0; // Sasuke open chest shirt
-  else if (a.key === "claude") outfitColor = 0x7c2d12; // Gaara Sand brown coat
+  else if (a.key === "claude") outfitColor = 0xdc2626; // Sakura: áo đỏ cổ đứng
 
   // 1. Tapered Torso & Pelvis
   const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.70, 0.54, 0.82, 18), std(outfitColor, { roughness: 0.4 }));
   chest.position.y = 1.95; g.add(chest);
   const body = chest;
 
-  const pantsColor = a.key === "ceo" ? 0xea580c : (a.key === "codex" ? 0x1e1b4b : (a.key === "claude" ? 0x7c2d12 : 0x1e293b));
+  const pantsColor = a.key === "ceo" ? 0xea580c : (a.key === "codex" || a.key === "antigravity" ? 0x1e1b4b : (a.key === "claude" || a.key === "sol" || a.key === "pain" ? 0x18181b : 0x1e293b));
   const pelvis = new THREE.Mesh(new THREE.SphereGeometry(0.55, 16, 12), std(pantsColor, { roughness: 0.45 }));
   pelvis.position.y = 1.45; pelvis.scale.set(1, 0.72, 0.9); g.add(pelvis);
 
@@ -1464,26 +1401,23 @@ function makeBot(a) {
   head.rotation.y = -Math.PI / 2; // Face texture (u=0.5) faces front toward camera (+Z)
   g.add(head);
 
-  // Forehead Protector: ONLY for Naruto and Kakashi in Shippuden
+  // Băng trán theo agent.md Vùng [2.3]: Naruto và Itachi (vết gạch ninja đào tẩu) đeo trên trán, Hinata đeo quanh cổ.
+  // Pain có băng Làng Mưa riêng ở nhánh của Pain bên dưới.
   const plateMat = new THREE.MeshStandardMaterial({ map: gHeadbandTex, metalness: 0.7, roughness: 0.2 });
-  if (a.key === "ceo" || a.key === "antigravity") {
-    const bandMat = std(0x0f172a, { roughness: 0.4 });
-    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.91, 0.91, 0.28, 32, 1, true), bandMat);
-    band.position.y = 3.42;
-    if (a.key === "antigravity") band.rotation.z = -0.32; // Kakashi tilted!
-    g.add(band);
-
+  if (a.key === "ceo" || a.key === "sol") {
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.91, 0.91, 0.28, 32, 1, true), std(0x0f172a, { roughness: 0.4 }));
+    band.position.y = 3.42; g.add(band);
     const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.56, 0.26), plateMat);
-    plate.position.set(0, 3.42, 0.9);
-    if (a.key === "antigravity") {
-      plate.rotation.z = -0.32;
-      plate.position.set(-0.1, 3.42, 0.9);
+    plate.position.set(0, 3.42, 0.9); g.add(plate);
+    if (a.key === "sol") {
+      const slash = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.035, 0.01), new THREE.MeshBasicMaterial({ color: 0x0f172a }));
+      slash.position.set(0, 3.42, 0.91); g.add(slash);
     }
-    g.add(plate);
-  } else if (a.key === "sol") {
-    // Shikamaru arm plate
-    const armPlate = new THREE.Mesh(new THREE.PlaneGeometry(0.36, 0.2), plateMat);
-    armPlate.position.set(0.95, 1.85, 0); armPlate.rotation.y = Math.PI / 2; g.add(armPlate);
+  } else if (a.key === "antigravity") {
+    const neckBand = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.2, 32, 1, true), std(0x1e293b, { roughness: 0.5 }));
+    neckBand.position.y = 2.42; g.add(neckBand);
+    const neckPlate = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.19), plateMat);
+    neckPlate.position.set(0, 2.42, 0.62); g.add(neckPlate);
   }
 
   // Specific Shinobi Hair, Costumes & Signatures (Full 6 Members)
@@ -1690,18 +1624,6 @@ function makeBot(a) {
     const rightArm = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.48, 4, 10), skinMat);
     rightArm.position.set(0.85, 1.8, 0.35); rightArm.rotation.set(-0.45, 0, -0.2);
     g.add(rightArm); arms.push(rightArm);
-  } else if (a.key === "sol") {
-    // Both arms bent in front of chest forming Nara shadow thinking pose
-    const leftArm = new THREE.Mesh(new THREE.CapsuleGeometry(0.15, 0.42, 4, 10), std(outfitColor));
-    leftArm.position.set(-0.52, 1.85, 0.35); leftArm.rotation.set(-0.5, 0, 0.7);
-    g.add(leftArm); arms.push(leftArm);
-
-    const rightArm = new THREE.Mesh(new THREE.CapsuleGeometry(0.15, 0.42, 4, 10), std(outfitColor));
-    rightArm.position.set(0.52, 1.85, 0.35); rightArm.rotation.set(-0.5, 0, -0.7);
-    g.add(rightArm); arms.push(rightArm);
-
-    const hands = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), skinMat);
-    hands.position.set(0, 1.85, 0.55); g.add(hands);
   } else {
     for (const sx of [-1, 1]) {
       const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.16, 0.48, 4, 10), skinMat);

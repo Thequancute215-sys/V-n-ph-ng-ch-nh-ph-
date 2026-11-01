@@ -27,7 +27,7 @@
 - Chỉ số thành công: 100% không cần mở tay file agent.md; 1-click phê duyệt chuyển lượt; chuyển đổi giữa các repo GitHub linh hoạt trong < 500ms; phát hiện phiên Antigravity cục bộ qua native node:sqlite trong < 2 giây.
 - Phạm vi MVP (F1..F7):
   - F1 (GitHub Repo Switcher): Liệt kê danh sách repo đã tạo trên GitHub, chuyển workspace hoặc clone về máy trong 1 click.
-  - F2 (Naruto Shippuden & 10 Vĩ Thú): 5 Nhẫn giả AI chủ lực (Thế Quân CEO Naruto 80px, Antigravity Kakashi 72px, Sol Shikamaru 72px, Codex Sasuke 72px, Claude Gaara 72px) cùng 10 Vĩ Thú Subagents từ Nhất Vĩ Shukaku đến Thập Vĩ Juubi với hiệu ứng hào quang Chakra tỏa sáng bốc khói rực rỡ quanh nhân vật.
+  - F2 (Naruto Shippuden & 10 Vĩ Thú): 6 Nhẫn giả chủ lực theo Vùng [2.3] (Thế Quân CEO Naruto 80px, Pain Thiên Đạo 72px, Antigravity Hinata 72px, Sol Itachi 72px, Codex Sasuke 72px, Claude Sakura 72px) cùng 10 Vĩ Thú Subagents từ Nhất Vĩ Shukaku đến Thập Vĩ Juubi với hiệu ứng hào quang Chakra tỏa sáng bốc khói rực rỡ quanh nhân vật.
   - F3 (Antigravity & Subagents Hierarchy): Module đọc SQLite cục bộ nhận diện phiên cha và vệ tinh (research, generative_ui).
   - F4 (Hội Chẩn Ban Tổng Thể): Phòng họp bàn tròn xuất tài liệu đồng thuận data/HOI-CHAN-TONG-THE.md từ cả 4 AI.
   - F5 (Cơ Chế Đề Xuất Chuyển Lượt Tự Động 1-Click): Pop-up đề xuất khi xong Vùng, Giám đốc bấm duyệt là tự động cập nhật Vùng [4] và commit chore(agent-sync).
@@ -101,31 +101,26 @@
   - Ước tính chi phí mỗi lượt: 30–150 nghìn token, 3–20 phút (cần đo thật ở Phase 5). Chạy bằng gói thuê bao cá nhân (OAuth sẵn có), không dùng API key nếu không cần.
 - Lộ trình Phase (mỗi Phase có điều kiện nghiệm thu đo được):
   - [x] Phase 1: Đặc tả Sản phẩm & Thiết kế UI/UX (Antigravity).
-  - [ ] Phase 2 (Claude đã làm, PR #1): Vá lỗi nền tảng + chốt kiến trúc. Nghiệm thu: `npm test` xanh; POST từ Origin lạ / text/plain / Host lạ → 403; không còn dữ liệu giả, email cứng.
-  - [ ] Phase 3 (Claude đã làm, PR #2): `ctl/` lõi: sổ tiến trình, Kill-Switch, giám sát CPU/RAM, nhật ký kiểm toán. Nghiệm thu: dừng cây 3 tiến trình < 2s trên Windows; job quá timeout tự `timeout`; thiếu token → 401.
-  - [ ] Phase 4 (Claude đã làm, PR #3): Workspace + đọc/ghi file + lệnh theo danh sách cho phép + duyệt từng lệnh. Nghiệm thu: test `..\..\Windows`, symlink ra ngoài, `git push --force` đều bị chặn hoặc chờ duyệt.
-  - [ ] Phase 5 (Claude đã làm, PR #3; đã chạy thật trên Windows: f91a6cf): Runner AI + nút chuyển lượt trên giao diện 3D. Nghiệm thu: 1 vòng thật Sol → Astra → Claude trên một repo thử, log đã mask, đo token/độ trễ thật ghi vào [4.1].
-  - [ ] Phase 6 (Claude đã soát trên Linux + Windows, PR #3): Thẩm định bảo mật tổng & đưa vào dùng hằng ngày.
+  - [x] Phase 2 (Claude đã làm, PR #1): Vá lỗi nền tảng + chốt kiến trúc. Nghiệm thu: `npm test` xanh; POST từ Origin lạ / text/plain / Host lạ → 403; không còn dữ liệu giả, email cứng.
+  - [x] Phase 3 (Claude đã làm, PR #2): `ctl/` lõi: sổ tiến trình, Kill-Switch, giám sát CPU/RAM, nhật ký kiểm toán. Nghiệm thu: dừng cây 3 tiến trình < 2s trên Windows; job quá timeout tự `timeout`; thiếu token → 401.
+  - [x] Phase 4 (Claude đã làm, PR #3): Workspace + đọc/ghi file + lệnh theo danh sách cho phép + duyệt từng lệnh. Nghiệm thu: test `..\..\Windows`, symlink ra ngoài, `git push --force` đều bị chặn hoặc chờ duyệt.
+  - [x] Phase 5 (Claude đã làm, PR #3; đã chạy thật trên Windows: f91a6cf): Runner AI + nút chuyển lượt trên giao diện 3D. Nghiệm thu: 1 vòng thật Sol → Astra → Claude trên một repo thử, log đã mask, đo token/độ trễ thật ghi vào [4.1].
+  - [x] Phase 6 (Claude đã soát trên Linux + Windows, PR #3): Thẩm định bảo mật tổng & đưa vào dùng hằng ngày.
+  - [ ] Phase 7: Vận hành hằng ngày. Việc mới đi theo vòng Spec [2] → Sol [3] → Astra → Claude nghiệm thu, chạy lượt AI qua trang Điều khiển (OS Controller).
 
 ## [4] KHÓA LƯỢT & NHẬT KÝ
-- CURRENT_PHASE: Phase 2 - Vá lỗi nền tảng & Chốt kiến trúc OS Controller
-- LAST_UPDATED_BY: CLAUDE_AUDITOR
-- NEXT_OWNER (MUTEX LOCK): CODEX_ASTRA_DEV
+- CURRENT_PHASE: Phase 7 - Vận hành hằng ngày
+- LAST_UPDATED_BY: CODEX_ASTRA_DEV (Claude làm thay theo ĐC-06)
+- NEXT_OWNER (MUTEX LOCK): CLAUDE_AUDITOR
 
 ### [4.1] NHẬT KÝ PHASE HIỆN TẠI (tối đa 25 dòng)
-- Đặc cách CEO (01/11/2026): ĐC-01 Claude nhận lượt ghi agent.md; ĐC-02 Claude sửa code thay Astra cho P2-C03/C04/C05; ĐC-03 Claude soạn nháp Vùng [3].
-- File đã sửa (nhánh claude/va-loi-p2): server.js, public/index.html, lib/guard.js, lib/proc.js, lib/keys.js, test/*.test.js, package.json (thêm `npm test`).
-- CLAIM_FIXED: P2-C03, P2-C04, P2-C05, P2-C06 -> nhánh claude/va-loi-p2 (chờ Sol đọc chéo vì người sửa cũng là người nghiệm thu).
-- Đặc cách ĐC-04 (01/11/2026): Claude dựng ctl/ Phase 3 trên nhánh claude/ctl-phase3 (tách từ claude/va-loi-p2): ctl/main.js, db.js, jobs.js, audit.js, monitor.js, lib/mask.js, test/ctl.test.js; `npm run ctl`. 25/25 test đạt trên Linux, CHƯA chạy trên Windows.
-- Giới hạn Phase 3 đã biết: giám sát từng việc chỉ tính tiến trình gốc; Windows hỏi PowerShell mỗi 5s; chưa nối vào giao diện 3D (để Phase 5); chưa có route chạy lệnh (để Phase 4).
-- Đặc cách ĐC-05 (01/11/2026): Claude làm trọn app (Phase 4–6) trên nhánh claude/ctl-hoan-chinh: ctl/policy.js, workspaces.js, files.js, runner.js, handoff.js, lib/ctlbridge.js, public/dieukhien.html, scripts/chay-tat-ca.js (`npm run all`), README. 38/38 test + chạy thật đầu-cuối qua văn phòng đạt trên Linux.
-- Tự soát Phase 6 đã vá: git -C/--output thoát workspace; DNS rebinding với GET (guard.checkHost cho mọi yêu cầu); spam auth.fail. Còn lại đã biết: CLI flag của claude/codex cần kiểm chứng trên máy thật; xem file .env trong workspace sẽ hiện khóa (máy CEO, không qua mạng).
-- PR #1, #2 đã merge vào main (CEO). Claude Code trên Windows 11 (f91a6cf, 42/42 test): vá chờ exit khi taskkill, tắt ctl qua IPC trong `npm run all`, điều kiện chặn ~/.ssh ~/.claude bị viết ngược (lỗ hổng đọc file khóa), trùng workspace do hoa/thường, chặn chạy lượt AI kế khi bàn giao chưa duyệt (409 HANDOFF_PENDING). Claude (Codespace) đọc chéo f91a6cf: đạt, 42/42 trên Linux.
-- Vòng 2 (claude/ctl-hoan-chinh): merge main; P2-H02 tên nhân vật trong server.js theo Vùng [2.3]; P2-M08 thoát HTML ở index.html; P2-H07 sửa mau/BAI-HOC.md + 4 bài học mới; thêm test/html.test.js (importmap + cú pháp mọi trang).
-- Việc cho CODEX_ASTRA_DEV: Phase 2–6 được phép đóng: nén [4.1] thành 1 dòng ở [4.2], tăng CURRENT_PHASE sang "Phase 7 - Vận hành hằng ngày". Không sửa code.
+- Đặc cách ĐC-06 (CEO, 01/11/2026): Claude làm thay việc đóng Phase của CODEX_ASTRA_DEV và P2-M09 của SPEC_ARCHITECT, sau đó nghiệm thu như bình thường.
+- File đã sửa (nhánh claude/dong-phase-m09): agent.md ([2.1] F2, [3] lộ trình, [4]), docs/SPEC-VUNG-2.md (bảng nhân vật), public/characters.html (hồ sơ + mô hình 3D Hinata, Itachi, Sakura, Pain; link cũ chuyển sang nhân vật mới; bỏ mô hình Kakashi/Shikamaru/Gaara), public/index.html (bỏ băng trán Kakashi, tấm tay Shikamaru, áo Gaara còn sót; Hinata đeo băng cổ, Itachi băng trán gạch, màu áo theo [2.3]).
+- CLAIM_FIXED: P2-M09 -> claude/dong-phase-m09 (ảnh chụp trình duyệt thật cả 6 nhân vật ở characters.html và văn phòng 3D; npm test xanh).
 
 ### [4.2] LƯU TRỮ PHASE ĐÃ XONG (tối đa 5 dòng, 1 dòng/Phase)
 - Phase 1: Hoàn tất đặc tả Vùng [2] và Interactive Prototype Chibi Edition (SPEC_ARCHITECT).
+- Phase 2–6: OS Controller (ctl/) + vá bảo mật P2 (CSRF, Kill-Switch thật, dữ liệu giả), PASS vòng 2/3, PR #1–#3, 55 test Linux + Windows (CLAUDE_AUDITOR, đặc cách ĐC-01..05).
 
 ## [5] CHỐT CHẶN CLAUDE: KIỂM DUYỆT & BLOCKER (Chỉ CLAUDE_AUDITOR)
 - AUDIT_STATUS: PASS (Phase 2–6, OS Controller). Phase 2–6 được phép đóng.
