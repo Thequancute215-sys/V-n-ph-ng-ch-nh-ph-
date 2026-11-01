@@ -111,8 +111,8 @@
 
 ## [4] KHÓA LƯỢT & NHẬT KÝ
 - CURRENT_PHASE: Phase 7 - Vận hành hằng ngày
-- LAST_UPDATED_BY: CODEX_ASTRA_DEV (Claude làm thay theo ĐC-09)
-- NEXT_OWNER (MUTEX LOCK): CLAUDE_AUDITOR
+- LAST_UPDATED_BY: CLAUDE_AUDITOR
+- NEXT_OWNER (MUTEX LOCK): CODEX_ASTRA_DEV
 
 ### [4.1] NHẬT KÝ PHASE HIỆN TẠI (tối đa 25 dòng)
 - Đặc cách ĐC-06 (CEO, 01/11/2026): Claude làm thay việc đóng Phase của CODEX_ASTRA_DEV và P2-M09 của SPEC_ARCHITECT, sau đó nghiệm thu như bình thường.
@@ -128,12 +128,15 @@
 - Phase 2–6: OS Controller (ctl/) + vá bảo mật P2 (CSRF, Kill-Switch thật, dữ liệu giả), PASS vòng 2/3, PR #1–#3, 55 test Linux + Windows (CLAUDE_AUDITOR, đặc cách ĐC-01..05).
 
 ## [5] CHỐT CHẶN CLAUDE: KIỂM DUYỆT & BLOCKER (Chỉ CLAUDE_AUDITOR)
-- AUDIT_STATUS: PASS (đóng Phase 2–6; Phase 7 mở, không còn blocker chặn)
-- REVIEW_ROUND: 2/3 (Phase 7)
-- LAST_AUDITED_COMMIT: d7847ed
+- AUDIT_STATUS: CONDITIONAL PASS (F11 935e8c2: còn P7-H02)
+- REVIEW_ROUND: 3/3 (Phase 7)
+- LAST_AUDITED_COMMIT: 935e8c2
 - Phản biện kiến trúc & chống over-engineering: "Toàn quyền điều khiển máy + AI tự chỉ huy nhau" bị thay bằng Kiến trúc A (Vùng [3]): một prompt injection qua README/issue/log không được phép thành lệnh xóa file hay đẩy secret ra ngoài. Không multi-agent tự động: mọi lần chuyển lượt có CEO bấm duyệt.
 - Nghiệm thu da30252 (ĐC-06, Claude làm thay rồi tự nghiệm thu, đã báo CEO): nén log đúng luật ([4.1] 3 dòng, [4.2] 2 dòng); tăng Phase hợp lệ (chỉ còn mục MEDIUM). P2-M09: Chromium thật bấm đủ 6 nhẫn giả + 10 vĩ thú × 6 nút trên characters.html, 0 lỗi console; văn phòng 3D 6 nhân vật đúng Vùng [2.3]; nhánh mặt bị xóa trong index.html là mã chết (khóa antigravity/sol/claude đã khớp nhánh hinata/itachi/sakura phía trên); npm test 55/55.
 - Blocker (chỉ CLAUDE_AUDITOR đổi [ ] OPEN thành [x] RESOLVED):
   - [x] RESOLVED P2-C01, C03, C04, C05, C06, H02, H07, M08 (chi tiết đã nén: xem commit e4bf8cb và [4.2] Phase 2–6).
   - [x] RESOLVED P2-M09 [MEDIUM - đội hình nhân vật]: characters.html, index.html, agent.md [2.1] F2, docs/SPEC-VUNG-2.md theo Vùng [2.3]; link cũ chuyển sang nhân vật mới (da30252).
   - [x] RESOLVED P7-M01 [MEDIUM - public/characters.html]: bố cục vỡ ở màn hình hẹp (d7847ed, ĐC-07, Claude làm thay rồi tự nghiệm thu). Đã kiểm bằng Chromium: đầu trang 1 hàng từ 1024px, 2 hàng ở 768/390px; không tràn ngang ở 390–1440px; khung 3D khớp khung chứa; 16 nhân vật × 6 nút không lỗi console ở 390 và 1440px; npm test 55/55. Ghi chú: nhãn "Xoay 360°" ẩn dưới 1536px (đè nhãn Meshy ở 1280px).
+  - [ ] OPEN P7-H02 [HIGH - scripts/tat-app.js]: tắt theo PID trong app.pid mà không kiểm PID đó còn là chay-tat-ca: văn phòng đã tắt kiểu khác / máy khởi động lại thì PID có thể thuộc tiến trình khác (Windows hay dùng lại PID) → `npm run tat-app` giết nhầm. Sửa: chỉ dừng khi dòng lệnh của PID có `scripts/chay-tat-ca.js`, không thì xóa app.pid và báo.
+  - [ ] OPEN P7-M03 [MEDIUM - README]: ghi "không cửa sổ đen" nhưng lối tắt chạy node.exe ở cửa sổ thu nhỏ vài giây; chỉ máy chủ ngầm mới không cửa sổ. Sửa câu chữ cho đúng.
+  - [ ] OPEN P7-M04 [MEDIUM - scripts/mo-app.js]: luôn kiểm 127.0.0.1; config `host` là IP LAN cụ thể thì tưởng chưa chạy và bật bản thứ hai (lỗi cổng bận). Sửa: kiểm đúng host trong config (0.0.0.0/:: → 127.0.0.1).
