@@ -1610,13 +1610,7 @@ function makeBot(a) {
     // Long straight back hair down waist
     const backHair = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.8, 0.3), hairMat);
     backHair.position.set(0, 2.1, -0.65); g.add(backHair);
-
-    // Twin Lion Fists Cyan Chakra on both hands
-    for (const sx of [-0.85, 0.85]) {
-      const lionFist = new THREE.Mesh(new THREE.SphereGeometry(0.26, 12, 10), new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true, transparent: true, opacity: 0.65 }));
-      lionFist.position.set(sx, 1.65, 0.55); g.add(lionFist);
-      extras.push({ obj: lionFist, type: "flicker" });
-    }
+    // Không vẽ cầu Song Sư Quyền ở hai tay (CEO bỏ, ĐC-09); characters.html cũng vậy.
   }
 
   // Arms with Dynamic Ninja Poses

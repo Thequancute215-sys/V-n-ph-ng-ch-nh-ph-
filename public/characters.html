@@ -1389,7 +1389,7 @@ function build3DCharacter(data) {
 
     } else if (data.shinobiType === "hinata") {
       // Mũ tóc dừng ở 0.4π (≈18° trên xích đạo) để không che mắt vẽ ở v≈0.48 của texture mặt.
-      // 5.6 Hinata Hyuga: tóc dài thẳng xanh tím than, mái bằng hime-cut, 2 lọn ôm má, Song Sư Quyền
+      // 5.6 Hinata Hyuga: tóc dài thẳng xanh tím than, mái bằng hime-cut, 2 lọn ôm má (không vẽ cầu Song Sư Quyền ở tay: CEO bỏ, ĐC-09)
       const hairMat = new THREE.MeshStandardMaterial({ color: 0x1e1b4b, roughness: 0.35 });
       const hairBase = new THREE.Mesh(new THREE.SphereGeometry(headR + 0.03, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.4), hairMat);
       hairBase.position.y = head.position.y;
@@ -1412,14 +1412,6 @@ function build3DCharacter(data) {
         arm.rotation.set(-0.5, 0, -sx * 0.2);
         g.add(arm);
       }
-      const lions = new THREE.Group();
-      for (const sx of [-0.95, 0.95]) {
-        const fist = new THREE.Mesh(new THREE.SphereGeometry(0.3, 14, 12), new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true, transparent: true, opacity: 0.7 }));
-        fist.position.set(sx, 1.55, 0.7);
-        lions.add(fist);
-      }
-      g.add(lions);
-      extras.push({ obj: lions, type: "flicker" });
 
     } else if (data.shinobiType === "itachi") {
       // 5.7 Itachi Uchiha: tóc đen buộc đuôi thấp, 2 lọn dài trước ngực, áo choàng Akatsuki cổ cao, bầy quạ
