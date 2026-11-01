@@ -46,11 +46,12 @@
 5. Khi cần hội ý liên AI -> Mở Phòng Họp Ban -> Xuất tài liệu HOI-CHAN-TONG-THE.md.
 
 ### [2.3] LUỒNG AI AGENT, HỆ THỐNG NHẪN GIẢ & 10 VĨ THÚ
-- Thế Quân CEO: Naruto Uzumaki (Hokage Đệ Thất / Kurama Chakra Lục Đạo / Rasengan) - Chủ Tịch Tối Cao. Cố vấn: Cửu Vĩ Kurama.
-- Antigravity (Gemini 3.8): Kakashi Hatake (Hokage Đệ Lục / Sharingan / Tử Điện Raikiri) - SPEC & UI/UX (Vùng [2]). Vệ tinh: Nhất Vĩ Shukaku (Research) & Nhị Vĩ Matatabi (Generative UI).
-- GPT 6.1 Sol: Shikamaru Nara (Quân Sư IQ 200 / Trận Đồ Bóng Râm Kagemane / Sage Mode Override) - SOL_PLANNER (Vùng [3]). Vệ tinh: Tam Vĩ Isobu & Tứ Vĩ Son Goku.
-- Codex / Astra: Sasuke Uchiha (Thiên Tài Uchiha / Thiên Điểu Chidori / Kiếm Kusanagi) - CODEX_DEV (Vùng [3] & [4.1]). Vệ tinh: Ngũ Vĩ Kokuo, Thất Vĩ Chomei, Bát Vĩ Gyuki.
-- Claude Code: Gaara Sa Mạc (Kazekage Đệ Ngũ / Lá Chắn Cát Tuyệt Đối Zero-Leak) - AUDITOR (Vùng [5]). Vệ tinh: Lục Vĩ Saiken.
+- Thế Quân CEO: Naruto Uzumaki (Chủ Tịch Tối Cao / Hokage Tiên Nhân / Rasengan 2 lớp). Thú bảo hộ: Cửu Vĩ Kurama.
+- Tổng Quản Lý: Pain Thiên Đạo Yahiko (Quản Lý Điều Hành / 16 Hắc Trượng / Rinnegan 4 vòng / Áo Akatsuki).
+- GPT 6.1 Sol: Itachi Uchiha (Quân Sư Chiến Lược & SOL_PLANNER / Mangekyo Sharingan / Rãnh lệ 35°). Vệ tinh: Tam Vĩ Isobu & Tứ Vĩ Son Goku.
+- Codex / Astra: Sasuke Uchiha (Kỹ Sư Trưởng Code & CODEX_DEV / EMS & Rinnegan 6 Tomoe / Chidori / Kiếm Kusanagi). Vệ tinh: Bát Vĩ Gyuki & Thất Vĩ Chomei.
+- Claude Captain: Sakura Haruno (Chốt Chặn Kiểm Duyệt & CLAUDE_AUDITOR / Ấn Bách Hào tím / Y thuật QA / Zero-Leak). Vệ tinh: Lục Vĩ Saiken & Ngũ Vĩ Kokuo.
+- Antigravity (Gemini 3.8): Hinata Hyuga (Thư Ký Trợ Lý Giám Đốc & SPEC_ARCHITECT / Bạch Nhãn tím trắng / Song Sư Quyền). Vệ tinh: Nhất Vĩ Shukaku & Nhị Vĩ Matatabi.
 - Phòng Họp Ban Hội Chẩn: Thập Vĩ Juubi (Cội nguồn Chakra Ban Hội Chẩn Đa AI).
 
 ### [2.4] THIẾT KẾ FULLSTACK FRONTEND & UI/UX DESIGN SYSTEM

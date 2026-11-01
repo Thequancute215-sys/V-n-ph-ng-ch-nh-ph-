@@ -284,7 +284,15 @@ body.hide-bubbles .req-bubble {
   <!-- Nút Studio Anime CyberConnect2 1:1 -->
   <button class="btn" onclick="location.href='anime-studio.html'" style="background:linear-gradient(135deg, #8b5cf6, #6366f1);color:#fff;font-weight:800;box-shadow:0 6px 20px rgba(99,102,241,0.35);gap:6px">
     <span style="font-size:14px">⚡</span>
-    <span>Studio Anime CC2 1:1 & 10 Vĩ Thú</span>
+    <span>Studio Anime CC2 1:1</span>
+  </button>
+
+  <!-- Nút Quản Lý & Đăng Nhập Tài Khoản AI (Claude, GPT, Gemini) -->
+  <button class="btn pill" id="openAccountsBtn" title="Xem trạng thái & đăng nhập tài khoản Claude, GPT Codex, Gemini" style="background:rgba(99,102,241,0.22);border:1px solid rgba(129,140,248,0.5);color:#e0e7ff;font-weight:800;gap:8px">
+    <span style="font-size:15px">🔑</span>
+    <span>Tài Khoản AI:</span>
+    <span id="badgeClaudeStatus" style="font-size:10.5px;padding:2px 7px;border-radius:6px;background:rgba(249,115,22,0.25);color:#fdba74;border:1px solid rgba(249,115,22,0.4)">Claude...</span>
+    <span id="badgeGptStatus" style="font-size:10.5px;padding:2px 7px;border-radius:6px;background:rgba(16,185,129,0.25);color:#6ee7b7;border:1px solid rgba(16,185,129,0.4)">GPT...</span>
   </button>
 
   <!-- Nút Bật/Tắt Lời Thoại Nhân Vật -->
@@ -308,13 +316,13 @@ body.hide-bubbles .req-bubble {
 <!-- ================= CỤM ĐIỀU HƯỚNG PHÒNG & ZOOM TRỰC QUAN (BOTTOM BAR) ================= -->
 <div class="room-nav-pill">
   <button class="rbtn active" data-room="all" title="Xem toàn cảnh văn phòng">🏢 Toàn Cảnh</button>
-  <button class="rbtn" data-room="ceo" title="Zoom vào Phòng Giám Đốc">👑 Giám Đốc</button>
-  <button class="rbtn" data-room="antigravity" title="Zoom vào Studio Antigravity">🤖 Antigravity</button>
-  <button class="rbtn" data-room="sol" title="Zoom vào Phòng Kiến Trúc Sol">📐 Sol Architect</button>
-  <button class="rbtn" data-room="codex" title="Zoom vào Xưởng Lập Trình Codex">💻 Codex Astra</button>
-  <button class="rbtn" data-room="claude" title="Zoom vào Phòng Claude Captain">🛡️ Claude</button>
-  <button class="rbtn" data-room="dev" title="Zoom vào Phòng DEV">⚡ DEV</button>
-  <button class="rbtn" data-room="lounge" title="Zoom vào Phòng Họp Ban">🪑 Họp Ban</button>
+  <button class="rbtn" data-room="ceo" title="Zoom vào Phòng Giám Đốc">👑 Naruto (CEO)</button>
+  <button class="rbtn" data-room="antigravity" title="Zoom vào Bàn Thư Ký">🌸 Hinata (Trợ Lý)</button>
+  <button class="rbtn" data-room="pain" title="Zoom vào Phòng Quản Lý">⚡ Pain (Quản Lý)</button>
+  <button class="rbtn" data-room="sol" title="Zoom vào Phòng Chiến Lược">👁️ Itachi (Sol)</button>
+  <button class="rbtn" data-room="codex" title="Zoom vào Khu Kỹ Sư">⚡ Sasuke (Codex)</button>
+  <button class="rbtn" data-room="claude" title="Zoom vào Studio Kiểm Duyệt">🛡️ Sakura (Claude)</button>
+  <button class="rbtn" data-room="lounge" title="Zoom vào Bàn Tròn Hội Chẩn">🌀 Bàn Tròn Juubi</button>
 
   <div class="zoom-slider-box">
     <button id="zoomOutBtn" title="Thu nhỏ">-</button>
@@ -341,10 +349,11 @@ body.hide-bubbles .req-bubble {
     <div>
       <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--mute);margin-bottom:6px">Chọn AI nhận chỉ thị đặc biệt:</label>
       <select id="overrideAgentSelect" style="width:100%;padding:10px 12px;background:#090d16;border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:#fff;font-size:12.5px;font-family:inherit;outline:none">
-        <option value="sol" selected>📐 GPT 6.1 Sol (Khuyên dùng: Cho phép Code trực tiếp)</option>
-        <option value="antigravity">🤖 Antigravity (Gemini 3.8 - Đặc tả & UI/UX)</option>
-        <option value="claude">🛡️ Claude Code (Captain & Auditor)</option>
-        <option value="codex">💻 Codex Astra (Fullstack Dev)</option>
+        <option value="sol" selected>👁️ Itachi Uchiha (GPT 6.1 Sol: Cho phép Code trực tiếp)</option>
+        <option value="pain">⚡ Pain Thiên Đạo (Quản lý Akatsuki - Tiếp quản điều phối)</option>
+        <option value="antigravity">🌸 Hinata Hyuga (Antigravity - Đặc tả & Thiết kế UI/UX)</option>
+        <option value="claude">🛡️ Sakura Haruno (Claude Captain - Kiểm toán & Y thuật QA)</option>
+        <option value="codex">💻 Sasuke Uchiha (Codex Astra - Kỹ sư trưởng Dev)</option>
       </select>
     </div>
 
@@ -459,6 +468,123 @@ body.hide-bubbles .req-bubble {
       <button class="btn" id="killAllTasksBtn" style="padding:10px 18px;background:linear-gradient(135deg, #ef4444, #b91c1c);color:#fff;font-weight:800;box-shadow:0 4px 16px rgba(239,68,68,0.4)">
         🛑 DỪNG TẤT CẢ TASK NGAY LẬP TỨC
       </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ================= MODAL 4: TRẠM QUẢN LÝ & ĐĂNG NHẬP TÀI KHOẢN AI (CLAUDE & GPT) ================= -->
+<div class="modal-overlay" id="accountsModal">
+  <div class="modal-card" style="max-width:700px">
+    <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:12px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg, rgba(99,102,241,0.25), rgba(168,85,247,0.25));color:#c7d2fe;display:grid;place-items:center;font-size:20px;border:1px solid rgba(129,140,248,0.4)">🔑</div>
+        <div>
+          <h3 style="margin:0;font-size:15px;font-weight:800;color:#fff;font-family:'Quicksand',sans-serif">TRẠM QUẢN LÝ & ĐĂNG NHẬP TÀI KHOẢN AI</h3>
+          <p style="margin:2px 0 0;font-size:11px;color:var(--mute)">Kiểm tra kết nối và cấu hình đăng nhập Claude Code, GPT / Codex & Gemini</p>
+        </div>
+      </div>
+      <button class="btn ghost" style="padding:4px 8px;font-size:12px" id="closeAccountsBtn">✕</button>
+    </div>
+
+    <!-- Provider Cards Container -->
+    <div style="display:flex;flex-direction:column;gap:14px;margin-top:16px;max-height:65vh;overflow-y:auto;padding-right:4px">
+      
+      <!-- Claude Code Card -->
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(249,115,22,0.3);border-radius:16px;padding:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:22px">🛡️</span>
+            <div>
+              <b style="font-size:14px;color:#fff">Claude Code (Anthropic)</b>
+              <div style="font-size:11px;color:var(--mute)">Chốt chặn Kiểm Duyệt QA & Bảo Mật Zero-Leak (Sakura Haruno)</div>
+            </div>
+          </div>
+          <span id="claudeStatusBadge" style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;background:rgba(16,185,129,0.2);color:#34d399;border:1px solid rgba(16,185,129,0.4)">
+            ● ĐANG KIỂM TRA...
+          </span>
+        </div>
+        <div id="claudeDetails" style="font-size:11.5px;color:#cbd5e1;line-height:1.6;background:rgba(0,0,0,0.25);border-radius:10px;padding:10px 12px;margin-bottom:12px">
+          Đang quét thông tin xác thực từ <code>~/.claude</code>...
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+          <button class="btn ghost" onclick="copyLoginCmd('claude login')" style="font-size:11px;padding:6px 12px;gap:6px">
+            📋 Copy lệnh <code>claude login</code>
+          </button>
+          <button class="btn ghost" onclick="toggleApiKeyInput('claude')" style="font-size:11px;padding:6px 12px">
+            🔑 Nhập Anthropic API Key
+          </button>
+          <button class="btn ghost" onclick="refreshAccounts()" style="font-size:11px;padding:6px 12px;margin-left:auto">
+            🔄 Quét lại
+          </button>
+        </div>
+        <div id="claudeApiKeyRow" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(255,255,255,0.1)">
+          <div style="display:flex;gap:8px">
+            <input type="password" id="claudeApiKeyInput" placeholder="sk-ant-api03-..." style="flex:1;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:6px 10px;color:#fff;font-size:11px;font-family:monospace">
+            <button class="btn" onclick="saveApiKey('claude')" style="font-size:11px;padding:6px 14px;background:var(--gold);color:#000;font-weight:700">Lưu Key</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- GPT & Codex Card -->
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(16,185,129,0.3);border-radius:16px;padding:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:22px">⚡</span>
+            <div>
+              <b style="font-size:14px;color:#fff">GPT & Codex (OpenAI)</b>
+              <div style="font-size:11px;color:var(--mute)">Kỹ Sư Trưởng Code Sasuke & Quân Sư Sol Itachi</div>
+            </div>
+          </div>
+          <span id="gptStatusBadge" style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;background:rgba(16,185,129,0.2);color:#34d399;border:1px solid rgba(16,185,129,0.4)">
+            ● ĐANG KIỂM TRA...
+          </span>
+        </div>
+        <div id="gptDetails" style="font-size:11.5px;color:#cbd5e1;line-height:1.6;background:rgba(0,0,0,0.25);border-radius:10px;padding:10px 12px;margin-bottom:12px">
+          Đang quét thông tin xác thực từ <code>~/.codex</code>...
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+          <button class="btn ghost" onclick="copyLoginCmd('codex login')" style="font-size:11px;padding:6px 12px;gap:6px">
+            📋 Copy lệnh <code>codex login</code>
+          </button>
+          <button class="btn ghost" onclick="toggleApiKeyInput('gpt')" style="font-size:11px;padding:6px 12px">
+            🔑 Nhập OpenAI API Key
+          </button>
+          <button class="btn ghost" onclick="refreshAccounts()" style="font-size:11px;padding:6px 12px;margin-left:auto">
+            🔄 Quét lại
+          </button>
+        </div>
+        <div id="gptApiKeyRow" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(255,255,255,0.1)">
+          <div style="display:flex;gap:8px">
+            <input type="password" id="gptApiKeyInput" placeholder="sk-..." style="flex:1;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:6px 10px;color:#fff;font-size:11px;font-family:monospace">
+            <button class="btn" onclick="saveApiKey('gpt')" style="font-size:11px;padding:6px 14px;background:var(--gold);color:#000;font-weight:700">Lưu Key</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Google Antigravity / Gemini Card -->
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(168,85,247,0.3);border-radius:16px;padding:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:22px">🌸</span>
+            <div>
+              <b style="font-size:14px;color:#fff">Google Antigravity (Gemini 3.8)</b>
+              <div style="font-size:11px;color:var(--mute)">Kiến Trúc Sư Đặc Tả, Thư Ký & UI/UX (Hinata Hyuga)</div>
+            </div>
+          </div>
+          <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;background:rgba(16,185,129,0.2);color:#34d399;border:1px solid rgba(16,185,129,0.4)">
+            ● ĐANG HOẠT ĐỘNG
+          </span>
+        </div>
+        <div style="font-size:11.5px;color:#cbd5e1;line-height:1.6;background:rgba(0,0,0,0.25);border-radius:10px;padding:10px 12px">
+          Phiên IDE trực tiếp qua Google DeepMind Agent Protocol. Tài khoản kết nối: <code style="color:#c084fc">haphuongied@haphuongied.com.vn</code>.
+        </div>
+      </div>
+
+      <!-- Guidance Footer -->
+      <div style="padding:12px;border-radius:12px;background:rgba(236,201,112,0.06);border:1px solid rgba(236,201,112,0.2);font-size:11px;color:#e2e8f0;line-height:1.5">
+        💡 <b>Cơ chế Zero-Leak & Thuê Bao Cá Nhân:</b> Văn phòng tự động đọc phiên và xác thực trực tiếp trên máy của Thế Quân CEO. Các gói dịch vụ cá nhân (Claude Pro/Team, ChatGPT Plus/Team) được bảo toàn 100%, không chuyển tiếp dữ liệu ra máy chủ ngoài!
+      </div>
     </div>
   </div>
 </div>
@@ -807,13 +933,13 @@ for (const sx of [-1, 1]) add(new THREE.Mesh(new THREE.BoxGeometry(0.6, 2.4, OD)
 
 // Phòng ban
 const ROOMS = [
-  { id: "ceo", label: "Phòng Giám đốc (CEO)", x: 20, y: 20, w: 220, h: 170, tone: 0x8a6a3a },
-  { id: "antigravity", label: "Studio Antigravity (Gemini)", x: 256, y: 20, w: 240, h: 170, tone: 0x6b21a8 },
-  { id: "sol", label: "Phòng Kiến trúc Sol (GPT 6.1)", x: 512, y: 20, w: 350, h: 170, tone: 0x065f46 },
-  { id: "claude", label: "Phòng Claude Captain (Auditor)", x: 878, y: 20, w: 302, h: 300, tone: 0x9a3412 },
+  { id: "ceo", label: "Phòng Giám đốc (Naruto CEO)", x: 20, y: 20, w: 220, h: 280, tone: 0x8a6a3a },
+  { id: "pain", label: "Phòng Quản lý Akatsuki (Pain)", x: 256, y: 20, w: 240, h: 170, tone: 0x9a3412 },
+  { id: "sol", label: "Phòng Chiến lược Sol (Itachi)", x: 512, y: 20, w: 350, h: 170, tone: 0x065f46 },
+  { id: "claude", label: "Studio Kiểm duyệt QA (Sakura)", x: 878, y: 20, w: 302, h: 300, tone: 0x831843 },
   { id: "dev", label: "Phòng DEV & Dịch vụ", x: 426, y: 206, w: 436, h: 250, tone: 0x1e293b },
-  { id: "codex", label: "Xưởng Lập trình Codex Astra", x: 20, y: 380, w: 842, h: 380, tone: 0x1e40af },
-  { id: "lounge", label: "Phòng Họp Ban Tổng Thể", x: 878, y: 336, w: 302, h: 426, tone: 0x881337 },
+  { id: "codex", label: "Khu Kỹ sư Dev (Sasuke)", x: 20, y: 380, w: 842, h: 380, tone: 0x1e40af },
+  { id: "lounge", label: "Bàn Tròn Hội Chẩn (Thập Vĩ Juubi)", x: 878, y: 336, w: 302, h: 426, tone: 0x581c87 },
 ];
 
 const glassMat = new THREE.MeshStandardMaterial({ color: 0xdbeafe, transparent: true, opacity: 0.18, roughness: 0.08, metalness: 0.15 });
@@ -859,11 +985,12 @@ for (let i = 0; i < 6; i++) {
 
 // Bàn làm việc
 const HOME = {
-  ceo: [130, 112],
-  antigravity: [376, 112],
-  sol: [687, 112],
-  claude: [1029, 170],
-  codex: [431, 570],
+  ceo: [130, 112],           // Naruto (Thế Quân CEO)
+  antigravity: [130, 260],   // Hinata (Thư Ký Trợ Lý cạnh Giám Đốc)
+  pain: [376, 112],          // Pain (Tổng Quản Lý Điều Hành Akatsuki)
+  sol: [687, 112],           // Itachi (Quân Sư Chiến Lược Sol)
+  claude: [1029, 170],       // Sakura (Studio Kiểm Duyệt & Y Thuật Claude)
+  codex: [431, 570],         // Sasuke (Khu Kỹ Sư Codex Dev)
 };
 
 const oak = std(0xc9a27a, { roughness: 0.4 }), white = std(0xf8fafc, { roughness: 0.3 });
@@ -901,13 +1028,187 @@ function drawKonohaHeadbandPlate() {
   return new THREE.CanvasTexture(c);
 }
 
+
+function makeAkatsukiCloakTexture() {
+  const c = document.createElement("canvas"); c.width = 512; c.height = 512;
+  const ctx = c.getContext("2d");
+  ctx.fillStyle = "#18181b"; ctx.fillRect(0, 0, 512, 512);
+
+  // Red clouds with white outline
+  function drawCloud(cx, cy, s) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(s, s);
+
+    // White outline
+    ctx.fillStyle = "#ffffff";
+    for (const [ox, oy, r] of [[-30, 0, 24], [0, -18, 30], [30, 0, 24], [-15, 12, 22], [15, 12, 22]]) {
+      ctx.beginPath(); ctx.arc(ox, oy, r + 4, 0, Math.PI * 2); ctx.fill();
+    }
+    // Red body (#b91c1c)
+    ctx.fillStyle = "#b91c1c";
+    for (const [ox, oy, r] of [[-30, 0, 24], [0, -18, 30], [30, 0, 24], [-15, 12, 22], [15, 12, 22]]) {
+      ctx.beginPath(); ctx.arc(ox, oy, r, 0, Math.PI * 2); ctx.fill();
+    }
+    // Inner swirl
+    ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 3; ctx.beginPath();
+    ctx.arc(0, -6, 12, 0.4, Math.PI * 1.6); ctx.stroke();
+    ctx.restore();
+  }
+
+  drawCloud(140, 160, 1.1);
+  drawCloud(380, 220, 0.95);
+  drawCloud(220, 380, 1.25);
+  drawCloud(420, 430, 0.85);
+  drawCloud(70, 420, 0.9);
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+const gAkatsukiTex = makeAkatsukiCloakTexture();
+
 function makeFaceTexture(type) {
   const c = document.createElement("canvas"); c.width = 512; c.height = 512;
   const ctx = c.getContext("2d");
-  ctx.fillStyle = type === "gaara" ? "#fbf5ef" : type === "sasuke" ? "#fff1f2" : "#fed7aa";
+  const isPale = type === "pain" || type === "itachi" || type === "sol" || type === "sasuke" || type === "codex" || type === "sakura" || type === "claude" || type === "hinata" || type === "antigravity";
+  ctx.fillStyle = isPale ? "#fff5eb" : "#fed7aa";
   ctx.fillRect(0, 0, 512, 512);
 
-  if (type === "naruto" || type === "ceo") {
+  if (type === "pain") {
+    // Pain Rinnegan & Piercings
+    for (const sx of [170, 342]) {
+      ctx.fillStyle = "#9b8da6";
+      ctx.beginPath(); ctx.ellipse(sx, 245, 42, 34, 0, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = "#4a3b56"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(sx, 245, 26, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(sx, 245, 17, 0, Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(sx, 245, 8, 0, Math.PI*2); ctx.stroke();
+      ctx.fillStyle = "#1e1b2e"; ctx.beginPath(); ctx.arc(sx, 245, 3.5, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = "#ea580c"; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.moveTo(sx - 35, 190); ctx.lineTo(sx + 35, 185); ctx.stroke();
+    }
+    // 6 black studs on nose bridge
+    ctx.fillStyle = "#18181b";
+    for (const [nx, ny] of [[244, 235], [268, 235], [244, 255], [268, 255], [244, 275], [268, 275]]) {
+      ctx.beginPath(); ctx.arc(nx, ny, 4.5, 0, Math.PI*2); ctx.fill();
+    }
+    // 2 chin studs
+    for (const cx of [246, 266]) {
+      ctx.beginPath(); ctx.arc(cx, 395, 4.5, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.strokeStyle = "#78350f"; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(226, 360); ctx.lineTo(286, 360); ctx.stroke();
+
+  } else if (type === "itachi" || type === "sol") {
+    // Itachi Mangekyo Sharingan & 35 deg Tear-Trough Creases (Rãnh lệ)
+    for (const sx of [170, 342]) {
+      const dir = sx < 256 ? -1 : 1;
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath(); ctx.ellipse(sx, 245, 42, 30, 0, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = "#dc2626";
+      ctx.beginPath(); ctx.arc(sx, 245, 24, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = "#18181b";
+      ctx.beginPath(); ctx.arc(sx, 245, 7, 0, Math.PI*2); ctx.fill();
+      // 3-blade curved pinwheel
+      for (let i = 0; i < 3; i++) {
+        const a = (i / 3) * Math.PI * 2;
+        ctx.beginPath(); ctx.arc(sx + Math.cos(a)*14, 245 + Math.sin(a)*14, 6, 0, Math.PI*2); ctx.fill();
+      }
+      // Drooping upper eyelid (30% coverage)
+      ctx.fillStyle = "#fff5eb";
+      ctx.beginPath(); ctx.ellipse(sx, 232, 44, 18, 0, Math.PI, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = "#1e293b"; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.arc(sx, 240, 42, Math.PI*1.1, Math.PI*1.9); ctx.stroke();
+      // Eyebrow
+      ctx.strokeStyle = "#18181b"; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.moveTo(sx - 40*dir, 195); ctx.lineTo(sx + 35*dir, 185); ctx.stroke();
+      // TEAR-TROUGH CREASE (Rãnh lệ 35 độ từ khóe mắt trong xuống má)
+      ctx.strokeStyle = "#18181b"; ctx.lineWidth = 4.5; ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(sx - 32*dir, 255);
+      ctx.lineTo(sx - 6*dir, 335);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = "#475569"; ctx.lineWidth = 3.5;
+    ctx.beginPath(); ctx.moveTo(230, 365); ctx.lineTo(282, 365); ctx.stroke();
+
+  } else if (type === "sakura" || type === "claude") {
+    // Sakura Byakugou Diamond Purple Forehead Seal + Emerald Eyes with 2 Eyelash Spikes
+    ctx.fillStyle = "#6d4c82"; // Purple diamond
+    ctx.beginPath();
+    ctx.moveTo(256, 155); ctx.lineTo(268, 172); ctx.lineTo(256, 189); ctx.lineTo(244, 172); ctx.closePath();
+    ctx.fill();
+    // Spreading curse lines when activated
+    ctx.strokeStyle = "#18181b"; ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(244, 172); ctx.quadraticCurveTo(210, 180, 185, 205);
+    ctx.moveTo(268, 172); ctx.quadraticCurveTo(302, 180, 327, 205);
+    ctx.stroke();
+
+    for (const sx of [170, 342]) {
+      const dir = sx < 256 ? -1 : 1;
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath(); ctx.ellipse(sx, 245, 42, 34, 0, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = "#3b9e78"; // Emerald iris
+      ctx.beginPath(); ctx.arc(sx, 245, 23, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = "#0f172a";
+      ctx.beginPath(); ctx.arc(sx, 245, 10, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath(); ctx.arc(sx - 6, 238, 5, 0, Math.PI*2); ctx.fill();
+      // Eyelid line with 2 winged outer eyelash spikes
+      ctx.strokeStyle = "#18181b"; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.arc(sx, 240, 42, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke();
+      // Outer lash spikes
+      ctx.beginPath();
+      ctx.moveTo(sx + 38*dir, 236); ctx.lineTo(sx + 54*dir, 226);
+      ctx.moveTo(sx + 34*dir, 242); ctx.lineTo(sx + 50*dir, 240);
+      ctx.stroke();
+      // Pink eyebrow
+      ctx.strokeStyle = "#f472b6"; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(sx - 38*dir, 192); ctx.quadraticCurveTo(sx, 175, sx + 38*dir, 192); ctx.stroke();
+      // Soft blush
+      ctx.fillStyle = "rgba(244, 114, 182, 0.28)";
+      ctx.beginPath(); ctx.ellipse(sx, 288, 32, 16, 0, 0, Math.PI*2); ctx.fill();
+    }
+    // Pink smile
+    ctx.strokeStyle = "#db2777"; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.arc(256, 355, 24, 0.2, Math.PI - 0.2); ctx.stroke();
+
+  } else if (type === "hinata" || type === "antigravity") {
+    // Hinata Pupilless Lavender-White Byakugan & Temple Veins
+    for (const sx of [170, 342]) {
+      const dir = sx < 256 ? -1 : 1;
+      // White lavender sclera & iris
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath(); ctx.ellipse(sx, 245, 44, 34, 0, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = "#e2dcf0";
+      ctx.beginPath(); ctx.arc(sx, 245, 26, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = "#c4b5fd"; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(sx, 245, 20, 0, Math.PI*2); ctx.stroke();
+      ctx.fillStyle = "rgba(255,255,255,0.7)";
+      ctx.beginPath(); ctx.arc(sx, 245, 12, 0, Math.PI*2); ctx.fill();
+      // Soft eyelid
+      ctx.strokeStyle = "#334155"; ctx.lineWidth = 4.5;
+      ctx.beginPath(); ctx.arc(sx, 240, 42, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke();
+      // Soft dark eyebrow
+      ctx.strokeStyle = "#1e1b4b"; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(sx - 36*dir, 195); ctx.quadraticCurveTo(sx, 182, sx + 34*dir, 196); ctx.stroke();
+      // Byakugan Temple Veins (Gân thái dương)
+      ctx.strokeStyle = "rgba(167, 139, 250, 0.75)"; ctx.lineWidth = 2.5; ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(sx + 42*dir, 235); ctx.lineTo(sx + 68*dir, 225); ctx.lineTo(sx + 88*dir, 215);
+      ctx.moveTo(sx + 44*dir, 250); ctx.lineTo(sx + 72*dir, 255); ctx.lineTo(sx + 92*dir, 265);
+      ctx.stroke();
+      // Soft blush
+      ctx.fillStyle = "rgba(244, 114, 182, 0.35)";
+      ctx.beginPath(); ctx.ellipse(sx, 290, 34, 16, 0, 0, Math.PI*2); ctx.fill();
+    }
+    // Shy smile
+    ctx.strokeStyle = "#ec4899"; ctx.lineWidth = 3.5;
+    ctx.beginPath(); ctx.arc(256, 360, 20, 0.25, Math.PI - 0.25); ctx.stroke();
+
+  } else if (type === "naruto" || type === "ceo") {
     for (const sx of [170, 342]) {
       ctx.fillStyle = "rgba(249, 115, 22, 0.45)";
       ctx.beginPath(); ctx.ellipse(sx, 245, 48, 44, 0, 0, Math.PI*2); ctx.fill();
@@ -1176,9 +1477,9 @@ function makeBot(a) {
     armPlate.position.set(0.95, 1.85, 0); armPlate.rotation.y = Math.PI / 2; g.add(armPlate);
   }
 
-  // Specific Shinobi Hair & Signatures
+  // Specific Shinobi Hair, Costumes & Signatures (Full 6 Members)
   if (a.key === "ceo") {
-    // Naruto Spiky Blonde Hair & Hair Base
+    // 1. Naruto Uzumaki (Hokage Tiên Nhân Thế Quân CEO)
     const hairMat = std(0xfacc15, { roughness: 0.25 });
     const hairBase = new THREE.Mesh(new THREE.SphereGeometry(0.9, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.52), hairMat);
     hairBase.position.y = 3.2; g.add(hairBase);
@@ -1198,83 +1499,107 @@ function makeBot(a) {
     const cloak = new THREE.Mesh(new THREE.CylinderGeometry(0.74, 1.2, 1.35, 24, 1, true), cloakMat);
     cloak.position.y = 1.45; g.add(cloak);
 
-    // Spinning Rasengan on hand
+    // Spinning 2-layer Rasengan on hand
     const ras = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 16), new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true }));
     ras.position.set(0.85, 1.6, 0.65); g.add(ras);
     extras.push({ obj: ras, type: "spin" });
 
-  } else if (a.key === "antigravity") {
-    // Kakashi Silver Spiky Hair & Hair Base
-    const hairMat = std(0xe2e8f0, { roughness: 0.3 });
+  } else if (a.key === "pain") {
+    // 2. Pain (Thiên Đạo Yahiko - Tổng Quản Lý Akatsuki)
+    const hairMat = std(0xe86a24, { roughness: 0.3 });
     const hairBase = new THREE.Mesh(new THREE.SphereGeometry(0.9, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.52), hairMat);
     hairBase.position.y = 3.2; g.add(hairBase);
 
-    for (let i = 0; i < 14; i++) {
-      const spk = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.75, 4), hairMat);
-      const ang = (i / 14) * Math.PI * 2;
-      spk.position.set(Math.cos(ang) * 0.6 - 0.18, 3.88, Math.sin(ang) * 0.6);
-      spk.rotation.set(0.2, ang, 0.45);
+    // 15 orange hair spikes swept backward
+    for (let i = 0; i < 15; i++) {
+      const spk = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.72, 4), hairMat);
+      const ang = (i / 15) * Math.PI * 2;
+      spk.position.set(Math.cos(ang) * 0.65, 3.82, Math.sin(ang) * 0.65 - 0.1);
+      spk.rotation.set(-0.35 + Math.sin(ang) * 0.2, ang, -Math.cos(ang) * 0.3);
       g.add(spk);
     }
 
-    // Jounin Vest Chest Pockets
-    const pocketMat = std(0x14532d);
-    for (const sx of [-0.3, 0.3]) {
-      const pocket = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.26, 0.08), pocketMat);
-      pocket.position.set(sx, 1.8, 0.65); g.add(pocket);
+    // Crossed-out Rain Headband
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.91, 0.91, 0.28, 32, 1, true), std(0x0f172a));
+    band.position.y = 3.42; g.add(band);
+    const rainPlate = new THREE.Mesh(new THREE.PlaneGeometry(0.56, 0.26), std(0x94a3b8, { metalness: 0.8 }));
+    rainPlate.position.set(0, 3.42, 0.9); g.add(rainPlate);
+
+    // 16 Black Receiver Piercings (6 on nose bridge, 2 chin, 14 ear rings)
+    const rodMat = std(0x18181b, { metalness: 0.9, roughness: 0.1 });
+    // Ear piercings (6 outer helix + 1 lobe bar per ear)
+    for (const sx of [-0.92, 0.92]) {
+      for (let p = 0; p < 6; p++) {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.015, 6, 10), rodMat);
+        ring.position.set(sx, 3.15 + p * 0.06, -0.05);
+        ring.rotation.y = Math.PI / 2; g.add(ring);
+      }
+      const lobeBar = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.14, 6), rodMat);
+      lobeBar.position.set(sx, 2.95, -0.05); lobeBar.rotation.z = Math.PI / 2; g.add(lobeBar);
+    }
+    // 2 chin rods below lower lip
+    for (const cx of [-0.08, 0.08]) {
+      const chinRod = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.14, 6), rodMat);
+      chinRod.position.set(cx, 2.65, 0.72); g.add(chinRod);
     }
 
-    // Purple Lightning Raikiri / Shiden
-    const chidori = new THREE.Group();
-    chidori.position.set(0.85, 1.6, 0.6);
-    for (let i = 0; i < 6; i++) {
-      const spark = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.02, 0.5, 4), new THREE.MeshBasicMaterial({ color: 0xc084fc }));
-      spark.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
-      chidori.add(spark);
-    }
-    g.add(chidori);
-    extras.push({ obj: chidori, type: "flicker" });
+    // Akatsuki Cloak with Red Clouds
+    const cloakMat = new THREE.MeshStandardMaterial({ map: gAkatsukiTex, roughness: 0.45, side: THREE.DoubleSide });
+    const cloak = new THREE.Mesh(new THREE.CylinderGeometry(0.74, 1.25, 1.45, 24, 1, true), cloakMat);
+    cloak.position.y = 1.4; g.add(cloak);
+
+    // Shinra Tensei Gravity Pulse Ring
+    const pulseRing = new THREE.Mesh(new THREE.RingGeometry(0.6, 2.2, 24), new THREE.MeshBasicMaterial({ color: 0x9b8da6, transparent: true, opacity: 0.35, side: THREE.DoubleSide }));
+    pulseRing.rotation.x = -Math.PI / 2; pulseRing.position.y = 0.06; g.add(pulseRing);
+    extras.push({ obj: pulseRing, type: "flicker" });
 
   } else if (a.key === "sol") {
-    // Shikamaru Pineapple Ponytail & Hair Base
-    const hairMat = std(0x1c1917, { roughness: 0.5 });
+    // 3. Itachi Uchiha (Quân Sư Sol)
+    const hairMat = std(0x18181b, { roughness: 0.4 });
     const hairBase = new THREE.Mesh(new THREE.SphereGeometry(0.9, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.52), hairMat);
     hairBase.position.y = 3.2; g.add(hairBase);
 
-    const ponytail = new THREE.Mesh(new THREE.ConeGeometry(0.4, 1.1, 8), hairMat);
-    ponytail.position.set(0, 4.25, -0.18);
-    ponytail.rotation.x = -0.3; g.add(ponytail);
-
-    // Silver ring earrings
-    const silver = std(0xe2e8f0, { metalness: 0.9 });
-    for (const sx of [-0.9, 0.9]) {
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.02, 6, 12), silver);
-      ring.position.set(sx, 3.05, 0); g.add(ring);
+    // 2 Long chest-length locks
+    for (const sx of [-0.62, 0.62]) {
+      const lock = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.04, 1.4, 8), hairMat);
+      lock.position.set(sx, 2.3, 0.4); lock.rotation.set(0.15, 0, -sx * 0.1); g.add(lock);
     }
+    // Low ponytail at back
+    const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.08, 1.2, 8), hairMat);
+    tail.position.set(0, 2.2, -0.65); tail.rotation.x = -0.2; g.add(tail);
 
-    // Blueprint Scroll on hip
-    const scroll = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 1.0, 16), std(0xfef08a, { roughness: 0.6 }));
-    scroll.position.set(0.75, 1.2, 0); scroll.rotation.z = Math.PI / 3; g.add(scroll);
+    // Akatsuki Cloak with Red Clouds & High Collar
+    const cloakMat = new THREE.MeshStandardMaterial({ map: gAkatsukiTex, roughness: 0.45, side: THREE.DoubleSide });
+    const cloak = new THREE.Mesh(new THREE.CylinderGeometry(0.74, 1.25, 1.45, 24, 1, true), cloakMat);
+    cloak.position.y = 1.4; g.add(cloak);
 
-    // Shadow tendril ring on floor
-    const shRing = new THREE.Mesh(new THREE.RingGeometry(0.4, 1.6, 16), new THREE.MeshBasicMaterial({ color: 0x020617 }));
-    shRing.rotation.x = -Math.PI / 2; shRing.position.y = 0.04; g.add(shRing);
+    // Orbiting Crow Feathers Ring
+    const crowG = new THREE.Group();
+    for (let i = 0; i < 5; i++) {
+      const feather = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.12), new THREE.MeshBasicMaterial({ color: 0x0f172a, side: THREE.DoubleSide }));
+      const aAng = (i / 5) * Math.PI * 2;
+      feather.position.set(Math.cos(aAng) * 1.6, 2.2 + Math.sin(i) * 0.3, Math.sin(aAng) * 1.6);
+      crowG.add(feather);
+    }
+    g.add(crowG);
+    extras.push({ obj: crowG, type: "orbit" });
 
   } else if (a.key === "codex") {
-    // Sasuke Dark Navy Spiky Hair & Hair Base
+    // 4. Sasuke Uchiha (Kỹ Sư Trưởng Codex)
     const hairMat = std(0x0f172a, { roughness: 0.3 });
     const hairBase = new THREE.Mesh(new THREE.SphereGeometry(0.9, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.52), hairMat);
     hairBase.position.y = 3.2; g.add(hairBase);
 
+    // 7-spike duckbutt hair
     for (const sx of [-0.58, 0.58]) {
       const bng = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.68, 4), hairMat);
       bng.position.set(sx, 3.25, 0.6); bng.rotation.set(0.4, 0, -sx * 0.3); g.add(bng);
     }
-    for (let i = 0; i < 12; i++) {
-      const spk = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.68, 4), hairMat);
-      const ang = (i / 12) * Math.PI + Math.PI;
-      spk.position.set(Math.cos(ang) * 0.58, 3.88, Math.sin(ang) * 0.58);
-      spk.rotation.set(0.4, ang, 0.2); g.add(spk);
+    for (let i = 0; i < 7; i++) {
+      const spk = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.85, 4), hairMat);
+      const ang = (i / 7) * Math.PI + Math.PI;
+      spk.position.set(Math.cos(ang) * 0.62, 3.9, Math.sin(ang) * 0.62 - 0.2);
+      spk.rotation.set(0.65, ang, 0.2); g.add(spk);
     }
 
     // Uchiha Crest on Back
@@ -1289,10 +1614,10 @@ function makeBot(a) {
     const blade = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.7, 0.03), std(0xe2e8f0, { metalness: 0.9 }));
     blade.position.set(0.4, 1.4, -0.6); blade.rotation.set(0.3, 0, Math.PI / 4); g.add(blade);
 
-    // Blue Chidori Electricity
+    // Blue Chidori Electricity on left hand
     const chidoriB = new THREE.Group();
-    chidoriB.position.set(0.85, 1.6, 0.6);
-    for (let i = 0; i < 6; i++) {
+    chidoriB.position.set(-0.85, 1.6, 0.6);
+    for (let i = 0; i < 7; i++) {
       const spark = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.02, 0.5, 4), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
       spark.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
       chidoriB.add(spark);
@@ -1301,39 +1626,48 @@ function makeBot(a) {
     extras.push({ obj: chidoriB, type: "flicker" });
 
   } else if (a.key === "claude") {
-    // Gaara Red Spiky Hair & Hair Base
-    const hairMat = std(0x991b1b, { roughness: 0.5 });
-    const hairBase = new THREE.Mesh(new THREE.SphereGeometry(0.9, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.48), hairMat);
+    // 5. Sakura Haruno (Kiểm Duyệt Claude Captain)
+    const hairMat = std(0xf472b6, { roughness: 0.35 });
+    const hairBase = new THREE.Mesh(new THREE.SphereGeometry(0.9, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.5), hairMat);
     hairBase.position.y = 3.2; g.add(hairBase);
 
+    // Chin-length pink bob with asymmetric part
     for (let i = 0; i < 14; i++) {
-      const spk = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.48, 4), hairMat);
+      const spk = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.6, 4), hairMat);
       const ang = (i / 14) * Math.PI * 2;
-      spk.position.set(Math.cos(ang) * 0.6, 3.75, Math.sin(ang) * 0.6);
-      spk.rotation.set(Math.sin(ang) * 0.3, ang, -Math.cos(ang) * 0.3); g.add(spk);
+      spk.position.set(Math.cos(ang) * 0.65, 3.55, Math.sin(ang) * 0.65);
+      spk.rotation.set(Math.sin(ang) * 0.2, ang, -Math.cos(ang) * 0.2);
+      g.add(spk);
     }
+    // Red headband on crown
+    const redBand = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.08, 8, 32), std(0xdc2626));
+    redBand.position.set(0, 3.65, 0.1); redBand.rotation.x = Math.PI / 4; g.add(redBand);
 
-    // White sash
-    const sash = new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.5, 0.08), std(0xf8fafc));
-    sash.position.set(0, 1.6, 0); sash.rotation.z = -0.65; g.add(sash);
+    // Medical Green Chakra Healing Sphere on hand
+    const healSphere = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 16), new THREE.MeshBasicMaterial({ color: 0x34d399, wireframe: true, transparent: true, opacity: 0.6 }));
+    healSphere.position.set(0.85, 1.6, 0.6); g.add(healSphere);
+    extras.push({ obj: healSphere, type: "flicker" });
 
-    // Giant Sand Gourd
-    const gourdMat = std(0xd4a373, { roughness: 0.6 });
-    const gBot = new THREE.Mesh(new THREE.SphereGeometry(0.8, 16, 14), gourdMat);
-    gBot.position.set(0, 1.4, -0.85); g.add(gBot);
-    const gTop = new THREE.Mesh(new THREE.SphereGeometry(0.6, 16, 14), gourdMat);
-    gTop.position.set(0, 2.4, -0.8); g.add(gTop);
+  } else if (a.key === "antigravity") {
+    // 6. Hinata Hyuga (Thư Ký Trợ Lý Antigravity)
+    const hairMat = std(0x1e1b4b, { roughness: 0.35 }); // Dark navy
+    const hairBase = new THREE.Mesh(new THREE.SphereGeometry(0.9, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.52), hairMat);
+    hairBase.position.y = 3.2; g.add(hairBase);
 
-    // Orbiting Sand Defense
-    const sandG = new THREE.Group();
-    for (let i = 0; i < 4; i++) {
-      const chk = new THREE.Mesh(new THREE.DodecahedronGeometry(0.16), gourdMat);
-      const ang = (i / 4) * Math.PI * 2;
-      chk.position.set(Math.cos(ang) * 1.5, 2.0 + Math.sin(i) * 0.3, Math.sin(ang) * 1.5);
-      sandG.add(chk);
+    // Hime-cut straight bangs
+    const bangPlate = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.3, 0.12), hairMat);
+    bangPlate.position.set(0, 3.5, 0.75); g.add(bangPlate);
+
+    // Long straight back hair down waist
+    const backHair = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.8, 0.3), hairMat);
+    backHair.position.set(0, 2.1, -0.65); g.add(backHair);
+
+    // Twin Lion Fists Cyan Chakra on both hands
+    for (const sx of [-0.85, 0.85]) {
+      const lionFist = new THREE.Mesh(new THREE.SphereGeometry(0.26, 12, 10), new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true, transparent: true, opacity: 0.65 }));
+      lionFist.position.set(sx, 1.65, 0.55); g.add(lionFist);
+      extras.push({ obj: lionFist, type: "flicker" });
     }
-    g.add(sandG);
-    extras.push({ obj: sandG, type: "orbit" });
   }
 
   // Arms with Dynamic Ninja Poses
@@ -1435,22 +1769,25 @@ function makeMiniTailedBeast(name, tails, color, posX, posZ) {
 
 // Spawn Tailed Beasts Companions
 const tailedBeasts = [
-  makeMiniTailedBeast("Cửu Vĩ Kurama", 9, 0xea580c, X(130) + 3.2, Z(112) - 1.5), // Cạnh Naruto Thế Quân
-  makeMiniTailedBeast("Nhất Vĩ Shukaku", 1, 0xd4a373, X(376) + 3.0, Z(112) - 1.5), // Cạnh Kakashi Antigravity
-  makeMiniTailedBeast("Nhị Vĩ Matatabi", 2, 0x38bdf8, X(376) - 3.0, Z(112) - 1.5),
-  makeMiniTailedBeast("Tứ Vĩ Son Goku", 4, 0xdc2626, X(687) + 3.0, Z(112) - 1.5), // Cạnh Shikamaru Sol
-  makeMiniTailedBeast("Tam Vĩ Isobu", 3, 0x64748b, X(687) - 3.0, Z(112) - 1.5),
-  makeMiniTailedBeast("Bát Vĩ Gyuki", 8, 0x78350f, X(127) + 3.0, Z(350) - 1.5), // Cạnh Sasuke Codex
-  makeMiniTailedBeast("Thất Vĩ Chomei", 7, 0x059669, X(376) + 3.0, Z(350) - 1.5), // Cạnh Gaara Claude
-  makeMiniTailedBeast("Thập Vĩ Juubi", 10, 0x9333ea, X(1022), Z(275)) // Phòng Họp Ban Hội Chẩn
+  makeMiniTailedBeast("Cửu Vĩ Kurama", 9, 0xea580c, X(130) + 3.2, Z(112) - 1.5), // Cạnh Naruto Thế Quân CEO
+  makeMiniTailedBeast("Nhất Vĩ Shukaku", 1, 0xd4a373, X(130) - 3.2, Z(260) - 1.5), // Cạnh Hinata Antigravity
+  makeMiniTailedBeast("Nhị Vĩ Matatabi", 2, 0x38bdf8, X(130) + 3.2, Z(260) - 1.5),
+  makeMiniTailedBeast("Tam Vĩ Isobu", 3, 0x64748b, X(687) - 3.2, Z(112) - 1.5), // Cạnh Itachi Sol
+  makeMiniTailedBeast("Tứ Vĩ Son Goku", 4, 0xdc2626, X(687) + 3.2, Z(112) - 1.5),
+  makeMiniTailedBeast("Ngũ Vĩ Kokuo", 5, 0xf8fafc, X(1029) - 3.2, Z(170) - 1.5), // Cạnh Sakura Claude
+  makeMiniTailedBeast("Lục Vĩ Saiken", 6, 0xfce7f3, X(1029) + 3.2, Z(170) - 1.5),
+  makeMiniTailedBeast("Thất Vĩ Chomei", 7, 0x059669, X(431) - 3.2, Z(570) - 1.5), // Cạnh Sasuke Codex
+  makeMiniTailedBeast("Bát Vĩ Gyuki", 8, 0x78350f, X(431) + 3.2, Z(570) - 1.5),
+  makeMiniTailedBeast("Thập Vĩ Juubi", 10, 0x9333ea, MT.x, MT.z) // Ngự trị trung tâm Bàn Họp Hội Chẩn
 ];
 
 const defaultAgents = [
-  { key: "ceo", name: "Thế Quân CEO (Naruto)", role: "Hokage Đệ Thất / Quyết định tối cao", platform: "human", lastText: "Ta là Hokage Đệ Thất! Khi ta ban lệnh đặc cách thì Shikamaru Sol mới code. Rasengan Lục Đạo sẵn sàng!" },
-  { key: "antigravity", name: "Antigravity (Kakashi)", role: "Hokage Đệ Lục / SPEC & UI/UX", platform: "antigravity", lastText: "Đã hoàn thành Vùng [2] Đặc Tả & Giao diện Naruto 3D. Tử Điện Raikiri sẵn sàng chuyển giao cho Sol!" },
-  { key: "sol", name: "GPT 6.1 Sol (Shikamaru)", role: "Quân Sư IQ 200 / SOL_PLANNER", platform: "sol", lastText: "Phiền phức thật đấy, nhưng kế hoạch Vùng [3] DB & API đã được tính toán 200 bước! Khi CEO cấp lệnh sẽ lập tức code." },
-  { key: "codex", name: "Codex Astra (Sasuke)", role: "Thiên Tài Uchiha / Kỹ Sư Dev", platform: "codex", lastText: "Thiên Điểu Chidori sẵn sàng. Đưa hợp đồng Vùng [3] đây, ta sẽ code thần tốc không lỗi." },
-  { key: "claude", name: "Claude Captain (Gaara)", role: "Kazekage / Chốt Chặn An Toàn", platform: "claude", lastText: "Lá chắn cát tuyệt đối (Zero-Leak Defense) canh giữ Vùng [5]. Không một dòng code lộ bí mật nào được lọt qua." }
+  { key: "ceo", name: "Thế Quân CEO", role: "Chủ Tịch Tối Cao (Naruto Uzumaki)", platform: "human", ninja: "naruto", lastText: "Chào cả đội! Ta là Hokage Thế Quân CEO. Khi ta ban lệnh đặc cách thì Itachi Sol mới code. Rasengan Lục Đạo sẵn sàng!", status: "active" },
+  { key: "pain", name: "Pain (Thiên Đạo)", role: "Tổng Quản Lý Điều Hành (Yahiko Akatsuki)", platform: "claude", ninja: "pain", lastText: "Thế giới này cần cảm nhận sự ngăn nắp và kỷ luật! 16 Hắc Trượng chấp pháp mọi luồng việc văn phòng.", status: "active" },
+  { key: "antigravity", name: "Hinata Hyuga", role: "Thư Ký Trợ Lý Giám Đốc & UI/UX (Antigravity)", platform: "gemini", ninja: "hinata", lastText: "Bạch Nhãn đã soi thấu 360 độ giao diện văn phòng. Song Sư Quyền bảo vệ và trợ lý cho anh Thế Quân CEO!", status: "active" },
+  { key: "sol", name: "Itachi Uchiha", role: "Quân Sư Chiến Lược & Backend (GPT 6.1 Sol)", platform: "gpt", ninja: "itachi", lastText: "Mọi kỹ thuật đều có điểm yếu. Mangekyo Sharingan đã nhìn thấu toàn bộ kiến trúc DB & hợp đồng API.", status: "idle" },
+  { key: "codex", name: "Sasuke Uchiha", role: "Kỹ Sư Trưởng Code Fullstack (Codex Astra)", platform: "codex", ninja: "sasuke", lastText: "Chidori đã nạp đầy, kiếm Kusanagi sắc bén. Đưa hợp đồng Vùng [3] đây, ta sẽ code sạch không một lỗi cú pháp.", status: "active" },
+  { key: "claude", name: "Sakura Haruno", role: "Chốt Chặn Kiểm Duyệt & Y Thuật (Claude Captain)", platform: "claude", ninja: "sakura", lastText: "Ấn Bách Hào kích hoạt! Lá chắn kiểm toán an toàn Zero-Leak, triệt tiêu toàn bộ blocker Vùng [5]!", status: "idle" }
 ];
 
 for (const a of defaultAgents) {
@@ -1541,7 +1878,8 @@ loop();
 const ROOM_COORDS = {
   all: { pos: new THREE.Vector3(0, 52, 92), target: new THREE.Vector3(0, 4, 0) },
   ceo: { pos: new THREE.Vector3(X(130), 18, Z(112) + 22), target: new THREE.Vector3(X(130), 2, Z(112)) },
-  antigravity: { pos: new THREE.Vector3(X(376), 18, Z(112) + 22), target: new THREE.Vector3(X(376), 2, Z(112)) },
+  antigravity: { pos: new THREE.Vector3(X(130), 18, Z(260) + 22), target: new THREE.Vector3(X(130), 2, Z(260)) },
+  pain: { pos: new THREE.Vector3(X(376), 18, Z(112) + 22), target: new THREE.Vector3(X(376), 2, Z(112)) },
   sol: { pos: new THREE.Vector3(X(687), 18, Z(112) + 22), target: new THREE.Vector3(X(687), 2, Z(112)) },
   codex: { pos: new THREE.Vector3(X(431), 22, Z(570) + 26), target: new THREE.Vector3(X(431), 2, Z(570)) },
   claude: { pos: new THREE.Vector3(X(1029), 20, Z(170) + 24), target: new THREE.Vector3(X(1029), 2, Z(170)) },
@@ -1883,6 +2221,115 @@ window.sendQuickMsg = () => {
     $("quickMsgInp").value = "";
   }
 };
+
+
+// ================= QUẢN LÝ & ĐĂNG NHẬP TÀI KHOẢN AI =================
+const accountsModal = $("accountsModal");
+$("openAccountsBtn").addEventListener("click", () => {
+  accountsModal.classList.add("open");
+  refreshAccounts();
+});
+$("closeAccountsBtn").addEventListener("click", () => accountsModal.classList.remove("open"));
+
+window.copyLoginCmd = (cmd) => {
+  navigator.clipboard.writeText(cmd).then(() => {
+    alert("Đã sao chép lệnh: " + cmd + "\n\nHãy mở Terminal/PowerShell và dán lệnh này để đăng nhập trực tiếp trình duyệt!");
+  }).catch(() => {
+    prompt("Copy lệnh sau và chạy trong Terminal:", cmd);
+  });
+};
+
+window.toggleApiKeyInput = (p) => {
+  const row = $(p + "ApiKeyRow");
+  if (row) row.style.display = row.style.display === "none" ? "block" : "none";
+};
+
+window.saveApiKey = async (provider) => {
+  const inp = $(provider + "ApiKeyInput");
+  const key = inp ? inp.value.trim() : "";
+  if (!key) return alert("Vui lòng nhập API Key hợp lệ!");
+  try {
+    const res = await fetch("/api/accounts/save", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider, apiKey: key })
+    });
+    const d = await res.json();
+    alert(d.message || "Đã lưu API Key an toàn!");
+    inp.value = "";
+    $(provider + "ApiKeyRow").style.display = "none";
+    refreshAccounts();
+  } catch (err) {
+    alert("Lỗi khi lưu API Key: " + err.message);
+  }
+};
+
+window.refreshAccounts = async () => {
+  try {
+    const res = await fetch("/api/accounts");
+    const d = await res.json();
+    if (!d.ok || !d.accounts) return;
+    const a = d.accounts;
+
+    // Claude
+    const clBadge = $("claudeStatusBadge");
+    const clTop = $("badgeClaudeStatus");
+    if (a.claude.connected) {
+      clBadge.textContent = "● ĐÃ KẾT NỐI (PRO/TEAM)";
+      clBadge.style.background = "rgba(16,185,129,0.2)";
+      clBadge.style.color = "#34d399";
+      clTop.textContent = "Claude: OK";
+      clTop.style.background = "rgba(16,185,129,0.25)";
+      clTop.style.color = "#6ee7b7";
+      $("claudeDetails").innerHTML = `
+        <b>Trạng thái:</b> ${a.claude.authMode}<br>
+        <b>Mã Tổ Chức:</b> ${a.claude.organization || "Cá nhân (Claude AI)"}<br>
+        <b>Thư mục phiên:</b> <code>${a.claude.path}</code> (${a.claude.sessionsCount} phiên)
+      `;
+    } else {
+      clBadge.textContent = "○ CHƯA ĐĂNG NHẬP";
+      clBadge.style.background = "rgba(239,68,68,0.2)";
+      clBadge.style.color = "#f87171";
+      clTop.textContent = "Claude: Chưa login";
+      clTop.style.background = "rgba(239,68,68,0.25)";
+      clTop.style.color = "#fca5a5";
+      $("claudeDetails").innerHTML = `
+        Chưa phát hiện phiên Claude Code. Hãy chạy lệnh <code>claude login</code> trong terminal hoặc nhập API Key bên dưới.
+      `;
+    }
+
+    // GPT / Codex
+    const gptBadge = $("gptStatusBadge");
+    const gptTop = $("badgeGptStatus");
+    if (a.gpt.connected) {
+      gptBadge.textContent = "● ĐÃ KẾT NỐI (CHATGPT)";
+      gptBadge.style.background = "rgba(16,185,129,0.2)";
+      gptBadge.style.color = "#34d399";
+      gptTop.textContent = "GPT: OK";
+      gptTop.style.background = "rgba(16,185,129,0.25)";
+      gptTop.style.color = "#6ee7b7";
+      $("gptDetails").innerHTML = `
+        <b>Trạng thái:</b> ${a.gpt.authMode}<br>
+        <b>Làm mới gần nhất:</b> ${a.gpt.lastRefresh || "Đang hiệu lực"}<br>
+        <b>Thư mục phiên:</b> <code>${a.gpt.path}</code> (${a.gpt.sessionsCount} phiên)
+      `;
+    } else {
+      gptBadge.textContent = "○ CHƯA ĐĂNG NHẬP";
+      gptBadge.style.background = "rgba(239,68,68,0.2)";
+      gptBadge.style.color = "#f87171";
+      gptTop.textContent = "GPT: Chưa login";
+      gptTop.style.background = "rgba(239,68,68,0.25)";
+      gptTop.style.color = "#fca5a5";
+      $("gptDetails").innerHTML = `
+        Chưa phát hiện phiên Codex / GPT. Hãy chạy lệnh <code>codex login</code> trong terminal hoặc nhập OpenAI API Key.
+      `;
+    }
+  } catch (e) {
+    console.error("refreshAccounts err:", e);
+  }
+};
+refreshAccounts();
+setInterval(refreshAccounts, 10000);
 
 // SSE Data Sync
 const es = new EventSource("events");

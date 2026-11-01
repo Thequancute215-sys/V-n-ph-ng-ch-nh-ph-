@@ -625,6 +625,103 @@ let activeTasks = [
   }
 ];
 
+// ---------- Quản Lý & Đăng Nhập Tài Khoản AI (Claude, GPT Codex, Gemini) ----------
+function getAccountsStatus() {
+  const home = os.homedir();
+  
+  // 1. Claude Code
+  const claudeCred = path.join(home, ".claude", ".credentials.json");
+  let claudeConnected = false;
+  let claudeAuthMode = "Chưa kết nối";
+  let claudeOrg = null;
+  let claudeSessionsCount = 0;
+  
+  if (fs.existsSync(claudeCred)) {
+    try {
+      const c = JSON.parse(fs.readFileSync(claudeCred, "utf8"));
+      if (c.claudeAiOauth || c.organizationUuid) {
+        claudeConnected = true;
+        claudeAuthMode = "OAuth (Gói Claude Pro / Team)";
+        if (c.organizationUuid) claudeOrg = c.organizationUuid.slice(0, 8) + "***";
+      }
+    } catch (e) {}
+  }
+  if (process.env.ANTHROPIC_API_KEY || (CFG.anthropicApiKey && CFG.anthropicApiKey.length > 5)) {
+    claudeConnected = true;
+    claudeAuthMode = "Anthropic API Key";
+  }
+  try {
+    const sDir = path.join(home, ".claude", "sessions");
+    if (fs.existsSync(sDir)) claudeSessionsCount = fs.readdirSync(sDir).length;
+  } catch (e) {}
+
+  // 2. GPT / Codex
+  const codexAuth = path.join(home, ".codex", "auth.json");
+  let gptConnected = false;
+  let gptAuthMode = "Chưa kết nối";
+  let gptLastRefresh = null;
+  let gptSessionsCount = 0;
+
+  if (fs.existsSync(codexAuth)) {
+    try {
+      const a = JSON.parse(fs.readFileSync(codexAuth, "utf8"));
+      if (a.tokens || a.OPENAI_API_KEY || a.auth_mode) {
+        gptConnected = true;
+        gptAuthMode = a.auth_mode ? `OpenAI (${a.auth_mode})` : "OpenAI OAuth / Token";
+        if (a.last_refresh) gptLastRefresh = new Date(a.last_refresh).toLocaleString("vi-VN");
+      }
+    } catch (e) {}
+  }
+  if (process.env.OPENAI_API_KEY || (CFG.openaiApiKey && CFG.openaiApiKey.length > 5)) {
+    gptConnected = true;
+    gptAuthMode = "OpenAI API Key";
+  }
+  try {
+    const sDir = path.join(home, ".codex", "sessions");
+    if (fs.existsSync(sDir)) {
+      let count = 0;
+      function walk(d) {
+        for (const item of fs.readdirSync(d, { withFileTypes: true })) {
+          if (item.isDirectory()) walk(path.join(d, item.name));
+          else if (item.name.endsWith(".jsonl")) count++;
+        }
+      }
+      walk(sDir);
+      gptSessionsCount = count;
+    }
+  } catch (e) {}
+
+  // 3. Antigravity / Gemini
+  const geminiStatus = {
+    connected: true,
+    engine: "Google Gemini 3.8 (DeepMind)",
+    role: "Kiến trúc sư Đặc tả & Fullstack UI/UX (BCC v2.2)",
+    account: "haphuongied@haphuongied.com.vn"
+  };
+
+  return {
+    claude: {
+      connected: claudeConnected,
+      authMode: claudeAuthMode,
+      organization: claudeOrg,
+      sessionsCount: claudeSessionsCount,
+      path: path.join(home, ".claude"),
+      loginCmd: "claude login",
+      hasApiKey: !!(process.env.ANTHROPIC_API_KEY || CFG.anthropicApiKey)
+    },
+    gpt: {
+      connected: gptConnected,
+      authMode: gptAuthMode,
+      lastRefresh: gptLastRefresh,
+      sessionsCount: gptSessionsCount,
+      path: path.join(home, ".codex"),
+      loginCmd: "codex login",
+      hasApiKey: !!(process.env.OPENAI_API_KEY || CFG.openaiApiKey)
+    },
+    gemini: geminiStatus
+  };
+}
+
 http.createServer((req, res) => {
   const url = new URL(req.url, "http://x");
   if (!authed(req, url)) { res.writeHead(401, { "Content-Type": "text/html; charset=utf-8" }); return res.end(LOGIN); }
@@ -731,6 +828,32 @@ http.createServer((req, res) => {
       const t = activeTasks.find(x => x.id === data.taskId);
       if (t) t.status = "stopped";
       return json(res, { ok: true, message: "Đã dừng task " + data.taskId + " an toàn!" });
+    });
+    return;
+  }
+
+  // API: Lấy trạng thái tài khoản AI (Claude, GPT Codex, Gemini)
+  if (url.pathname === "/api/accounts" && req.method === "GET") {
+    return json(res, { ok: true, accounts: getAccountsStatus() });
+  }
+
+  // API: Lưu cấu hình / API Key tài khoản AI
+  if (url.pathname === "/api/accounts/save" && req.method === "POST") {
+    let body = "";
+    req.on("data", c => body += c);
+    req.on("end", () => {
+      let data = {};
+      try { data = JSON.parse(body); } catch {}
+      if (data.provider === "claude" && data.apiKey) {
+        CFG.anthropicApiKey = data.apiKey;
+      } else if (data.provider === "gpt" && data.apiKey) {
+        CFG.openaiApiKey = data.apiKey;
+      }
+      try {
+        const cfgPath = path.join(ROOT, "config.json");
+        fs.writeFileSync(cfgPath, JSON.stringify(CFG, null, 2), "utf8");
+      } catch (e) {}
+      return json(res, { ok: true, message: "Đã lưu thông tin tài khoản AI an toàn!", accounts: getAccountsStatus() });
     });
     return;
   }
