@@ -3,14 +3,20 @@
 // Ngắt mạch (dừng, Claude báo cáo cho CEO): bàn giao sai, hết lượt/thời gian, log có chuỗi hình dạng khóa API, xung đột git,
 // Claude trả việc về Codex quá MAX_REWORK lần. Claude (đội trưởng) hỏi CEO bằng ask_ceo → luồng chờ "awaiting_answer", CEO chọn phương án.
 // AI của lượt hết hạn mức gói → "waiting_quota": tự chạy lại đúng lượt đó khi hạn mức mở lại (ngữ cảnh nằm trong agent.md/repo nên không mất);
-// CEO có thể yêu cầu đội trưởng soạn master prompt + chuẩn đầu ra để tự làm lượt đó trên ChatGPT web bằng tài khoản khác.
+// CEO có thể yêu cầu đội trưởng soạn master prompt + chuẩn đầu ra để tự làm lượt đó trên ChatGPT web bằng tài khoản khác,
+// rồi dán kết quả ChatGPT trả về: AI còn hạn mức kiểm theo chuẩn đầu ra, đạt thì áp vào repo như một lượt của vai đó.
+// Mỗi luồng làm trên nhánh git riêng (ctl/nhanh.js); file AI đổi được commit sau từng lượt để CEO xem diff.
 "use strict";
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const { maskSecrets, looksLikeKey } = require("../lib/mask");
 const { readTurn } = require("./handoff");
+const nhanh = require("./nhanh");
 const ACTIVE = new Set(["running", "reporting", "awaiting_approval", "awaiting_answer", "attention", "waiting_quota"]);
+// Trạng thái cần CEO: báo ra máy (thông báo Windows) một lần mỗi khi luồng chuyển vào.
+const NOTIFY = { awaiting_answer: "Claude hỏi anh, cần chọn phương án", awaiting_approval: "Claude đã gửi báo cáo, chờ anh duyệt", attention: "Luồng gặp lỗi, cần anh xem", waiting_quota: "AI hết hạn mức, luồng đang chờ" };
+const WEB_MAX = 400000;
 const PROVIDER = { CODEX_ASTRA_DEV: "codex", SOL_ARCHITECT_PLANNER: "codex", SOL_ARCHITECT_ADVISOR: "codex", CLAUDE_AUDITOR: "claude", SPEC_ARCHITECT: "antigravity" };
 const PROVIDER_NAME = { codex: "Codex", claude: "Claude", antigravity: "Antigravity" };
 const WRITER_NAME = { claude: "Claude (đội trưởng)", codex: "Codex (Sol/Astra)", antigravity: "Antigravity (Hinata)" };
@@ -54,13 +60,17 @@ function responseText(log) {
   return String(log).slice(-40000);
 }
 
-function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quotaSnapshot = () => ({ providers: [] }) }) {
+function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quotaSnapshot = () => ({ providers: [] }), notify = () => {} }) {
   const folder = path.join(dir, "autopilot");
   fs.mkdirSync(folder, { recursive: true, mode: 0o700 });
   const runs = new Map();
   let closing = false, ticking = false;
   const save = (run) => {
     run.updatedAt = Date.now();
+    if (NOTIFY[run.status] && run.notified !== run.status) {
+      run.notified = run.status;
+      try { notify("Văn phòng AI · " + path.basename(run.workspace), NOTIFY[run.status] + ": " + run.task.split(/\r?\n/)[0].slice(0, 120)); } catch {}
+    } else if (!NOTIFY[run.status]) run.notified = null;
     const dest = path.join(folder, run.id + ".json"), temp = dest + ".tmp";
     fs.writeFileSync(temp, JSON.stringify(run), { mode: 0o600 }); fs.renameSync(temp, dest);
   };
@@ -80,6 +90,24 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
   // Lượt bị ngắt vì hết hạn mức (quota) không tính vào giới hạn lượt và số lần sửa lại.
   const stepsSinceCeo = (run) => run.steps.slice(run.stepBase || 0).filter((s) => !s.quota).length;
   const providers = () => { try { return quotaSnapshot().providers || []; } catch { return []; } };
+
+  // Commit file AI vừa đổi trong lượt cuối lên nhánh của luồng (mỗi lượt một lần). Diff có chuỗi giống khóa API thì không commit.
+  function saveStep(run, note = "") {
+    const step = run.steps[run.steps.length - 1];
+    if (!run.git || !step || step.saved) return true;
+    const n = run.steps.length;
+    const r = nhanh.save(run.workspace, run.git, `ai(${step.role}): ${run.task.split(/\r?\n/)[0].slice(0, 60)} [lượt ${n}${step.via === "web" ? ", từ GPT web" : ""}]${note}`);
+    step.saved = r.commit ? { commit: r.commit } : r.secret ? { secret: true } : r.error ? { error: r.error } : { skipped: r.skipped };
+    if (r.secret) { report(run, `Lượt ${step.role} sửa file có chuỗi giống khóa API: chưa commit, CEO kiểm tra các file đang đổi trong repo trước khi chạy tiếp.`); return false; }
+    return true;
+  }
+  // Mốc kết thúc của lượt cuối = HEAD hiện tại (sau commit file và commit agent.md khi chuyển lượt).
+  function closeStep(run) {
+    const step = run.steps[run.steps.length - 1];
+    if (run.git && step && step.base && nhanh.branchOf(run.workspace) === run.git.branch) step.head = nhanh.head(run.workspace);
+  }
+  // Bản gửi trình duyệt: không kèm danh sách file chưa theo dõi lúc bắt đầu.
+  const view = (run) => run && (run.git ? { ...run, git: { ...run.git, baseline: undefined, baselineCount: run.git.baseline.length } } : run);
 
   // Giờ chạy lại: ưu tiên giờ mở lại từ bộ theo dõi hạn mức, rồi thông báo của CLI, cuối cùng là mặc định 30 phút.
   function resumeTime(provider, text, now) {
@@ -180,7 +208,10 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     if (!job || job.status === "running") return;
     const raw = logOf(job.id), text = markedText(raw);
     const m = job.status === "done" ? SECTION.exec(text) : null;
-    if (m && m[1].trim() && m[2].trim()) Object.assign(run.web, { status: "ready", prompt: maskSecrets(m[1].trim()), spec: maskSecrets(m[2].trim()), note: run.web.failures.length ? "Đã thử trước: " + run.web.failures.join("; ") : "" });
+    if (m && m[1].trim() && m[2].trim()) {
+      Object.assign(run.web, { status: "ready", prompt: maskSecrets(m[1].trim()), spec: maskSecrets(m[2].trim()), note: run.web.failures.length ? "Đã thử trước: " + run.web.failures.join("; ") : "" });
+      try { notify("Văn phòng AI · " + path.basename(run.workspace), "Master prompt cho ChatGPT web đã sẵn sàng (" + run.web.writer + " soạn)."); } catch {}
+    }
     else {
       // AI này hỏng hoặc vừa hết hạn mức: giao cho AI kế tiếp còn hạn mức
       run.web.failures.push(run.web.writer + ": " + (QUOTA_HIT.test(raw.slice(-8000)) ? "vừa báo hết hạn mức" : job.status !== "done" ? "kết thúc với trạng thái " + job.status : "không trả đúng định dạng"));
@@ -197,13 +228,20 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     if (stepsSinceCeo(run) >= run.maxSteps) return report(run, "Đã hết giới hạn " + run.maxSteps + " lượt nội bộ.");
     const role = readTurn(run.workspace).nextOwner;
     const decisions = (run.decisions || []).map((d) => "- " + d.text).join("\n");
-    const task = "ĐẶC CÁCH CEO cho luồng " + run.id + ": tự chạy và duyệt bàn giao NỘI BỘ cho việc này, CEO chỉ nhận báo cáo cuối của Claude để duyệt. Giữ đúng quyền theo vai, không push/merge/release, không xóa dữ liệu người dùng. Bộ điều phối sẽ commit agent.md và chuyển lượt sau khi kiểm bàn giao: bạn không tự commit hoặc đổi NEXT_OWNER. Không làm việc ngoài yêu cầu. Nếu là Claude: còn lỗi cần sửa thì next_owner CODEX_ASTRA_DEV; kiến trúc đã duyệt nhưng chưa code thì chuyển CODEX_ASTRA_DEV; khi nghiệm thu xong thì next_owner SPEC_ARCHITECT để kết thúc; thấy AI khác đi sai hướng thì hỏi CEO bằng ask_ceo, không tự ra lệnh sửa." +
+    // Chạy thử thật 03/11/2026: không nói rõ thì Claude tưởng sổ của repo công khai sẽ bị commit lên GitHub và dừng lại hỏi CEO.
+    const book = nhanh.agentMdLocal(run.workspace)
+      ? "agent.md của repo này bị git bỏ qua (repo công khai, .git/info/exclude): sổ CHỈ nằm trên máy, bộ điều phối KHÔNG commit và không bao giờ push nó; bạn vẫn ghi sổ bình thường, bộ điều phối chuyển lượt sau khi kiểm bàn giao"
+      : "Bộ điều phối sẽ commit agent.md (cục bộ, trên nhánh của luồng) và chuyển lượt sau khi kiểm bàn giao";
+    const where = run.git ? ` Luồng chạy trên nhánh riêng ${run.git.branch}; file bạn đổi được bộ điều phối commit lên nhánh này sau lượt, CEO duyệt xong mới đẩy lên GitHub.` : "";
+    const task = "ĐẶC CÁCH CEO cho luồng " + run.id + ": tự chạy và duyệt bàn giao NỘI BỘ cho việc này, CEO chỉ nhận báo cáo cuối của Claude để duyệt. Giữ đúng quyền theo vai, không push/merge/release, không xóa dữ liệu người dùng." + where + " " + book + ": bạn không tự commit hoặc đổi NEXT_OWNER. Không làm việc ngoài yêu cầu. Nếu là Claude: còn lỗi cần sửa thì next_owner CODEX_ASTRA_DEV; kiến trúc đã duyệt nhưng chưa code thì chuyển CODEX_ASTRA_DEV; khi nghiệm thu xong thì next_owner SPEC_ARCHITECT để kết thúc; thấy AI khác đi sai hướng thì hỏi CEO bằng ask_ceo, không tự ra lệnh sửa." +
       (decisions ? "\nQUYẾT ĐỊNH CỦA CEO TRONG LUỒNG NÀY (làm theo):\n" + decisions : "") + "\nVIỆC CEO GIAO:\n" + run.task;
     // Sol/Astra chạy đúng model của vai; mức suy luận theo lần đội trưởng đặt gần nhất cho vai đó trong luồng (mặc định medium).
     const effort = (run.effort || {})[role] || null;
+    closeStep(run);
+    const base = run.git ? nhanh.head(run.workspace) : null;
     const job = runner.run({ workspace: run.workspace, role, task, allowRetry: false, effort }, "ceo-autopilot");
     const model = runner.CODEX_MODEL[role] ? { model: runner.CODEX_MODEL[role], effort: effort || runner.DEFAULT_EFFORT } : {};
-    run.jobId = job.id; run.steps.push({ jobId: job.id, role, startedAt: Date.now(), ...model }); save(run);
+    run.jobId = job.id; run.steps.push({ jobId: job.id, role, startedAt: Date.now(), base, ...model }); save(run);
     audit.log("ceo-autopilot", "step.start", run.id, { role, job: job.id });
   }
 
@@ -233,9 +271,11 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     const status = runner.status(root);
     if (!status.turn) throw err("BAD_AGENT_MD", status.problem || "Chưa đọc được sổ agent.md.");
     if (status.aiBusy || status.handoffPending) throw err("AI_BUSY", "Xử lý công việc hoặc bàn giao đang chờ trước khi bật tự động.");
-    const run = { id: "auto-" + Date.now().toString(36) + "-" + crypto.randomBytes(3).toString("hex"), workspace: root, task: maskSecrets(task.trim()), status: "running", createdAt: Date.now(), updatedAt: Date.now(), deadline: Date.now() + timeoutMs, timeoutMs, maxSteps, steps: [], stepBase: 0, rework: 0, decisions: [], question: null, jobId: null, finalHandoffId: null, report: "", problem: "" };
+    const id = "auto-" + Date.now().toString(36) + "-" + crypto.randomBytes(3).toString("hex");
+    const git = nhanh.prepare(root, { task, id });   // nhánh riêng ai/<việc>-<mã>; repo đang sửa dở thì từ chối (DIRTY_REPO)
+    const run = { id, workspace: root, task: maskSecrets(task.trim()), status: "running", createdAt: Date.now(), updatedAt: Date.now(), deadline: Date.now() + timeoutMs, timeoutMs, maxSteps, steps: [], stepBase: 0, rework: 0, decisions: [], question: null, jobId: null, finalHandoffId: null, report: "", problem: "", git };
     runs.set(run.id, run); save(run);
-    audit.log("ceo", "autopilot.start", run.id, { workspace: root, task: run.task, maxSteps, timeoutMs }, "approved");
+    audit.log("ceo", "autopilot.start", run.id, { workspace: root, task: run.task, maxSteps, timeoutMs, branch: git?.branch || null }, "approved");
     try { launch(run); } catch (e) { report(run, e.message); }
     return run;
   }
@@ -265,7 +305,10 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
             if (run.status === "attention") run.problem += /hit your .*limit|usage_limit_reached/i.test(run.report) ? " Claude đang hết lượt phiên: " + run.report : " Claude chưa gửi được báo cáo, công việc kết thúc với trạng thái " + job.status + ".";
             save(run); continue;
           }
+          if (!saveStep(run)) continue;
           const handoff = runner.get(job.id);
+          // Lượt áp kết quả GPT web: AI kiểm thấy chưa đạt (hoặc hỏng) thì luồng quay về chờ hạn mức, CEO sửa và dán lại.
+          if (run.steps[run.steps.length - 1]?.via === "web" && (!handoff || handoff.problems.length)) { webRejected(run, job, handoff); continue; }
           // Lượt không có bàn giao hợp lệ vì AI hết hạn mức: chờ hạn mức rồi chạy lại đúng lượt đó.
           const quotaText = !handoff || handoff.problems.length ? (QUOTA_HIT.test((jobs.rawLog(job.id) || "").slice(-8000)) ? (jobs.rawLog(job.id) || "").slice(-8000) : null) : null;
           if (quotaText) { if (handoff && !handoff.decided) runner.reject(job.id, "ceo-autopilot"); waitQuota(run, quotaText); continue; }
@@ -321,6 +364,7 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     audit.log("ceo", "autopilot.stop", run.id);
     const job = jobs.get(run.jobId); if (job?.status === "running") await jobs.kill(job.id, "ceo");
     rejectPending(run);
+    if (run.steps.length && !run.steps[run.steps.length - 1].saved) { saveStep(run, " (dở dang: CEO dừng luồng)"); closeStep(run); save(run); }
     return run;
   }
 
@@ -334,9 +378,75 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     }
     if (!approve && run.finalHandoffId && !runner.get(run.finalHandoffId)?.decided) runner.reject(run.finalHandoffId, "ceo");
     if (!run.finalHandoffId) rejectPending(run);
+    closeStep(run);
     run.status = approve ? (run.problem ? "acknowledged" : "approved") : "rejected"; save(run);
     audit.log("ceo", approve ? "report.approve" : "report.reject", run.id, { handoff: run.finalHandoffId }, run.status);
     return run;
+  }
+
+  // CEO bấm "Đẩy nhánh lên GitHub" sau khi duyệt: push nhánh của luồng (không --force) và trả link tạo PR.
+  function pushBranch(id) {
+    const run = get(id);
+    if (!run.git) throw err("NO_GIT", "Luồng này không chạy trên nhánh git riêng.");
+    if (!["approved", "acknowledged"].includes(run.status)) throw err("NOT_PENDING", "Duyệt báo cáo của Claude trước rồi mới đẩy nhánh.");
+    run.git.pushed = nhanh.push(run.workspace, run.git); save(run);
+    audit.log("ceo", "autopilot.push", run.id, { branch: run.git.branch, remote: run.git.pushed.remote }, "approved");
+    return run;
+  }
+
+  // File đổi và diff của lượt thứ n (đếm từ 1).
+  function stepDiff(id, n) {
+    const run = get(id), i = Number(n) - 1, step = run.steps[i];
+    if (!step) throw err("NOT_FOUND", "Luồng không có lượt " + n);
+    if (!run.git || !step.base) throw err("NO_GIT", "Lượt này không có mốc git (dự án không phải repo git hoặc luồng tạo trước khi có nhánh riêng).");
+    if (step.jobId === run.jobId && jobs.get(step.jobId)?.status === "running") throw err("AI_BUSY", "Lượt này đang chạy: xem diff khi AI làm xong.");
+    const end = step.head || run.steps[i + 1]?.base || (nhanh.branchOf(run.workspace) === run.git.branch ? null : undefined);
+    if (end === undefined) throw err("NO_GIT", "Repo không còn đứng trên nhánh " + run.git.branch + " và lượt chưa có mốc kết thúc.");
+    return { step: n, role: step.role, ...nhanh.diff(run.workspace, step.base, end) };
+  }
+
+  // CEO dán kết quả ChatGPT web cho lượt đang chờ hạn mức. AI còn hạn mức (Claude; lượt của Claude thì Codex) kiểm theo
+  // chuẩn đầu ra, đạt thì áp vào repo và bàn giao như chính vai đó; không đạt thì luồng quay về chờ, kèm lý do.
+  function applyWeb(id, text) {
+    const run = get(id);
+    if (run.status !== "waiting_quota" || !run.wait) throw err("NOT_WAITING", "Chỉ dán kết quả GPT web khi luồng đang chờ hạn mức.");
+    text = String(text || "");
+    if (!text.trim()) throw err("BAD_REQUEST", "Dán kết quả ChatGPT trả về.");
+    if (text.length > WEB_MAX) throw err("BAD_REQUEST", "Kết quả dài quá " + WEB_MAX.toLocaleString("vi-VN") + " ký tự: chia nhỏ việc trên ChatGPT.");
+    if (looksLikeKey(text)) throw err("BAD_REQUEST", "Kết quả có chuỗi giống khóa API: xoá trước khi dán.");
+    const applier = run.wait.provider === "claude" ? "codex" : "claude";
+    const q = quotaState(providers().find((p) => p.id === applier));
+    if (q.state === "hết") throw err("NO_QUOTA", `${PROVIDER_NAME[applier]} (AI kiểm kết quả) cũng đang hết hạn mức tới ${new Date(q.resetAt).toLocaleString("vi-VN")}.`);
+    // Kết quả để trong .git của repo (không lẫn vào file dự án, không đưa vào dòng lệnh vì Windows giới hạn độ dài).
+    const store = nhanh.isRepo(run.workspace) ? path.join(run.workspace, ".git", "van-phong-ai") : path.join(folder, "web");
+    fs.mkdirSync(store, { recursive: true });
+    const file = path.join(store, run.id + "-" + Date.now().toString(36) + ".md");
+    fs.writeFileSync(file, text, { mode: 0o600 });
+    const decisions = (run.decisions || []).map((d) => "- " + d.text).join("\n");
+    const job = runner.applyWeb({ workspace: run.workspace, role: run.wait.role, file, task: run.task, decisions, applier });
+    closeStep(run);
+    const waited = Date.now() - (run.wait.since || Date.now());
+    run.deadline += waited;
+    run.webApply = { at: Date.now(), applier, applierName: PROVIDER_NAME[applier], jobId: job.id, chars: text.length, wait: run.wait };
+    if (run.web) run.web.applyError = null;
+    run.status = "running"; run.wait = null; run.jobId = job.id;
+    run.steps.push({ jobId: job.id, role: run.webApply.wait.role, startedAt: Date.now(), base: run.git ? nhanh.head(run.workspace) : null, via: "web", applier });
+    save(run);
+    audit.log("ceo", "quota.web_result", run.id, { role: run.webApply.wait.role, applier, chars: text.length, job: job.id }, "approved");
+    return run;
+  }
+
+  function webRejected(run, job, handoff) {
+    const log = logOf(job.id), text = responseText(log);
+    const said = /WEB_RESULT_REJECTED:\s*(.+)/.exec(text) || /WEB_RESULT_REJECTED:\s*(.+)/.exec(log);
+    const why = said ? said[1].trim().slice(0, 1500) : QUOTA_HIT.test(log.slice(-8000)) ? run.webApply.applierName + " (AI kiểm) vừa hết hạn mức" :
+      handoff ? "bàn giao không hợp lệ: " + handoff.problems.join("; ") : "công việc kết thúc với trạng thái " + job.status + " mà không có bàn giao";
+    if (handoff && !handoff.decided) runner.reject(job.id, "ceo-autopilot");
+    const step = run.steps[run.steps.length - 1]; step.quota = true; step.rejected = maskSecrets(why);
+    run.status = "waiting_quota"; run.wait = { ...run.webApply.wait, since: Date.now() };
+    run.web = { ...(run.web || {}), applyError: run.webApply.applierName + " chưa áp kết quả GPT web: " + maskSecrets(why) };
+    save(run);
+    audit.log("autopilot", "quota.web_rejected", run.id, { job: job.id, why: maskSecrets(why).slice(0, 300) });
   }
 
   function rejectPending(run) {
@@ -356,7 +466,8 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     resume(run, "ceo");
     return run;
   }
-  return { start, stop, answer, decide, resumeNow, webPrompt, list, get, busy, cancelJob, cancelAll, close, tick };
+  const preflight = (workspace) => nhanh.preflight(ws.find(workspace).path);
+  return { start, stop, answer, decide, resumeNow, webPrompt, applyWeb, pushBranch, stepDiff, preflight, view, list, get, busy, cancelJob, cancelAll, close, tick };
 }
 
 module.exports = { createAutopilot, responseText };

@@ -63,6 +63,8 @@ function createIdeas({ dir, ws, runner, autopilot, audit }) {
     if (!status.turn) throw err("BAD_AGENT_MD", status.problem || "Chưa đọc được agent.md của dự án.");
     // Kiểm dự án rảnh TRƯỚC khi đổi lượt, để không chuyển lượt rồi mới phát hiện không chạy được.
     if (autopilot.busy(idea.workspace) || status.aiBusy || status.handoffPending) throw err("AI_BUSY", "Dự án đang có việc hoặc bàn giao chờ duyệt. Xử lý xong rồi giao ý tưởng.");
+    autopilot.preflight(idea.workspace);   // repo đang sửa dở thì từ chối trước khi ghi đè lượt
+
     const owner = readTurn(idea.workspace).nextOwner;
     if (owner !== "SPEC_ARCHITECT") {
       if (!force) throw err("NEEDS_SPEC_TURN", `Sổ agent.md đang tới lượt ${owner}. Bước đầu của ý tưởng là Hinata (SPEC_ARCHITECT) đặc tả. Anh xác nhận ghi đè chuyển lượt cho Hinata thì văn phòng mới bắt đầu.`);

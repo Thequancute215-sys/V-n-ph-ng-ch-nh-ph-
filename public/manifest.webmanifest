@@ -17,7 +17,7 @@
   ],
   "shortcuts": [
     { "name": "Điều khiển máy", "url": "/dieukhien.html", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
-    { "name": "Bảng điều hành", "url": "/board.html", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
+    { "name": "Bảng điều hành", "url": "/prototype.html#board", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
     { "name": "Hồ sơ nhân vật", "url": "/characters.html", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] }
   ]
 }

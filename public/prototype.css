@@ -16,3 +16,5 @@
 
 .projects-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:18px;align-items:start}.project{min-width:0;overflow-wrap:anywhere}.project h2{margin:0}.project h3{margin-top:22px}.project .entry-head{flex-wrap:wrap}.project button{max-width:100%;white-space:normal}
 .ideas form{display:grid;gap:8px;margin-top:12px}.ideas input[type=text],.ideas textarea{width:100%;background:#06090e;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit}.ideas textarea{resize:vertical}
+
+.steps{margin:8px 0 0;padding-left:22px;font-size:13px;color:var(--text)}.steps li{margin:4px 0;overflow-wrap:anywhere}button.link{background:none;border:0;padding:0 4px;min-height:0;color:var(--gold);text-decoration:underline;font-size:12px;cursor:pointer}.diff{margin:10px 0 4px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:#0a0e15;min-width:0}.diff p{margin:0 0 6px}.diff-files{margin:6px 0;padding-left:18px;font-size:12px}.diff .add{color:#8ee8bd}.diff .del{color:#ffb6c5}.diff .hunk{color:#7fb4ff}.diff .file{color:var(--gold);font-weight:700}.patch{max-height:55vh}
