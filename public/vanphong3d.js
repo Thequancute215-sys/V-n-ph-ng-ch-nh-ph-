@@ -334,19 +334,19 @@ for (const z of [28, 38, 48]) { lamp(-3.4, z); lamp(3.4, z); }
 for (let x = -60; x <= 60; x += 20) lamp(x, ROAD_Z - 8.4);
 
 // ================= Cây cối (instancing + gió lay) =================
-const wind = { value: 0 };
+const wind = { value: 0 }, windStrength = { value: 1 };
 function windMat(o = {}) {
   const m = std(0xffffff, o);
   m.onBeforeCompile = (sh) => {
-    sh.uniforms.uTime = wind;
-    sh.vertexShader = "uniform float uTime;\n" + sh.vertexShader.replace("#include <begin_vertex>", `#include <begin_vertex>
+    sh.uniforms.uTime = wind; sh.uniforms.uWind = windStrength;
+    sh.vertexShader = "uniform float uTime;\nuniform float uWind;\n" + sh.vertexShader.replace("#include <begin_vertex>", `#include <begin_vertex>
       #ifdef USE_INSTANCING
         vec3 ip = instanceMatrix[3].xyz;
       #else
         vec3 ip = vec3(0.0);
       #endif
       float hgt = max(position.y + 1.0, 0.0);
-      float sw = sin(uTime * 1.3 + ip.x * 0.21 + ip.z * 0.17) * 0.045 + sin(uTime * 2.9 + ip.z * 0.37) * 0.016;
+      float sw = (sin(uTime * 1.3 + ip.x * 0.21 + ip.z * 0.17) * 0.045 + sin(uTime * 2.9 + ip.z * 0.37) * 0.016) * uWind;
       transformed.x += sw * hgt;
       transformed.z += sw * 0.6 * hgt;`);
   };
@@ -461,9 +461,12 @@ scene.add(floor);
 
 // Vách kính ngoài có đố nhôm; cửa chính mặt nam rộng 4m; giữa mặt bắc ốp gỗ (sau tường chữ).
 const wy = BASE + H / 2;
+// Tường, vách kính, mái: camera không được nằm sau những mặt này so với nhân vật
+const camBlockers = [];
 function curtain(x1, z1, x2, z2) {
   const len = Math.hypot(x2 - x1, z2 - z1), ry = -Math.atan2(z2 - z1, x2 - x1), cx = (x1 + x2) / 2, cz = (z1 + z2) / 2;
   const pane = box(glassMat, len, H, 0.06, cx, wy, cz, scene, ry);
+  camBlockers.push(pane);
   pane.castShadow = false; pane.renderOrder = 2;
   const n = Math.max(1, Math.round(len / 2.5));
   for (let i = 0; i <= n; i++) {
@@ -479,7 +482,7 @@ curtain(-W / 2, -D / 2, -6, -D / 2);
 curtain(6, -D / 2, W / 2, -D / 2);
 curtain(-W / 2, -D / 2, -W / 2, D / 2);
 curtain(W / 2, -D / 2, W / 2, D / 2);
-box(cladding, 12, H, 0.35, 0, wy, -D / 2);
+camBlockers.push(box(cladding, 12, H, 0.35, 0, wy, -D / 2));
 solidBox(-6, -D / 2 - 0.2, 6, -D / 2 + 0.2);
 box(metal, 4.2, 0.35, 0.2, 0, BASE + H - 0.6, D / 2);   // khung cửa
 for (const sx of [-2.05, 2.05]) box(metal, 0.14, H, 0.2, sx, wy, D / 2);
@@ -492,7 +495,7 @@ scene.add(roof);
 const roofMats = [];
 const rstd = (c, o) => { const m = std(c, { transparent: true, ...o }); roofMats.push(m); return m; };
 const roofY = BASE + H;
-box(rstd(0xeef0f2, { roughness: 0.9 }), W + 3, 0.5, D + 3, 0, roofY + 0.25, 0, roof);
+const roofSlab = box(rstd(0xeef0f2, { roughness: 0.9 }), W + 3, 0.5, D + 3, 0, roofY + 0.25, 0, roof);
 box(rstd(0x1f2933, { roughness: 0.35, metalness: 0.75 }), W + 3.1, 0.22, D + 3.1, 0, roofY + 0.55, 0, roof);
 const panelMat = rstd(0x1e3a5f, { roughness: 0.22, metalness: 0.6 }), panelLeg = rstd(0x1f2933, { metalness: 0.7 });
 for (let i = 0; i < 8; i++) for (let j = 0; j < 5; j++) {
@@ -571,6 +574,7 @@ function rug(x0, x1, z0, z1, hex) { box(std(hex, { roughness: 1 }), x1 - x0 - 1.
 function glassPane(x1, z1, x2, z2, y0, y1) {
   const len = Math.hypot(x2 - x1, z2 - z1), ry = -Math.atan2(z2 - z1, x2 - x1), cx = (x1 + x2) / 2, cz = (z1 + z2) / 2;
   const p = box(glassMat, len, y1 - y0, 0.05, cx, (y0 + y1) / 2, cz, inn, ry); p.castShadow = false; p.renderOrder = 2;
+  camBlockers.push(p);
   box(aluMat, len, 0.08, 0.1, cx, y0 + 0.04, cz, inn, ry);
   box(aluMat, len, 0.08, 0.1, cx, y1, cz, inn, ry);
 }
@@ -895,6 +899,278 @@ for (const n of NPCS) {
   n.tag = tag;
 }
 
+
+// ================= Chi tiết vui nhộn =================
+const funTick = [];   // các hàm chạy mỗi khung hình cho đồ trang trí có chuyển động
+const steamTex = canvasTex(64, 64, (g) => {
+  const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, "rgba(255,255,255,0.8)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+  g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+});
+const yellow = std(0xfacc15, { roughness: 0.35 }), orangeBeak = std(0xf97316, { roughness: 0.4 });
+const gold = std(0xfbbf24, { roughness: 0.22, metalness: 1, envMapIntensity: 1.1 });
+const near = (x, z, r) => Math.hypot(player.pos.x - x, player.pos.z - z) < r;
+
+// Vịt cao su trên bàn mỗi AI ("debug vịt")
+function duck(x, y, z, ry) {
+  const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.y = ry; inn.add(g);
+  const b = new THREE.Mesh(new THREE.SphereGeometry(0.08, 14, 10), yellow); b.scale.set(1, 0.8, 1.25); b.position.y = 0.06; g.add(b);
+  const hd = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 10), yellow); hd.position.set(0, 0.14, 0.06); g.add(hd);
+  const bk = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.05, 8), orangeBeak); bk.rotation.x = Math.PI / 2; bk.position.set(0, 0.135, 0.12); g.add(bk);
+  for (const m of [b, hd, bk]) m.castShadow = true;
+}
+for (const x of [-24, -12, 12, 24]) duck(x + 0.85, 0.78, -12.05, 0);
+duck(-12.35, 0.78, 12.05, Math.PI);
+duck(-24.8, 0.92, 11.85, Math.PI);
+
+// Biển vui dựng trong hành lang
+function poster(x, z, ry, top, bottom, hex) {
+  const tex = canvasTex(400, 520, (g, w, h) => {
+    g.fillStyle = css(hex); g.fillRect(0, 0, w, h);
+    g.fillStyle = "rgba(255,255,255,0.15)"; for (let i = 0; i < 6; i++) { g.beginPath(); g.arc(rnd() * w, rnd() * h, 30 + rnd() * 60, 0, Math.PI * 2); g.fill(); }
+    g.fillStyle = "#fff"; g.textAlign = "center"; g.textBaseline = "middle";
+    g.font = "900 54px Segoe UI, sans-serif"; wrapLines(g, top, w / 2, 170, 64);
+    g.font = "600 34px Segoe UI, sans-serif"; wrapLines(g, bottom, w / 2, 380, 44);
+  });
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry; inn.add(g);
+  box(dark, 1.16, 1.5, 0.05, 0, 1.45, 0, g);
+  const pl = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 1.43), new THREE.MeshStandardMaterial({ map: tex, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.25 }));
+  pl.position.set(0, 1.45, 0.03); g.add(pl);
+  cyl(aluMat, 0.02, 0.02, 0.7, 0, 0.35, 0, g, 6); box(dark, 0.5, 0.04, 0.3, 0, 0.02, 0, g);
+  solidBox(x - 0.6, z - 0.2, x + 0.6, z + 0.2);
+}
+function wrapLines(g, text, x, y, lh) { const lines = text.split("\n"); lines.forEach((l, i) => g.fillText(l, x, y + (i - (lines.length - 1) / 2) * lh)); }
+poster(-18, -5.35, 0, "KHÔNG CÓ\nBUG", "chỉ có tính năng\nbất ngờ", 0x7c3aed);
+poster(18, -5.35, 0, "COMMIT\nSỚM", "về nhà sớm", 0x0ea5e9);
+poster(-17, 5.35, Math.PI, "HÔM NAY", "CEO vẫn\nđẹp trai ✨", 0xf59e0b);
+poster(17.2, 5.35, Math.PI, "UỐNG\nNƯỚC ĐI", "code chạy\nmượt hơn", 0x10b981);
+
+// Dây đèn màu nhấp nháy dọc trần hành lang
+{
+  const bulbs = [], wire = [];
+  for (let x = -28; x <= 28; x += 4) {
+    const pts = [];
+    for (let i = 0; i <= 12; i++) {
+      const u = i / 12, z = -5.6 + u * 11.2, y = H - 0.25 - Math.sin(u * Math.PI) * 0.6;
+      pts.push(x + Math.sin(u * Math.PI) * 0.3, y, z);
+      if (i > 0 && i < 12) bulbs.push([x + Math.sin(u * Math.PI) * 0.3, y - 0.08, z]);
+    }
+    for (let i = 0; i < 12; i++) wire.push(...pts.slice(i * 3, i * 3 + 6));
+  }
+  const wg = new THREE.BufferGeometry(); wg.setAttribute("position", new THREE.Float32BufferAttribute(wire, 3));
+  inn.add(new THREE.LineSegments(wg, new THREE.LineBasicMaterial({ color: 0x334155 })));
+  const COLORS = [0xf43f5e, 0xfacc15, 0x22c55e, 0x38bdf8, 0xa855f7, 0xfb923c].map((c) => new THREE.Color(c));
+  const lights = new THREE.InstancedMesh(new THREE.SphereGeometry(0.07, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }), bulbs.length);
+  bulbs.forEach(([x, y, z], i) => lights.setMatrixAt(i, m4.makeTranslation(x, y, z)));
+  inn.add(lights);
+  const c = new THREE.Color();
+  funTick.push((dt, t) => {
+    for (let i = 0; i < bulbs.length; i++) {
+      const k = 0.45 + 0.55 * Math.max(0, Math.sin(t * 2.4 + i * 1.7));
+      lights.setColorAt(i, c.copy(COLORS[i % COLORS.length]).multiplyScalar(k));
+    }
+    lights.instanceColor.needsUpdate = true;
+  });
+}
+
+// Bóng bay buộc ở sảnh, nhấp nhô
+for (const [bx, bz] of [[-2.8, 16.4], [2.8, 16.4]]) {
+  box(dark, 0.25, 0.12, 0.25, bx, 0.06, bz, inn);
+  const strings = [], balloons = [];
+  [0xf43f5e, 0x38bdf8, 0xfacc15].forEach((hex, i) => {
+    const b = new THREE.Mesh(new THREE.SphereGeometry(0.28, 18, 14), std(hex, { roughness: 0.25 }));
+    b.scale.set(1, 1.18, 1); b.castShadow = true; inn.add(b); balloons.push({ b, i, ox: (i - 1) * 0.35, oy: 2.7 + i * 0.35 });
+    const lg = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
+    const ln = new THREE.Line(lg, new THREE.LineBasicMaterial({ color: 0xe2e8f0 })); inn.add(ln); strings.push(ln);
+  });
+  solidCircle(bx, bz, 0.25);
+  funTick.push((dt, t) => balloons.forEach(({ b, i, ox, oy }, k) => {
+    const x = bx + ox + Math.sin(t * 0.9 + i) * 0.08, y = oy + Math.sin(t * 1.4 + i * 2) * 0.08, z = bz + Math.cos(t * 0.8 + i) * 0.08;
+    b.position.set(x, y, z);
+    const pos = strings[k].geometry.attributes.position;
+    pos.setXYZ(0, bx, 0.12, bz); pos.setXYZ(1, x, y - 0.33, z); pos.needsUpdate = true;
+  }));
+}
+
+// Bể cá ở sảnh
+{
+  const fx = -5.45, fz = 8;
+  box(walnut, 0.6, 0.9, 2.1, fx, 0.45, fz, inn);
+  const water = box(new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.32, roughness: 0.05 }), 0.5, 0.75, 1.95, fx, 1.3, fz, inn);
+  water.castShadow = false; water.renderOrder = 3;
+  box(std(0xd6c7a1, { roughness: 1 }), 0.48, 0.06, 1.93, fx, 0.96, fz, inn);
+  box(metal, 0.54, 0.04, 2.0, fx, 1.69, fz, inn);
+  const fishes = [0xf97316, 0xfacc15, 0xef4444, 0x60a5fa].map((hex, i) => {
+    const g = new THREE.Group(); inn.add(g);
+    const m = std(hex, { roughness: 0.4 });
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), m); body.scale.set(0.6, 0.8, 1.4); g.add(body);
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.08, 6), m); tail.rotation.x = -Math.PI / 2; tail.position.z = -0.1; g.add(tail);
+    return { g, tail, phase: i * 1.6, y: 1.1 + i * 0.12, sp: 0.35 + i * 0.07 };
+  });
+  solidBox(fx - 0.3, fz - 1.05, fx + 0.3, fz + 1.05);
+  funTick.push((dt, t) => fishes.forEach((f) => {
+    const s = Math.sin(t * f.sp + f.phase), dir = Math.cos(t * f.sp + f.phase);
+    f.g.position.set(fx + Math.sin(t * 1.3 + f.phase) * 0.12, f.y + Math.sin(t * 2 + f.phase) * 0.04, fz + s * 0.8);
+    f.g.rotation.y = dir >= 0 ? 0 : Math.PI;
+    f.tail.rotation.y = Math.sin(t * 12 + f.phase) * 0.5;
+  }));
+}
+
+// Cúp vàng "Giải Đẹp Trai Nhất Năm" giữa sảnh danh dự
+{
+  const tx = 0, tz = -10.6;
+  box(std(0xf1f5f9, { roughness: 0.3 }), 1.0, 1.0, 1.0, tx, 0.5, tz, inn);
+  const plateTex = canvasTex(512, 256, (g, w, h) => {
+    g.fillStyle = "#111827"; g.fillRect(0, 0, w, h);
+    g.fillStyle = "#fbbf24"; g.textAlign = "center"; g.textBaseline = "middle";
+    g.font = "800 46px Segoe UI, sans-serif"; g.fillText("GIẢI ĐẸP TRAI", w / 2, 80); g.fillText("NHẤT NĂM", w / 2, 135);
+    g.fillStyle = "#f8fafc"; g.font = "600 34px Segoe UI, sans-serif"; g.fillText("Thế Quân CEO", w / 2, 200);
+  });
+  const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.4), new THREE.MeshStandardMaterial({ map: plateTex, emissive: 0xffffff, emissiveMap: plateTex, emissiveIntensity: 0.3 }));
+  plate.position.set(tx, 0.55, tz + 0.505); inn.add(plate);
+  const cup = new THREE.Group(); cup.position.set(tx, 1.0, tz); inn.add(cup);
+  const profile = [[0, 0], [0.22, 0], [0.22, 0.05], [0.08, 0.1], [0.05, 0.3], [0.08, 0.35], [0.25, 0.45], [0.3, 0.75], [0.27, 0.78]].map(([x, y]) => new THREE.Vector2(x, y));
+  const body = new THREE.Mesh(new THREE.LatheGeometry(profile, 40), gold); body.castShadow = true; cup.add(body);
+  for (const sx of [-1, 1]) { const hdl = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.025, 8, 20, Math.PI * 1.2), gold); hdl.position.set(sx * 0.3, 0.6, 0); hdl.rotation.z = sx > 0 ? -Math.PI * 0.6 : Math.PI * 1.6; cup.add(hdl); }
+  const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.1, 0), gold); star.position.y = 0.95; cup.add(star);
+  solidCircle(tx, tz, 0.75);
+  funTick.push((dt, t) => { cup.rotation.y = t * 0.5; star.position.y = 0.95 + Math.sin(t * 2) * 0.04; });
+}
+
+// Bàn bóng bàn trong hành lang, bóng nảy qua lại
+{
+  const px = 24, pz = 0.8;
+  box(std(0x1e7a4f, { roughness: 0.5 }), 2.74, 0.05, 1.52, px, 0.76, pz, inn);
+  box(white, 2.74, 0.052, 0.03, px, 0.762, pz, inn).castShadow = false;
+  box(std(0xffffff, { transparent: true, opacity: 0.6 }), 0.02, 0.15, 1.6, px, 0.86, pz, inn);
+  for (const [lx, lz] of [[-1.2, -0.65], [1.2, -0.65], [-1.2, 0.65], [1.2, 0.65]]) box(metal, 0.06, 0.74, 0.06, px + lx, 0.37, pz + lz, inn);
+  for (const sx of [-1, 1]) { const pd = cyl(std(0xdc2626), 0.08, 0.08, 0.015, px + sx * 1.1, 0.8, pz + 0.4 * sx, inn, 16); pd.rotation.z = Math.PI / 2 * 0.2; }
+  const ball = new THREE.Mesh(new THREE.SphereGeometry(0.025, 10, 8), std(0xffffff, { emissive: 0xffffff, emissiveIntensity: 0.3 }));
+  inn.add(ball);
+  solidBox(px - 1.4, pz - 0.8, px + 1.4, pz + 0.8);
+  funTick.push((dt, t) => {
+    const u = (t * 0.7) % 2, s = u < 1 ? u : 2 - u;   // qua lại giữa hai đầu bàn
+    ball.position.set(px - 1.2 + s * 2.4, 0.8 + Math.abs(Math.sin(s * Math.PI * 2)) * 0.35, pz + Math.sin(t * 1.3) * 0.4);
+  });
+}
+
+// Máy chơi game và ghế lười ở góc thư giãn
+{
+  const g = new THREE.Group(); g.position.set(19.2, 0, 7.6); g.rotation.y = Math.PI / 2; inn.add(g);
+  box(std(0x7c3aed, { roughness: 0.5 }), 0.85, 1.9, 0.75, 0, 0.95, 0, g);
+  box(dark, 0.86, 0.3, 0.5, 0, 1.0, 0.25, g);
+  const scr = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0x22d3ee, emissiveIntensity: 0.9 });
+  const sp = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.48), scr); sp.position.set(0, 1.45, 0.38); g.add(sp);
+  const mq = canvasTex(256, 64, (c, w, h) => { c.fillStyle = "#111827"; c.fillRect(0, 0, w, h); c.fillStyle = "#facc15"; c.font = "900 34px Segoe UI, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("BUG HUNTER", w / 2, h / 2); });
+  const mqm = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.2), new THREE.MeshStandardMaterial({ map: mq, emissive: 0xffffff, emissiveMap: mq, emissiveIntensity: 0.8 })); mqm.position.set(0, 1.78, 0.38); g.add(mqm);
+  const stick = cyl(dark, 0.015, 0.015, 0.12, -0.12, 1.21, 0.38, g, 6); stick.rotation.x = 0.2;
+  for (const [bx, hex] of [[0.08, 0xef4444], [0.18, 0x22c55e]]) cyl(std(hex, { emissive: hex, emissiveIntensity: 0.4 }), 0.03, 0.03, 0.02, bx, 1.16, 0.4, g, 10);
+  solidBox(18.8, 7.2, 19.6, 8.05);
+  const hues = [0x22d3ee, 0xf472b6, 0xfacc15, 0x4ade80];
+  funTick.push((dt, t) => { scr.emissive.setHex(hues[Math.floor(t * 1.5) % hues.length]); });
+  for (const [bx, bz, hex] of [[24.2, 8.7, 0xec4899], [25.8, 9.8, 0x14b8a6], [21.6, 9.4, 0xf59e0b]]) {
+    const bag = new THREE.Mesh(new THREE.SphereGeometry(0.55, 20, 14), std(hex, { roughness: 0.9 }));
+    bag.scale.set(1, 0.62, 1); bag.position.set(bx, 0.34, bz); bag.castShadow = bag.receiveShadow = true; inn.add(bag);
+    solidCircle(bx, bz, 0.55);
+  }
+}
+
+// Máy pha cà phê bốc hơi ở pantry
+{
+  const cx = 29.3, cz = 10.8;
+  box(std(0x111827, { roughness: 0.3, metalness: 0.4 }), 0.42, 0.55, 0.45, cx, 1.28, cz, inn);
+  cyl(white, 0.05, 0.04, 0.1, cx - 0.1, 1.06, cz, inn, 12);
+  const puffs = [0, 1, 2, 3].map(() => { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: steamTex, transparent: true, depthWrite: false })); s.scale.setScalar(0.18); inn.add(s); return s; });
+  funTick.push((dt, t) => puffs.forEach((s, i) => {
+    const u = (t * 0.35 + i / puffs.length) % 1;
+    s.position.set(cx - 0.1 + Math.sin(t * 2 + i) * 0.04, 1.16 + u * 0.7, cz + Math.cos(t * 1.7 + i) * 0.04);
+    s.material.opacity = 0.55 * Math.sin(u * Math.PI); s.scale.setScalar(0.12 + u * 0.25);
+  }));
+}
+
+// Mèo văn phòng đi dạo hành lang & sảnh, gặp bạn thì ngồi xuống "meo"
+{
+  const fur = std(0xf59e0b, { roughness: 0.85 }), belly = std(0xfff7ed, { roughness: 0.85 });
+  const cat = new THREE.Group(); scene.add(cat);
+  const mk = (geo, mat, x, y, z, parent = cat) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m; };
+  const body = mk(new THREE.CapsuleGeometry(0.15, 0.36, 4, 10), fur, 0, 0.3, 0); body.rotation.x = Math.PI / 2;
+  const head = new THREE.Group(); head.position.set(0, 0.45, 0.3); cat.add(head);
+  mk(new THREE.SphereGeometry(0.14, 16, 12), fur, 0, 0, 0, head);
+  for (const sx of [-1, 1]) {
+    const ear = mk(new THREE.ConeGeometry(0.05, 0.1, 4), fur, sx * 0.075, 0.13, 0, head); ear.rotation.z = -sx * 0.25;
+    mk(new THREE.SphereGeometry(0.022, 8, 6), eyeDark, sx * 0.05, 0.03, 0.12, head);
+  }
+  mk(new THREE.SphereGeometry(0.018, 8, 6), std(0xf472b6), 0, -0.01, 0.14, head);
+  const legs = [[-0.08, 0.16], [0.08, 0.16], [-0.08, -0.16], [0.08, -0.16]].map(([x, z]) => {
+    const g = new THREE.Group(); g.position.set(x, 0.24, z); cat.add(g);
+    const l = mk(new THREE.CylinderGeometry(0.035, 0.035, 0.24, 8), belly, 0, -0.12, 0, g); l.castShadow = true;
+    return g;
+  });
+  const tail = new THREE.Group(); tail.position.set(0, 0.35, -0.3); cat.add(tail);
+  const tl = mk(new THREE.CylinderGeometry(0.025, 0.035, 0.42, 8), fur, 0, 0.2, -0.05, tail); tl.rotation.x = -0.35;
+  const PTS = [[-25, 2.2], [-12, 2.6], [-2, 2.8], [9, -1.6], [16, 2.6], [-17, -2.6], [0, 9], [-2.5, 15.2], [0, -8.5], [3, -12.5]];
+  // Đổi khu (hành lang ↔ sảnh lễ tân ↔ sảnh danh dự) thì đi qua giữa hành lang trước, để không xuyên vách kính
+  const zoneOf = (z) => (z < -6 ? "atrium" : z > 6 ? "lobby" : "hall");
+  const st = { x: -12, z: 2.6, tx: -2, tz: 2.8, next: null, wait: 0, yaw: 0, sit: 0 };
+  const col = [st.x, st.z, 0.3]; circles.push(col);
+  const tag = makeTag("Mèo Bug", 0xfb923c, "Meo~ Nhớ commit trước khi về nha!", "cat");
+  const lb = new CSS2DObject(tag); lb.position.set(0, 0.9, 0); cat.add(lb);
+  funTick.push((dt, t) => {
+    const dx = player.pos.x - st.x, dz = player.pos.z - st.z, dp = Math.hypot(dx, dz);
+    let moving = false;
+    if (dp < 2.6) { st.yaw = Math.atan2(dx, dz); }
+    else if (st.wait > 0) st.wait -= dt;
+    else {
+      const vx = st.tx - st.x, vz = st.tz - st.z, d = Math.hypot(vx, vz);
+      if (d < 0.2) {
+        if (st.next) { [st.tx, st.tz] = st.next; st.next = null; }
+        else {
+          const [nx, nz] = pick(PTS);
+          if (zoneOf(nz) !== zoneOf(st.z)) { st.tx = 0; st.tz = 0; st.next = [nx, nz]; } else { st.tx = nx; st.tz = nz; }
+          st.wait = range(1.5, 5);
+        }
+      }
+      else { const sp = Math.min(d, 1.1 * dt); st.x += (vx / d) * sp; st.z += (vz / d) * sp; st.yaw = Math.atan2(vx, vz); moving = true; }
+    }
+    st.sit = lerp(st.sit, moving ? 0 : 1, 1 - Math.exp(-4 * dt));
+    let dy = st.yaw - cat.rotation.y; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+    cat.rotation.y += dy * (1 - Math.exp(-8 * dt));
+    cat.position.set(st.x, BASE, st.z);
+    legs.forEach((g, i) => { g.rotation.x = moving ? Math.sin(t * 12 + (i % 2 ? Math.PI : 0) + (i > 1 ? Math.PI : 0)) * 0.6 : 0; });
+    body.position.y = 0.3 - st.sit * 0.06; body.rotation.x = Math.PI / 2 - st.sit * 0.35;
+    tail.rotation.z = Math.sin(t * (moving ? 6 : 2.5)) * 0.5;
+    col[0] = st.x; col[1] = st.z;
+    tag.classList.toggle("near", dp < 2.6);
+    tag.style.opacity = dp < 18 ? 1 : 0;
+  });
+}
+
+// Robot hút bụi chạy dọc hành lang
+{
+  const rb = new THREE.Group(); scene.add(rb);
+  const base = cyl(std(0x334155, { roughness: 0.4, metalness: 0.3 }), 0.3, 0.3, 0.09, 0, 0.05, 0, rb, 28);
+  cyl(std(0xe2e8f0, { roughness: 0.3 }), 0.24, 0.26, 0.02, 0, 0.1, 0, rb, 28);
+  const led = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0x22c55e, emissiveIntensity: 1.5 });
+  const l = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 6), led); l.position.set(0, 0.11, 0.18); rb.add(l);
+  base.castShadow = true;
+  const tag = makeTag("Robot Dọn Dẹp", 0x94a3b8, "Đang hút bụi… và hút luôn bug 🐞", "robot");
+  const lb = new CSS2DObject(tag); lb.position.set(0, 0.6, 0); rb.add(lb);
+  const st = { x: -25, dir: 1 };
+  const col = [st.x, -2.6, 0.32]; circles.push(col);
+  funTick.push((dt, t) => {
+    const z = -2.6 + Math.sin(st.x * 0.35) * 0.5;
+    const dp = Math.hypot(player.pos.x - st.x, player.pos.z - z);
+    if (dp > 1.2) st.x += st.dir * 0.9 * dt;
+    if (st.x > 26) st.dir = -1; else if (st.x < -26) st.dir = 1;
+    rb.position.set(st.x, BASE, -2.6 + Math.sin(st.x * 0.35) * 0.5);
+    rb.rotation.y = st.dir > 0 ? Math.PI / 2 : -Math.PI / 2;
+    led.emissive.setHex(Math.floor(t * 2) % 2 ? 0x22c55e : 0x16a34a);
+    col[0] = rb.position.x; col[1] = rb.position.z;
+    tag.classList.toggle("near", dp < 2.5);
+    tag.style.opacity = dp < 18 ? 1 : 0;
+  });
+}
+
 // ================= Điều khiển nhân vật =================
 const SPAWN = { x: 0, z: D / 2 + 14, yaw: Math.PI };
 const player = { pos: new THREE.Vector3(SPAWN.x, 0, SPAWN.z), vel: new THREE.Vector3(), yaw: SPAWN.yaw, y: 0, vy: 0, onGround: true };
@@ -1009,16 +1285,25 @@ const SUN_WHITE = new THREE.Color(0xfff6ea), SUN_GOLD = new THREE.Color(0xffa860
 const CLOUD_DAY = new THREE.Color(0xffffff), CLOUD_GOLD = new THREE.Color(0xffc8a0), CLOUD_NIGHT = new THREE.Color(0x3a4458);
 const sunDir = new THREE.Vector3();
 let day = 1, golden = 0;
-function setHour(h) {
+// Thời tiết đang hiển thị (đổi dần về weatherTarget): mây, mưa, sương, giông 0..1; gió = hệ số lay cây.
+const WEATHER_CLEAR = { cloud: 0.2, rain: 0, fog: 0, storm: 0, wind: 1 };
+const weather = { ...WEATHER_CLEAR }, weatherTarget = { ...WEATHER_CLEAR };
+const OVERCAST_TOP = new THREE.Color(0x6b7787), OVERCAST_HOR = new THREE.Color(0xa9b3bd), CLOUD_RAIN = new THREE.Color(0x5b6472), FLASH = new THREE.Color(0xdde6ff);
+const tmpCol = new THREE.Color();
+let hourNow = 15.5, flash = 0;
+function setHour(h) { hourNow = h; applySky(); }
+function applySky() {
+  const h = hourNow, w = weather;
   const t = (h - 6) / 13;                                   // 6:00 → 0, 19:00 → 1
   const elev = Math.sin(Math.PI * clamp(t, -0.16, 1.16)) * 62;
   const theta = lerp(115, -115, clamp(t, 0, 1));            // mọc đông (+x), lặn tây (-x), đi ngang phía trước sảnh
   sunDir.setFromSphericalCoords(1, degToRad(90 - elev), degToRad(theta));
   day = smoothstep(elev, -5, 9);
   golden = day * (1 - smoothstep(elev, 3, 26));
-  sun.intensity = 5.2 * day * smoothstep(elev, -2, 6);
+  const gloom = clamp(w.cloud * 0.7 + w.rain * 0.35 + w.fog * 0.3, 0, 0.92);   // trời u ám: nắng yếu, màu xám
+  sun.intensity = 5.2 * day * smoothstep(elev, -2, 6) * (1 - gloom);
   sun.color.copy(SUN_WHITE).lerp(SUN_GOLD, golden);
-  hemi.intensity = 0.25 + 0.9 * day;
+  hemi.intensity = (0.25 + 0.9 * day) * (1 - gloom * 0.3) + flash * 2.5;
   hemi.color.set(0xcfe7ff).lerp(new THREE.Color(0x30406a), 1 - day);
   gl.toneMappingExposure = lerp(0.85, 0.5, day);
 
@@ -1026,14 +1311,18 @@ function setHour(h) {
   u.uTop.value.copy(SKY.night.top).lerp(SKY.day.top, day).lerp(SKY.gold.top, golden * 0.55);
   u.uHor.value.copy(SKY.night.hor).lerp(SKY.day.hor, day).lerp(SKY.gold.hor, golden * 0.85);
   u.uSun.value.copy(sunDir);
-  u.uSunCol.value.copy(SUN_WHITE).lerp(SUN_GOLD, golden).multiplyScalar(smoothstep(elev, -3, 2));
+  u.uTop.value.lerp(tmpCol.copy(OVERCAST_TOP).multiplyScalar(0.12 + 0.88 * day), gloom * 0.85).lerp(FLASH, flash * 0.5);
+  u.uHor.value.lerp(tmpCol.copy(OVERCAST_HOR).multiplyScalar(0.12 + 0.88 * day), gloom * 0.8).lerp(FLASH, flash * 0.4);
+  u.uSunCol.value.copy(SUN_WHITE).lerp(SUN_GOLD, golden).multiplyScalar(smoothstep(elev, -3, 2) * (1 - gloom));
   u.uMoon.value.set(-sunDir.x, Math.max(0.45, -sunDir.y), -sunDir.z);
   u.uNight.value = smoothstep(night, 0.4, 1);
   scene.fog.color.copy(u.uHor.value);
-  starMat.opacity = smoothstep(night, 0.4, 1);
+  starMat.opacity = smoothstep(night, 0.4, 1) * (1 - w.cloud);
+  scene.fog.density = 0.0014 + w.rain * 0.0035 + w.fog * 0.012;
+  rainMat.opacity = 0.75 * (0.45 + 0.55 * day) + flash * 0.25;
   for (const c of clouds) {
-    c.material.color.copy(CLOUD_DAY).lerp(CLOUD_GOLD, golden).lerp(CLOUD_NIGHT, night);
-    c.material.opacity = c.userData.alpha * (0.35 + 0.65 * day);
+    c.material.color.copy(CLOUD_DAY).lerp(CLOUD_GOLD, golden * (1 - gloom)).lerp(CLOUD_RAIN, Math.min(1, w.rain + w.storm * 0.5) * 0.85).lerp(CLOUD_NIGHT, night);
+    c.material.opacity = c.userData.alpha * (0.35 + 0.65 * day) * (0.3 + 0.7 * w.cloud);
   }
   for (const m of lampMats) m.emissiveIntensity = 0.2 + 3 * night;
   for (const g of glows) g.material.opacity = 0.85 * smoothstep(night, 0.3, 0.9);
@@ -1043,6 +1332,50 @@ function setHour(h) {
 
   envDirty = true;
 }
+
+// ================= Mưa =================
+const RAIN_N = 4500, RAIN_BOX = 40, RAIN_H = 34;
+const drops = Array.from({ length: RAIN_N }, () => ({ x: range(-RAIN_BOX, RAIN_BOX), y: range(0, RAIN_H), z: range(-RAIN_BOX, RAIN_BOX), sp: range(24, 32) }));
+const rainPos = new Float32Array(RAIN_N * 6);
+const rainGeo = new THREE.BufferGeometry();
+rainGeo.setAttribute("position", new THREE.BufferAttribute(rainPos, 3));
+const rainMat = new THREE.LineBasicMaterial({ color: 0xdbe7f3, transparent: true, opacity: 0.7, depthWrite: false });
+const rain = new THREE.LineSegments(rainGeo, rainMat);
+rain.frustumCulled = false; rain.visible = false;
+scene.add(rain);
+const wrap = (v, c) => c + ((((v - c) % (2 * RAIN_BOX)) + 3 * RAIN_BOX) % (2 * RAIN_BOX)) - RAIN_BOX;
+function updateRain(dt) {
+  rain.visible = weather.rain > 0.02;
+  if (!rain.visible) return;
+  const active = Math.floor(RAIN_N * weather.rain), cx = camera.position.x, cz = camera.position.z, slant = 0.12 * weather.wind;
+  for (let i = 0; i < RAIN_N; i++) {
+    const d = drops[i], o = i * 6;
+    d.y -= d.sp * dt; if (d.y < 0) d.y += RAIN_H;
+    const x = wrap(d.x, cx), z = wrap(d.z, cz);
+    const indoors = Math.abs(x) < W / 2 + 1.6 && Math.abs(z) < D / 2 + 1.6 && d.y < roofY + 0.8;
+    if (i >= active || indoors) { rainPos.fill(-50, o, o + 6); continue; }
+    rainPos[o] = x; rainPos[o + 1] = d.y; rainPos[o + 2] = z;
+    rainPos[o + 3] = x - slant * 1.4; rainPos[o + 4] = d.y + 1.4; rainPos[o + 5] = z;
+  }
+  rainGeo.attributes.position.needsUpdate = true;
+}
+let nextBolt = 4;
+function updateWeather(dt) {
+  let moving = false;
+  for (const k in weatherTarget) {
+    const before = weather[k];
+    weather[k] = lerp(before, weatherTarget[k], 1 - Math.exp(-0.5 * dt));   // đổi dần trong vài giây
+    if (Math.abs(weather[k] - weatherTarget[k]) > 0.002) moving = true;
+  }
+  windStrength.value = weather.wind;
+  // Giông: chớp loé ngẫu nhiên 5–14 giây một lần
+  if (weather.storm > 0.5 && !reduceMotion) { nextBolt -= dt; if (nextBolt <= 0) { flash = 1; nextBolt = range(5, 14); } }
+  const flashing = flash > 0;
+  flash = Math.max(0, flash - dt * 4);
+  if (moving || flashing) applySky();
+  updateRain(dt);
+}
+
 setHour(clamp(opts.hour ?? 15.5, 5, 21));
 
 // ================= Vòng lặp =================
@@ -1051,10 +1384,14 @@ controls.update();
 const clock = new THREE.Clock();
 let first = true, roofAlpha = 1;
 const ray = new THREE.Raycaster();
+const camBlockersAll = [...camBlockers, roofSlab];
+const desiredCam = new THREE.Vector3(), renderedCam = new THREE.Vector3(NaN, NaN, NaN), armDir = new THREE.Vector3();
+let arm = 9;
 const plaqueMeshes = plaques.flatMap((p) => [p.front, p.back]);
 gl.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
   if (!reduceMotion) wind.value = t;
+  updateWeather(dt);
 
   for (const c of clouds) {
     c.position.x += dt * c.userData.speed;
@@ -1065,12 +1402,27 @@ gl.setAnimationLoop(() => {
   animateChar(hero, dt, t);
   const inside = updateZone();
 
-  // Camera dời theo nhân vật (độ cao được làm mượt để nhảy không giật hình)
+  // Camera dời theo nhân vật (độ cao được làm mượt để nhảy không giật hình).
+  // desiredCam là chỗ người dùng muốn đặt camera; camera thật có thể bị tường đẩy vào gần hơn.
+  if (camera.position.equals(renderedCam)) camera.position.copy(desiredCam);
   focus.set(player.pos.x, lerp(lastFocus.y, player.y + 2.2, 1 - Math.exp(-8 * dt)), player.pos.z);
   camera.position.add(v3.subVectors(focus, lastFocus));
   controls.target.copy(focus);
   lastFocus.copy(focus);
   controls.update();
+  desiredCam.copy(camera.position);
+  // Cần camera co giãn: có tường/kính/mái chắn giữa nhân vật và camera thì kéo camera vào trước chỗ chắn,
+  // hết chắn thì giãn ra từ từ. Nhờ vậy camera không đứng sau tường hay nhìn xuyên vách.
+  armDir.subVectors(desiredCam, focus);
+  const armWant = armDir.length();
+  armDir.divideScalar(armWant || 1);
+  ray.set(focus, armDir); ray.far = armWant;
+  const wall = ray.intersectObjects(roof.visible && roofAlpha > 0.5 ? camBlockersAll : camBlockers, false)[0];
+  const armTarget = wall ? Math.max(1.1, wall.distance - 0.4) : armWant;
+  arm = armTarget < arm ? armTarget : lerp(arm, armTarget, 1 - Math.exp(-3 * dt));
+  camera.position.copy(focus).addScaledVector(armDir, Math.min(arm, armWant));
+  renderedCam.copy(camera.position);
+  hero.body.visible = arm > 1.3;   // camera sát đầu thì ẩn thân để không che màn hình
 
   // Mái mờ dần khi ở trong nhà
   roofAlpha = lerp(roofAlpha, inside ? 0 : 1, 1 - Math.exp(-6 * dt));
@@ -1090,6 +1442,7 @@ gl.setAnimationLoop(() => {
   }
   for (const m of ledMats) if (rnd() < 0.04) m.emissiveIntensity = rnd() < 0.5 ? 0.2 : 1.4;
   logoMat.emissiveIntensity = 0.7 + Math.sin(t * 2) * 0.2;
+  for (const f of funTick) f(dt, t);
 
   // Biển phòng nằm chắn giữa camera và nhân vật thì mờ đi để không che tầm nhìn
   v3.set(player.pos.x, player.y + 1.2, player.pos.z);
@@ -1121,7 +1474,7 @@ function goToRoom(id) {
   const r = ZONES.find((z) => z.id === id);
   if (!r) return;
   const north = r.z1 <= -6;
-  player.pos.set(r.door ?? (r.x0 + r.x1) / 2, 0, north ? -9 : 9);
+  player.pos.set(r.door ?? (r.x0 + r.x1) / 2, 0, north ? -10.2 : 10.2);
   player.vel.set(0, 0, 0); player.vy = 0; player.y = BASE; player.yaw = north ? Math.PI : 0;
   focus.set(player.pos.x, player.y + 2.2, player.pos.z); lastFocus.copy(focus); controls.target.copy(focus);
   cameraBehind();
@@ -1133,8 +1486,10 @@ function setDistance(d) {
 return {
   camera, controls, ZONES, npcIds: NPCS.map((n) => n.room),
   setHour: (h) => setHour(clamp(h, 5, 21)),
+  // Thời tiết: { cloud, rain, fog, storm (0..1), wind (hệ số lay cây) }; cảnh đổi dần sang trạng thái mới.
+  setWeather: (w) => Object.assign(weatherTarget, WEATHER_CLEAR, w),
   goToRoom, goHome, cameraBehind, jump, setDistance,
-  getDistance: () => camera.position.distanceTo(controls.target),
+  getDistance: () => desiredCam.distanceTo(controls.target),
   // Bong bóng việc được giao trên đầu nhân vật (chỉ dùng textContent, không chèn HTML)
   say(id, { tag = "", text = "", color = 0xfbbf24 } = {}) {
     const el = tagOf(id); if (!el) return;
