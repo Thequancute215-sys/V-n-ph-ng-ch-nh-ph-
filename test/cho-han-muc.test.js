@@ -24,7 +24,7 @@ async function fixture(t, { webMode = "ok" } = {}) {
     if(role==='CLAUDE_REPORTER'){console.log(JSON.stringify({result:'Claude báo cáo.'}));return;}
     if(role==='${sol}'&&!fs.existsSync(marker)){fs.writeFileSync(marker,'1');console.log(JSON.stringify({type:'error',message:"You've hit your usage limit. Upgrade to Pro or try again in 3 minutes."}));process.exit(1);}
     const next={SOL_ARCHITECT_PLANNER:'CODEX_ASTRA_DEV',CODEX_ASTRA_DEV:'CLAUDE_AUDITOR',CLAUDE_AUDITOR:'SPEC_ARCHITECT'}[role];
-    console.log(JSON.stringify({result:'Xong lượt.\\n'+JSON.stringify({role,next_owner:next,files:[],claim_fixed:[]})}));`);
+    console.log(JSON.stringify({result:'Xong lượt.\\n'+JSON.stringify({role,next_owner:next,files:[],claim_fixed:[],giai_thich:[{van_de:'Vấn đề của lượt thử nghiệm',da_lam:'Đã làm phần việc thử nghiệm',vi_sao:'Vì đây là CLI giả dùng cho test',phuong_an_khac:[]}]})}));`);
   // SPEC_ARCHITECT cấu hình như agy thật (chương trình rồi "-p"): AGY_WEB_PROMPT phải tự lấy chương trình từ đó.
   const agents = Object.fromEntries([sol, dev, claude, "CLAUDE_REPORTER", "CLAUDE_WEB_PROMPT"].map((role) => [role, [process.execPath, fake, role, webMode, "{prompt}"]]));
   agents[spec] = [process.execPath, fake, "-p", "{prompt}", "--mode", "accept-edits"];

@@ -19,7 +19,7 @@ const ASK = { question: "Sol thêm hàng đợi Redis không cần thiết: đ�
 // AI giả: argv = [vai, kịch bản, thư mục đếm, prompt]. Mỗi vai đếm số lần được gọi để kịch bản đổi theo lượt.
 const FAKE = `const fs=require("fs"),path=require("path");const [role,mode,dir,prompt]=process.argv.slice(2);
 const f=path.join(dir,role);const n=(fs.existsSync(f)?+fs.readFileSync(f,"utf8"):0)+1;fs.writeFileSync(f,String(n));
-const out=(o)=>console.log(JSON.stringify({result:"Xong lượt.\\n"+JSON.stringify(Object.assign({role,files:[],claim_fixed:[]},o))}));
+const out=(o)=>console.log(JSON.stringify({result:"Xong lượt.\\n"+JSON.stringify(Object.assign({role,files:[],claim_fixed:[],giai_thich:[{van_de:'Vấn đề của lượt thử nghiệm',da_lam:'Đã làm phần việc thử nghiệm',vi_sao:'Vì đây là CLI giả dùng cho test',phuong_an_khac:[]}]},o))}));
 if(role==="CLAUDE_REPORTER"){console.log(JSON.stringify({result:"Claude báo cáo: luồng dừng, CEO xem."}));process.exit(0);}
 if(mode==="ask"){
   if(role==="CLAUDE_AUDITOR"&&n===1){if(!prompt.includes('"ask_ceo"'))process.exit(4);out({next_owner:"CODEX_ASTRA_DEV",ask_ceo:${JSON.stringify(ASK)}});return;}
@@ -60,11 +60,13 @@ test("Claude hỏi CEO trong luồng tự động: chờ, CEO chọn A → Sol n
   assert.equal(r.status, 201);
   const asked = await wait(r.run.id, "awaiting_answer");
   assert.equal(asked.question.options.length, 2);
+  assert.match(asked.report, /^Xong lượt\./, "CEO đọc được toàn bộ phân tích của Claude trước khi chọn");
   assert.equal(ctl.autopilot.busy(repo), true, "đang chờ CEO thì không giao việc khác");
   assert.equal((await call(`/handoffs/${asked.question.jobId}/approve`, {})).code, "NEEDS_ANSWER", "phải chọn phương án, không duyệt thẳng");
   assert.equal((await call(`/autopilot/${r.run.id}/answer`, { option: "Z" })).status, 400);
   const a = await call(`/autopilot/${r.run.id}/answer`, { option: "A" });
   assert.equal(a.status, 200, JSON.stringify(a));
+  assert.equal(a.run.report, "", "phân tích cũ không còn treo sau khi CEO đã chọn");
   assert.match(git("log", "--format=%s"), /CLAUDE_AUDITOR -> NEXT: SOL_ARCHITECT_PLANNER — CEO chọn A/);
   const done = await wait(r.run.id, "awaiting_approval");
   assert.deepEqual(done.steps.map((s) => s.role), [CLAUDE, SOL, CLAUDE]);

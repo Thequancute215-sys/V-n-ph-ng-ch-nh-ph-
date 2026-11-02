@@ -70,7 +70,7 @@ test("không phải lượt của vai → 409; đủ 4 vai đều có CLI chạy
 });
 
 test("lượt AI chạy, bàn giao hợp lệ, CEO duyệt → agent.md đổi lượt + commit chore(agent-sync)", async () => {
-  setFake('Đã sửa xong.\n{"role":"CODEX_ASTRA_DEV","next_owner":"SOL_ARCHITECT_ADVISOR","files":["a.js"],"claim_fixed":["P2-C03"]}');
+  setFake('Đã sửa xong.\n{"role":"CODEX_ASTRA_DEV","next_owner":"SOL_ARCHITECT_ADVISOR","files":["a.js"],"claim_fixed":["P2-C03"],"giai_thich":[{"van_de":"Vấn đề của lượt thử nghiệm","da_lam":"Đã sửa a.js cho P2-C03","vi_sao":"Vì đây là CLI giả dùng cho test","phuong_an_khac":[]}]}');
   const r = await call("POST", "/ai/run", { workspace: repo, role: "CODEX_ASTRA_DEV", task: "sửa P2-C03" });
   assert.strictEqual(r.status, 201, r.text);
   assert.strictEqual(r.json.job.kind, "ai");
@@ -113,7 +113,7 @@ test("bàn giao sai schema hoặc thiếu → không duyệt được, agent.md 
 // sáng ngay và lượt bị chuyển mà CEO chưa bấm "Duyệt chuyển lượt".
 test("AI tự sửa NEXT_OWNER nhưng bàn giao chưa duyệt → không chạy được lượt kế tiếp (409 HANDOFF_PENDING)", async () => {
   fs.writeFileSync(path.join(repo, "agent.md"), AGENT_MD); git("commit", "-qam", "trả lượt về Astra để thử", "--allow-empty");
-  const selfEdit = `require("fs").writeFileSync("agent.md", require("fs").readFileSync("agent.md","utf8").replace("NEXT_OWNER (MUTEX LOCK): CODEX_ASTRA_DEV","NEXT_OWNER (MUTEX LOCK): SOL_ARCHITECT_ADVISOR")); console.log(JSON.stringify({role:"CODEX_ASTRA_DEV",next_owner:"SOL_ARCHITECT_ADVISOR",files:["agent.md"],claim_fixed:[]}))`;
+  const selfEdit = `require("fs").writeFileSync("agent.md", require("fs").readFileSync("agent.md","utf8").replace("NEXT_OWNER (MUTEX LOCK): CODEX_ASTRA_DEV","NEXT_OWNER (MUTEX LOCK): SOL_ARCHITECT_ADVISOR")); console.log(JSON.stringify({role:"CODEX_ASTRA_DEV",next_owner:"SOL_ARCHITECT_ADVISOR",files:["agent.md"],claim_fixed:[],giai_thich:[{van_de:"Vấn đề của lượt thử nghiệm",da_lam:"Đã tự đổi NEXT_OWNER để thử",vi_sao:"Vì đây là CLI giả dùng cho test",phuong_an_khac:[]}]}))`;
   fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify({ CODEX_ASTRA_DEV: [process.execPath, "-e", selfEdit, "{prompt}"], SOL_ARCHITECT_ADVISOR: [process.execPath, "-e", "1", "{prompt}"] }));
   const r = await call("POST", "/ai/run", { workspace: repo, role: "CODEX_ASTRA_DEV" });
   assert.strictEqual(r.status, 201, r.text);

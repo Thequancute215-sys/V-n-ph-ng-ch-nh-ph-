@@ -222,7 +222,7 @@
   function runHtml(r, statuses) {
     const warn = ["awaiting_approval", "awaiting_answer", "attention", "waiting_quota"].includes(r.status);
     return `<article class="entry"><div class="entry-head"><strong>${esc(r.task)}</strong>${badge(statuses[r.status] || r.status, warn ? "warn" : r.status === "approved" ? "good" : "")}</div>` +
-      `<p>${esc(r.steps.filter((s) => !s.quota).length)}/${esc(r.maxSteps)} lượt</p>` + gitHtml(r) + stepsHtml(r) +
+      `<p>${esc(r.steps.filter((s) => !s.quota).length)}/${esc(r.maxSteps)} lượt</p>` + gitHtml(r) + stepsHtml(r) + globalThis.RepoProgress.explainHtml(r) +
       (r.decisions || []).map((d) => `<p class="muted">✔ Anh đã chọn ${esc(d.option)}: ${esc(d.label)} → ${esc(d.next)}</p>`).join("") +
       (r.status === "awaiting_answer" && r.question ? askHtml(r.question, "data-auto-answer", r.id) : "") +
       (r.status === "waiting_quota" && r.wait ? waitHtml(r) : "") +

@@ -23,7 +23,7 @@ async function fixture(t, mode = "normal") {
     if(mode==='slow'){setInterval(()=>{},1000);return;}
     if(mode.startsWith('bad')){console.log('Không có dòng bàn giao');process.exit(0);}
     const next={SPEC_ARCHITECT:'SOL_ARCHITECT_PLANNER',SOL_ARCHITECT_PLANNER:'CODEX_ASTRA_DEV',CODEX_ASTRA_DEV:'CLAUDE_AUDITOR',CLAUDE_AUDITOR:'SPEC_ARCHITECT'}[role];
-    console.log(JSON.stringify({result:(role==='CLAUDE_AUDITOR'?'Claude báo cáo: đã kiểm thử và hoàn tất.\\n':'Xong lượt.\\n')+JSON.stringify({role,next_owner:next,files:[],claim_fixed:[]})}));`);
+    console.log(JSON.stringify({result:(role==='CLAUDE_AUDITOR'?'Claude báo cáo: đã kiểm thử và hoàn tất.\\n':'Xong lượt.\\n')+JSON.stringify({role,next_owner:next,files:[],claim_fixed:[],giai_thich:[{van_de:'Vấn đề của lượt thử nghiệm',da_lam:'Đã làm phần việc thử nghiệm',vi_sao:'Vì đây là CLI giả dùng cho test',phuong_an_khac:[]}]})}));`);
   fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify(Object.fromEntries([spec, sol, dev, claude, "CLAUDE_REPORTER"].map((role) => [role, [process.execPath, fake, role, mode, "{prompt}"]]))));
   const ctl = createCtl({ dir });
   await new Promise((r) => ctl.server.listen(0, "127.0.0.1", r));

@@ -23,8 +23,8 @@ async function fixture(t, claudePlan) {
     console.log(JSON.stringify({argv:args.slice(0,-1)}));
     let h;
     if(role==='CLAUDE_AUDITOR'){const n=fs.existsSync(${JSON.stringify(count)})?Number(fs.readFileSync(${JSON.stringify(count)},'utf8')):0;fs.writeFileSync(${JSON.stringify(count)},String(n+1));
-      const plan=${JSON.stringify(claudePlan)}[n]||{next_owner:'SPEC_ARCHITECT',done:true};h={role,files:[],claim_fixed:[],...plan};}
-    else h={role,next_owner:{SOL_ARCHITECT_PLANNER:'CODEX_ASTRA_DEV',CODEX_ASTRA_DEV:'CLAUDE_AUDITOR'}[role],files:[],claim_fixed:[]};
+      const plan=${JSON.stringify(claudePlan)}[n]||{next_owner:'SPEC_ARCHITECT',done:true};h={role,files:[],claim_fixed:[],giai_thich:[{van_de:'Vấn đề của lượt thử nghiệm',da_lam:'Đã làm phần việc thử nghiệm',vi_sao:'Vì đây là CLI giả dùng cho test',phuong_an_khac:[]}],...plan};}
+    else h={role,next_owner:{SOL_ARCHITECT_PLANNER:'CODEX_ASTRA_DEV',CODEX_ASTRA_DEV:'CLAUDE_AUDITOR'}[role],files:[],claim_fixed:[],giai_thich:[{van_de:'Vấn đề của lượt thử nghiệm',da_lam:'Đã làm phần việc thử nghiệm',vi_sao:'Vì đây là CLI giả dùng cho test',phuong_an_khac:[]}]};
     console.log(JSON.stringify({result:'Xong.\\n'+JSON.stringify(h)}));`);
   const codex = [process.execPath, fake, "exec", "--json", "{prompt}"];
   fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify({ SOL_ARCHITECT_PLANNER: codex, SOL_ARCHITECT_ADVISOR: codex, CODEX_ASTRA_DEV: codex,
