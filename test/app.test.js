@@ -20,7 +20,7 @@ test("manifest đủ điều kiện cài (tên, start_url, display, biểu tư�
   }
   assert.ok(m.icons.some((i) => i.sizes === "192x192") && m.icons.some((i) => i.sizes === "512x512"));
   assert.ok(m.icons.some((i) => i.purpose === "maskable"));
-  for (const s of m.shortcuts) assert.ok(fs.existsSync(path.join(PUB, s.url.replace(/^\//, ""))), "lối tắt trỏ tới trang không có: " + s.url);
+  for (const s of m.shortcuts) assert.ok(fs.existsSync(path.join(PUB, s.url.replace(/^\//, "").replace(/#.*$/, ""))), "lối tắt trỏ tới trang không có: " + s.url);
 });
 
 test("mọi trang gắn manifest (kèm cookie khóa xem), biểu tượng và app.js", () => {

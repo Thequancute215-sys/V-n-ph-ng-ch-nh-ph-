@@ -1,5 +1,5 @@
 // Mở app Văn phòng AI: `npm run app` (lối tắt Desktop cũng chạy file này).
-//  - Văn phòng chưa chạy: bật `scripts/chay-tat-ca.js` (văn phòng + OS Controller) chạy ngầm, không cửa sổ, log vào
+//  - Văn phòng chưa chạy: bật `scripts/chay-tat-ca.js --tu-bat-lai` (văn phòng + OS Controller, sập thì tự bật lại) chạy ngầm, không cửa sổ, log vào
 //    ~/.van-phong-ao/logs/app.log, PID vào ~/.van-phong-ao/app.pid; chờ tới khi trả lời.
 //  - Rồi mở cửa sổ app (Edge/Chrome chế độ --app). Thêm `--nen` thì chỉ bật ngầm, không mở cửa sổ (dùng khi tự bật cùng Windows).
 "use strict";
@@ -27,7 +27,7 @@ const background = process.argv.includes("--nen");
     fs.mkdirSync(path.dirname(app.LOG_FILE()), { recursive: true });
     const log = fs.openSync(app.LOG_FILE(), "a");
     fs.writeSync(log, `\n===== ${new Date().toISOString()} bật văn phòng (npm run app) =====\n`);
-    const child = spawn(process.execPath, [path.join(root, "scripts", "chay-tat-ca.js")], { cwd: root, detached: true, windowsHide: true, stdio: ["ignore", log, log] });
+    const child = spawn(process.execPath, [path.join(root, "scripts", "chay-tat-ca.js"), "--tu-bat-lai"], { cwd: root, detached: true, windowsHide: true, stdio: ["ignore", log, log] });
     fs.closeSync(log);
     fs.writeFileSync(app.PID_FILE(), String(child.pid));
     child.unref();

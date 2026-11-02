@@ -13,7 +13,9 @@
   let snapshot = null, accounts = null, active = "", workspaces = [], turn = null, blockerLines = null;
   let jobs = [], handoffs = [], autoRuns = [], controller = false, selected = "spec", view = "office", pendingApproval = null;
   // Kết quả đọc repo đang chọn (ctl /workspaces/overview): chỉ đọc lại khi đổi dự án hoặc bấm Làm mới.
-  let ideaList = null, ideaError = "";   // ý tưởng của dự án đang chọn (ctl /ideas)
+  let ideaList = null, ideaError = "";
+  let diffView = null;          // diff đang mở: { run, step, loading, error, data }
+  const webDrafts = {};         // chữ đang dán vào ô kết quả GPT web, theo luồng   // ý tưởng của dự án đang chọn (ctl /ideas)
   let repoInfo = null, repoFor = "", repoError = "", repoLoading = false, createdFor = "";
   let loading = false, switching = false, controlError = "", stateError = "", accountError = "", source = null, streaming = false;
   let docText = null, docError = "", signatures = {}, lastRefresh = null, logSequence = 0;
@@ -194,7 +196,16 @@
       `<p>Tự chạy lại đúng lượt này lúc ${esc(hhmm(w.until))} (giờ lấy từ ${esc(w.source)}). Ngữ cảnh nằm trong agent.md và repo nên không mất.</p>` +
       (w.message ? `<p class="muted mono">${esc(w.message)}</p>` : "") +
       `<div class="actions"><button class="primary" data-auto-web="${esc(r.id)}" ${web?.status === "writing" ? "disabled" : ""}>${web ? "Soạn lại master prompt" : "Nhờ đội trưởng soạn master prompt cho GPT web"}</button><button data-auto-resume="${esc(r.id)}">Chạy lại ngay</button></div>` +
-      (web ? webHtml(r) : "") + "</div>";
+      (web ? webHtml(r) : "") + pasteHtml(r) + "</div>";
+  }
+  // Anh làm lượt trên ChatGPT web xong thì dán câu trả lời vào đây: AI còn hạn mức kiểm theo chuẩn đầu ra rồi áp vào repo.
+  function pasteHtml(r) {
+    const who = r.wait.provider === "claude" ? "Codex" : "Claude";
+    return `<div class="web-copy"><div class="entry-head"><strong>Dán kết quả ChatGPT trả về</strong></div>` +
+      (r.web?.applyError ? `<p class="error">${esc(r.web.applyError)}</p>` : "") +
+      `<textarea data-web-draft="${esc(r.id)}" rows="7" maxlength="400000" aria-label="Kết quả ChatGPT cho lượt ${esc(r.wait.role)}" placeholder="Dán toàn bộ câu trả lời của ChatGPT (các khối FILE:, vùng agent.md, dòng JSON bàn giao)…"></textarea>` +
+      `<div class="actions"><button class="primary" data-auto-webresult="${esc(r.id)}">Gửi ${who} kiểm và áp vào repo</button></div>` +
+      `<p class="muted">${who} đọc kết quả, đối chiếu với chuẩn đầu ra và quyền của ${esc(r.wait.role)}; chưa đạt thì không sửa file và báo lý do để anh nhờ ChatGPT làm lại.</p></div>`;
   }
   function webHtml(r) {
     const w = r.web;
@@ -205,6 +216,50 @@
       `<p class="muted">Dán master prompt vào ChatGPT web (tài khoản của anh/CLB). Prompt có mô tả dự án${w.writer.startsWith("Claude") ? " và đoạn mã nguồn liên quan" : ""}.</p>` +
       `<div class="web-copy"><div class="entry-head"><strong>Master prompt</strong><button data-copy="prompt" data-run="${esc(r.id)}">Sao chép</button></div><textarea readonly rows="8" aria-label="Master prompt">${esc(w.prompt)}</textarea></div>` +
       `<div class="web-copy"><div class="entry-head"><strong>Chuẩn kết quả đầu ra</strong><button data-copy="spec" data-run="${esc(r.id)}">Sao chép</button></div><textarea readonly rows="6" aria-label="Chuẩn kết quả đầu ra">${esc(w.spec)}</textarea></div>`;
+  }
+
+  // Một luồng tự động: trạng thái, nhánh git riêng, từng lượt (xem file đã đổi), câu hỏi/chờ hạn mức, báo cáo và nút duyệt.
+  function runHtml(r, statuses) {
+    const warn = ["awaiting_approval", "awaiting_answer", "attention", "waiting_quota"].includes(r.status);
+    return `<article class="entry"><div class="entry-head"><strong>${esc(r.task)}</strong>${badge(statuses[r.status] || r.status, warn ? "warn" : r.status === "approved" ? "good" : "")}</div>` +
+      `<p>${esc(r.steps.filter((s) => !s.quota).length)}/${esc(r.maxSteps)} lượt</p>` + gitHtml(r) + stepsHtml(r) +
+      (r.decisions || []).map((d) => `<p class="muted">✔ Anh đã chọn ${esc(d.option)}: ${esc(d.label)} → ${esc(d.next)}</p>`).join("") +
+      (r.status === "awaiting_answer" && r.question ? askHtml(r.question, "data-auto-answer", r.id) : "") +
+      (r.status === "waiting_quota" && r.wait ? waitHtml(r) : "") +
+      (r.problem ? `<p class="error">${esc(r.problem)}</p>` : "") + (r.report ? `<pre>${esc(r.report)}</pre>` : "") +
+      `<div class="actions">${["running", "reporting", "awaiting_answer", "waiting_quota"].includes(r.status) ? `<button data-auto-stop="${esc(r.id)}">Dừng luồng này</button>` : ""}${["awaiting_approval", "attention"].includes(r.status) ? `<button class="primary" data-auto-approve="${esc(r.id)}">${r.status === "attention" ? "Đã xem lỗi" : r.problem ? "Đã nhận báo cáo" : "Duyệt báo cáo Claude"}</button><button data-auto-reject="${esc(r.id)}">Từ chối</button>` : ""}</div></article>`;
+  }
+  // Nhánh ai/… của luồng; sau khi duyệt thì đẩy lên GitHub để mở PR (văn phòng không tự push, không merge).
+  function gitHtml(r) {
+    const g = r.git;
+    if (!g) return r.steps.length ? '<p class="muted">Dự án không phải repo git: AI sửa thẳng thư mục, không có diff từng lượt.</p>' : "";
+    const done = ["approved", "acknowledged"].includes(r.status);
+    return `<p class="muted">🌿 Nhánh <span class="mono">${esc(g.branch)}</span> · tách từ <span class="mono">${esc(g.from || "?")}</span>${(g.notes || []).map((n) => "<br>" + esc(n)).join("")}</p>` +
+      (g.pushed ? `<p>Đã đẩy nhánh lên GitHub lúc ${esc(hhmm(g.pushed.at))}. ${g.pushed.compareUrl ? `<a href="${esc(g.pushed.compareUrl)}" target="_blank" rel="noopener noreferrer">Mở trang tạo PR ↗</a>` : "Remote không phải GitHub: tạo PR trên trang của remote."}</p>` :
+        done ? `<div class="actions"><button class="primary" data-auto-push="${esc(r.id)}" data-branch="${esc(g.branch)}">Đẩy nhánh lên GitHub & mở PR</button></div>` : "");
+  }
+  function stepsHtml(r) {
+    if (!r.steps.length) return '<p class="muted">Đang chuẩn bị lượt đầu…</p>';
+    const open = (i) => diffView?.run === r.id && diffView.step === i + 1;
+    const items = r.steps.map((s, i) => `<li><span class="mono">${esc(s.role)}</span>${s.model ? ` <span class="muted">[${esc(s.model)} · ${esc(s.effort)}]</span>` : ""}` +
+      (s.via === "web" ? " " + badge("GPT web · " + (s.applier === "codex" ? "Codex" : "Claude") + " kiểm") : "") +
+      (s.quota ? ` <span class="muted">(${s.rejected ? "chưa áp: " + esc(s.rejected) : "hết hạn mức"})</span>` : "") +
+      (s.saved?.commit ? ` <span class="mono muted">· commit ${esc(s.saved.commit)}</span>` : s.saved?.secret ? ' <span class="error">· có chuỗi giống khóa API, chưa commit</span>' : "") +
+      (r.git && s.base ? ` <button class="link" data-diff-run="${esc(r.id)}" data-diff-step="${i + 1}" aria-expanded="${open(i)}">${open(i) ? "Ẩn file đã đổi" : "Xem file đã đổi"}</button>` : "") + "</li>").join("");
+    return `<ol class="steps">${items}</ol>` + (diffView?.run === r.id ? diffHtml() : "");
+  }
+  function diffHtml() {
+    const d = diffView;
+    if (d.loading) return '<div class="diff"><p class="muted">Đang đọc diff của lượt…</p></div>';
+    if (d.error) return `<div class="diff"><p class="error">${esc(d.error)}</p></div>`;
+    const x = d.data;
+    const files = x.files.length ? `<ul class="diff-files">${x.files.map((f) => `<li><span class="mono">${esc(f.path)}</span> <span class="add">+${esc(f.added ?? "?")}</span> <span class="del">−${esc(f.removed ?? "?")}</span></li>`).join("")}</ul>` : '<p class="muted">Lượt này không đổi file nào.</p>';
+    const lines = x.patch.split("\n").map((l) => {
+      const cls = /^(\+\+\+|---) /.test(l) || l.startsWith("diff ") ? "file" : l.startsWith("+") ? "add" : l.startsWith("-") ? "del" : l.startsWith("@@") ? "hunk" : "";
+      return cls ? `<span class="${cls}">${esc(l)}</span>` : esc(l);
+    }).join("\n");
+    return `<div class="diff"><p><strong>Lượt ${esc(x.step)} · ${esc(x.role)}</strong> · ${esc(x.files.length)} file${x.commits.length ? " · " + x.commits.map((c) => esc(c.hash + " " + c.subject)).join("; ") : ""}</p>${files}` +
+      (x.patch ? `<details><summary>Xem diff chi tiết${x.truncated ? " (đã cắt ở 300 KB)" : ""}</summary><pre class="patch">${lines}</pre></details>` : "") + "</div>";
   }
 
   function renderIdeas() {
@@ -225,7 +280,11 @@
     const busy = currentRuns.some((r) => ["running", "reporting", "awaiting_approval", "awaiting_answer", "attention", "waiting_quota"].includes(r.status));
     $("autoStart").disabled = !controller || !active || !turn || busy;
     const statuses = { running: "Đội đang làm việc", reporting: "Claude đang tổng hợp", awaiting_approval: "Chờ bạn duyệt báo cáo", awaiting_answer: "Claude hỏi anh: chọn phương án", waiting_quota: "Chờ hạn mức", approved: "Bạn đã duyệt", acknowledged: "Bạn đã nhận báo cáo lỗi", rejected: "Đã từ chối", attention: "Claude chưa gửi được báo cáo", stopped: "Đã dừng" };
-    setMarkup("autoRuns", !controller ? '<p class="muted">Chưa kết nối được OS Controller.</p>' : currentRuns.length ? currentRuns.slice(0, 8).map((r) => `<article class="entry"><div class="entry-head"><strong>${esc(r.task)}</strong>${badge(statuses[r.status] || r.status, ["awaiting_approval", "awaiting_answer", "attention", "waiting_quota"].includes(r.status) ? "warn" : r.status === "approved" ? "good" : "")}</div><p>${esc(r.steps.filter((s) => !s.quota).length)}/${esc(r.maxSteps)} lượt · ${esc(r.steps.map((s) => s.role + (s.model ? " [" + s.model + " · " + s.effort + "]" : "") + (s.quota ? " (hết hạn mức)" : "")).join(" → ") || "Đang chuẩn bị")}</p>${(r.decisions || []).map((d) => `<p class="muted">✔ Anh đã chọn ${esc(d.option)}: ${esc(d.label)} → ${esc(d.next)}</p>`).join("")}${r.status === "awaiting_answer" && r.question ? askHtml(r.question, "data-auto-answer", r.id) : ""}${r.status === "waiting_quota" && r.wait ? waitHtml(r) : ""}${r.problem ? `<p class="error">${esc(r.problem)}</p>` : ""}${r.report ? `<pre>${esc(r.report)}</pre>` : ""}<div class="actions">${["running", "reporting", "awaiting_answer", "waiting_quota"].includes(r.status) ? `<button data-auto-stop="${esc(r.id)}">Dừng luồng này</button>` : ""}${["awaiting_approval", "attention"].includes(r.status) ? `<button class="primary" data-auto-approve="${esc(r.id)}">${r.status === "attention" ? "Đã xem lỗi" : r.problem ? "Đã nhận báo cáo" : "Duyệt báo cáo Claude"}</button><button data-auto-reject="${esc(r.id)}">Từ chối</button>` : ""}</div></article>`).join("") : '<p class="muted">Chưa có việc tự động nào cho dự án này. Giao một việc ở trên để bắt đầu.</p>');
+    setMarkup("autoRuns", !controller ? '<p class="muted">Chưa kết nối được OS Controller.</p>' : currentRuns.length ? currentRuns.slice(0, 8).map((r) => runHtml(r, statuses)).join("") : '<p class="muted">Chưa có việc tự động nào cho dự án này. Giao một việc ở trên để bắt đầu.</p>');
+    // Ô dán kết quả GPT web: giữ chữ anh đang dán khi danh sách vẽ lại
+    document.querySelectorAll("[data-web-draft]").forEach((ta) => { if (!ta.value && webDrafts[ta.dataset.webDraft]) ta.value = webDrafts[ta.dataset.webDraft]; });
+    const waiting = autoRuns.filter((r) => ["awaiting_answer", "awaiting_approval", "attention"].includes(r.status) || (r.status === "waiting_quota" && r.web?.status === "ready")).length;
+    document.title = (waiting ? "(" + waiting + ") " : "") + "Văn phòng AI · Tổng quan";
     const unavailable = !controller ? `<p class="muted">${esc(controlError || "OS Controller chưa kết nối.")}</p>` : !active ? '<p class="muted">Chọn dự án để xem bàn giao.</p>' : null;
     setMarkup("handoffs", unavailable || (ownHandoffs().length ? ownHandoffs().map((h) => `<article class="entry"><strong class="mono">${esc(h.role)} → ${esc(h.next_owner || "Chưa xác định")}</strong><p>File: ${esc((h.payload?.files || []).join(", ") || "Không có file được khai báo")}</p><p class="mono">${esc(h.job_id)}</p>${h.problems.length ? `<p class="error">${h.problems.map(esc).join("; ")}</p>` : ""}${h.payload?.ask_ceo && !h.problems.length ? askHtml(h.payload.ask_ceo, "data-handoff-answer", h.job_id) : ""}<div class="actions">${h.payload?.ask_ceo && !h.problems.length ? "" : `<button class="primary" data-approve="${esc(h.job_id)}" ${h.problems.length ? "disabled" : ""}>Duyệt chuyển lượt</button>`}<button data-job="${esc(h.job_id)}">Xem nhật ký</button></div></article>`).join("") : '<p class="muted">Không có bàn giao chờ duyệt cho dự án này.</p>'));
     setMarkup("blockerList", blockerLines === null ? '<p class="muted">Chưa đọc được chốt chặn từ agent.md.</p>' : blockerLines.length ? blockerLines.map((l) => `<div class="entry error">${esc(l.replace(/^\s*-\s*/, ""))}</div>`).join("") : '<p class="muted">Sổ agent.md không có mục OPEN ở Vùng [5].</p>');
@@ -438,6 +497,35 @@
       copy.textContent = "Đã sao chép"; setTimeout(() => { copy.textContent = "Sao chép"; }, 1500);
       return;
     }
+    const diffBtn = e.target.closest("[data-diff-run]");
+    if (diffBtn) {
+      const run = diffBtn.dataset.diffRun, step = Number(diffBtn.dataset.diffStep), same = () => diffView?.run === run && diffView.step === step;
+      if (same() && !diffView.loading) { diffView = null; renderBoard(); return; }
+      diffView = { run, step, loading: true }; renderBoard();
+      try { const { diff } = await request("/ctl/autopilot/" + encodeURIComponent(run) + "/steps/" + step + "/diff", undefined, 20000); if (same()) diffView = { run, step, data: diff }; }
+      catch (err) { if (same()) diffView = { run, step, error: err.message }; }
+      renderBoard();
+      return;
+    }
+    const push = e.target.closest("[data-auto-push]");
+    if (push) {
+      if (!confirm("Đẩy nhánh " + push.dataset.branch + " lên GitHub?\nChỉ đẩy nhánh này (không force, không merge). Sau đó anh mở PR và tự merge khi đã xem.")) return;
+      push.disabled = true;
+      try { const r = await request("/ctl/autopilot/" + encodeURIComponent(push.dataset.autoPush) + "/push", {}, 130000); const url = r.run.git.pushed.compareUrl; $("autoMessage").textContent = "Đã đẩy nhánh " + r.run.git.branch + "." + (url ? " Đang mở trang tạo PR." : ""); if (url) window.open(url, "_blank", "noopener"); }
+      catch (err) { $("autoMessage").textContent = err.message; push.disabled = false; }
+      finally { await refresh(); }
+      return;
+    }
+    const send = e.target.closest("[data-auto-webresult]");
+    if (send) {
+      const id = send.dataset.autoWebresult, ta = document.querySelector(`[data-web-draft="${CSS.escape(id)}"]`), text = ta ? ta.value : "";
+      if (!text.trim()) { $("autoMessage").textContent = "Dán kết quả ChatGPT vào ô trước."; ta?.focus(); return; }
+      send.disabled = true;
+      try { await request("/ctl/autopilot/" + encodeURIComponent(id) + "/web-result", { text }, 20000); delete webDrafts[id]; $("autoMessage").textContent = "Đã gửi kết quả GPT web: AI đang kiểm và áp vào repo."; }
+      catch (err) { $("autoMessage").textContent = err.message; send.disabled = false; }
+      finally { await refresh(); }
+      return;
+    }
     const web = e.target.closest("[data-auto-web],[data-auto-resume]");
     if (web) {
       const id = web.dataset.autoWeb || web.dataset.autoResume, action = web.dataset.autoWeb ? "web-prompt" : "resume";
@@ -455,6 +543,7 @@
     catch (err) { $("autoMessage").textContent = err.message; }
     finally { await refresh(); b.disabled = false; }
   });
+  $("autoRuns").addEventListener("input", (e) => { const ta = e.target.closest("[data-web-draft]"); if (ta) webDrafts[ta.dataset.webDraft] = ta.value; });
   $("handoffButton").onclick = () => { setView("board"); $("boardTitle").tabIndex = -1; $("boardTitle").focus(); };
   $("projects").onclick = (e) => { const b = e.target.closest("[data-project]"); if (b) switchProject(b.dataset.project); };
   $("workspace").onchange = () => switchProject($("workspace").value);

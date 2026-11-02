@@ -20,6 +20,7 @@ const { createAutopilot } = require("./autopilot");
 const { createGitHub } = require("./github");
 const { createQuotas } = require("./quotas");
 const { createIdeas } = require("./ideas");
+const { createNotifier } = require("./thongbao");
 const { classify } = require("./policy");
 const { readTurn } = require("./handoff");
 const { maskSecrets } = require("../lib/mask");
@@ -32,9 +33,10 @@ const HTTP_CODE = {
   NOT_FOUND: 404, TOO_LARGE: 413,
   GITHUB_AUTH: 401, GITHUB_LIMIT: 429, GITHUB_OFFLINE: 502, GITHUB_CLONE: 502,
   CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_WAITING: 409, NEEDS_SPEC_TURN: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409, HANDOFF_PENDING: 409, NEEDS_ANSWER: 409, NO_QUESTION: 422, BAD_OPTION: 400,
+  DIRTY_REPO: 409, NO_COMMIT: 409, NO_QUOTA: 409, NO_GIT: 422, NO_REMOTE: 422, GIT_PUSH: 502,
 };
 
-function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {}, quotaOptions = {} } = {}) {
+function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {}, quotaOptions = {}, notify = false } = {}) {
   const db = open(dir);
   const audit = createAudit(db);
   const jobs = createJobs(db, audit, path.join(dir, "logs"));
@@ -43,7 +45,9 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
   try { ws.switchTo(JSON.parse(fs.readFileSync(activeFile, "utf8")).path, "ctl-restore"); } catch (e) { if (e.code !== "ENOENT") audit.log("ctl", "workspace.restore_skipped", null, e.message); }
   const files = createFiles(ws, audit);
   const runner = createRunner({ jobs, ws, audit, db, dir });
-  const autopilot = createAutopilot({ runner, jobs, ws, audit, dir, quotaSnapshot: () => quotas.snapshot() });
+  // Thông báo Windows chỉ bật khi chạy thật (main), test thì chỉ ghi nhật ký kiểm toán.
+  const notifier = createNotifier({ enabled: notify && process.platform === "win32" && process.env.VP_NO_TOAST !== "1", audit });
+  const autopilot = createAutopilot({ runner, jobs, ws, audit, dir, quotaSnapshot: () => quotas.snapshot(), notify: notifier });
   const ideas = createIdeas({ dir, ws, runner, autopilot, audit });
   const selectWorkspace = (p) => {
     const w = ws.switchTo(p, "ceo");
@@ -195,15 +199,20 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
       if (autopilot.busy(workspace)) throw Object.assign(new Error("Dự án đang có luồng tự động hoặc báo cáo chờ duyệt"), { code: "AI_BUSY" });
       return [201, { job: runner.run({ workspace, role: b.role, task: b.task, effort: b.effort || null }, "ceo") }];
     }],
-    ["GET", "/autopilot", () => ({ runs: autopilot.list() })],
-    ["GET", "/autopilot/:id", (p) => ({ run: autopilot.get(p.id) })],
-    ["POST", "/autopilot", (p, qs, b) => [201, { run: autopilot.start({ workspace: wsOf(b.workspace), task: b.task, maxSteps: b.maxSteps, timeoutMs: b.timeoutMs }) }]],
-    ["POST", "/autopilot/:id/stop", async (p) => ({ run: await autopilot.stop(p.id) })],
-    ["POST", "/autopilot/:id/answer", (p, qs, b) => ({ run: autopilot.answer(p.id, b.option) })],
-    ["POST", "/autopilot/:id/resume", (p) => ({ run: autopilot.resumeNow(p.id) })],
-    ["POST", "/autopilot/:id/web-prompt", (p) => [202, { run: autopilot.webPrompt(p.id) }]],
-    ["POST", "/autopilot/:id/approve", (p) => ({ run: autopilot.decide(p.id, true) })],
-    ["POST", "/autopilot/:id/reject", (p) => ({ run: autopilot.decide(p.id, false) })],
+    ["GET", "/autopilot", () => ({ runs: autopilot.list().map(autopilot.view) })],
+    ["GET", "/autopilot/:id", (p) => ({ run: autopilot.view(autopilot.get(p.id)) })],
+    ["POST", "/autopilot", (p, qs, b) => [201, { run: autopilot.view(autopilot.start({ workspace: wsOf(b.workspace), task: b.task, maxSteps: b.maxSteps, timeoutMs: b.timeoutMs })) }]],
+    ["POST", "/autopilot/:id/stop", async (p) => ({ run: autopilot.view(await autopilot.stop(p.id)) })],
+    ["POST", "/autopilot/:id/answer", (p, qs, b) => ({ run: autopilot.view(autopilot.answer(p.id, b.option)) })],
+    ["POST", "/autopilot/:id/resume", (p) => ({ run: autopilot.view(autopilot.resumeNow(p.id)) })],
+    ["POST", "/autopilot/:id/web-prompt", (p) => [202, { run: autopilot.view(autopilot.webPrompt(p.id)) }]],
+    // CEO dán kết quả ChatGPT web cho lượt đang chờ hạn mức; AI còn hạn mức kiểm rồi áp vào repo.
+    ["POST", "/autopilot/:id/web-result", (p, qs, b) => [202, { run: autopilot.view(autopilot.applyWeb(p.id, b.text)) }]],
+    // Nhánh riêng của luồng: diff từng lượt, và đẩy nhánh lên GitHub để mở PR (chỉ khi CEO bấm).
+    ["GET", "/autopilot/:id/steps/:n/diff", (p) => ({ diff: autopilot.stepDiff(p.id, p.n) })],
+    ["POST", "/autopilot/:id/push", (p) => ({ run: autopilot.view(autopilot.pushBranch(p.id)) })],
+    ["POST", "/autopilot/:id/approve", (p) => ({ run: autopilot.view(autopilot.decide(p.id, true)) })],
+    ["POST", "/autopilot/:id/reject", (p) => ({ run: autopilot.view(autopilot.decide(p.id, false)) })],
     ["GET", "/handoffs", () => ({ handoffs: runner.pending() })],
     ["GET", "/handoffs/:id", (p) => { const h = runner.get(p.id); if (!h) throw Object.assign(new Error("Chưa có bàn giao của " + p.id), { code: "NOT_FOUND" }); return { handoff: h }; }],
     ["POST", "/handoffs/:id/approve", (p) => ({ handoff: runner.approve(p.id, "ceo") })],
@@ -280,7 +289,7 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
 if (require.main === module) {
   const dir = home();
   const port = Number(process.env.CTL_PORT || 7790);
-  const ctl = createCtl({ dir });
+  const ctl = createCtl({ dir, notify: true });
   const tokenFile = path.join(dir, "ctl-token");
   fs.writeFileSync(tokenFile + ".tmp", ctl.token, { mode: 0o600 });
   fs.renameSync(tokenFile + ".tmp", tokenFile);
