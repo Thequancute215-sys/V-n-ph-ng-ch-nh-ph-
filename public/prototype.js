@@ -12,6 +12,8 @@
   ];
   let snapshot = null, accounts = null, active = "", workspaces = [], turn = null, blockerLines = null;
   let jobs = [], handoffs = [], autoRuns = [], controller = false, selected = "spec", view = "office", pendingApproval = null;
+  // Kết quả đọc repo đang chọn (ctl /workspaces/overview): chỉ đọc lại khi đổi dự án hoặc bấm Làm mới.
+  let repoInfo = null, repoFor = "", repoError = "", repoLoading = false, createdFor = "";
   let loading = false, switching = false, controlError = "", stateError = "", accountError = "", source = null, streaming = false;
   let docText = null, docError = "", signatures = {}, lastRefresh = null, logSequence = 0;
   let githubRepos = [], githubPage = 0, githubHasMore = false, githubLoading = false, githubOpening = false;
@@ -67,7 +69,7 @@
         ({ operation } = await request("/ctl/github/operations/" + encodeURIComponent(operation.id)));
       }
       if (operation.status !== "done") throw new Error(operation.message);
-      active = operation.workspace; turn = null; blockerLines = null; docText = null;
+      active = operation.workspace; repoFor = ""; if (operation.agentMdCreated) createdFor = operation.workspace; turn = null; blockerLines = null; docText = null;
       $("logJob").value = ""; $("jobLog").textContent = "Chọn công việc để đọc nhật ký.";
       $("githubMessage").textContent = operation.message;
       $("autoMessage").textContent = operation.message;
@@ -222,6 +224,51 @@
     docError = meeting.status === "rejected" && !/Không có|không tồn tại|NOT_FOUND/.test(meeting.reason.message) ? meeting.reason.message : "";
   }
 
+  async function loadRepo(force = false) {
+    if (!active) { repoInfo = null; repoFor = ""; renderRepo(); return; }
+    if (repoLoading || (!force && repoFor === active && repoInfo)) return;
+    const target = active;
+    repoLoading = true; renderRepo();
+    try {
+      const { overview } = await request("/ctl/workspaces/overview?workspace=" + encodeURIComponent(target), undefined, 25000);
+      if (target === active) { repoInfo = overview; repoFor = target; repoError = ""; }
+    } catch (e) { if (target === active) { repoInfo = null; repoError = "Chưa đọc được repo: " + e.message; } }
+    finally { repoLoading = false; renderRepo(); }
+  }
+
+  function renderRepo() {
+    const box = $("repoRead");
+    if (!active) { setMarkup("repoRead", '<h2 id="repoTitle">Đọc repo dự án</h2><p class="muted">Chưa đăng ký dự án nào. Bấm "Chọn repo GitHub" để mở một repo.</p>'); return; }
+    box.setAttribute("aria-busy", String(repoLoading));
+    const o = repoFor === active ? repoInfo : null;
+    if (!o) { setMarkup("repoRead", `<h2 id="repoTitle">Đọc repo dự án</h2><p class="${repoError ? "error" : "muted"}">${esc(repoError || "Đang đọc repo " + active + "…")}</p>`); return; }
+    const a = o.agentMd || {}, r = o.repo, v = o.visibility || {};
+    const vis = { public: "Công khai trên GitHub", private: "Riêng tư trên GitHub", "not-github": "Remote không phải GitHub", "no-remote": "Chưa có remote origin", unknown: "Chưa xác định được (" + (v.reason || "lỗi mạng") + ")" }[v.kind] || "Chưa xác định";
+    let agentLine;
+    if (!a.exists) agentLine = "Chưa có agent.md và chưa tạo được. Kiểm tra quyền ghi thư mục.";
+    else if (createdFor === active && r && !r.agentMdTracked) agentLine = "Vừa tạo agent.md theo mẫu v2.2 (lượt đầu cho Claude).";
+    else agentLine = "Có agent.md.";
+    if (a.exists && r) agentLine += r.agentMdTracked ? (v.kind === "public" ? " Cảnh báo: agent.md đang được commit trong repo công khai." : " Đã commit trong repo.") : r.agentMdIgnored ? " Chỉ giữ trên máy (repo công khai, nằm trong .git/info/exclude)." : " Chưa commit: sẽ commit ở lần duyệt chuyển lượt đầu.";
+    const blockers = a.openBlockers || [];
+    const rows = [
+      ["Thư mục", o.workspace],
+      ["Git", r ? `Nhánh ${r.branch || "?"} · ${r.changed === null ? "chưa đọc được thay đổi" : r.changed + " file chưa commit"}` : "Không phải repo git"],
+      ["Remote", r?.remote || "Không có"],
+      ["Hiển thị", vis],
+      ["Công nghệ nhận diện", o.stack.length ? o.stack.join(", ") : "Chưa nhận diện được từ file ở gốc repo"],
+      ["README", o.readme ? o.readme.firstLine : "Không có README"],
+      ["Phase (agent.md)", a.phase || (a.exists ? "Không đọc được" : "—")],
+      ["Đang giữ lượt", a.nextOwner || (a.problem ? a.problem : "—")],
+      ["Kiểm duyệt", (a.auditStatus || "—") + " · " + blockers.length + " blocker OPEN"],
+    ];
+    setMarkup("repoRead", `<div class="entry-head"><h2 id="repoTitle">Đã đọc repo ${esc(o.name)}</h2><span class="badge">Đọc lúc ${esc(new Date(o.readAt).toLocaleTimeString("vi-VN"))}</span></div>
+      <p class="${a.exists ? "muted" : "error"}">${esc(agentLine)}</p>
+      <dl class="repo-grid">${rows.map(([k, val]) => `<div><dt>${esc(k)}</dt><dd>${esc(val)}</dd></div>`).join("")}</dl>
+      ${blockers.length ? `<details open><summary>Blocker OPEN trong Vùng [5]</summary><ul>${blockers.map((b) => `<li>${esc(b)}</li>`).join("")}</ul></details>` : ""}
+      ${r && r.commits.length ? `<details><summary>${r.commits.length} commit gần nhất</summary><ul>${r.commits.map((c) => `<li><span class="mono">${esc(c.hash)}</span> · ${esc(c.when)} · ${esc(c.subject)}</li>`).join("")}</ul></details>` : r ? '<p class="muted">Repo chưa có commit nào.</p>' : ""}
+      <details><summary>${o.totalEntries} mục ở gốc repo</summary><ul>${o.entries.map((e) => `<li class="mono">${esc(e)}</li>`).join("")}${o.totalEntries > o.entries.length ? `<li>… và ${o.totalEntries - o.entries.length} mục khác</li>` : ""}</ul></details>`);
+  }
+
   async function refresh() {
     if (loading || switching) return;
     loading = true; $("refresh").disabled = true;
@@ -233,6 +280,7 @@
     ]);
     loading = false; $("refresh").disabled = false; lastRefresh = new Date();
     renderProtocol(); renderOffice(); renderBoard(); renderQuotas(); renderAccounts();
+    loadRepo();
     if (view === "transcript" && $("logJob").value) readLog();
   }
 
@@ -249,7 +297,7 @@
 
   document.querySelector(".tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-view]"); if (b) setView(b.dataset.view); });
   $("rooms").addEventListener("click", (e) => { const b = e.target.closest("[data-detail]"); if (b) { selected = b.dataset.detail; renderOffice(); if (matchMedia("(max-width:800px)").matches) $("detail").scrollIntoView({ block: "nearest" }); } });
-  $("refresh").onclick = refresh;
+  $("refresh").onclick = () => { repoFor = ""; refresh(); };
   $("quotaSummary").onclick = () => setView("account");
   $("quotaRefresh").onclick = async () => {
     $("quotaRefresh").disabled = true;
@@ -293,7 +341,7 @@
     const path = $("workspace").value, old = active;
     if (switching) return;
     switching = true; $("workspace").disabled = true;
-    try { await request("/ctl/workspaces/switch", { path }); active = path; turn = null; blockerLines = null; docText = null; $("logJob").value = ""; $("jobLog").textContent = "Chọn công việc để đọc nhật ký."; }
+    try { const r = await request("/ctl/workspaces/switch", { path }); active = path; repoFor = ""; if (r.agentMd?.created) createdFor = path; turn = null; blockerLines = null; docText = null; $("logJob").value = ""; $("jobLog").textContent = "Chọn công việc để đọc nhật ký."; }
     catch (e) { active = old; controlError = e.message; renderProtocol(); }
     finally { switching = false; $("workspace").disabled = false; await refresh(); }
   };

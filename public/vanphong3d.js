@@ -883,11 +883,11 @@ const heroLabel = new CSS2DObject(heroTag); heroLabel.position.set(0, 2.2, 0); h
 
 // Các AI đứng ở bàn phòng mình, quay mặt ra cửa; lại gần thì quay sang nhìn và nói một câu.
 const NPCS = [
-  { room: "pain", name: "Pain · Tổng quản lý", color: 0xef4444, x: -11.5, z: 13.35, rot: Math.PI, look: { hair: 0xea580c, hairStyle: "spiky", top: 0x111827, cloak: 0x0b0b0f, trim: 0xb91c1c }, line: "Lượt tiếp theo đã giao. Chu trình đang chạy đúng kỷ luật." },
-  { room: "hinata", name: "Hinata · Antigravity", color: 0xa855f7, x: -24, z: -13.35, rot: 0, look: { hair: 0x1e1b4b, hairStyle: "long", top: 0xe9e3f5, pants: 0x4c1d95, eye: 0xe0e7ff }, line: "Đặc tả Vùng [2] và Design System em đang hoàn thiện ạ." },
-  { room: "itachi", name: "Itachi · GPT Sol", color: 0x10b981, x: -12, z: -13.35, rot: 0, look: { hair: 0x0f172a, hairStyle: "pony", top: 0x111827, cloak: 0x0b0b0f, trim: 0xb91c1c, eye: 0xdc2626 }, line: "Kiến trúc đã chia Phase rõ ràng, chờ Claude duyệt." },
-  { room: "sasuke", name: "Sasuke · Codex Astra", color: 0x3b82f6, x: 12, z: -13.35, rot: 0, look: { hair: 0x0f172a, hairStyle: "back", top: 0xe2e8f0, pants: 0x1e3a8a }, line: "Đưa kế hoạch đây, ta code xong trong Phase này." },
-  { room: "sakura", name: "Sakura · Claude", color: 0xec4899, x: 24, z: -13.35, rot: 0, look: { hair: 0xf9a8d4, hairStyle: "bob", top: 0xdc2626, pants: 0x1f2937, eye: 0x15803d }, line: "Vùng [5] chưa có blocker mở. Mọi commit đều qua tay em." },
+  { room: "pain", name: "Pain · Tổng quản lý", color: 0xef4444, x: -11.5, z: 13.35, rot: Math.PI, look: { hair: 0xea580c, hairStyle: "spiky", top: 0x111827, cloak: 0x0b0b0f, trim: 0xb91c1c }, line: "Tôi điều phối chu trình: giao lượt theo NEXT_OWNER trong agent.md và báo cáo CEO." },
+  { room: "hinata", name: "Hinata · Antigravity", color: 0xa855f7, x: -24, z: -13.35, rot: 0, look: { hair: 0x1e1b4b, hairStyle: "long", top: 0xe9e3f5, pants: 0x4c1d95, eye: 0xe0e7ff }, line: "Tôi viết đặc tả sản phẩm và thiết kế giao diện (Vùng [2])." },
+  { room: "itachi", name: "Itachi · GPT Sol", color: 0x10b981, x: -12, z: -13.35, rot: 0, look: { hair: 0x0f172a, hairStyle: "pony", top: 0x111827, cloak: 0x0b0b0f, trim: 0xb91c1c, eye: 0xdc2626 }, line: "Tôi lập kiến trúc: công nghệ, CSDL, API và chia Phase (Vùng [1], [3])." },
+  { room: "sasuke", name: "Sasuke · Codex Astra", color: 0x3b82f6, x: 12, z: -13.35, rot: 0, look: { hair: 0x0f172a, hairStyle: "back", top: 0xe2e8f0, pants: 0x1e3a8a }, line: "Tôi viết code theo kế hoạch đã duyệt và ghi CLAIM_FIXED." },
+  { room: "sakura", name: "Sakura · Claude", color: 0xec4899, x: 24, z: -13.35, rot: 0, look: { hair: 0xf9a8d4, hairStyle: "bob", top: 0xdc2626, pants: 0x1f2937, eye: 0x15803d }, line: "Tôi kiểm duyệt kiến trúc, bảo mật và giữ chốt chặn Vùng [5]." },
 ];
 for (const n of NPCS) {
   n.c = makeChar(n.look);
@@ -1499,5 +1499,7 @@ return {
     el.classList.toggle("has-req", Boolean(text));
   },
   setBusy(id, on) { const n = NPC_BY_ID[id]; if (n) n.c.busy = Boolean(on); },
+  // Câu nói khi lại gần: trang nạp trạng thái thật của dự án (không có dữ liệu thì giữ lời giới thiệu vai).
+  setLine(id, text) { const n = NPC_BY_ID[id]; if (n) n.tag.querySelector(".say").textContent = text || n.line; },
 };
 }

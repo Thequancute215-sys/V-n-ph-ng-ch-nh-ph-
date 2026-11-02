@@ -42,9 +42,22 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
   const runner = createRunner({ jobs, ws, audit, db, dir });
   const autopilot = createAutopilot({ runner, jobs, ws, audit, dir });
   const selectWorkspace = (p) => {
-    const active = ws.switchTo(p, "ceo").path;
-    fs.writeFileSync(activeFile + ".tmp", JSON.stringify({ path: active }), { mode: 0o600 }); fs.renameSync(activeFile + ".tmp", activeFile);
-    return active;
+    const w = ws.switchTo(p, "ceo");
+    fs.writeFileSync(activeFile + ".tmp", JSON.stringify({ path: w.path }), { mode: 0o600 }); fs.renameSync(activeFile + ".tmp", activeFile);
+    lastSelect = w;
+    protectPublic(w.path);
+    return w.path;
+  };
+  let lastSelect = null;
+  // Repo GitHub công khai: agent.md chưa từng commit thì đưa vào .git/info/exclude (chạy nền, lỗi mạng thì bỏ qua và thử lại ở lần đọc sau).
+  const background = new Set();   // việc chạy nền (git, GitHub) phải xong trước khi ctl tắt
+  const protectPublic = (root) => {
+    const job = github.visibility(root).then((v) => {
+      if (v.kind !== "public") return;
+      const o = ws.overview(root);
+      if (o.repo && !o.repo.agentMdTracked) ws.excludeAgentMd(root);
+    }).catch(() => {}).finally(() => background.delete(job));
+    background.add(job);
   };
   const github = createGitHub({ ...githubOptions, ws, jobs, audit, select: selectWorkspace });
   const quotas = createQuotas({ ...quotaOptions, dir });
@@ -108,10 +121,21 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     ["GET", "/github/repos", (p, qs) => github.list(qs.get("page") || 1)],
     ["POST", "/github/open", (p, qs, b) => [202, { operation: github.open(b.fullName) }]],
     ["GET", "/github/operations/:id", (p) => ({ operation: github.get(p.id) })],
-    ["POST", "/workspaces", (p, qs, b) => [201, { workspace: ws.add(b.path, "ceo") }]],
+    ["POST", "/workspaces", (p, qs, b) => { const w = ws.add(b.path, "ceo"); protectPublic(w.path); return [201, { workspace: w }]; }],
+    // Đọc thật repo đang chọn (git, công nghệ, README, agent.md) và repo công khai hay riêng tư.
+    ["GET", "/workspaces/overview", async (p, qs) => {
+      const root = ws.find(wsOf(qs.get("workspace"))).path;
+      const visibility = await github.visibility(root);
+      if (visibility.kind === "public" && fs.existsSync(path.join(root, "agent.md"))) {
+        const first = ws.overview(root);
+        if (first.repo && !first.repo.agentMdTracked) ws.excludeAgentMd(root);
+      }
+      return { overview: { ...ws.overview(root), visibility } };
+    }],
     ["POST", "/workspaces/remove", (p, qs, b) => { ws.remove(b.path, "ceo"); return { workspaces: ws.list() }; }],
     ["POST", "/workspaces/switch", (p, qs, b) => {
-      return { active: selectWorkspace(b.path) };
+      const active = selectWorkspace(b.path);
+      return { active, agentMd: lastSelect && lastSelect.agentMd };
     }],
 
     ["GET", "/fs/list", (p, qs) => files.list(wsOf(qs.get("workspace")), qs.get("path") || ".")],
@@ -189,6 +213,7 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
   });
 
   async function close() {
+    await Promise.allSettled([...background]);
     github.close();
     autopilot.close();
     await quotas.close();

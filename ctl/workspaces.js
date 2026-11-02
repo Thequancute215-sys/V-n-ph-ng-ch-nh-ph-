@@ -4,6 +4,8 @@
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
+const { execFileSync } = require("child_process");
+const { readTurn } = require("./handoff");
 
 const MAX_READ = 2 * 1024 * 1024;
 const TEMPLATE = path.join(__dirname, "agent-template.md");
@@ -17,6 +19,12 @@ const detectStack = (root) => STACKS.filter(([files]) => files.some((f) => fs.ex
 const same = (a, b) => (process.platform === "win32" ? a.toLowerCase() === b.toLowerCase() : a === b);
 const inside = (root, p) => { const rel = path.relative(root, p); return rel === "" || (!rel.startsWith("..") && !path.isAbsolute(rel)); };
 const err = (code, msg) => Object.assign(new Error(msg), { code });
+// Lệnh git chỉ đọc; lỗi (không phải repo, chưa có commit…) trả null để báo "không có", không đoán.
+const gitRead = (root, args) => {
+  try { return execFileSync("git", args, { cwd: root, encoding: "utf8", windowsHide: true, timeout: 8000, stdio: ["ignore", "pipe", "ignore"], maxBuffer: 4 * 1024 * 1024 }).trim(); }
+  catch { return null; }
+};
+const README = ["README.md", "readme.md", "README.MD", "Readme.md", "README"];
 
 function createWorkspaces(db, audit) {
   const q = {
@@ -74,7 +82,69 @@ function createWorkspaces(db, audit) {
     return w;
   }
 
-  function switchTo(p, actor = "ceo") { const w = find(p); active = w.path; audit.log(actor, "workspace.switch", w.path); return w; }
+  // Chọn dự án nào cũng kiểm agent.md: dự án đăng ký từ trước khi có tính năng tự tạo vẫn được tạo khi chọn lại.
+  function switchTo(p, actor = "ceo") {
+    const w = find(p);
+    active = w.path;
+    audit.log(actor, "workspace.switch", w.path);
+    let agentMd;
+    try { agentMd = initAgentMd(w.path, actor); } catch (e) { agentMd = { created: false, error: e.message }; }
+    return { ...w, agentMd };
+  }
+
+  // Repo công khai: agent.md (Vùng [5] có thể ghi lỗ hổng chưa sửa) chỉ giữ trên máy, không commit.
+  function excludeAgentMd(p, actor = "ctl") {
+    const root = find(p).path;
+    const rel = gitRead(root, ["rev-parse", "--git-path", "info/exclude"]);
+    if (!rel) return false;
+    const f = path.resolve(root, rel);
+    let txt = "";
+    try { txt = fs.readFileSync(f, "utf8"); } catch {}
+    if (/^\/?agent\.md\s*$/m.test(txt)) return false;
+    fs.mkdirSync(path.dirname(f), { recursive: true });
+    fs.appendFileSync(f, (txt && !txt.endsWith("\n") ? "\n" : "") + "# Văn phòng AI: repo công khai, agent.md chỉ giữ trên máy\n/agent.md\n");
+    audit.log(actor, "workspace.exclude_agent_md", root);
+    return true;
+  }
+
+  // Đọc thật repo đang chọn: git, công nghệ, README, sổ agent.md. Mục nào không đọc được thì để null kèm lý do.
+  function overview(p) {
+    const root = find(p).path;
+    const isRepo = gitRead(root, ["rev-parse", "--is-inside-work-tree"]) === "true";
+    let repo = null;
+    if (isRepo) {
+      const log = gitRead(root, ["log", "-5", "--format=%h%x09%cr%x09%s"]);
+      const status = gitRead(root, ["status", "--porcelain"]);
+      repo = {
+        branch: gitRead(root, ["rev-parse", "--abbrev-ref", "HEAD"]),
+        commits: (log || "").split("\n").filter(Boolean).map((l) => { const [hash, when, ...s] = l.split("\t"); return { hash, when, subject: s.join("\t").slice(0, 200) }; }),
+        changed: status === null ? null : status.split("\n").filter(Boolean).length,
+        remote: (gitRead(root, ["remote", "get-url", "origin"]) || "").replace(/\/\/[^@/]+@/, "//") || null,   // bỏ user:token@ nếu có
+        agentMdTracked: gitRead(root, ["ls-files", "--error-unmatch", "--", "agent.md"]) !== null,
+        agentMdIgnored: gitRead(root, ["check-ignore", "-q", "--", "agent.md"]) !== null,
+      };
+    }
+    let entries = [];
+    try { entries = fs.readdirSync(root, { withFileTypes: true }).filter((d) => d.name !== ".git").map((d) => d.name + (d.isDirectory() ? "/" : "")).sort(); } catch {}
+    let readme = null;
+    for (const name of README) {
+      try {
+        const line = fs.readFileSync(path.join(root, name), "utf8").slice(0, 4000).split(/\r?\n/).map((l) => l.replace(/^#+\s*/, "").trim()).find((l) => l && !l.startsWith("<!--") && !l.startsWith("!["));
+        if (line) { readme = { file: name, firstLine: line.slice(0, 300) }; break; }
+      } catch {}
+    }
+    const agentMd = { exists: fs.existsSync(path.join(root, "agent.md")) };
+    if (agentMd.exists) {
+      try { Object.assign(agentMd, readTurn(root)); } catch (e) { agentMd.problem = e.message; }
+      try {
+        const txt = fs.readFileSync(path.join(root, "agent.md"), "utf8");
+        const sec5 = txt.split(/^## \[5\]/m)[1] || "";
+        agentMd.auditStatus = (/^- AUDIT_STATUS:\s*(\S+)/m.exec(txt) || [])[1] || null;
+        agentMd.openBlockers = sec5.split(/\r?\n/).filter((l) => /^\s*-\s*\[ \]\s+OPEN\b/.test(l)).map((l) => l.replace(/^\s*-\s*/, "").slice(0, 300));
+      } catch {}
+    }
+    return { workspace: root, name: path.basename(root), readAt: Date.now(), isRepo, repo, stack: detectStack(root), entries: entries.slice(0, 40), totalEntries: entries.length, readme, agentMd };
+  }
   function current() { if (!active) { const a = q.all.all()[0]; active = a ? a.path : null; } return active; }
 
   // Đổi (workspace, đường dẫn tương đối) thành đường dẫn thật nằm trong workspace. forWrite: file có thể chưa có, kiểm thư mục cha.
@@ -99,7 +169,7 @@ function createWorkspaces(db, audit) {
     return { root, real, rel: path.relative(root, real).split(path.sep).join("/") };
   }
 
-  return { list, add, remove, find, switchTo, current, resolve, MAX_READ };
+  return { list, add, remove, find, switchTo, current, resolve, overview, excludeAgentMd, MAX_READ };
 }
 
 module.exports = { createWorkspaces };
