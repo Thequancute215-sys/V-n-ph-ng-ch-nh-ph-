@@ -211,6 +211,12 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
     <span id="wxTxt" role="status" style="font-size:12px;font-weight:700;white-space:nowrap">Hà Nội · đang lấy thời tiết…</span>
   </div>
 
+  <!-- Chu trình tự động, Phase, lượt, blocker của dự án đang chọn (đọc thật từ repo) -->
+  <a class="btn pill" href="prototype.html#board" title="Chọn dự án, xem repo đã đọc, Phase, ai giữ lượt, blocker và giao việc tự động" style="background:linear-gradient(135deg, #22c55e, #0ea5e9);color:#fff;font-weight:800;text-decoration:none;gap:6px">
+    <span style="font-size:14px">📋</span>
+    <span>Chu trình & dự án</span>
+  </a>
+
   <div class="pill k-stats">
     <div><b id="k1">–</b><span>Đang làm</span></div>
     <div><b id="k2">–</b><span>Chờ/chặn</span></div>
@@ -663,12 +669,12 @@ const $ = (id) => document.getElementById(id);
 
 // Đội AI hiển thị ở thanh bên và hộp phân việc; key giữ nguyên để khớp /api/broadcast.
 const defaultAgents = [
-  { key: "ceo", name: "Thế Quân CEO", role: "Chủ Tịch Tối Cao (Naruto Uzumaki)", platform: "human", ninja: "naruto", lastText: "Chào cả đội! Ta là Hokage Thế Quân CEO. Khi ta ban lệnh đặc cách thì Itachi Sol mới code. Rasengan Lục Đạo sẵn sàng!", status: "active" },
-  { key: "pain", name: "Pain (Thiên Đạo)", role: "Tổng Quản Lý Điều Hành (Yahiko Akatsuki)", platform: "claude", ninja: "pain", lastText: "Thế giới này cần cảm nhận sự ngăn nắp và kỷ luật! 16 Hắc Trượng chấp pháp mọi luồng việc văn phòng.", status: "active" },
-  { key: "antigravity", name: "Hinata Hyuga", role: "Thư Ký Trợ Lý Giám Đốc & UI/UX (Antigravity)", platform: "gemini", ninja: "hinata", lastText: "Bạch Nhãn đã soi thấu 360 độ giao diện văn phòng. Song Sư Quyền bảo vệ và trợ lý cho anh Thế Quân CEO!", status: "active" },
-  { key: "sol", name: "Itachi Uchiha", role: "Quân Sư Chiến Lược & Backend (GPT 6.1 Sol)", platform: "gpt", ninja: "itachi", lastText: "Mọi kỹ thuật đều có điểm yếu. Mangekyo Sharingan đã nhìn thấu toàn bộ kiến trúc DB & hợp đồng API.", status: "idle" },
-  { key: "codex", name: "Sasuke Uchiha", role: "Kỹ Sư Trưởng Code Fullstack (Codex Astra)", platform: "codex", ninja: "sasuke", lastText: "Chidori đã nạp đầy, kiếm Kusanagi sắc bén. Đưa hợp đồng Vùng [3] đây, ta sẽ code sạch không một lỗi cú pháp.", status: "active" },
-  { key: "claude", name: "Sakura Haruno", role: "Chốt Chặn Kiểm Duyệt & Y Thuật (Claude Captain)", platform: "claude", ninja: "sakura", lastText: "Ấn Bách Hào kích hoạt! Lá chắn kiểm toán an toàn Zero-Leak, triệt tiêu toàn bộ blocker Vùng [5]!", status: "idle" }
+  { key: "ceo", name: "Thế Quân CEO", role: "Chủ Tịch Tối Cao (Naruto Uzumaki)", platform: "human", ninja: "naruto", lastText: "", status: "active" },
+  { key: "pain", name: "Pain (Thiên Đạo)", role: "Tổng Quản Lý Điều Hành (Yahiko Akatsuki)", platform: "claude", ninja: "pain", lastText: "", status: "active" },
+  { key: "antigravity", name: "Hinata Hyuga", role: "Thư Ký Trợ Lý Giám Đốc & UI/UX (Antigravity)", platform: "gemini", ninja: "hinata", lastText: "", status: "active" },
+  { key: "sol", name: "Itachi Uchiha", role: "Quân Sư Chiến Lược & Backend (GPT 6.1 Sol)", platform: "gpt", ninja: "itachi", lastText: "", status: "idle" },
+  { key: "codex", name: "Sasuke Uchiha", role: "Kỹ Sư Trưởng Code Fullstack (Codex Astra)", platform: "codex", ninja: "sasuke", lastText: "", status: "active" },
+  { key: "claude", name: "Sakura Haruno", role: "Chốt Chặn Kiểm Duyệt & Y Thuật (Claude Captain)", platform: "claude", ninja: "sakura", lastText: "", status: "idle" }
 ];
 // key của đội → nhân vật/phòng trong văn phòng 3D (vanphong3d.js)
 const NPC_OF = { ceo: "ceo", pain: "pain", antigravity: "hinata", sol: "itachi", codex: "sasuke", claude: "sakura", lounge: "meet", all: "all" };
@@ -695,6 +701,26 @@ try {
       $("wxTxt").textContent = `${place} · ${clock} · ` + (!w ? "đang lấy thời tiết…" : w.error ? "chưa lấy được thời tiết" : `${w.temp}°C · ${w.text}${w.stale ? " (cũ)" : ""}`);
     },
   });
+  // Trạng thái thật của dự án đang chọn (agent.md qua OS Controller): AI giữ lượt nói đúng như vậy.
+  // Controller chưa chạy hoặc chưa có dự án thì giữ lời giới thiệu vai, không đoán.
+  const ROLE_NPC = { SPEC_ARCHITECT: "hinata", SOL_ARCHITECT_PLANNER: "itachi", SOL_ARCHITECT_ADVISOR: "itachi", CODEX_ASTRA_DEV: "sasuke", CLAUDE_AUDITOR: "sakura" };
+  const getJson = async (url) => (await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(8000) })).json();
+  const syncTurn = async () => {
+    for (const id of office.npcIds) office.setLine(id, "");
+    try {
+      const list = await getJson("/ctl/workspaces");
+      if (!list.active) { office.setLine("pain", "Chưa chọn dự án nào. Mở trang Tổng quan để chọn repo."); return; }
+      const name = list.workspaces.find((w) => w.path === list.active)?.name || list.active;
+      const st = await getJson("/ctl/ai/status?workspace=" + encodeURIComponent(list.active));
+      const t = st.turn;
+      if (!t) { office.setLine("pain", `Dự án ${name}: ${st.problem || st.error || "chưa đọc được agent.md"}.`); return; }
+      const holder = ROLE_NPC[t.nextOwner];
+      if (holder) office.setLine(holder, `Đang giữ lượt trong dự án ${name} (${t.phase || "chưa rõ Phase"}).`);
+      office.setLine("pain", `Dự án ${name}: lượt hiện tại của ${t.nextOwner}${st.handoffPending ? ", có bàn giao chờ CEO duyệt" : ""}.`);
+    } catch { /* Controller chưa chạy: giữ lời giới thiệu vai */ }
+  };
+  syncTurn();
+  setInterval(syncTurn, 15000);
   // Thẻ "Bạn đang ở" nằm ngay dưới thanh trên (trên màn hẹp thanh trên xuống nhiều dòng)
   const placeCard = () => {
     const card = document.querySelector(".vp-room"), bar = document.querySelector(".bar");

@@ -97,10 +97,16 @@ function createGitHub({ ws, jobs, audit, select, projectsDir = path.join(os.home
     }
     if (closed) return;
     const workspace = ws.add(root, "ceo-github");
+    // Đã biết repo công khai hay riêng tư từ GitHub: repo công khai thì agent.md chỉ giữ trên máy.
+    remember(workspace.path, { kind: repo.private ? "private" : "public", fullName: repo.full_name });
+    if (!repo.private) ws.excludeAgentMd(workspace.path, "ceo-github");
     select(workspace.path);
     op.status = "done"; op.workspace = workspace.path;
     op.hasAgent = fs.existsSync(path.join(workspace.path, "agent.md"));
-    op.message = op.hasAgent ? "Đã mở repo. Có thể giao việc cho đội AI." : "Đã mở repo. Repo chưa có agent.md; cần thiết lập sổ đội AI trước khi giao việc tự động.";
+    op.agentMdCreated = !!(workspace.agentMd && workspace.agentMd.created);
+    op.message = !op.hasAgent ? "Đã mở repo nhưng chưa tạo được agent.md: " + (workspace.agentMd?.error || "kiểm tra quyền ghi thư mục.")
+      : op.agentMdCreated ? "Đã mở repo. Repo chưa có agent.md nên văn phòng đã tạo theo mẫu v2.2" + (repo.private ? "." : " (repo công khai: chỉ giữ trên máy, không commit).")
+      : "Đã mở repo, đọc được agent.md. Có thể giao việc cho đội AI.";
     audit.log("ceo", "github.open", op.fullName, { workspace: workspace.path, cloned: !!op.cloned });
   }
   function open(fullName) {
@@ -112,7 +118,20 @@ function createGitHub({ ws, jobs, audit, select, projectsDir = path.join(os.home
     perform(op).catch((e) => { if (closed) return; op.status = "failed"; op.code = e.code || "GITHUB_CLONE"; op.message = e.message; audit.log("ctl", "github.open_failed", fullName, { code: op.code, message: op.message }); });
     return { ...op };
   }
+  // Repo của workspace là công khai hay riêng tư (để biết agent.md được commit hay chỉ giữ trên máy). Nhớ 10 phút.
+  const visCache = new Map();
+  const remember = (root, v) => { visCache.set(root, { v, at: Date.now() }); return v; };
+  async function visibility(root) {
+    const hit = visCache.get(root);
+    if (hit && Date.now() - hit.at < 10 * 60 * 1000) return hit.v;
+    let url;
+    try { url = (await runGit(["remote", "get-url", "origin"], null, root)).trim(); } catch { return remember(root, { kind: "no-remote" }); }
+    const fullName = remoteName(url);
+    if (!fullName) return remember(root, { kind: "not-github" });
+    try { const { data } = await api("/repos/" + fullName); return remember(root, { kind: data.private ? "private" : "public", fullName }); }
+    catch (e) { return { kind: "unknown", fullName, reason: e.message }; }   // không nhớ lỗi: lần sau thử lại
+  }
   function get(id) { const op = operations.get(id); if (!op) throw err("NOT_FOUND", "Không tìm thấy phiên mở repo; kiểm tra lại dự án đang chọn."); return { ...op }; }
-  return { list, open, get, close: () => { closed = true; } };
+  return { list, open, get, visibility, close: () => { closed = true; } };
 }
 module.exports = { createGitHub, remoteName };
