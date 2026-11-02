@@ -5,7 +5,45 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const { execFileSync } = require("child_process");
-const { readTurn } = require("./handoff");
+const { maskSecrets } = require("../lib/mask");
+
+// Chỉ đọc vùng có thật; không lấy NEXT_OWNER hoặc OPEN trong ví dụ ở vùng khác.
+function readProgress(text) {
+  const lines = maskSecrets(text).split(/\r?\n/), sections = new Map();
+  let section = null;
+  for (const line of lines) {
+    const heading = /^#{1,6}\s+\[(\d+(?:\.\d+)*)\]\s*(.*)/.exec(line);
+    if (heading) { section = { id: heading[1], title: `[${heading[1]}] ${heading[2]}`, lines: [] }; sections.set(section.id, section); }
+    else if (section) section.lines.push(line);
+  }
+  const body = (id) => (sections.get(id)?.lines || []).join("\n");
+  const field = (id, key) => new RegExp(`^\\s*-\\s*${key}[^:\\n]*:[ \\t]*(.*)$`, "m").exec(body(id))?.[1]?.trim() || null;
+  // Chỉ lấy mã vai (NEXT_OWNER có thể kèm ghi chú phía sau).
+  const role = (key) => /^[A-Z_]+/.exec(field("4", key) || "")?.[0] || null;
+  const phase = field("4", "CURRENT_PHASE"), nextOwner = role("NEXT_OWNER"), lastUpdatedBy = role("LAST_UPDATED_BY");
+  const openBlockers = [...sections.values()].filter((s) => /^5(?:\.|$)/.test(s.id)).flatMap((s) => s.lines)
+    .filter((l) => /^\s*-\s*\[ \]\s+OPEN\b/.test(l)).map((line) => {
+      const text = line.replace(/^\s*-\s*\[ \]\s+OPEN\s*/, "").trim();
+      return { id: /^([^\s:[\]]+)/.exec(text)?.[1] || null,
+        level: /\b(CRITICAL|HIGH|MEDIUM|LOW|P[0-3])\b/i.exec(text)?.[1]?.toUpperCase() || null, text };
+    });
+  const placeholder = /\[(?:Chưa\s|Chờ\s|Tên tính năng|Bước 1|Mất mạng|Tool name|Session\s*\/|Chống prompt|ví dụ|Layout tổng quan|State cần|Cache keys|Cơ chế stream|File HTML)[^\]]*\]|\{\{[^}]+\}\}/i;
+  const emptySections = [...sections.values()].filter((s) => /^[123](?:\.|$)/.test(s.id) && placeholder.test(s.lines.join("\n"))).map((s) => s.title);
+  const duties = {
+    SPEC_ARCHITECT: "viết đặc tả sản phẩm và thiết kế giao diện ở Vùng [2]",
+    SOL_ARCHITECT_PLANNER: "chốt công nghệ Vùng [1] và lập kiến trúc, kế hoạch ở Vùng [3]",
+    CLAUDE_AUDITOR: "kiểm duyệt và ghi kết quả, chốt chặn ở Vùng [5]",
+    CODEX_ASTRA_DEV: "viết code, kiểm thử và ghi CLAIM_FIXED ở Vùng [4.1] để Claude kiểm lại",
+    SOL_ARCHITECT_ADVISOR: "đối chiếu code với đặc tả, kiến trúc và ghi nhận xét ở Vùng [4.1]",
+  };
+  const nextStep = (duties[nextOwner] ? `${nextOwner} cần ${duties[nextOwner]}.` : "Chưa xác định được vai giữ lượt hợp lệ trong Vùng [4]; cần kiểm tra sổ agent.md.") +
+    ` Còn ${openBlockers.length} blocker OPEN${openBlockers.length ? "; chưa được tăng Phase" : ""}.`;
+  return { phase, nextOwner, lastUpdatedBy, auditStatus: field("5", "AUDIT_STATUS"), openBlockers,
+    log41: (sections.get("4.1")?.lines || []).filter((l) => l.trim()).slice(-25), emptySections, nextStep };
+}
+
+const maskValues = (value) => typeof value === "string" ? maskSecrets(value) : Array.isArray(value) ? value.map(maskValues) :
+  value && typeof value === "object" ? Object.fromEntries(Object.entries(value).map(([k, v]) => [k, maskValues(v)])) : value;
 
 const MAX_READ = 2 * 1024 * 1024;
 const TEMPLATE = path.join(__dirname, "agent-template.md");
@@ -134,16 +172,20 @@ function createWorkspaces(db, audit) {
       } catch {}
     }
     const agentMd = { exists: fs.existsSync(path.join(root, "agent.md")) };
+    let progress = null, progressReason = "Dự án chưa có agent.md nên chưa đọc được tiến độ theo giao thức.";
     if (agentMd.exists) {
-      try { Object.assign(agentMd, readTurn(root)); } catch (e) { agentMd.problem = e.message; }
       try {
-        const txt = fs.readFileSync(path.join(root, "agent.md"), "utf8");
-        const sec5 = txt.split(/^## \[5\]/m)[1] || "";
-        agentMd.auditStatus = (/^- AUDIT_STATUS:\s*(\S+)/m.exec(txt) || [])[1] || null;
-        agentMd.openBlockers = sec5.split(/\r?\n/).filter((l) => /^\s*-\s*\[ \]\s+OPEN\b/.test(l)).map((l) => l.replace(/^\s*-\s*/, "").slice(0, 300));
-      } catch {}
+        const agentPath = resolve(root, "agent.md").real;
+        if (fs.statSync(agentPath).size > MAX_READ) throw new Error("agent.md vượt giới hạn đọc 2 MB");
+        const txt = fs.readFileSync(agentPath, "utf8");
+        progress = readProgress(txt); progressReason = null;
+        Object.assign(agentMd, { phase: progress.phase, nextOwner: progress.nextOwner, lastUpdatedBy: progress.lastUpdatedBy });
+        if (!progress.nextOwner) agentMd.problem = "agent.md không có dòng NEXT_OWNER trong Vùng [4]";
+        agentMd.auditStatus = progress.auditStatus;
+        agentMd.openBlockers = progress.openBlockers.map((b) => ("[ ] OPEN " + b.text).slice(0, 300));
+      } catch (e) { progressReason = "Không đọc được tiến độ: " + e.message; agentMd.problem = e.message; }
     }
-    return { workspace: root, name: path.basename(root), readAt: Date.now(), isRepo, repo, stack: detectStack(root), entries: entries.slice(0, 40), totalEntries: entries.length, readme, agentMd };
+    return maskValues({ workspace: root, name: path.basename(root), readAt: Date.now(), isRepo, repo, stack: detectStack(root), entries: entries.slice(0, 40), totalEntries: entries.length, readme, agentMd, progress, progressReason });
   }
   function current() { if (!active) { const a = q.all.all()[0]; active = a ? a.path : null; } return active; }
 

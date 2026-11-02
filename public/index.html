@@ -185,6 +185,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
 .links a:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
 .hint { position: fixed; left: 16px; bottom: 16px; font-size: 11px; color: var(--mute2); z-index: 20; pointer-events: none; }
 </style>
+<link rel="stylesheet" href="office-desk.css">
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">
 <meta name="theme-color" content="#06080d">
@@ -222,9 +223,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
   </div>
 
   <!-- Luồng tự động đang chờ anh (Claude hỏi, báo cáo chờ duyệt, lỗi) -->
-  <a id="ceoWaitPill" class="btn pill" href="prototype.html#board" hidden style="background:rgba(236,201,112,0.22);border:1px solid #ecc970;color:#fde68a;font-weight:800;text-decoration:none;gap:6px">
+  <button type="button" id="ceoWaitPill" class="btn pill" aria-controls="officeDesk" hidden style="background:rgba(236,201,112,0.22);border:1px solid #ecc970;color:#fde68a;font-weight:800;text-decoration:none;gap:6px">
     <span style="font-size:14px">🔔</span><span id="ceoWaitTxt">Việc chờ anh</span>
-  </a>
+  </button>
 
   <!-- Claude còn ≤ 8% hạn mức: báo CEO để dừng việc Claude đang chạy, dành cho điều phối -->
   <a id="claudeLowPill" class="btn pill" href="prototype.html#board" hidden style="background:rgba(239,68,68,0.25);border:1px solid #ef4444;color:#fecaca;font-weight:800;text-decoration:none;gap:6px">
@@ -690,6 +691,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
 
 <script type="module">
 import { createOffice } from "./vanphong3d.js";
+import { createDesk } from "./office-desk.js";
 import { connectLive, vietnamHour } from "./thoitiet.js";
 
 const $ = (id) => document.getElementById(id);
@@ -728,69 +730,13 @@ try {
       $("wxTxt").textContent = `${place} · ${clock} · ` + (!w ? "đang lấy thời tiết…" : w.error ? "chưa lấy được thời tiết (" + w.error + ", thử lại sau 2 phút)" : `${w.temp}°C · ${w.text}${w.stale ? " (cũ)" : ""}`);
     },
   });
-  // Trạng thái thật của dự án đang chọn (agent.md qua OS Controller): AI giữ lượt nói đúng như vậy.
-  // Controller chưa chạy hoặc chưa có dự án thì giữ lời giới thiệu vai, không đoán.
-  const ROLE_NPC = { SPEC_ARCHITECT: "hinata", SOL_ARCHITECT_PLANNER: "itachi", SOL_ARCHITECT_ADVISOR: "itachi", CODEX_ASTRA_DEV: "sasuke", CLAUDE_AUDITOR: "sakura" };
-  const getJson = async (url) => (await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(8000) })).json();
-  // AI đang chạy thật thì nhân vật gõ phím và có bong bóng việc; luồng chờ anh thì nhân vật báo. Chỉ xoá những gì đồng bộ này đã đặt.
-  const AGENT_NPC = { ...ROLE_NPC, CLAUDE_REPORTER: "sakura", CLAUDE_WEB_PROMPT: "sakura", CLAUDE_WEB_APPLY: "sakura", CODEX_WEB_PROMPT: "sasuke", CODEX_WEB_APPLY: "sasuke", AGY_WEB_PROMPT: "hinata" };
-  const AGENT_DOING = { CLAUDE_REPORTER: "Viết báo cáo cho anh", CLAUDE_WEB_PROMPT: "Soạn master prompt cho GPT web", CODEX_WEB_PROMPT: "Soạn master prompt cho GPT web", AGY_WEB_PROMPT: "Soạn master prompt cho GPT web", CLAUDE_WEB_APPLY: "Kiểm kết quả GPT web", CODEX_WEB_APPLY: "Kiểm kết quả GPT web" };
-  let liveNpc = new Set();
-  const syncWork = async (active) => {
-    const [jobsRes, autoRes] = await Promise.all([getJson("/ctl/jobs?status=running"), getJson("/ctl/autopilot")]);
-    const runs = (autoRes.runs || []).filter((r) => r.workspace === active);
-    const next = new Map();   // npc → { tag, text, color, busy }
-    for (const j of (jobsRes.jobs || []).filter((j) => j.kind === "ai" && j.status === "running" && j.workspace === active)) {
-      const npc = AGENT_NPC[j.agent]; if (!npc) continue;
-      const run = runs.find((r) => r.jobId === j.id), step = run?.steps.find((s) => s.jobId === j.id);
-      const mins = Math.round((j.runningS || 0) / 60);
-      next.set(npc, { busy: true, color: 0x22c55e, tag: "⌨️ Đang làm" + (step?.model ? " · " + step.model + " " + step.effort : "") + " · " + mins + " phút",
-        text: AGENT_DOING[j.agent] || (run ? run.task.split("\n")[0].slice(0, 90) : "Lượt " + j.agent) });
-    }
-    for (const r of runs) {
-      if (r.status === "awaiting_answer") next.set("sakura", { busy: false, color: 0xf59e0b, tag: "❓ Hỏi anh", text: "Chọn phương án ở trang Tổng quan" });
-      if (r.status === "awaiting_approval") next.set("sakura", { busy: false, color: 0xecc970, tag: "📋 Báo cáo xong", text: "Chờ anh duyệt ở trang Tổng quan" });
-      if (r.status === "attention") next.set("pain", { busy: false, color: 0xef4444, tag: "⚠️ Luồng lỗi", text: (r.problem || "Cần anh xem").slice(0, 90) });
-      if (r.status === "waiting_quota" && r.wait) next.set(ROLE_NPC[r.wait.role] || "pain", { busy: false, color: 0x94a3b8, tag: "⏳ Hết hạn mức " + r.wait.providerName, text: "Tự chạy lại lúc " + new Date(r.wait.until).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) });
-    }
-    for (const npc of liveNpc) if (!next.has(npc)) { office.say(npc, {}); office.setBusy(npc, false); }
-    for (const [npc, v] of next) { office.say(npc, v); office.setBusy(npc, v.busy); }
-    liveNpc = new Set(next.keys());
-    const waiting = runs.filter((r) => ["awaiting_answer", "awaiting_approval", "attention"].includes(r.status)).length;
-    $("ceoWaitPill").hidden = !waiting;
-    $("ceoWaitTxt").textContent = waiting + " việc chờ anh";
-    document.title = (waiting ? "(" + waiting + ") " : "") + "Văn phòng AI";
-  };
-  const syncTurn = async () => {
-    for (const id of office.npcIds) office.setLine(id, "");
-    getJson("/ctl/quotas").then((q) => {
-      const p = (q.providers || []).find((x) => x.id === "claude");
-      const live = p && p.status === "ready" ? p.buckets.filter((b) => !b.resetAt || Date.parse(b.resetAt) > Date.now()) : [];
-      const left = live.length ? Math.min(...live.map((b) => b.remainingPercent)) : null;
-      $("claudeLowPill").hidden = left === null || left > 8;
-      if (left !== null && left <= 8) $("claudeLowTxt").textContent = "Claude còn " + Math.round(left) + "% hạn mức: dừng việc Claude, dành cho điều phối";
-    }).catch(() => { $("claudeLowPill").hidden = true; });
-    try {
-      const list = await getJson("/ctl/workspaces");
-      if (!list.active) { office.setLine("pain", "Chưa chọn dự án nào. Mở trang Tổng quan để chọn repo."); return; }
-      const name = list.workspaces.find((w) => w.path === list.active)?.name || list.active;
-      const st = await getJson("/ctl/ai/status?workspace=" + encodeURIComponent(list.active));
-      const t = st.turn;
-      if (!t) { office.setLine("pain", `Dự án ${name}: ${st.problem || st.error || "chưa đọc được agent.md"}.`); return; }
-      const holder = ROLE_NPC[t.nextOwner];
-      if (holder) office.setLine(holder, `Đang giữ lượt trong dự án ${name} (${t.phase || "chưa rõ Phase"}).`);
-      office.setLine("pain", `Dự án ${name}: lượt hiện tại của ${t.nextOwner}${st.handoffPending ? ", có bàn giao chờ CEO duyệt" : ""}.`);
-      await syncWork(list.active);
-    } catch { /* Controller chưa chạy: giữ lời giới thiệu vai */ }
-  };
-  syncTurn();
-  setInterval(syncTurn, 10000);
   // Thẻ "Bạn đang ở" nằm ngay dưới thanh trên (trên màn hẹp thanh trên xuống nhiều dòng)
   const placeCard = () => {
     const card = document.querySelector(".vp-room"), bar = document.querySelector(".bar");
     if (card && bar) card.style.top = Math.round(bar.getBoundingClientRect().bottom + 8) + "px";
   };
   addEventListener("resize", placeCard);
+  new ResizeObserver(placeCard).observe(document.querySelector(".bar"));
   placeCard();
 } catch (err) {
   console.error(err);
@@ -801,6 +747,11 @@ try {
 }
 
 // ================= ĐI TỚI PHÒNG & ZOOM =================
+const desk = createDesk(() => office);
+const syncTurn = () => desk.syncTurn();
+syncTurn();
+setInterval(syncTurn, 10000);
+
 function focusRoom(roomId) {
   if (office) office.goToRoom(NPC_OF[roomId] || roomId);
   document.querySelectorAll(".rbtn").forEach((b) => b.classList.toggle("active", b.dataset.room === roomId));

@@ -338,14 +338,15 @@
 
   async function loadRepo(force = false) {
     if (!active) { repoInfo = null; repoFor = ""; renderRepo(); return; }
-    if (repoLoading || (!force && repoFor === active && repoInfo)) return;
+    if (repoLoading) return;
+    if (!force && repoFor === active && repoInfo) { renderRepo(); return; }
     const target = active;
     repoLoading = true; renderRepo();
     try {
       const { overview } = await request("/ctl/workspaces/overview?workspace=" + encodeURIComponent(target), undefined, 25000);
       if (target === active) { repoInfo = overview; repoFor = target; repoError = ""; }
     } catch (e) { if (target === active) { repoInfo = null; repoError = "Chưa đọc được repo: " + e.message; } }
-    finally { repoLoading = false; renderRepo(); }
+    finally { repoLoading = false; renderRepo(); if (target !== active) loadRepo(); }
   }
 
   function renderRepo() {
@@ -375,6 +376,7 @@
     ];
     setMarkup("repoRead", `<div class="entry-head"><h2 id="repoTitle">Đã đọc repo ${esc(o.name)}</h2><span class="badge">Đọc lúc ${esc(new Date(o.readAt).toLocaleTimeString("vi-VN"))}</span></div>
       <p class="${a.exists ? "muted" : "error"}">${esc(agentLine)}</p>
+      ${globalThis.RepoProgress.html(o, autoRuns, ownHandoffs(), controlError ? { runs: controlError, handoffs: controlError } : {})}
       <dl class="repo-grid">${rows.map(([k, val]) => `<div><dt>${esc(k)}</dt><dd>${esc(val)}</dd></div>`).join("")}</dl>
       ${blockers.length ? `<details open><summary>Blocker OPEN trong Vùng [5]</summary><ul>${blockers.map((b) => `<li>${esc(b)}</li>`).join("")}</ul></details>` : ""}
       ${r && r.commits.length ? `<details><summary>${r.commits.length} commit gần nhất</summary><ul>${r.commits.map((c) => `<li><span class="mono">${esc(c.hash)}</span> · ${esc(c.when)} · ${esc(c.subject)}</li>`).join("")}</ul></details>` : r ? '<p class="muted">Repo chưa có commit nào.</p>' : ""}
