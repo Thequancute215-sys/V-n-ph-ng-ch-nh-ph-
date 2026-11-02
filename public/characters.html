@@ -30,8 +30,6 @@ body { background: #040711; color: #f8fafc; font-family: "Plus Jakarta Sans", sa
 .glass-panel { background: rgba(11, 17, 33, 0.9); backdrop-filter: blur(18px); border: 1px solid rgba(255, 255, 255, 0.1); }
 .custom-scroll::-webkit-scrollbar { width: 5px; }
 .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 999px; }
-@keyframes pulseGlow { 0%, 100% { opacity: 0.8; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
-.chakra-glow { animation: pulseGlow 2.5s ease-in-out infinite; }
 /* P7-M01: dưới 1024px danh sách nhân vật thành dải cuộn ngang nằm giữa khung 3D và hồ sơ */
 @media (max-width: 1023px) {
   #charList { flex-direction: row; overflow-x: auto; overflow-y: hidden; }
@@ -39,6 +37,11 @@ body { background: #040711; color: #f8fafc; font-family: "Plus Jakarta Sans", sa
 }
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">
+<meta name="theme-color" content="#06080d">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="app.js" defer></script>
 </head>
 <body class="min-h-screen lg:h-screen w-full overflow-x-hidden lg:overflow-hidden flex flex-col select-none">
 
@@ -54,7 +57,7 @@ body { background: #040711; color: #f8fafc; font-family: "Plus Jakarta Sans", sa
         <span class="lg:hidden">HỒ SƠ NHẪN GIẢ & VĨ THÚ</span>
         <span class="hidden wide:inline-block whitespace-nowrap text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30">Nét Mặt & Trang Phục Chuẩn 100%</span>
       </h1>
-      <p class="hidden xl:block truncate text-xs text-slate-400">Rõ từng nét vẽ mắt, ấn ký, chữ Hán, hoa văn trang phục & hiệu ứng Chakra</p>
+      <p class="hidden xl:block truncate text-xs text-slate-400">Rõ từng nét vẽ mắt, ấn ký, chữ Hán, hoa văn trang phục & phụ kiện</p>
     </div>
   </div>
 
@@ -278,9 +281,6 @@ body { background: #040711; color: #f8fafc; font-family: "Plus Jakarta Sans", sa
       </div>
 
       <div class="absolute top-3 right-3 sm:top-6 sm:right-6 z-10 flex flex-wrap justify-end gap-2">
-        <button onclick="toggleChakraFx()" id="btnChakraFx" class="px-3.5 py-1.5 rounded-xl bg-orange-500/20 text-orange-300 border border-orange-500/30 text-xs font-bold hover:bg-orange-500/30 flex items-center gap-1.5 transition">
-          <i data-lucide="zap" class="w-3.5 h-3.5"></i> Hào quang Chakra: BẬT
-        </button>
         <button onclick="toggleActionAnim('jutsu')" class="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-slate-200">
           Thi Triển Tuyệt Kỹ
         </button>
@@ -792,7 +792,7 @@ const CHAR_DATA = {
       <div>🍥 <b>Nét mặt nguyên tác:</b> Đôi mắt xanh da trời viền cam Hiền Nhân, 3 vệt râu mèo cong mỗi bên má, nụ cười tự tin.</div>
       <div>🥋 <b>Trang phục Hokage:</b> Áo choàng trắng viền lửa đỏ rực rỡ, sau lưng thêu thư pháp đỏ <b>七代目火影 (Nanadaime Hokage)</b>.</div>
       <div>🎖️ <b>Băng trán & Tay:</b> Băng bảo vệ trán Làng Lá khắc biểu tượng lá xoáy Konoha sắc nét, tay phải quấn băng gạc Hashirama channeling Rasengan!</div>
-      <div>⚡ <b>Hào quang Chakra:</b> Vỏ bọc Chakra Cửu Vĩ vàng cam #F59E0B tỏa sáng phập phồng quanh toàn thân.</div>`,
+`,
     auth: "Tối Cao (Duyệt Lượt)", scale: "100% (80px Boss)", type: "shinobi", shinobiType: "naruto"
   },
   hinata_antigravity: {
@@ -882,7 +882,7 @@ const CHAR_DATA = {
       <div>💠 <b>Nét mặt nguyên tác:</b> Mắt xanh lục ngọc, <b>Ấn Bách Hào</b> hình thoi tím trên trán.</div>
       <div>💇 <b>Tóc:</b> Tóc hồng ngắn ngang cằm, băng trán đỏ cài trên đầu như dải buộc tóc.</div>
       <div>👘 <b>Trang phục Shippuden:</b> Áo đỏ cổ đứng không tay với vòng tròn trắng gia tộc Haruno sau lưng, quần ngắn đen.</div>
-      <div>💚 <b>Y thuật:</b> Quả cầu Chakra chữa thương xanh lục trên tay: kiểm duyệt bảo mật Zero-Leak Vùng [5]. Vệ tinh: Lục Vĩ Saiken & Ngũ Vĩ Kokuo.</div>`,
+      <div>💚 <b>Y thuật:</b> Kiểm duyệt bảo mật Zero-Leak Vùng [5]. Vệ tinh: Lục Vĩ Saiken & Ngũ Vĩ Kokuo.</div>`,
     auth: "Chốt chặn Vùng [5]", scale: "90% (72px)", type: "shinobi", shinobiType: "sakura"
   },
 
@@ -991,7 +991,6 @@ const CHAR_DATA = {
 
 let currentCharKey = "naruto_ceo";
 let currentCharMesh = null;
-let chakraFxEnabled = true;
 let animClock = new THREE.Clock();
 
 function makeAkatsukiCloakTexture() {
@@ -1053,19 +1052,6 @@ function build3DCharacter(data) {
 
   spot.color.setHex(col);
 
-  // 1. CHAKRA AURA ENVELOPE
-  const auraGeo = new THREE.CapsuleGeometry(isShinobi ? 1.15 : 0.95, isShinobi ? 1.55 : 1.05, 12, 20);
-  const auraMat = new THREE.MeshBasicMaterial({
-    color: col,
-    transparent: true,
-    opacity: 0.35,
-    wireframe: true,
-    side: THREE.DoubleSide
-  });
-  const auraMesh = new THREE.Mesh(auraGeo, auraMat);
-  auraMesh.position.y = isShinobi ? 2.3 : 1.5;
-  g.add(auraMesh);
-
   const extras = [];
 
   // Check if a custom Meshy.ai 3D Model (.glb) was loaded for this character
@@ -1075,7 +1061,7 @@ function build3DCharacter(data) {
     activeMixer = glbData.mixer || null;
     g.scale.setScalar(data.scale.includes("80px") ? 1.4 : isShinobi ? 1.3 : 1.15);
     scene.add(g);
-    currentCharMesh = { g, auraMesh, extras, data, isCustomGlb: true };
+    currentCharMesh = { g, extras, data, isCustomGlb: true };
 
     const resetBtn = document.getElementById("btnResetProcedural");
     if (resetBtn) resetBtn.classList.remove("hidden");
@@ -1471,10 +1457,6 @@ function build3DCharacter(data) {
       rightArm.position.set(0.9, 1.85, 0.3);
       rightArm.rotation.set(-0.45, 0, -0.2);
       g.add(rightArm);
-      const heal = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), new THREE.MeshBasicMaterial({ color: 0x34d399, wireframe: true, transparent: true, opacity: 0.65 }));
-      heal.position.set(0.95, 1.6, 0.75);
-      g.add(heal);
-      extras.push({ obj: heal, type: "flicker" });
 
     } else if (data.shinobiType === "pain") {
       // 5.9 Pain Thiên Đạo: tóc cam dựng ngược, khuyên đen trên tai và cằm, áo choàng Akatsuki, vòng Thần La Thiên Chinh
@@ -1589,7 +1571,7 @@ function build3DCharacter(data) {
   g.scale.setScalar(data.scale.includes("80px") ? 1.4 : isShinobi ? 1.3 : 1.15);
   scene.add(g);
 
-  currentCharMesh = { g, auraMesh, extras, data };
+  currentCharMesh = { g, extras, data };
 }
 
 // Meshy.ai File Loader & Drag-and-Drop Handlers
@@ -1715,19 +1697,6 @@ window.selectChar = (key) => {
   build3DCharacter(d);
 };
 
-window.toggleChakraFx = () => {
-  chakraFxEnabled = !chakraFxEnabled;
-  const btn = document.getElementById("btnChakraFx");
-  if (chakraFxEnabled) {
-    btn.innerHTML = `<i data-lucide="zap" class="w-3.5 h-3.5"></i> Hào quang Chakra: BẬT`;
-    btn.className = "px-3.5 py-1.5 rounded-xl bg-orange-500/20 text-orange-300 border border-orange-500/30 text-xs font-bold hover:bg-orange-500/30 flex items-center gap-1.5 transition";
-  } else {
-    btn.innerHTML = `<i data-lucide="zap-off" class="w-3.5 h-3.5"></i> Hào quang Chakra: TẮT`;
-    btn.className = "px-3.5 py-1.5 rounded-xl bg-white/10 text-slate-400 text-xs font-bold flex items-center gap-1.5 transition";
-  }
-  lucide.createIcons();
-};
-
 window.toggleActionAnim = (type) => {
   const d = CHAR_DATA[currentCharKey];
   if (!d) return;
@@ -1756,7 +1725,7 @@ window.promptEditChar = () => {
   if (req) alert(`Đã ghi nhận yêu cầu: "${req}". Kiến trúc sư Antigravity sẽ cập nhật ngay!`);
 };
 
-// Render Loop with Chakra Pulsing
+// Render Loop
 function animate() {
   requestAnimationFrame(animate);
   const t = animClock.getElapsedTime();
@@ -1766,17 +1735,6 @@ function animate() {
   sealMesh.rotation.z = t * 0.15;
 
   if (currentCharMesh) {
-    if (currentCharMesh.auraMesh) {
-      if (chakraFxEnabled) {
-        currentCharMesh.auraMesh.visible = true;
-        const pulse = 1.0 + Math.sin(t * 5.0) * 0.08;
-        currentCharMesh.auraMesh.scale.set(pulse, pulse, pulse);
-        currentCharMesh.auraMesh.material.opacity = 0.25 + Math.sin(t * 3.0) * 0.15;
-      } else {
-        currentCharMesh.auraMesh.visible = false;
-      }
-    }
-
     if (currentCharMesh.extras) {
       for (const ex of currentCharMesh.extras) {
         if (ex.type === "rasengan") {

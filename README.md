@@ -52,7 +52,34 @@ Mở **http://localhost:7788**.
 
 Xong, máy ghi `config.json` và tạo sổ `data/` từ khung mẫu `mau/`.
 
+## Dùng như app trên máy
+
+```bash
+npm run cai-app                 # Windows: tạo lối tắt "Văn phòng AI" trên Desktop và Start Menu
+npm run cai-app -- --tu-khoi-dong   # thêm: tự bật ngầm mỗi khi đăng nhập Windows
+npm run app                     # mở app (tự bật văn phòng + OS Controller chạy ngầm nếu chưa chạy)
+npm run tat-app                 # tắt văn phòng đã bật bằng app
+npm run cai-app -- --go         # gỡ mọi lối tắt
+```
+
+- Bấm **Văn phòng AI** trên Desktop: một cửa sổ nhỏ thu gọn hiện vài giây trên thanh tác vụ trong lúc bật, văn phòng + OS Controller chạy ngầm không cửa sổ (log ở `~/.van-phong-ao/logs/app.log`), rồi mở cửa sổ app riêng bằng Edge/Chrome (không thanh địa chỉ). Không có Edge/Chrome thì mở bằng trình duyệt mặc định.
+- Hoặc trong văn phòng bấm **⬇ Cài app** (Edge/Chrome): có biểu tượng trên thanh tác vụ, lối tắt nhanh tới Điều khiển máy, Bảng điều hành, Hồ sơ nhân vật.
+- Mở app khi văn phòng đang tắt: hiện trang hướng dẫn, tự mở lại khi văn phòng bật. App không lưu đệm dữ liệu văn phòng.
+- Không cần cài thêm gì: không Electron, không thư viện ngoài.
+
 ## Các màn hình
+
+### Giao việc tự động, Claude báo cáo
+
+Mở `prototype.html#board` → chọn dự án đã đăng ký → nhập việc → **Giao cho cả đội**. Bộ điều phối gọi Antigravity CLI (`agy`) cho SPEC, Codex cho Sol/Astra và Claude Code để kiểm duyệt. Các CLI dùng tài khoản đã đăng nhập và gọi dịch vụ AI tương ứng.
+
+Các bàn giao nội bộ được xử lý tự động trong phạm vi việc bạn vừa giao. Báo cáo cuối của Claude dừng chờ bạn duyệt; duyệt báo cáo không tự push, merge hay phát hành. Mặc định giới hạn 10 lượt và 90 phút. Có nút dừng từng luồng và phanh khẩn cấp. Khi Controller khởi động lại, việc dang dở cần được kiểm tra trước khi giao lại.
+
+Luồng và báo cáo lưu ở `~/.van-phong-ao/autopilot/`, cùng nhật ký kiểm toán của Controller. Nếu CLI thiếu quyền, trả bàn giao sai hoặc hết hạn mức, app hiển thị lỗi và giữ công việc ở trạng thái chưa hoàn tất. **Đã xem lỗi** chỉ đóng thông báo, không xác nhận công việc thành công.
+
+CLI và đường dẫn của từng vai được cấu hình ngoài repo trong `~/.van-phong-ao/ctl-agents.json`. Codex dùng `--approve-for-me` để duyệt các yêu cầu vượt sandbox qua cơ chế automatic review; Antigravity dùng quyền theo từng lệnh. Tài liệu chính thức: [Codex chạy tự động](https://learn.chatgpt.com/docs/non-interactive-mode), [Antigravity headless](https://antigravity.google/docs/cli/headless/), [Claude CLI](https://code.claude.com/docs/en/cli-reference).
+
+Có thể đặt `"appStartPath": "/prototype.html#board"` trong `config.json` để biểu tượng Desktop mở thẳng màn giao việc và báo cáo.
 
 | Màn | Có gì |
 |---|---|
@@ -65,6 +92,7 @@ Xong, máy ghi `config.json` và tạo sổ `data/` từ khung mẫu `mau/`.
 | **Đánh giá nhân sự** | Token theo giờ và ngày, quỹ Codex tuần, xếp loại A/B/C/D theo việc xong, lỗi lệnh, lượt DEV, giờ làm, độ tiết kiệm |
 | **Tin nhắn** | Toàn bộ tin 24 giờ, lọc theo người |
 | **Sơ đồ 2D** | Bản nhẹ cho điện thoại yếu: mặt bằng, người, tin bay, cảnh báo, dòng thời gian |
+| **App trên máy** | Lối tắt Desktop / Start Menu, cửa sổ riêng, tự bật ngầm khi đăng nhập Windows (xem mục "Dùng như app trên máy") |
 | **Điều khiển máy** | CPU/RAM trực tiếp, phanh khẩn cấp, workspace, chạy lệnh (chờ duyệt nếu ngoài danh sách), lượt AI theo `agent.md` + duyệt chuyển lượt, sửa file, nhật ký kiểm toán. Chỉ mở được trên chính máy này |
 | **Nhắn tin cho agent** | Bấm vào một người trên văn phòng hoặc bảng điều hành, gõ tin. Tin vào hòm thư của người đó; từ xa phải nhập **PIN 6 số**, mã chỉ hiện trên chính máy bạn |
 
@@ -89,7 +117,25 @@ Mở `http://localhost:7788/dieukhien.html` (hoặc nút **⌘ Điều khiển m
 
 Dữ liệu của ctl nằm ở `~/.van-phong-ao/` (`ctl.db`, `logs/`, `ctl-token`). Lệnh CLI của từng vai AI đổi được ở `~/.van-phong-ao/ctl-agents.json`, ví dụ `{ "CODEX_ASTRA_DEV": ["codex", "exec", "-m", "<model>", "{prompt}"] }`.
 
-> **Lưu ý thật:** lệnh trong danh sách cho phép như `npm test` vẫn chạy script của chính dự án. Ranh giới an toàn là: chỉ trong workspace + bạn duyệt mọi thứ khác + nhật ký + phanh khẩn cấp, không phải hộp cát. Antigravity chưa có CLI chạy nền nên vẫn giao việc qua Hòm thư.
+> **Lưu ý thật:** lệnh trong danh sách cho phép như `npm test` vẫn chạy script của chính dự án. Ranh giới của Controller là workspace đã đăng ký, quyền của từng CLI, nhật ký và phanh khẩn cấp. Antigravity có CLI chạy nền `agy`; cài và đăng nhập trước khi giao lượt SPEC tự động.
+
+## Theo dõi hạn mức từng AI
+
+Trong Tổng quan, bấm **Hạn mức AI** hoặc tab **Hạn mức & tài khoản** để xem phần trăm còn lại/đã dùng, hạn mức 5 giờ và 7 ngày, giờ đặt lại theo múi giờ trên máy và lần cập nhật thành công. Cảnh báo hiện trên thanh đầu và màn Điều hành từ 80% đã dùng; thanh chuyển đỏ từ 95%. Các hạn mức thuộc tài khoản, dùng chung giữa các dự án; Sol/Astra dùng chung Codex. Nhóm Claude/GPT bên trong Antigravity là hạn mức Antigravity, tách khỏi Claude Code và Codex.
+
+Nguồn đọc chỉ dùng chức năng trạng thái của CLI đang đăng nhập: Codex `app-server` qua `account/rateLimits/read`; Claude `-p /usage --output-format json --safe-mode`; Antigravity `-p /usage --output-format json`. Đã kiểm trên Codex 0.163.0, Claude 2.1.309 và agy 1.4.12: các lệnh này không gọi mô hình, không mua thêm lượt, không dùng lượt đặt lại hạn mức, không đổi tài khoản. Bộ theo dõi không đọc hoặc chép credential; dữ liệu trả về chỉ gồm hạn mức đã chuẩn hóa, không có nội dung phiên, mã tài khoản hoặc chi tiết plugin.
+
+Khi app đang mở, số liệu tự cập nhật tối đa mỗi 2 phút; nút Cập nhật cũng tuân theo khoảng chờ này. Lỗi một hãng không làm mất số liệu hãng khác; hãng lỗi chờ ít nhất 5 phút rồi thử lại. Bản đọc cũ được ghi rõ, không tự coi là 0% sử dụng hoặc tự cho rằng hạn mức đã phục hồi khi qua giờ reset. CLI thiếu, chưa đăng nhập hoặc thay đổi định dạng sẽ hiện chưa đọc được số liệu. Các tiến trình đọc có timeout 25 giây và được dừng khi tắt app. API cục bộ `GET /ctl/quotas` và `POST /ctl/quotas/refresh` qua cùng cơ chế token/localhost của Controller.
+
+Tham khảo: [Codex app-server](https://learn.chatgpt.com/docs/app-server), [Claude Code /usage](https://code.claude.com/docs/en/interactive-mode), [Antigravity /usage](https://antigravity.google/docs/cli/commands/usage/).
+
+## Chọn repo GitHub trong app
+
+Ở trang Tổng quan (`prototype.html`), bấm **Chọn repo GitHub**, tìm repo rồi bấm **Mở repo**. Danh sách lấy trực tiếp từ tài khoản GitHub đã đăng nhập trong Git Credential Manager trên máy, gồm cả repo riêng tư và repo được cộng tác; có tải thêm khi danh sách dài. Không cần nhập token vào văn phòng.
+
+Văn phòng nhận diện bản sao đã đăng ký hoặc nằm ngay dưới `~/Projects` qua remote `origin` (HTTPS/SSH). Bản sao có sẵn được giữ nguyên nhánh và các thay đổi chưa commit. Repo chưa có được clone vào `~/Projects/<chủ-repo>/<tên-repo>` rồi đăng ký và chọn làm dự án; lựa chọn được khôi phục khi bật lại app. Nếu thư mục đích có dữ liệu khác, văn phòng báo lỗi và giữ nguyên dữ liệu. Tác vụ clone có nhật ký, giới hạn 10 phút và dừng được bằng bảng điều khiển máy/Kill-All.
+
+Chọn repo chỉ tải mã về máy, không push, merge hoặc phát hành. Repo chưa có `agent.md` vẫn mở được, nhưng nút giao việc tự động tạm khóa và giao diện báo cần thiết lập sổ đội AI. Văn phòng không tự ghi đè hướng dẫn hoặc tự khởi tạo giao thức trong repo vừa chọn. Nếu đăng nhập hết hạn, đăng nhập lại qua Git Credential Manager rồi tải lại danh sách.
 
 ## Sổ điều phối `data/` và công cụ `vp`
 
@@ -140,9 +186,10 @@ Luật đội để dán vào dự án nằm ở `data/DOAN-CHEN-VAO-AGENTS.md`,
 | Văn phòng trống | Mở phiên AI **trong đúng thư mục dự án** đã chọn; kiểm `projects` (dùng dấu `/`). |
 | `EADDRINUSE` | Cổng 7788 đang bận: đổi `port`. |
 | Màn 3D đen | Trình duyệt chặn WebGL hoặc máy không tải được three.js. Thử Chrome/Edge mới, hoặc dùng Sơ đồ 2D. |
+| Bấm lối tắt mà không thấy cửa sổ | Xem `~/.van-phong-ao/logs/app.log`; thường do thiếu `config.json` (chạy `npm run setup`) hoặc cổng 7788 đang bận. |
 | `OS Controller chưa chạy` trên màn Điều khiển | Chạy `npm run ctl` (hoặc `npm run all` thay cho `npm start`). |
 | `Bảng điều khiển máy chỉ dùng được trên chính máy này` | Đúng thiết kế: không điều khiển máy qua điện thoại / máy khác. Mở bằng `http://localhost:7788` trên chính máy. |
-| Lượt AI báo `Không tìm thấy chương trình claude/codex` hoặc lỗi cờ CLI | Cài CLI và đăng nhập (`claude login`, `codex login`), hoặc sửa lệnh trong `~/.van-phong-ao/ctl-agents.json`. |
+| Lượt AI báo `Không tìm thấy chương trình claude/codex/agy` hoặc lỗi cờ CLI | Cài CLI chính thức và đăng nhập (`claude auth login`, `codex login`, chạy `agy` để đăng nhập), hoặc sửa lệnh trong `~/.van-phong-ao/ctl-agents.json`. |
 | Hòm thư không ai đọc | Phiên AI chưa có luật đội: dán `data/DOAN-CHEN-VAO-AGENTS.md` vào `AGENTS.md` / `CLAUDE.md`, và đặt tên phiên trùng tên vai. |
 
 ## Cấu trúc mã
@@ -150,14 +197,14 @@ Luật đội để dán vào dự án nằm ở `data/DOAN-CHEN-VAO-AGENTS.md`,
 ```
 server.js              máy chủ: tìm phiên, đọc nhật ký + sổ, đẩy trạng thái mỗi giây
 lib/                   perf (token, điểm, tiền) · docs (sổ sách) · hopthu · tongquan · chat (PIN) · mailbox · config
-                       guard (chặn CSRF/DNS rebinding) · proc (dừng cây tiến trình) · keys · mask · ctlbridge (cầu nối tới ctl)
-ctl/                   OS Controller: main (HTTP) · jobs · policy · workspaces · files · runner (lượt AI) · handoff · monitor · audit · db
+                       guard (chặn CSRF/DNS rebinding) · proc (dừng cây tiến trình) · keys · mask · ctlbridge (cầu nối tới ctl) · app (mở app, lối tắt)
+ctl/                   OS Controller: main (HTTP) · jobs · policy · workspaces · files · runner (lượt AI) · autopilot (giao việc tự động) · handoff · monitor · audit · db
 test/                  node --test (npm test)
 tools/vp.js            công cụ ghi sổ cho agent
 setup.js               cài đặt (hỏi–đáp hoặc --yes cho agent)
 mau/                   khung mẫu sổ điều phối + đoạn luật đội cho AGENTS.md / CLAUDE.md
 public/                giao diện: index (3D), board, congviec, noiquy, tongquan, hopthu, hieusuat, tinnhan, 2d, dieukhien
-scripts/               mở đường hầm xem trên điện thoại · chay-tat-ca.js (npm run all)
+scripts/               mở đường hầm xem trên điện thoại · chay-tat-ca.js (npm run all) · mo-app / tat-app / cai-app (app trên máy)
 HUONG-DAN-CHO-AGENT.md hướng dẫn để agent tự cài từ link này
 ```
 

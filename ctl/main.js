@@ -16,6 +16,9 @@ const { createMonitor } = require("./monitor");
 const { createWorkspaces } = require("./workspaces");
 const { createFiles } = require("./files");
 const { createRunner } = require("./runner");
+const { createAutopilot } = require("./autopilot");
+const { createGitHub } = require("./github");
+const { createQuotas } = require("./quotas");
 const { classify } = require("./policy");
 
 const VERSION = "1.0.0";
@@ -24,16 +27,27 @@ const HTTP_CODE = {
   BAD_REQUEST: 400, NOT_DIR: 400, NOT_FILE: 400, BAD_CONFIG: 400, NO_AGENT_MD: 422, BAD_AGENT_MD: 422, INVALID_HANDOFF: 422, NO_CLI: 422,
   WORKSPACE_DENIED: 403, PATH_ESCAPE: 403, PATH_DENIED: 403, TOO_BROAD: 403, TOO_SENSITIVE: 403, COMMAND_DENIED: 403,
   NOT_FOUND: 404, TOO_LARGE: 413,
-  CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409, HANDOFF_PENDING: 409,
+  GITHUB_AUTH: 401, GITHUB_LIMIT: 429, GITHUB_OFFLINE: 502, GITHUB_CLONE: 502,
+  CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409, HANDOFF_PENDING: 409, NEEDS_ANSWER: 409, NO_QUESTION: 422, BAD_OPTION: 400,
 };
 
-function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex") } = {}) {
+function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {}, quotaOptions = {} } = {}) {
   const db = open(dir);
   const audit = createAudit(db);
   const jobs = createJobs(db, audit, path.join(dir, "logs"));
   const ws = createWorkspaces(db, audit);
+  const activeFile = path.join(dir, "active-workspace.json");
+  try { ws.switchTo(JSON.parse(fs.readFileSync(activeFile, "utf8")).path, "ctl-restore"); } catch (e) { if (e.code !== "ENOENT") audit.log("ctl", "workspace.restore_skipped", null, e.message); }
   const files = createFiles(ws, audit);
   const runner = createRunner({ jobs, ws, audit, db, dir });
+  const autopilot = createAutopilot({ runner, jobs, ws, audit, dir });
+  const selectWorkspace = (p) => {
+    const active = ws.switchTo(p, "ceo").path;
+    fs.writeFileSync(activeFile + ".tmp", JSON.stringify({ path: active }), { mode: 0o600 }); fs.renameSync(activeFile + ".tmp", activeFile);
+    return active;
+  };
+  const github = createGitHub({ ...githubOptions, ws, jobs, audit, select: selectWorkspace });
+  const quotas = createQuotas({ ...quotaOptions, dir });
   const monitor = createMonitor();
   const tokenBuf = Buffer.from(token);
   const streams = new Set();
@@ -61,6 +75,8 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
   // Bảng route: [method, mẫu đường dẫn, xử lý(params, query, body)] → trả object (200) hoặc [mã, object].
   const routes = [
     ["GET", "/health", () => ({ version: VERSION, pid: process.pid, uptimeS: Math.round(process.uptime()) })],
+    ["GET", "/quotas", () => quotas.get()],
+    ["POST", "/quotas/refresh", () => { quotas.refresh(); return [202, quotas.snapshot()]; }],
     ["GET", "/monitor", () => snap()],
     ["GET", "/audit", (p, qs) => ({ audit: audit.recent(Number(qs.get("limit")) || 100) })],
 
@@ -76,33 +92,51 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     ["POST", "/jobs/:id/approve", (p) => ({ job: jobs.approve(p.id, "ceo") })],
     ["POST", "/jobs/:id/reject", (p) => ({ job: jobs.reject(p.id, "ceo") })],
     ["POST", "/jobs/:id/kill", async (p) => {
+      autopilot.cancelJob(p.id);
       const r = await jobs.kill(p.id, "ceo");
       if (r.code) throw Object.assign(new Error(r.error), { code: r.code });
       return r.killed ? { results: [r] } : [500, { ok: false, code: "KILL_FAILED", error: r.error, results: [r] }];
     }],
     ["POST", "/kill-all", async () => {
+      autopilot.cancelAll();
       const results = await jobs.killAll("ceo");
       const failed = results.filter((r) => !r.killed);
       return failed.length ? [500, { ok: false, code: "KILL_FAILED", error: failed.map((r) => r.error).join("; "), results }] : { results };
     }],
 
     ["GET", "/workspaces", () => ({ workspaces: ws.list(), active: ws.current() })],
+    ["GET", "/github/repos", (p, qs) => github.list(qs.get("page") || 1)],
+    ["POST", "/github/open", (p, qs, b) => [202, { operation: github.open(b.fullName) }]],
+    ["GET", "/github/operations/:id", (p) => ({ operation: github.get(p.id) })],
     ["POST", "/workspaces", (p, qs, b) => [201, { workspace: ws.add(b.path, "ceo") }]],
     ["POST", "/workspaces/remove", (p, qs, b) => { ws.remove(b.path, "ceo"); return { workspaces: ws.list() }; }],
-    ["POST", "/workspaces/switch", (p, qs, b) => ({ active: ws.switchTo(b.path, "ceo").path })],
+    ["POST", "/workspaces/switch", (p, qs, b) => {
+      return { active: selectWorkspace(b.path) };
+    }],
 
     ["GET", "/fs/list", (p, qs) => files.list(wsOf(qs.get("workspace")), qs.get("path") || ".")],
     ["GET", "/fs/read", (p, qs) => files.read(wsOf(qs.get("workspace")), qs.get("path"))],
     ["POST", "/fs/write", (p, qs, b) => files.write(wsOf(b.workspace), b.path, b.content, b.expectSha256, "ceo")],
 
     ["GET", "/ai/status", (p, qs) => runner.status(wsOf(qs.get("workspace")))],
-    ["POST", "/ai/run", (p, qs, b) => [201, { job: runner.run({ workspace: wsOf(b.workspace), role: b.role, task: b.task }, "ceo") }]],
+    ["POST", "/ai/run", (p, qs, b) => {
+      const workspace = ws.find(wsOf(b.workspace)).path;
+      if (autopilot.busy(workspace)) throw Object.assign(new Error("Dự án đang có luồng tự động hoặc báo cáo chờ duyệt"), { code: "AI_BUSY" });
+      return [201, { job: runner.run({ workspace, role: b.role, task: b.task }, "ceo") }];
+    }],
+    ["GET", "/autopilot", () => ({ runs: autopilot.list() })],
+    ["GET", "/autopilot/:id", (p) => ({ run: autopilot.get(p.id) })],
+    ["POST", "/autopilot", (p, qs, b) => [201, { run: autopilot.start({ workspace: wsOf(b.workspace), task: b.task, maxSteps: b.maxSteps, timeoutMs: b.timeoutMs }) }]],
+    ["POST", "/autopilot/:id/stop", async (p) => ({ run: await autopilot.stop(p.id) })],
+    ["POST", "/autopilot/:id/answer", (p, qs, b) => ({ run: autopilot.answer(p.id, b.option) })],
+    ["POST", "/autopilot/:id/approve", (p) => ({ run: autopilot.decide(p.id, true) })],
+    ["POST", "/autopilot/:id/reject", (p) => ({ run: autopilot.decide(p.id, false) })],
     ["GET", "/handoffs", () => ({ handoffs: runner.pending() })],
     ["GET", "/handoffs/:id", (p) => { const h = runner.get(p.id); if (!h) throw Object.assign(new Error("Chưa có bàn giao của " + p.id), { code: "NOT_FOUND" }); return { handoff: h }; }],
     ["POST", "/handoffs/:id/approve", (p) => ({ handoff: runner.approve(p.id, "ceo") })],
     ["POST", "/handoffs/:id/reject", (p) => ({ handoff: runner.reject(p.id, "ceo") })],
-    ["GET", "/settings", () => ({ settings: runner.settings() })],
-    ["POST", "/settings", (p, qs, b) => ({ settings: runner.setSettings(b, "ceo") })],
+    // Trả lời câu hỏi của Claude khi chạy tay; trong luồng tự động thì dùng /autopilot/:id/answer để luồng chạy tiếp.
+    ["POST", "/handoffs/:id/answer", (p, qs, b) => ({ handoff: runner.answer(p.id, b.option, "ceo") })],
   ];
   const match = (pattern, pathname) => {
     const a = pattern.split("/"), b = pathname.split("/");
@@ -155,6 +189,9 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
   });
 
   async function close() {
+    github.close();
+    autopilot.close();
+    await quotas.close();
     clearInterval(tick);
     for (const r of streams) r.end();
     await jobs.killAll("ctl-shutdown");
@@ -163,7 +200,7 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     db.close();
   }
 
-  return { server, jobs, ws, files, runner, audit, token, close };
+  return { server, jobs, ws, files, runner, autopilot, github, quotas, audit, token, close };
 }
 
 if (require.main === module) {

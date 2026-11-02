@@ -79,6 +79,11 @@
       background-size: 100% 100%, 36px 36px, 36px 36px;
     }
   </style>
+<link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">
+<meta name="theme-color" content="#06080d">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="app.js" defer></script>
 </head>
 <body class="h-screen w-screen flex flex-col bg-slate-950 text-slate-100">
 
@@ -1679,19 +1684,6 @@
             armGroup.add(rasenganGroup);
             dojutsuDependentMeshes.push(rasenganGroup);
             animatedCloakOrHair.push({ mesh: shell, spinY: 6.0 });
-          }
-
-          // Hinata's Twin Lion Fists Chakra Aura on Both Hands
-          if (id === 'hinata') {
-            const lionAura = new THREE.Mesh(
-              new THREE.DodecahedronGeometry(0.19, 1),
-              new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true, transparent: true, opacity: 0.65 })
-            );
-            lionAura.position.set(0, -0.75, 0.06);
-            lionAura.visible = dojutsuActive;
-            armGroup.add(lionAura);
-            dojutsuDependentMeshes.push(lionAura);
-            animatedCloakOrHair.push({ mesh: lionAura, spinY: 4.0 });
           }
 
           // Sasuke's Chidori Lightning on Left Hand

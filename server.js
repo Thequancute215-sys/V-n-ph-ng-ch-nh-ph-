@@ -591,7 +591,7 @@ const LOGIN = `<!doctype html><meta charset="utf-8"><meta name="viewport" conten
 <form method="get" style="display:grid;gap:10px;width:min(320px,90vw)"><b style="font-size:18px">Nhập khóa xem văn phòng</b>
 <input name="key" type="password" autofocus style="padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#eee;font-size:16px">
 <button style="padding:12px;border-radius:10px;border:0;background:#ecc970;font-weight:700;font-size:15px">Vào xem</button></form></body>`;
-const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon" };
+const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon", ".webmanifest": "application/manifest+json; charset=utf-8", ".json": "application/json; charset=utf-8" };
 const json = (res, body, code = 200) => { res.writeHead(code, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-cache" }); res.end(typeof body === "string" ? body : JSON.stringify(body)); };
 function sse(req, res, set, first) {
   res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive", "X-Accel-Buffering": "no" });
