@@ -5,6 +5,9 @@ const fs = require("fs");
 const path = require("path");
 
 const ROLES = ["SPEC_ARCHITECT", "SOL_ARCHITECT_PLANNER", "SOL_ARCHITECT_ADVISOR", "CODEX_ASTRA_DEV", "CLAUDE_AUDITOR"];
+// Mức suy luận của lượt Codex (Sol/Astra) kế tiếp mà đội trưởng được tự đặt, không cần hỏi CEO (CEO cho phép 02/11/2026).
+// Mặc định medium; "ultra" (tốn hạn mức nhất) vẫn để CEO quyết.
+const EFFORTS = ["medium", "high", "xhigh", "max"];
 const RE = {
   phase: /^- CURRENT_PHASE:\s*(.+)$/m,
   last: /^(- LAST_UPDATED_BY:\s*)(\S+)/m,
@@ -39,6 +42,10 @@ function checkHandoff(h, role) {
   if (!Array.isArray(h.claim_fixed) || !h.claim_fixed.every((x) => typeof x === "string" && /^P\d+-[CHM]\d+/.test(x))) bad.push("claim_fixed phải là mảng ID dạng P2-C01");
   if (h.done !== undefined && typeof h.done !== "boolean") bad.push("done (nếu có) phải là true/false");
   if (h.ask_ceo !== undefined) bad.push(...checkAsk(h.ask_ceo, role));
+  if (h.effort !== undefined) {
+    if (role !== "CLAUDE_AUDITOR") bad.push("chỉ CLAUDE_AUDITOR được đặt effort cho lượt kế tiếp");
+    else if (!EFFORTS.includes(h.effort)) bad.push("effort phải là một trong " + EFFORTS.join(", "));
+  }
   return bad;
 }
 
@@ -89,4 +96,4 @@ function findHandoff(log) {
   return null;
 }
 
-module.exports = { ROLES, readTurn, setTurn, checkHandoff, findHandoff };
+module.exports = { ROLES, EFFORTS, readTurn, setTurn, checkHandoff, findHandoff };

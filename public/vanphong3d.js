@@ -73,7 +73,7 @@ const controls = new OrbitControls(camera, gl.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
 controls.enablePan = false;
-controls.minDistance = 2.5;
+controls.minDistance = 0.4;   // cuộn sát vào đầu = góc nhìn thứ nhất
 controls.maxDistance = 90;
 controls.maxPolarAngle = 1.45;
 controls.rotateSpeed = 0.7;
@@ -241,9 +241,9 @@ const hemi = new THREE.HemisphereLight(0xcfe7ff, 0x4d6b3a, 1.1);
 scene.add(hemi);
 
 // ================= Mặt bằng tổng thể =================
-const W = 60, D = 36, BASE = 0.5, H = 5;   // toà nhà: rộng, sâu, nền, chiều cao tầng (mét)
+const W = 84, D = 36, BASE = 0.5, H = 5;   // toà nhà: rộng (thêm cánh Tây nhà vệ sinh, cánh Đông gym), sâu, nền, cao tầng (mét)
 const ROAD_Z = 66;
-const POND = { x: -54, z: 34, r: 9 };
+const POND = { x: -66, z: 34, r: 9 };
 
 const grassTex = canvasTex(256, 256, (g) => {
   g.fillStyle = "#5b8c3a"; g.fillRect(0, 0, 256, 256);
@@ -498,10 +498,10 @@ const roofY = BASE + H;
 const roofSlab = box(rstd(0xeef0f2, { roughness: 0.9 }), W + 3, 0.5, D + 3, 0, roofY + 0.25, 0, roof);
 box(rstd(0x1f2933, { roughness: 0.35, metalness: 0.75 }), W + 3.1, 0.22, D + 3.1, 0, roofY + 0.55, 0, roof);
 const panelMat = rstd(0x1e3a5f, { roughness: 0.22, metalness: 0.6 }), panelLeg = rstd(0x1f2933, { metalness: 0.7 });
-for (let i = 0; i < 8; i++) for (let j = 0; j < 5; j++) {
-  const p = box(panelMat, 4.6, 0.08, 2.2, -23 + i * 6.6, roofY + 1.1, -13 + j * 4, roof);
+for (let i = 0; i < 11; i++) for (let j = 0; j < 5; j++) {
+  const p = box(panelMat, 4.6, 0.08, 2.2, -33 + i * 6.6, roofY + 1.1, -13 + j * 4, roof);
   p.rotation.x = -0.32;
-  box(panelLeg, 0.08, 0.45, 0.08, -23 + i * 6.6, roofY + 0.9, -13 + j * 4, roof);
+  box(panelLeg, 0.08, 0.45, 0.08, -33 + i * 6.6, roofY + 0.9, -13 + j * 4, roof);
 }
 const hvac = rstd(0xcbd5e1, { roughness: 0.5, metalness: 0.4 });
 box(hvac, 3, 1.4, 2, 24, roofY + 1.4, 11, roof);
@@ -571,24 +571,26 @@ function sofa(x, z, len, ry, colr = 0x334155) {
   if (along) solidBox(x - len / 2, z - 0.5, x + len / 2, z + 0.5); else solidBox(x - 0.5, z - len / 2, x + 0.5, z + len / 2);
 }
 function rug(x0, x1, z0, z1, hex) { box(std(hex, { roughness: 1 }), x1 - x0 - 1.2, 0.02, z1 - z0 - 1.2, (x0 + x1) / 2, 0.01, (z0 + z1) / 2, inn).castShadow = false; }
-function glassPane(x1, z1, x2, z2, y0, y1) {
+// Kính mờ cho nhà vệ sinh: không nhìn xuyên được nhưng vẫn sáng.
+const frostMat = new THREE.MeshStandardMaterial({ color: 0xe8eef5, roughness: 0.9, metalness: 0, transparent: true, opacity: 0.92, envMapIntensity: 0.45 });
+function glassPane(x1, z1, x2, z2, y0, y1, mat = glassMat) {
   const len = Math.hypot(x2 - x1, z2 - z1), ry = -Math.atan2(z2 - z1, x2 - x1), cx = (x1 + x2) / 2, cz = (z1 + z2) / 2;
-  const p = box(glassMat, len, y1 - y0, 0.05, cx, (y0 + y1) / 2, cz, inn, ry); p.castShadow = false; p.renderOrder = 2;
+  const p = box(mat, len, y1 - y0, 0.05, cx, (y0 + y1) / 2, cz, inn, ry); p.castShadow = mat !== glassMat; p.renderOrder = 2;
   camBlockers.push(p);
   box(aluMat, len, 0.08, 0.1, cx, y0 + 0.04, cz, inn, ry);
   box(aluMat, len, 0.08, 0.1, cx, y1, cz, inn, ry);
 }
 // Vách kính trong nhà nằm ngang/dọc; door = toạ độ tâm cửa (rộng 2.4m) trên đoạn tường, null = kín.
-function partition(x1, z1, x2, z2, door = null) {
+function partition(x1, z1, x2, z2, door = null, mat = glassMat) {
   const horiz = z1 === z2, a = horiz ? x1 : z1, b = horiz ? x2 : z2;
   const seg = (p, q) => {
     if (q - p < 0.05) return;
-    if (horiz) { glassPane(p, z1, q, z1, 0, H - 0.1); solidBox(p, z1 - 0.1, q, z1 + 0.1); }
-    else { glassPane(x1, p, x1, q, 0, H - 0.1); solidBox(x1 - 0.1, p, x1 + 0.1, q); }
+    if (horiz) { glassPane(p, z1, q, z1, 0, H - 0.1, mat); solidBox(p, z1 - 0.1, q, z1 + 0.1); }
+    else { glassPane(x1, p, x1, q, 0, H - 0.1, mat); solidBox(x1 - 0.1, p, x1 + 0.1, q); }
   };
   if (door === null) return seg(a, b);
   seg(a, door - 1.2); seg(door + 1.2, b);
-  if (horiz) glassPane(door - 1.2, z1, door + 1.2, z1, 2.7, H - 0.1); else glassPane(x1, door - 1.2, x1, door + 1.2, 2.7, H - 0.1);
+  if (horiz) glassPane(door - 1.2, z1, door + 1.2, z1, 2.7, H - 0.1, mat); else glassPane(x1, door - 1.2, x1, door + 1.2, 2.7, H - 0.1, mat);
   for (const d of [door - 1.2, door + 1.2]) horiz ? box(aluMat, 0.1, 2.7, 0.12, d, 1.35, z1, inn) : box(aluMat, 0.12, 2.7, 0.1, x1, 1.35, d, inn);
 }
 // Bảng trắng đứng (canvas vẽ nội dung theo chức năng phòng)
@@ -644,13 +646,17 @@ const ROOMS = [
   { id: "sasuke", x0: 6, x1: 18, z0: -18, z1: -6, door: 12, color: 0x3b82f6, title: "PHÒNG LẬP TRÌNH", who: "Sasuke · Codex Astra", fn: "Viết code Backend & Frontend đúng kế hoạch, sửa lỗi rồi ghi CLAIM_FIXED." },
   { id: "sakura", x0: 18, x1: 30, z0: -18, z1: -6, door: 24, color: 0xec4899, title: "PHÒNG KIỂM DUYỆT", who: "Sakura · Claude", fn: "Phản biện kiến trúc, săn lỗi bảo mật & hiệu năng, chốt chặn blocker — Vùng [5]." },
   { id: "meet", x0: 6, x1: 18, z0: 6, z1: 18, door: 12, color: 0x64748b, title: "PHÒNG HỌP HỘI CHẨN", who: "Cả đội", fn: "Họp duyệt Phase, chốt blocker và hướng đi cùng CEO." },
+  { id: "wcnam", x0: -42, x1: -30, z0: -18, z1: -6, door: -36, frosted: true, color: 0x0ea5e9, title: "NHÀ VỆ SINH NAM", who: "Khu tiện ích · cánh Tây", fn: "3 buồng vệ sinh, 2 bồn tiểu, bồn rửa tay có gương và máy sấy tay." },
+  { id: "wcnu", x0: -42, x1: -30, z0: 6, z1: 18, door: -36, frosted: true, color: 0xf472b6, title: "NHÀ VỆ SINH NỮ", who: "Khu tiện ích · cánh Tây", fn: "4 buồng vệ sinh, bồn rửa tay, gương trang điểm và máy sấy tay." },
+  { id: "gym", x0: 30, x1: 42, z0: -18, z1: -6, door: 36, color: 0xf97316, title: "PHÒNG GYM · CARDIO", who: "Cả đội · cánh Đông", fn: "3 máy chạy bộ, giá tạ tay, gương tập. Vận động giữa các lượt làm việc." },
+  { id: "gymxa", x0: 30, x1: 42, z0: 6, z1: 18, door: 36, color: 0x84cc16, title: "PHÒNG GYM · XÀ ĐƠN & XÀ KÉP", who: "Cả đội · cánh Đông", fn: "Xà đơn, xà kép, thảm tập, bóng tập và tạ ấm." },
   { id: "lounge", x0: 18, x1: 30, z0: 6, z1: 18, door: null, open: true, color: 0x22c55e, title: "GÓC THƯ GIÃN & PANTRY", who: "Cả đội", fn: "Nghỉ giải lao, pha cà phê, trò chuyện giữa các lượt làm việc." },
 ];
 const ZONES = [
   ...ROOMS,
   { id: "lobby", x0: -6, x1: 6, z0: 6, z1: 18, color: 0xf59e0b, title: "SẢNH LỄ TÂN", who: "Cửa chính", fn: "Đón khách. Đi thẳng lên phía bắc là Sảnh danh dự." },
   { id: "atrium", x0: -6, x1: 6, z0: -18, z1: -6, color: 0xfbbf24, title: "SẢNH DANH DỰ", who: "Tường chữ", fn: "THẾ QUÂN ĐẸP TRAI." },
-  { id: "hall", x0: -30, x1: 30, z0: -6, z1: 6, color: 0x94a3b8, title: "HÀNH LANG CHÍNH", who: "Nối các phòng", fn: "Phòng phía bắc: Đặc tả, Kiến trúc, Lập trình, Kiểm duyệt. Phía nam: Giám đốc, Điều hành, Họp, Thư giãn." },
+  { id: "hall", x0: -42, x1: 42, z0: -6, z1: 6, color: 0x94a3b8, title: "HÀNH LANG CHÍNH", who: "Nối các phòng", fn: "Bắc: Đặc tả, Kiến trúc, Lập trình, Kiểm duyệt. Nam: Giám đốc, Điều hành, Họp, Thư giãn. Cuối hành lang phía Tây: nhà vệ sinh; phía Đông: phòng gym." },
 ];
 
 function plaqueTex(r) {
@@ -680,12 +686,15 @@ function plaque(r) {
 // Tường các phòng: dãy bắc (z -18..-6) cửa quay xuống hành lang; dãy nam (z 6..18) cửa quay lên.
 for (const r of ROOMS) {
   const north = r.z1 <= -6;
-  if (!r.open) partition(r.x0, north ? r.z1 : r.z0, r.x1, north ? r.z1 : r.z0, r.door);
+  if (!r.open) partition(r.x0, north ? r.z1 : r.z0, r.x1, north ? r.z1 : r.z0, r.door, r.frosted ? frostMat : glassMat);
   rug(r.x0, r.x1, r.z0, r.z1, shade(r.color, -0.25));
   plaque(r);
 }
-for (const x of [-18, -6, 6, 18]) partition(x, -D / 2 + 0.2, x, -6);
-for (const x of [-17, -6, 6, 18]) partition(x, 6, x, D / 2 - 0.2);
+for (const x of [-30, -18, -6, 6, 18, 30]) partition(x, -D / 2 + 0.2, x, -6, null, x === -30 ? frostMat : glassMat);
+for (const x of [-30, -17, -6, 6, 18, 30]) partition(x, 6, x, D / 2 - 0.2, null, x === -30 ? frostMat : glassMat);
+// Nhà vệ sinh: lót kính mờ phía trong mặt kính ngoài trời
+for (const z of [-D / 2 + 0.15, D / 2 - 0.15]) box(frostMat, 12, H - 0.1, 0.05, -36, (H - 0.1) / 2, z, inn).renderOrder = 2;
+for (const z of [-12, 12]) box(frostMat, 0.05, H - 0.1, 12, -W / 2 + 0.15, (H - 0.1) / 2, z, inn).renderOrder = 2;
 
 // ---- Phòng Giám đốc (của bạn) ----
 desk(-23.5, 12.5, 0, 0xf59e0b, { top: walnut, scale: 1.2 });
@@ -793,11 +802,11 @@ plant(-5, -14.5, 1.4); plant(5, -14.5, 1.4);
 // ---- Đèn trần: thanh LED (sáng hơn khi trời tối) + đèn điểm không đổ bóng để nhẹ máy ----
 const ledMat = std(0xffffff, { emissive: 0xfff3d6, emissiveIntensity: 0.6, roughness: 0.3 });
 for (const r of ZONES) {
-  if (r.id === "hall") { for (const x of [-20, 0, 20]) box(ledMat, 10, 0.05, 0.22, x, H - 0.05, 0, inn).castShadow = false; continue; }
+  if (r.id === "hall") { for (const x of [-36, -20, 0, 20, 36]) box(ledMat, 10, 0.05, 0.22, x, H - 0.05, 0, inn).castShadow = false; continue; }
   box(ledMat, 5, 0.05, 0.22, (r.x0 + r.x1) / 2, H - 0.05, (r.z0 + r.z1) / 2, inn).castShadow = false;
 }
 const roomLights = [];
-for (const [x, z] of [[-24, -12], [-12, -12], [12, -12], [24, -12], [-23.5, 12], [-11.5, 12], [-15, 0], [15, 0]]) {
+for (const [x, z] of [[-24, -12], [-12, -12], [12, -12], [24, -12], [-23.5, 12], [-11.5, 12], [-15, 0], [15, 0], [-36, 0], [36, 0]]) {
   const p = new THREE.PointLight(0xffe7c4, 6, 18, 1.6);
   p.position.set(x, H - 0.6, z); inn.add(p); roomLights.push(p);
 }
@@ -948,7 +957,7 @@ poster(17.2, 5.35, Math.PI, "UỐNG\nNƯỚC ĐI", "code chạy\nmượt hơn", 
 // Dây đèn màu nhấp nháy dọc trần hành lang
 {
   const bulbs = [], wire = [];
-  for (let x = -28; x <= 28; x += 4) {
+  for (let x = -40; x <= 40; x += 4) {
     const pts = [];
     for (let i = 0; i <= 12; i++) {
       const u = i / 12, z = -5.6 + u * 11.2, y = H - 0.25 - Math.sin(u * Math.PI) * 0.6;
@@ -1161,7 +1170,7 @@ for (const [bx, bz] of [[-2.8, 16.4], [2.8, 16.4]]) {
     const z = -2.6 + Math.sin(st.x * 0.35) * 0.5;
     const dp = Math.hypot(player.pos.x - st.x, player.pos.z - z);
     if (dp > 1.2) st.x += st.dir * 0.9 * dt;
-    if (st.x > 26) st.dir = -1; else if (st.x < -26) st.dir = 1;
+    if (st.x > 38) st.dir = -1; else if (st.x < -38) st.dir = 1;
     rb.position.set(st.x, BASE, -2.6 + Math.sin(st.x * 0.35) * 0.5);
     rb.rotation.y = st.dir > 0 ? Math.PI / 2 : -Math.PI / 2;
     led.emissive.setHex(Math.floor(t * 2) % 2 ? 0x22c55e : 0x16a34a);
@@ -1170,6 +1179,84 @@ for (const [bx, bz] of [[-2.8, 16.4], [2.8, 16.4]]) {
     tag.style.opacity = dp < 18 ? 1 : 0;
   });
 }
+
+
+// ================= Nhà vệ sinh (cánh Tây) =================
+const ceramic = std(0xffffff, { roughness: 0.25 }), stallMat = std(0x94a3b8, { roughness: 0.5 }), mirrorMat = std(0xdbeafe, { roughness: 0.04, metalness: 1, envMapIntensity: 1.2 });
+function toilet(x, z, ry) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry; inn.add(g);
+  cyl(ceramic, 0.2, 0.16, 0.42, 0, 0.21, 0.08, g, 20);
+  cyl(ceramic, 0.23, 0.23, 0.05, 0, 0.44, 0.08, g, 20);
+  box(ceramic, 0.42, 0.42, 0.18, 0, 0.65, -0.2, g);
+}
+// Dãy buồng vệ sinh dựa vào tường ngoài (zWall), cửa buồng quay vào giữa phòng
+function stalls(x0, n, zWall, dir) {
+  const w = 1.6, depth = 1.7;
+  for (let i = 0; i < n; i++) {
+    const cx = x0 + i * w + w / 2, zc = zWall + dir * depth / 2;
+    toilet(cx, zWall + dir * 0.35, dir > 0 ? 0 : Math.PI);
+    box(stallMat, 0.6, 2.0, 0.04, cx - w / 2 + 0.3, 1.1, zWall + dir * depth, inn);       // vách trước
+    const door = box(std(0x64748b, { roughness: 0.5 }), 0.7, 1.9, 0.04, cx + 0.32, 1.05, zWall + dir * (depth - 0.25), inn); door.rotation.y = dir * 0.6;   // cửa hé
+  }
+  for (let i = 0; i <= n; i++) box(stallMat, 0.04, 2.0, depth, x0 + i * w, 1.1, zWall + dir * depth / 2, inn);
+  solidBox(x0, Math.min(zWall, zWall + dir * depth), x0 + n * w, Math.max(zWall, zWall + dir * depth));
+}
+function sinks(zFrom, zTo) {
+  const x = -30.55, len = zTo - zFrom, zc = (zFrom + zTo) / 2;
+  box(std(0x334155, { roughness: 0.4 }), 0.6, 0.85, len, x, 0.43, zc, inn);
+  box(std(0xf1f5f9, { roughness: 0.2 }), 0.65, 0.05, len, x, 0.88, zc, inn);
+  for (let z = zFrom + 0.8; z < zTo - 0.4; z += 1.4) { cyl(ceramic, 0.2, 0.16, 0.1, x - 0.05, 0.92, z, inn, 20); cyl(aluMat, 0.02, 0.02, 0.25, x + 0.18, 1.02, z, inn, 6); }
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(len - 0.2, 1.0), mirrorMat); m.position.set(-30.2, 1.75, zc); m.rotation.y = -Math.PI / 2; inn.add(m);
+  box(std(0xe2e8f0), 0.2, 0.3, 0.3, -30.15, 1.3, zTo + 0.3, inn);   // máy sấy tay
+  solidBox(-30.9, zFrom, -30.2, zTo);
+}
+stalls(-41.8, 3, -D / 2 + 0.1, 1);                         // nam: 3 buồng dựa tường bắc
+for (const z of [-11.8, -10.4]) { box(ceramic, 0.35, 0.6, 0.3, -41.65, 1.0, z, inn); solidBox(-41.9, z - 0.2, -41.4, z + 0.2); }   // bồn tiểu
+sinks(-15.2, -9.6);
+stalls(-41.8, 4, D / 2 - 0.1, -1);                         // nữ: 4 buồng dựa tường nam
+sinks(8.6, 13.8);
+plant(-31.2, -7.2, 0.9); plant(-31.2, 7.2, 0.9);
+
+// ================= Phòng gym (cánh Đông) =================
+const rubber = std(0x1f2937, { roughness: 1 }), steel = std(0x9ca3af, { roughness: 0.3, metalness: 0.8 });
+const beltTex = canvasTex(64, 256, (g, w, h) => { g.fillStyle = "#111827"; g.fillRect(0, 0, w, h); g.fillStyle = "#374151"; for (let y = 0; y < h; y += 16) g.fillRect(0, y, w, 4); }, [1, 6]);
+function treadmill(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); inn.add(g);
+  box(rubber, 0.9, 0.22, 2.0, 0, 0.11, 0, g);
+  const belt = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 1.8), new THREE.MeshStandardMaterial({ map: beltTex, roughness: 0.9 }));
+  belt.rotation.x = -Math.PI / 2; belt.position.set(0, 0.225, 0.05); g.add(belt);
+  for (const sx of [-0.4, 0.4]) { const post = cyl(steel, 0.03, 0.03, 1.15, sx, 0.72, -0.85, g, 8); post.rotation.x = -0.15; }
+  box(steel, 0.86, 0.05, 0.05, 0, 1.2, -0.9, g);
+  box(dark, 0.6, 0.35, 0.08, 0, 1.38, -0.95, g);
+  const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.25), new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0x22c55e, emissiveIntensity: 0.8 }));
+  scr.position.set(0, 1.38, -0.905); g.add(scr);
+  solidBox(x - 0.5, z - 1.05, x + 0.5, z + 1.05);
+  return belt.material.map;
+}
+const belts = [32.6, 35.2, 37.8].map((x) => treadmill(x, -15.6));
+belts.forEach((t, i) => { t.wrapT = THREE.RepeatWrapping; });
+funTick.push((dt) => { for (const t of belts) t.offset.y -= dt * 1.6; });
+// Giá tạ tay dựa tường Đông
+box(steel, 0.5, 0.9, 3.2, 41.55, 0.45, -12, inn); solidBox(41.2, -13.6, 41.9, -10.4);
+for (let i = 0; i < 6; i++) for (const lv of [0.55, 0.95]) {
+  const db = cyl(std(pick([0xef4444, 0x3b82f6, 0x111827, 0xf59e0b]), { roughness: 0.6 }), 0.07, 0.07, 0.34, 41.5, lv, -13.3 + i * 0.52, inn, 12); db.rotation.x = Math.PI / 2;
+}
+const gymMirror = new THREE.Mesh(new THREE.PlaneGeometry(4.5, 2.2), mirrorMat); gymMirror.position.set(30.25, 1.6, -11.5); gymMirror.rotation.y = Math.PI / 2; inn.add(gymMirror);
+box(rubber, 0.04, 2.3, 4.6, 30.2, 1.6, -11.5, inn);
+
+// Xà đơn
+for (const x of [32.6, 34.2]) cyl(steel, 0.05, 0.05, 2.5, x, 1.25, 15.8, inn, 10);
+{ const bar = cyl(steel, 0.025, 0.025, 1.7, 33.4, 2.4, 15.8, inn, 10); bar.rotation.z = Math.PI / 2; }
+solidBox(32.4, 15.6, 34.4, 16.0);
+// Xà kép: 4 cột thấp, 2 thanh song song
+for (const [x, z] of [[37.3, 13.6], [37.3, 16.4], [38.0, 13.6], [38.0, 16.4]]) cyl(steel, 0.04, 0.05, 1.1, x, 0.55, z, inn, 10);
+for (const x of [37.3, 38.0]) { const pb = cyl(std(0xd6a46a, { roughness: 0.5 }), 0.03, 0.03, 3.0, x, 1.12, 15, inn, 10); pb.rotation.x = Math.PI / 2; }
+solidBox(37.1, 13.4, 38.2, 16.6);
+// Thảm tập, bóng tập, tạ ấm
+[0x22c55e, 0xa855f7, 0x0ea5e9].forEach((c, i) => box(std(c, { roughness: 1 }), 0.8, 0.02, 1.9, 33 + i * 1.1, 0.01, 10.5, inn).castShadow = false);
+{ const ball = new THREE.Mesh(new THREE.SphereGeometry(0.33, 24, 16), std(0xf43f5e, { roughness: 0.35 })); ball.position.set(40.4, 0.33, 9.2); ball.castShadow = true; inn.add(ball); solidCircle(40.4, 9.2, 0.35); }
+for (let i = 0; i < 3; i++) { cyl(std(0x111827, { roughness: 0.4 }), 0.13, 0.13, 0.22, 40.8, 0.11, 12 + i * 0.5, inn, 14); }
+poster(41.5, 15.5, -Math.PI / 2, "TẬP XONG", "mới được code\ntiếp 💪", 0xf97316);
 
 // ================= Điều khiển nhân vật =================
 const SPAWN = { x: 0, z: D / 2 + 14, yaw: Math.PI };
@@ -1230,8 +1317,9 @@ function updatePlayer(dt) {
 // Camera bám sau lưng: giữ nguyên góc người dùng đã xoay, chỉ dời theo nhân vật.
 const focus = new THREE.Vector3(), lastFocus = new THREE.Vector3();
 function cameraBehind() {
-  const dist = 9, back = new THREE.Vector3(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
-  camera.position.set(player.pos.x + back.x * dist, player.y + 5.2, player.pos.z + back.z * dist);
+  const inHouse = Math.abs(player.pos.x) < W / 2 && Math.abs(player.pos.z) < D / 2;
+  const dist = inHouse ? 4 : 9, back = new THREE.Vector3(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
+  camera.position.set(player.pos.x + back.x * dist, player.y + (inHouse ? 2.4 : 5.2), player.pos.z + back.z * dist);
 }
 function goHome() {
   player.pos.set(SPAWN.x, 0, SPAWN.z); player.vel.set(0, 0, 0); player.yaw = SPAWN.yaw; player.y = 0; player.vy = 0;
@@ -1382,7 +1470,7 @@ setHour(clamp(opts.hour ?? 15.5, 5, 21));
 goHome();
 controls.update();
 const clock = new THREE.Clock();
-let first = true, roofAlpha = 1;
+let first = true, indoor = 0;   // indoor: 0 ngoài trời → 1 trong nhà (đổi dần để camera không giật)
 const ray = new THREE.Raycaster();
 const camBlockersAll = [...camBlockers, roofSlab];
 const desiredCam = new THREE.Vector3(), renderedCam = new THREE.Vector3(NaN, NaN, NaN), armDir = new THREE.Vector3();
@@ -1405,7 +1493,10 @@ gl.setAnimationLoop(() => {
   // Camera dời theo nhân vật (độ cao được làm mượt để nhảy không giật hình).
   // desiredCam là chỗ người dùng muốn đặt camera; camera thật có thể bị tường đẩy vào gần hơn.
   if (camera.position.equals(renderedCam)) camera.position.copy(desiredCam);
-  focus.set(player.pos.x, lerp(lastFocus.y, player.y + 2.2, 1 - Math.exp(-8 * dt)), player.pos.z);
+  indoor = lerp(indoor, inside ? 1 : 0, 1 - Math.exp(-4 * dt));
+  // Trong nhà: nhìn từ ngang vai, không cho camera vọt lên cao nhìn từ trên xuống (kiểu game bắn súng góc nhìn thứ ba)
+  controls.minPolarAngle = 0.95 * indoor;
+  focus.set(player.pos.x, lerp(lastFocus.y, player.y + lerp(2.2, 1.65, indoor), 1 - Math.exp(-8 * dt)), player.pos.z);
   camera.position.add(v3.subVectors(focus, lastFocus));
   controls.target.copy(focus);
   lastFocus.copy(focus);
@@ -1414,20 +1505,20 @@ gl.setAnimationLoop(() => {
   // Cần camera co giãn: có tường/kính/mái chắn giữa nhân vật và camera thì kéo camera vào trước chỗ chắn,
   // hết chắn thì giãn ra từ từ. Nhờ vậy camera không đứng sau tường hay nhìn xuyên vách.
   armDir.subVectors(desiredCam, focus);
-  const armWant = armDir.length();
-  armDir.divideScalar(armWant || 1);
+  const armFree = armDir.length();
+  armDir.divideScalar(armFree || 1);
+  // Trong nhà tự kéo camera gần (tối đa 4 m) dù ngoài trời đang để xa; ra ngoài thì trả lại khoảng cách cũ
+  let armWant = lerp(armFree, Math.min(armFree, 4), indoor);
+  // Không bao giờ vượt lên trên trần nhà khi đang ở trong nhà
+  if (inside && armDir.y > 0.01) armWant = Math.min(armWant, Math.max(0.3, (BASE + H - 0.35 - focus.y) / armDir.y));
   ray.set(focus, armDir); ray.far = armWant;
-  const wall = ray.intersectObjects(roof.visible && roofAlpha > 0.5 ? camBlockersAll : camBlockers, false)[0];
-  const armTarget = wall ? Math.max(1.1, wall.distance - 0.4) : armWant;
+  const wall = ray.intersectObjects(camBlockersAll, false)[0];
+  const armTarget = wall ? Math.max(0.3, wall.distance - 0.35) : armWant;
   arm = armTarget < arm ? armTarget : lerp(arm, armTarget, 1 - Math.exp(-3 * dt));
   camera.position.copy(focus).addScaledVector(armDir, Math.min(arm, armWant));
   renderedCam.copy(camera.position);
-  hero.body.visible = arm > 1.3;   // camera sát đầu thì ẩn thân để không che màn hình
+  hero.body.visible = arm > 0.9;   // camera sát đầu = góc nhìn thứ nhất: ẩn thân để không che màn hình
 
-  // Mái mờ dần khi ở trong nhà
-  roofAlpha = lerp(roofAlpha, inside ? 0 : 1, 1 - Math.exp(-6 * dt));
-  for (const m of roofMats) m.opacity = roofAlpha;
-  roof.visible = roofAlpha > 0.03;
 
   // AI quay sang nhìn khi bạn lại gần, nói một câu
   for (const n of NPCS) {

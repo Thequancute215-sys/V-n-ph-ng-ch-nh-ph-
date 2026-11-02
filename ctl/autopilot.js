@@ -199,9 +199,19 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     const decisions = (run.decisions || []).map((d) => "- " + d.text).join("\n");
     const task = "ĐẶC CÁCH CEO cho luồng " + run.id + ": tự chạy và duyệt bàn giao NỘI BỘ cho việc này, CEO chỉ nhận báo cáo cuối của Claude để duyệt. Giữ đúng quyền theo vai, không push/merge/release, không xóa dữ liệu người dùng. Bộ điều phối sẽ commit agent.md và chuyển lượt sau khi kiểm bàn giao: bạn không tự commit hoặc đổi NEXT_OWNER. Không làm việc ngoài yêu cầu. Nếu là Claude: còn lỗi cần sửa thì next_owner CODEX_ASTRA_DEV; kiến trúc đã duyệt nhưng chưa code thì chuyển CODEX_ASTRA_DEV; khi nghiệm thu xong thì next_owner SPEC_ARCHITECT để kết thúc; thấy AI khác đi sai hướng thì hỏi CEO bằng ask_ceo, không tự ra lệnh sửa." +
       (decisions ? "\nQUYẾT ĐỊNH CỦA CEO TRONG LUỒNG NÀY (làm theo):\n" + decisions : "") + "\nVIỆC CEO GIAO:\n" + run.task;
-    const job = runner.run({ workspace: run.workspace, role, task, allowRetry: false }, "ceo-autopilot");
-    run.jobId = job.id; run.steps.push({ jobId: job.id, role, startedAt: Date.now() }); save(run);
+    // Sol/Astra chạy đúng model của vai; mức suy luận theo lần đội trưởng đặt gần nhất cho vai đó trong luồng (mặc định medium).
+    const effort = (run.effort || {})[role] || null;
+    const job = runner.run({ workspace: run.workspace, role, task, allowRetry: false, effort }, "ceo-autopilot");
+    const model = runner.CODEX_MODEL[role] ? { model: runner.CODEX_MODEL[role], effort: effort || runner.DEFAULT_EFFORT } : {};
+    run.jobId = job.id; run.steps.push({ jobId: job.id, role, startedAt: Date.now(), ...model }); save(run);
     audit.log("ceo-autopilot", "step.start", run.id, { role, job: job.id });
+  }
+
+  // Đội trưởng đặt mức suy luận cho vai Codex kế tiếp (không cần hỏi CEO); ghi vào luồng để các lượt sau của vai đó dùng tiếp.
+  function setEffort(run, role, effort, jobId) {
+    if (!runner.CODEX_MODEL[role]) return;
+    run.effort = { ...(run.effort || {}), [role]: effort };
+    audit.log("CLAUDE_AUDITOR", "codex.effort", run.id, { role, effort, job: jobId });
   }
 
   function report(run, problem) {
@@ -280,6 +290,7 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
             report(run, `Codex đã sửa ${MAX_REWORK} lần mà Claude vẫn trả về: CEO quyết hướng xử lý.`); continue;
           }
           if (Date.now() > run.deadline || stepsSinceCeo(run) >= run.maxSteps) { report(run, "Đã chạm giới hạn thời gian hoặc số lượt. Bàn giao còn chờ xử lý."); continue; }
+          if (handoff.role === "CLAUDE_AUDITOR" && p.effort) setEffort(run, handoff.next_owner, p.effort, job.id);
           if (!handoff.decided) runner.approve(job.id, "ceo-autopilot");
           if (!closing && run.status === "running") launch(run);
         } catch (e) { report(run, e.message); }
@@ -293,6 +304,8 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     const run = get(id);
     if (run.status !== "awaiting_answer" || !run.question) throw err("NOT_PENDING", "Luồng này không chờ câu trả lời của CEO.");
     const r = runner.answer(run.question.jobId, option, "ceo");
+    const asked = runner.get(run.question.jobId);
+    if (asked?.payload?.effort) setEffort(run, r.next, asked.payload.effort, run.question.jobId);
     run.decisions = [...(run.decisions || []), { at: Date.now(), option: r.option.id, label: r.option.label, next: r.next, text: r.decision }];
     Object.assign(run, { question: null, status: "running", stepBase: run.steps.length, rework: 0, problem: "", deadline: Date.now() + (run.timeoutMs || 90 * 60000) });
     save(run);
