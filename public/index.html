@@ -22,7 +22,16 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
 #gl canvas { pointer-events: auto; }
 
 /* Top Navigation Bar */
-.bar { position: fixed; left: 16px; right: 16px; top: 12px; display: flex; align-items: center; gap: 12px; z-index: 20; pointer-events: none; }
+.bar { position: fixed; left: 16px; right: 16px; top: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; z-index: 20; pointer-events: none; }
+/* Không bóp chữ trong nút: màn hẹp thì cả thanh xuống hàng; các nút ít dùng gom vào menu "Thêm" */
+.bar > * { flex: none; white-space: nowrap; }
+.bar > .sp { flex: 1; }
+.more { position: relative; pointer-events: auto; }
+.more > summary { list-style: none; cursor: pointer; }
+.more > summary::-webkit-details-marker { display: none; }
+.more-menu { position: absolute; right: 0; top: calc(100% + 8px); display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding: 10px; min-width: 260px; background: var(--panel-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--panel-border); border-radius: 16px; box-shadow: 0 16px 48px rgba(0,0,0,0.5); z-index: 40; }
+.more-menu > * { justify-content: flex-start; white-space: nowrap; }
+.more-menu .k-stats { justify-content: space-between; }
 .pill { pointer-events: auto; display: flex; align-items: center; gap: 10px; background: var(--panel-bg); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid var(--panel-border); border-radius: 16px; padding: 7px 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.35); }
 .logo { width: 30px; height: 30px; border-radius: 10px; background: linear-gradient(135deg, #ecc970, #d4a738); color: #000; display: grid; place-items: center; font-weight: 800; font-family: "Quicksand", sans-serif; font-size: 16px; }
 .ttl b { display: block; font-size: 13.5px; font-weight: 700; }
@@ -223,13 +232,6 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
     <span>Chu trình & dự án</span>
   </a>
 
-  <div class="pill k-stats">
-    <div><b id="k1">–</b><span>Đang làm</span></div>
-    <div><b id="k2">–</b><span>Chờ/chặn</span></div>
-    <div><b id="k3">–</b><span>DEV</span></div>
-    <div><b id="k4">–</b><span>Việc ưu tiên</span></div>
-  </div>
-
   <div class="sp"></div>
 
   <!-- Nút Phát Loa Toàn Thể Nhân Viên -->
@@ -244,18 +246,37 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
     <span id="runningTasksBtnTxt">Đang tải task...</span>
   </button>
 
+
+
+
+
+
+  <!-- Nút Phân Việc Ngoài Lề Đặc Cách -->
+  <button class="btn" id="openOverrideBtn" style="background:linear-gradient(135deg, #ecc970, #f59e0b);color:#000;font-weight:800;box-shadow:0 6px 22px rgba(245,158,11,0.35)">
+    <span style="font-size:14px">⚡</span>
+    <span>Phân Việc Ngoài Lề (Đặc Cách)</span>
+  </button>
+
+  <!-- Các nút ít dùng: gom vào menu để thanh trên không tràn viền -->
+  <details class="more" id="moreMenu">
+    <summary class="btn ghost pill" title="Thêm chức năng">⋯ Thêm</summary>
+    <div class="more-menu">
+  <div class="pill k-stats">
+    <div><b id="k1">–</b><span>Đang làm</span></div>
+    <div><b id="k2">–</b><span>Chờ/chặn</span></div>
+    <div><b id="k3">–</b><span>DEV</span></div>
+    <div><b id="k4">–</b><span>Việc ưu tiên</span></div>
+  </div>
   <!-- Nút Duyệt Nhẫn Giả & 10 Vĩ Thú -->
   <button class="btn" onclick="location.href='characters.html'" style="background:linear-gradient(135deg, #f97316, #ea580c);color:#fff;font-weight:800;box-shadow:0 6px 20px rgba(234,88,12,0.35);gap:6px">
     <span style="font-size:14px">🍥</span>
     <span>Duyệt Nhẫn Giả (Meshy 3D)</span>
   </button>
-
   <!-- Nút Studio Anime CyberConnect2 1:1 -->
   <button class="btn" onclick="location.href='anime-studio.html'" style="background:linear-gradient(135deg, #8b5cf6, #6366f1);color:#fff;font-weight:800;box-shadow:0 6px 20px rgba(99,102,241,0.35);gap:6px">
     <span style="font-size:14px">⚡</span>
     <span>Studio Anime CC2 1:1</span>
   </button>
-
   <!-- Nút Quản Lý & Đăng Nhập Tài Khoản AI (Claude, GPT, Gemini) -->
   <button class="btn pill" id="openAccountsBtn" title="Xem trạng thái & đăng nhập tài khoản Claude, GPT Codex, Gemini" style="background:rgba(99,102,241,0.22);border:1px solid rgba(129,140,248,0.5);color:#e0e7ff;font-weight:800;gap:8px">
     <span style="font-size:15px">🔑</span>
@@ -263,25 +284,19 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
     <span id="badgeClaudeStatus" style="font-size:10.5px;padding:2px 7px;border-radius:6px;background:rgba(249,115,22,0.25);color:#fdba74;border:1px solid rgba(249,115,22,0.4)">Claude...</span>
     <span id="badgeGptStatus" style="font-size:10.5px;padding:2px 7px;border-radius:6px;background:rgba(16,185,129,0.25);color:#6ee7b7;border:1px solid rgba(16,185,129,0.4)">GPT...</span>
   </button>
-
   <!-- Nút Sổ Bài Học & Cơ Chế Tự Học AI -->
   <button class="btn pill" onclick="window.open('noiquy.html?tab=bai', '_blank')" title="Xem ngân hàng lỗi, bài học đúc kết và cơ chế tự học hỏi giữa các dự án" style="background:rgba(16,185,129,0.18);border:1px solid rgba(52,211,153,0.4);color:#6ee7b7;font-weight:800;gap:7px">
     <span style="font-size:14px">🧠</span>
     <span>Sổ Bài Học & Tự Học</span>
     <span style="font-size:10.5px;padding:2px 6px;border-radius:6px;background:rgba(52,211,153,0.25);color:#a7f3d0;border:1px solid rgba(52,211,153,0.4)">Ngân hàng lỗi</span>
   </button>
-
   <!-- Nút Bật/Tắt Lời Thoại Nhân Vật -->
   <button class="btn ghost pill" id="toggleBubbleBtn" title="Bật/Tắt bong bóng lời thoại trên đầu nhân vật" style="font-weight:700">
     <span>💬</span>
     <span id="bubbleBtnTxt">Lời Thoại: BẬT</span>
   </button>
-
-  <!-- Nút Phân Việc Ngoài Lề Đặc Cách -->
-  <button class="btn" id="openOverrideBtn" style="background:linear-gradient(135deg, #ecc970, #f59e0b);color:#000;font-weight:800;box-shadow:0 6px 22px rgba(245,158,11,0.35)">
-    <span style="font-size:14px">⚡</span>
-    <span>Phân Việc Ngoài Lề (Đặc Cách)</span>
-  </button>
+    </div>
+  </details>
 
   <button class="btn ghost pill" id="toggleRightSidebar" title="Mở Trợ Năng Nhân Sự & Hòm Thư">
     <span>Nhân Sự & Hòm Thư</span>
@@ -299,10 +314,13 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
   <button class="rbtn" data-room="codex" title="Đi tới Phòng Lập trình">⚡ Sasuke (Lập trình)</button>
   <button class="rbtn" data-room="claude" title="Đi tới Phòng Kiểm duyệt">🛡️ Sakura (Kiểm duyệt)</button>
   <button class="rbtn" data-room="lounge" title="Đi tới Phòng họp hội chẩn">🌀 Phòng Họp</button>
+  <button class="rbtn" data-room="gym" title="Đi tới phòng gym (máy chạy bộ)">🏋️ Gym</button>
+  <button class="rbtn" data-room="wcnam" title="Đi tới nhà vệ sinh nam (cánh Tây)">🚹 WC nam</button>
+  <button class="rbtn" data-room="wcnu" title="Đi tới nhà vệ sinh nữ (cánh Tây)">🚺 WC nữ</button>
 
   <div class="zoom-slider-box">
     <button id="zoomOutBtn" title="Thu nhỏ">-</button>
-    <input type="range" id="zoomRange" min="2.5" max="90" step="0.5" value="9" title="Kéo để camera gần/xa" aria-label="Khoảng cách camera">
+    <input type="range" id="zoomRange" min="0.4" max="90" step="0.1" value="9" title="Kéo để camera gần/xa" aria-label="Khoảng cách camera">
     <button id="zoomInBtn" title="Phóng to">+</button>
   </div>
 </div>
@@ -1005,6 +1023,11 @@ function closeRightSidebar() { sbRight.classList.remove("open"); }
 $("toggleRightSidebar").addEventListener("click", () => sbRight.classList.toggle("open"));
 $("closeRightSidebar").addEventListener("click", closeRightSidebar);
 
+// Menu "Thêm": đóng khi bấm ra ngoài hoặc chọn xong một mục
+document.addEventListener("click", (e) => {
+  const menu = $("moreMenu");
+  if (menu.open && (!menu.contains(e.target) || e.target.closest(".more-menu button"))) menu.open = false;
+});
 $("toggleBubbleBtn").addEventListener("click", () => {
   const hidden = document.body.classList.toggle("hide-bubbles");
   $("bubbleBtnTxt").textContent = hidden ? "Lời Thoại: TẮT" : "Lời Thoại: BẬT";
