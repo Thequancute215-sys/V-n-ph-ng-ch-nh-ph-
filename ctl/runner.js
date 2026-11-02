@@ -7,7 +7,7 @@
 const fs = require("fs");
 const path = require("path");
 const { execFileSync } = require("child_process");
-const { readTurn, setTurn, checkHandoff, findHandoff } = require("./handoff");
+const { readTurn, setTurn, checkHandoff, findHandoff, EFFORTS } = require("./handoff");
 const { resolveProgram } = require("./policy");
 
 const MIN = 60 * 1000;
@@ -17,12 +17,27 @@ Không push, không merge, không release. Không in secret/token/API key. Khôn
 // Claude kiểm soát tổng mọi repo: được phản biện, nhưng muốn bắt sửa / đổi hướng thì hỏi CEO trước (ask_ceo).
 const CAPTAIN = `\n\nQUYỀN ĐỘI TRƯỞNG: bạn được phản biện Antigravity, Sol, Codex khi thấy hướng đi sai. Muốn bắt sửa hoặc đổi hướng thì KHÔNG tự ra lệnh: ` +
   `thêm vào dòng JSON trường "ask_ceo":{"question":"<vì sao hướng hiện tại hỏng, hướng mới tốt hơn thế nào>","options":[{"id":"A","label":"<phương án đề xuất>","next_owner":"<VAI sẽ làm>","task":"<lệnh cụ thể cho vai đó>"},{"id":"B","label":"Giữ hướng hiện tại","next_owner":"<VAI>"}]} ` +
-  `(2–4 phương án). CEO trả lời ở phần theo dõi chu trình; việc chạy tiếp theo phương án CEO chọn. Nghiệm thu đạt và hết việc thì thêm "done":true.`;
+  `(2–4 phương án). CEO trả lời ở phần theo dõi chu trình; việc chạy tiếp theo phương án CEO chọn. Nghiệm thu đạt và hết việc thì thêm "done":true.` +
+  ` Lượt kế tiếp là Sol (gpt-6.1-sol) hoặc Astra (gpt-6-astra) thì bạn được tự đặt mức suy luận, không cần hỏi CEO: thêm "effort":"high" | "xhigh" | "max" khi việc khó (kiến trúc phức tạp, lỗi khó tìm, bảo mật, sửa lại nhiều lần), "medium" để trở về mặc định. Chỉ nâng khi cần vì mức cao tốn hạn mức hơn.`;
 
 // Lệnh mặc định: cờ của từng CLI cần kiểm chứng trên máy thật (phiên bản CLI thay đổi); sai thì sửa ở ctl-agents.json.
 const CLAUDE = ["claude", "-p", "{prompt}", "--output-format", "json", "--max-turns", "30", "--permission-mode", "acceptEdits",
   "--allowedTools", "Read", "Grep", "Glob", "Edit", "Write", "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git show:*)", "Bash(git pull --ff-only)", "Bash(npm test:*)", "Bash(node --test:*)"];
 const CODEX = ["codex", "exec", "--json", "--approve-for-me", "{prompt}"];
+// Codex có nhiều model (danh sách thật lấy từ codex app-server model/list): Sol lập kế hoạch/cố vấn, Astra viết code.
+// Mặc định mức suy luận medium; đội trưởng nâng cho từng lượt bằng trường "effort" trong bàn giao.
+const CODEX_MODEL = { SOL_ARCHITECT_PLANNER: "gpt-6.1-sol", SOL_ARCHITECT_ADVISOR: "gpt-6.1-sol", CODEX_ASTRA_DEV: "gpt-6-astra" };
+const DEFAULT_EFFORT = "medium";
+// Chèn -m <model> và -c model_reasoning_effort=<mức> ngay sau "exec". Lệnh tự cấu hình đã có -m thì giữ model đó;
+// mức do đội trưởng đặt luôn được ghi sau cùng nên thắng cấu hình sẵn.
+function codexArgs(argv, role, effort) {
+  const model = CODEX_MODEL[role], at = argv.indexOf("exec");
+  if (!model || at < 0) return argv;
+  const hasModel = argv.some((x) => x === "-m" || x === "--model" || x.startsWith("--model="));
+  const hasEffort = argv.some((x, i) => (x === "-c" || x === "--config") && /^model_reasoning_effort=/.test(argv[i + 1] || ""));
+  const extra = [...(hasModel ? [] : ["-m", model]), ...(effort || !hasEffort ? ["-c", "model_reasoning_effort=" + (effort || DEFAULT_EFFORT)] : [])];
+  return [...argv.slice(0, at + 1), ...extra, ...argv.slice(at + 1)];
+}
 // Antigravity CLI (agy): chạy nền bằng -p; headless tự chặn lệnh terminal, chỉ mở git chỉ đọc + liệt kê thư mục (Codex kiểm trên máy CEO).
 // Máy cài agy từ trong app Codex thì agy.exe nằm ở thư mục ảo của gói Codex: đặt đường dẫn tuyệt đối trong ctl-agents.json.
 const AGY = ["agy", "-p", "{prompt}", "--output-format", "stream-json", "--mode", "accept-edits", "--print-timeout", "20m", "--settings",
@@ -77,7 +92,7 @@ function createRunner({ jobs, ws, audit, db, dir }) {
       runnable: turn && !pending ? !!(AGENTS[turn.nextOwner] && AGENTS[turn.nextOwner].argv) : false };
   }
 
-  function run({ workspace, role, task = "", retried = false, allowRetry = true }, actor = "ceo") {
+  function run({ workspace, role, task = "", retried = false, allowRetry = true, effort = null }, actor = "ceo") {
     const root = ws.find(workspace).path;
     const a = AGENTS[role];
     if (!a) throw err("BAD_REQUEST", "Vai không hợp lệ: " + role);
@@ -91,9 +106,11 @@ function createRunner({ jobs, ws, audit, db, dir }) {
     if (pending) throw err("HANDOFF_PENDING", `Bàn giao ${pending.job_id} đang chờ CEO duyệt hoặc từ chối: xử lý xong rồi mới chạy lượt kế tiếp`);
     const approvalNote = role.startsWith("SOL_") || role === "CODEX_ASTRA_DEV" ? "\nCodex đang bật automatic review trong sandbox workspace-write. Lệnh git ghi metadata .git (kể cả git pull --ff-only) cần yêu cầu quyền bổ sung ngay từ đầu qua automatic review; không chạy thử nó trong sandbox rồi lách lỗi bằng công cụ khác. Không dùng cờ bỏ qua sandbox hoặc bỏ qua duyệt." : "";
     const prompt = a.prompt + approvalNote + (String(task).trim() ? "\n\nViệc Giám đốc giao thêm: " + String(task).trim().slice(0, 8000) : "") + END(role) + (role === "CLAUDE_AUDITOR" ? CAPTAIN : "");
-    const argv = argvFor(role).map((x) => (x === "{prompt}" ? prompt : x));
-    audit.log(actor, "ai.run", root, { role, retried, task: String(task).slice(0, 500) });
-    return jobs.start({ kind: "ai", agent: role, workspace: root, argv, timeoutMs: a.timeoutMs, onExit: (job) => done(job, { workspace: root, role, task, retried, allowRetry }) });
+    if (effort !== null && !EFFORTS.includes(effort)) throw err("BAD_REQUEST", "Mức suy luận phải là một trong " + EFFORTS.join(", "));
+    const argv = codexArgs(argvFor(role), role, effort).map((x) => (x === "{prompt}" ? prompt : x));
+    const model = CODEX_MODEL[role] ? { model: CODEX_MODEL[role], effort: effort || DEFAULT_EFFORT } : {};
+    audit.log(actor, "ai.run", root, { role, retried, task: String(task).slice(0, 500), ...model });
+    return jobs.start({ kind: "ai", agent: role, workspace: root, argv, timeoutMs: a.timeoutMs, onExit: (job) => done(job, { workspace: root, role, task, retried, allowRetry, effort }) });
   }
 
   function done(job, opts) {
@@ -201,7 +218,7 @@ function createRunner({ jobs, ws, audit, db, dir }) {
     return jobs.start({ kind: "ai", agent, workspace: root, argv, timeoutMs: AGENTS[agent].timeoutMs });
   }
 
-  return { run, report, webPrompt, status, approve, answer, reject, conflicts, get: (id) => view(q.get.get(id)), pending: () => q.open.all().map(view), AGENTS };
+  return { run, report, webPrompt, CODEX_MODEL, DEFAULT_EFFORT, status, approve, answer, reject, conflicts, get: (id) => view(q.get.get(id)), pending: () => q.open.all().map(view), AGENTS };
 }
 
 module.exports = { createRunner, AGENTS };

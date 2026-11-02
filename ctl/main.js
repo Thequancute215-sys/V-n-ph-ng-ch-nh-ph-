@@ -146,7 +146,7 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     ["POST", "/ai/run", (p, qs, b) => {
       const workspace = ws.find(wsOf(b.workspace)).path;
       if (autopilot.busy(workspace)) throw Object.assign(new Error("Dự án đang có luồng tự động hoặc báo cáo chờ duyệt"), { code: "AI_BUSY" });
-      return [201, { job: runner.run({ workspace, role: b.role, task: b.task }, "ceo") }];
+      return [201, { job: runner.run({ workspace, role: b.role, task: b.task, effort: b.effort || null }, "ceo") }];
     }],
     ["GET", "/autopilot", () => ({ runs: autopilot.list() })],
     ["GET", "/autopilot/:id", (p) => ({ run: autopilot.get(p.id) })],
