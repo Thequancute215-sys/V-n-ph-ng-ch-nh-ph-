@@ -93,6 +93,18 @@ function save(root, g, message) {
   return { commit: tryGit(root, ["rev-parse", "--short", "HEAD"]) };
 }
 
+// File đang theo dõi bị xoá so với mốc đầu lượt (kể cả khi AI đã tự commit việc xoá).
+function deleted(root, from) {
+  if (!from) return [];
+  return (tryGit(root, ["diff", "--name-only", "--diff-filter=D", "-z", from]) || "").split("\0").map((x) => x.trim()).filter(Boolean);
+}
+// Khôi phục các file đang theo dõi về bản ở mốc đầu lượt. Trả danh sách khôi phục được.
+function restore(root, from, paths) {
+  const ok = [];
+  for (const p of paths) if (tryGit(root, ["checkout", from, "--", p]) !== null) ok.push(p);
+  return ok;
+}
+
 // File đổi và diff giữa hai mốc (một lượt của AI). Diff bị che khóa và cắt ở 300 KB.
 function diff(root, from, to) {
   if (!from) throw err("NO_GIT", "Lượt này không có mốc git (dự án không phải repo git).");
@@ -124,4 +136,4 @@ function compareUrl(remote, main, branch) {
   return m ? `https://github.com/${m[1]}/${m[2]}/compare/${enc(main)}...${enc(branch)}?expand=1` : null;
 }
 
-module.exports = { preflight, prepare, save, diff, push, compareUrl, head, branchOf, slug, isRepo, agentMdLocal };
+module.exports = { preflight, prepare, save, diff, push, compareUrl, head, branchOf, slug, isRepo, agentMdLocal, deleted, restore, untracked };

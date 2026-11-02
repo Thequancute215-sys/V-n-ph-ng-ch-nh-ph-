@@ -52,3 +52,6 @@
   .links a { flex-shrink:0; white-space:nowrap; }
   .hint { bottom:104px; }
 }
+.desk-dialog .scan-box { border:1px solid #8a3b4a; border-radius:10px; padding:12px; background:#2a1117; margin:10px 0; }
+.desk-dialog .scan-box ol { padding-left:20px; }
+.desk-dialog .scan-box code { white-space:pre-wrap; color:#fde68a; overflow-wrap:anywhere; }
