@@ -15,3 +15,4 @@
 .claude-low{margin:16px 28px 0;padding:14px 16px;border:1px solid #8a3b4a;border-radius:10px;color:#ffd5dc;background:#2a1117;overflow-wrap:anywhere}.claude-low strong{display:block;margin-bottom:6px}.claude-low .entry{border-color:#5a2a33}
 
 .projects-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:18px;align-items:start}.project{min-width:0;overflow-wrap:anywhere}.project h2{margin:0}.project h3{margin-top:22px}.project .entry-head{flex-wrap:wrap}.project button{max-width:100%;white-space:normal}
+.ideas form{display:grid;gap:8px;margin-top:12px}.ideas input[type=text],.ideas textarea{width:100%;background:#06090e;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit}.ideas textarea{resize:vertical}

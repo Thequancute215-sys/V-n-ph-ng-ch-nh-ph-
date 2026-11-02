@@ -722,7 +722,7 @@ try {
   // Trời theo giờ Việt Nam và thời tiết thật của Hà Nội
   connectLive(office, {
     onUpdate: ({ place, clock, weather: w }) => {
-      $("wxTxt").textContent = `${place} · ${clock} · ` + (!w ? "đang lấy thời tiết…" : w.error ? "chưa lấy được thời tiết" : `${w.temp}°C · ${w.text}${w.stale ? " (cũ)" : ""}`);
+      $("wxTxt").textContent = `${place} · ${clock} · ` + (!w ? "đang lấy thời tiết…" : w.error ? "chưa lấy được thời tiết (" + w.error + ", thử lại sau 2 phút)" : `${w.temp}°C · ${w.text}${w.stale ? " (cũ)" : ""}`);
     },
   });
   // Trạng thái thật của dự án đang chọn (agent.md qua OS Controller): AI giữ lượt nói đúng như vậy.

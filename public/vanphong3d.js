@@ -238,6 +238,11 @@ sun.shadow.normalBias = 0.03;
 Object.assign(sun.shadow.camera, { left: -55, right: 55, top: 55, bottom: -55, near: 1, far: 420 });
 scene.add(sun, sun.target);
 const hemi = new THREE.HemisphereLight(0xcfe7ff, 0x4d6b3a, 1.1);
+// Ban đêm: ánh trăng xanh nhạt (không đổ bóng để nhẹ máy) + đèn thật chiếu xuống lối đi và quảng trường.
+const moon = new THREE.DirectionalLight(0xa9bcff, 0);
+moon.position.set(-80, 140, 60);
+scene.add(moon);
+const pathLights = [[0, 23], [0, 40]].map(([x, z]) => { const l = new THREE.PointLight(0xffd9a0, 0, 26, 1.5); l.position.set(x, 4.2, z); scene.add(l); return l; });
 scene.add(hemi);
 
 // ================= Mặt bằng tổng thể =================
@@ -319,6 +324,7 @@ const glowTex = canvasTex(64, 64, (g) => {
   g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
 });
 const glows = [];
+let glowNight = 0;   // độ sáng quầng đèn theo giờ; mờ dần khi camera đứng sát để không thành đốm to che màn hình
 function lamp(x, z) {
   cyl(ironMat, 0.07, 0.1, 4, x, 2, z, scene, 10);
   const mat = std(0xfff1d6, { emissive: 0xffd9a0, emissiveIntensity: 0.2, roughness: 0.3 });
@@ -326,7 +332,7 @@ function lamp(x, z) {
   const bulb = cyl(mat, 0.3, 0.22, 0.45, x, 4.1, z, scene, 16);
   bulb.castShadow = false;
   const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 }));
-  glow.position.set(x, 4.1, z); glow.scale.setScalar(3.2);
+  glow.position.set(x, 4.1, z); glow.scale.setScalar(2.2);
   scene.add(glow); glows.push(glow);
   solidCircle(x, z, 0.18);
 }
@@ -1391,8 +1397,10 @@ function applySky() {
   const gloom = clamp(w.cloud * 0.7 + w.rain * 0.35 + w.fog * 0.3, 0, 0.92);   // trời u ám: nắng yếu, màu xám
   sun.intensity = 5.2 * day * smoothstep(elev, -2, 6) * (1 - gloom);
   sun.color.copy(SUN_WHITE).lerp(SUN_GOLD, golden);
-  hemi.intensity = (0.25 + 0.9 * day) * (1 - gloom * 0.3) + flash * 2.5;
-  hemi.color.set(0xcfe7ff).lerp(new THREE.Color(0x30406a), 1 - day);
+  hemi.intensity = (0.5 + 0.65 * day) * (1 - gloom * 0.3) + flash * 2.5;
+  hemi.color.set(0xcfe7ff).lerp(new THREE.Color(0x4a5a8c), 1 - day);
+  moon.intensity = 1.1 * (1 - day) * (1 - w.cloud * 0.6);
+  for (const l of pathLights) l.intensity = 30 * smoothstep(1 - day, 0.3, 0.9);
   gl.toneMappingExposure = lerp(0.85, 0.5, day);
 
   const night = 1 - day, u = skyMat.uniforms;
@@ -1413,7 +1421,7 @@ function applySky() {
     c.material.opacity = c.userData.alpha * (0.35 + 0.65 * day) * (0.3 + 0.7 * w.cloud);
   }
   for (const m of lampMats) m.emissiveIntensity = 0.2 + 3 * night;
-  for (const g of glows) g.material.opacity = 0.85 * smoothstep(night, 0.3, 0.9);
+  glowNight = 0.75 * smoothstep(night, 0.3, 0.9);
   ledMat.emissiveIntensity = 0.6 + 1.6 * night;
   shadeMat.emissiveIntensity = 0.5 + 1.5 * night;
   for (const p of roomLights) p.intensity = 5 + 22 * night;
@@ -1533,6 +1541,7 @@ gl.setAnimationLoop(() => {
   }
   for (const m of ledMats) if (rnd() < 0.04) m.emissiveIntensity = rnd() < 0.5 ? 0.2 : 1.4;
   logoMat.emissiveIntensity = 0.7 + Math.sin(t * 2) * 0.2;
+  for (const g of glows) g.material.opacity = glowNight * smoothstep(g.position.distanceTo(camera.position), 6, 16);
   for (const f of funTick) f(dt, t);
 
   // Biển phòng nằm chắn giữa camera và nhân vật thì mờ đi để không che tầm nhìn

@@ -13,6 +13,7 @@
   let snapshot = null, accounts = null, active = "", workspaces = [], turn = null, blockerLines = null;
   let jobs = [], handoffs = [], autoRuns = [], controller = false, selected = "spec", view = "office", pendingApproval = null;
   // Kết quả đọc repo đang chọn (ctl /workspaces/overview): chỉ đọc lại khi đổi dự án hoặc bấm Làm mới.
+  let ideaList = null, ideaError = "";   // ý tưởng của dự án đang chọn (ctl /ideas)
   let repoInfo = null, repoFor = "", repoError = "", repoLoading = false, createdFor = "";
   let loading = false, switching = false, controlError = "", stateError = "", accountError = "", source = null, streaming = false;
   let docText = null, docError = "", signatures = {}, lastRefresh = null, logSequence = 0;
@@ -31,7 +32,7 @@
     const res = await fetch(path, { method: body ? "POST" : "GET", cache: "no-store", signal: AbortSignal.timeout(timeout), ...(body ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {}) });
     if (res.status === 401 && !res.headers.get("content-type")?.includes("application/json")) throw new Error("Phiên xem đã hết hạn. Mở lại văn phòng để đăng nhập.");
     const data = await res.json();
-    if (!res.ok || data.ok === false) throw new Error(data.error || "Không đọc được dữ liệu (HTTP " + res.status + ").");
+    if (!res.ok || data.ok === false) throw Object.assign(new Error(data.error || "Không đọc được dữ liệu (HTTP " + res.status + ")."), { code: data.code });
     return data;
   }
 
@@ -206,7 +207,20 @@
       `<div class="web-copy"><div class="entry-head"><strong>Chuẩn kết quả đầu ra</strong><button data-copy="spec" data-run="${esc(r.id)}">Sao chép</button></div><textarea readonly rows="6" aria-label="Chuẩn kết quả đầu ra">${esc(w.spec)}</textarea></div>`;
   }
 
+  function renderIdeas() {
+    const statuses = { running: "Đội đang làm", reporting: "Claude đang tổng hợp", awaiting_approval: "Chờ anh duyệt báo cáo", awaiting_answer: "Claude hỏi anh", attention: "Cần anh xem", waiting_quota: "Chờ hạn mức", approved: "Anh đã duyệt", acknowledged: "Anh đã nhận báo cáo", rejected: "Đã từ chối", stopped: "Đã dừng" };
+    const live = ["running", "reporting", "awaiting_approval", "awaiting_answer", "attention", "waiting_quota"];
+    setMarkup("ideas", ideaError ? `<p class="error">${esc(ideaError)}</p>` : ideaList === null ? '<p class="muted">Đang đọc ý tưởng…</p>' : !ideaList.length ? '<p class="muted">Dự án này chưa có ý tưởng nào.</p>' : ideaList.map((i) => {
+      const r = i.run, busy = r && live.includes(r.status);
+      return `<article class="entry"><div class="entry-head"><strong>${esc(i.title)}</strong>${r ? badge(statuses[r.status] || r.status, busy ? "warn" : r.status === "approved" ? "good" : "") : badge("Chưa giao")}</div>` +
+        (i.detail ? `<p>${esc(i.detail)}</p>` : "") +
+        `<p class="muted">Ghi lúc ${esc(dateTime(new Date(i.createdAt).toISOString()))}${i.forcedFrom ? " · anh đã ghi đè lượt của " + esc(i.forcedFrom) + " để Hinata đặc tả" : ""}${r ? " · " + esc(r.steps) + " lượt: " + esc(r.roles || "đang chuẩn bị") : ""}</p>` +
+        (busy ? "" : `<div class="actions"><button class="primary" data-idea-start="${esc(i.id)}" ${controller ? "" : "disabled"}>${r ? "Giao lại cho Hinata đặc tả" : "Giao Hinata đặc tả"}</button></div>`) + "</article>";
+    }).join(""));
+  }
+
   function renderBoard() {
+    renderIdeas();
     const currentRuns = autoRuns.filter((r) => r.workspace === active);
     const busy = currentRuns.some((r) => ["running", "reporting", "awaiting_approval", "awaiting_answer", "attention", "waiting_quota"].includes(r.status));
     $("autoStart").disabled = !controller || !active || !turn || busy;
@@ -249,6 +263,7 @@
     controller = !!health.ok; jobs = jobResult.jobs; handoffs = handoffResult.handoffs; autoRuns = autoResult.runs;
     if (!active) { turn = null; blockerLines = null; return; }
     const q = encodeURIComponent(active);
+    request("/ctl/ideas?workspace=" + q).then((v) => { if (target === active) { ideaList = v.ideas; ideaError = ""; } }).catch((e) => { ideaList = null; ideaError = "Không đọc được ý tưởng: " + e.message; });
     const [status, file, meeting] = await Promise.allSettled([request("/ctl/ai/status?workspace=" + q), request("/ctl/fs/read?workspace=" + q + "&path=agent.md"), request("/ctl/fs/read?workspace=" + q + "&path=data%2FHOI-CHAN-TONG-THE.md")]);
     if (target !== active) return;
     turn = status.status === "fulfilled" ? status.value.turn : null;
@@ -382,6 +397,28 @@
     try { await request("/ctl/jobs/" + encodeURIComponent(b.dataset.killClaude) + "/kill", {}); }
     catch (err) { $("autoMessage").textContent = err.message; }
     finally { await refresh(); }
+  });
+  $("ideaForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    $("ideaSave").disabled = true;
+    try { await request("/ctl/ideas", { workspace: active, title: $("ideaTitle").value, detail: $("ideaDetail").value }); $("ideaTitle").value = ""; $("ideaDetail").value = ""; $("ideaMessage").textContent = "Đã lưu ý tưởng. Bấm \"Giao Hinata đặc tả\" để bắt đầu chu trình."; }
+    catch (err) { $("ideaMessage").textContent = err.message; }
+    finally { $("ideaSave").disabled = false; await refresh(); }
+  });
+  $("ideas").addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-idea-start]"); if (!b) return;
+    b.disabled = true;
+    const go = (force) => request("/ctl/ideas/" + encodeURIComponent(b.dataset.ideaStart) + "/start", { force });
+    try {
+      try { await go(false); }
+      catch (err) {
+        if (err.code !== "NEEDS_SPEC_TURN") throw err;
+        if (!confirm(err.message + "\n\nGhi đè chuyển lượt cho Hinata (SPEC_ARCHITECT)?")) { $("ideaMessage").textContent = "Chưa giao: anh chưa đồng ý ghi đè lượt."; return; }
+        await go(true);
+      }
+      $("ideaMessage").textContent = "Đã giao: Hinata đang đặc tả ý tưởng, theo dõi tiến độ ở mục bên dưới.";
+    } catch (err) { $("ideaMessage").textContent = err.message; }
+    finally { b.disabled = false; await refresh(); }
   });
   $("autoRuns").addEventListener("click", async (e) => {
     const ans = e.target.closest("[data-auto-answer]");

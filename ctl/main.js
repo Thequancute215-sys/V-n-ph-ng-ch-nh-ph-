@@ -19,6 +19,7 @@ const { createRunner } = require("./runner");
 const { createAutopilot } = require("./autopilot");
 const { createGitHub } = require("./github");
 const { createQuotas } = require("./quotas");
+const { createIdeas } = require("./ideas");
 const { classify } = require("./policy");
 const { readTurn } = require("./handoff");
 const { maskSecrets } = require("../lib/mask");
@@ -30,7 +31,7 @@ const HTTP_CODE = {
   WORKSPACE_DENIED: 403, PATH_ESCAPE: 403, PATH_DENIED: 403, TOO_BROAD: 403, TOO_SENSITIVE: 403, COMMAND_DENIED: 403,
   NOT_FOUND: 404, TOO_LARGE: 413,
   GITHUB_AUTH: 401, GITHUB_LIMIT: 429, GITHUB_OFFLINE: 502, GITHUB_CLONE: 502,
-  CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_WAITING: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409, HANDOFF_PENDING: 409, NEEDS_ANSWER: 409, NO_QUESTION: 422, BAD_OPTION: 400,
+  CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_WAITING: 409, NEEDS_SPEC_TURN: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409, HANDOFF_PENDING: 409, NEEDS_ANSWER: 409, NO_QUESTION: 422, BAD_OPTION: 400,
 };
 
 function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {}, quotaOptions = {} } = {}) {
@@ -43,6 +44,7 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
   const files = createFiles(ws, audit);
   const runner = createRunner({ jobs, ws, audit, db, dir });
   const autopilot = createAutopilot({ runner, jobs, ws, audit, dir, quotaSnapshot: () => quotas.snapshot() });
+  const ideas = createIdeas({ dir, ws, runner, autopilot, audit });
   const selectWorkspace = (p) => {
     const w = ws.switchTo(p, "ceo");
     fs.writeFileSync(activeFile + ".tmp", JSON.stringify({ path: w.path }), { mode: 0o600 }); fs.renameSync(activeFile + ".tmp", activeFile);
@@ -159,6 +161,10 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
 
     ["GET", "/workspaces", () => ({ workspaces: ws.list(), active: ws.current() })],
     ["GET", "/projects", () => ({ projects: projects() })],
+    // Ý tưởng của CEO: bước 1 chu trình, giao Hinata (SPEC_ARCHITECT) đặc tả
+    ["GET", "/ideas", (p, qs) => ({ ideas: ideas.list(wsOf(qs.get("workspace"))) })],
+    ["POST", "/ideas", (p, qs, b) => [201, { idea: ideas.add({ workspace: wsOf(b.workspace), title: b.title, detail: b.detail }) }]],
+    ["POST", "/ideas/:id/start", (p, qs, b) => ({ idea: ideas.start(p.id, { force: b.force === true }) })],
     ["GET", "/github/repos", (p, qs) => github.list(qs.get("page") || 1)],
     ["POST", "/github/open", (p, qs, b) => [202, { operation: github.open(b.fullName) }]],
     ["GET", "/github/operations/:id", (p) => ({ operation: github.get(p.id) })],
