@@ -14,6 +14,7 @@
   --panel-border: rgba(255, 255, 255, 0.12);
 }
 * { box-sizing: border-box; }
+#claudeLowPill[hidden] { display: none !important; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; color: #f8fafc; font-family: "Plus Jakarta Sans", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
 #world { position: fixed; inset: 0; background: radial-gradient(130% 90% at 50% 15%, #182638 0%, #0d1522 50%, #070c14 100%); }
 #gl, #lbl { position: absolute; inset: 0; }
@@ -210,6 +211,11 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
   <div class="pill" title="Giờ Việt Nam và thời tiết Hà Nội thật (Open-Meteo), cập nhật 15 phút một lần">
     <span id="wxTxt" role="status" style="font-size:12px;font-weight:700;white-space:nowrap">Hà Nội · đang lấy thời tiết…</span>
   </div>
+
+  <!-- Claude còn ≤ 8% hạn mức: báo CEO để dừng việc Claude đang chạy, dành cho điều phối -->
+  <a id="claudeLowPill" class="btn pill" href="prototype.html#board" hidden style="background:rgba(239,68,68,0.25);border:1px solid #ef4444;color:#fecaca;font-weight:800;text-decoration:none;gap:6px">
+    <span style="font-size:14px">⚠️</span><span id="claudeLowTxt">Claude sắp hết hạn mức</span>
+  </a>
 
   <!-- Chu trình tự động, Phase, lượt, blocker của dự án đang chọn (đọc thật từ repo) -->
   <a class="btn pill" href="prototype.html#board" title="Chọn dự án, xem repo đã đọc, Phase, ai giữ lượt, blocker và giao việc tự động" style="background:linear-gradient(135deg, #22c55e, #0ea5e9);color:#fff;font-weight:800;text-decoration:none;gap:6px">
@@ -707,6 +713,13 @@ try {
   const getJson = async (url) => (await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(8000) })).json();
   const syncTurn = async () => {
     for (const id of office.npcIds) office.setLine(id, "");
+    getJson("/ctl/quotas").then((q) => {
+      const p = (q.providers || []).find((x) => x.id === "claude");
+      const live = p && p.status === "ready" ? p.buckets.filter((b) => !b.resetAt || Date.parse(b.resetAt) > Date.now()) : [];
+      const left = live.length ? Math.min(...live.map((b) => b.remainingPercent)) : null;
+      $("claudeLowPill").hidden = left === null || left > 8;
+      if (left !== null && left <= 8) $("claudeLowTxt").textContent = "Claude còn " + Math.round(left) + "% hạn mức: dừng việc Claude, dành cho điều phối";
+    }).catch(() => { $("claudeLowPill").hidden = true; });
     try {
       const list = await getJson("/ctl/workspaces");
       if (!list.active) { office.setLine("pain", "Chưa chọn dự án nào. Mở trang Tổng quan để chọn repo."); return; }

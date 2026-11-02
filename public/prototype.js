@@ -83,7 +83,23 @@
   const dateTime = (v) => v && Number.isFinite(Date.parse(v)) ? new Date(v).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }) : "Chưa rõ";
   const expired = (b) => b.resetAt && Date.parse(b.resetAt) <= Date.now();
   const quotaStale = (p) => !!quotaError || p.status === "stale" || (p.lastSuccessAt && Date.now() - Date.parse(p.lastSuccessAt) > 3 * (quotaData?.intervalMs || 120000));
+  // CEO dặn: Claude còn ≤ 8% hạn mức thì báo ngay để CEO dừng các việc Claude đang chạy, dành hạn mức cho điều phối.
+  const CLAUDE_LOW = 8;
+  function renderClaudeLow() {
+    const p = (quotaData?.providers || []).find((x) => x.id === "claude");
+    const live = p && p.status === "ready" && !quotaStale(p) ? p.buckets.filter((b) => !expired(b)) : [];
+    const low = live.length ? live.reduce((a, b) => (b.remainingPercent < a.remainingPercent ? b : a)) : null;
+    const box = $("claudeLow");
+    if (!low || low.remainingPercent > CLAUDE_LOW) { box.hidden = true; return; }
+    const running = jobs.filter((j) => j.status === "running" && String(j.agent).startsWith("CLAUDE"));
+    box.hidden = false;
+    setMarkup("claudeLow", `<strong>⚠️ Claude (đội trưởng) chỉ còn ${pct(low.remainingPercent)} hạn mức (${esc(low.label)}${low.resetAt ? ", mở lại " + esc(dateTime(low.resetAt)) : low.resetLabel ? ", mở lại " + esc(low.resetLabel) : ""}).</strong>` +
+      `<p>Anh nên dừng các việc Claude đang chạy để dành phần còn lại cho điều phối. Văn phòng không tự dừng; anh quyết.</p>` +
+      (running.length ? running.map((j) => `<div class="entry"><div class="entry-head"><span class="mono">${esc(j.agent)} · ${esc(j.id)}</span><button data-kill-claude="${esc(j.id)}">Dừng việc này</button></div></div>`).join("") : '<p class="muted">Hiện không có việc nào của Claude đang chạy.</p>'));
+  }
+
   function renderQuotas() {
+    renderClaudeLow();
     const providers = quotaData?.providers || [];
     const alerts = [];
     for (const p of providers) if (p.status === "ready" && !quotaStale(p)) for (const b of p.buckets) if (!expired(b) && b.usedPercent >= 80) alerts.push({ provider: p.name, bucket: b.label, used: b.usedPercent });
@@ -339,6 +355,14 @@
     catch (err) { $("autoMessage").textContent = err.message; }
     finally { await refresh(); }
   };
+  $("claudeLow").addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-kill-claude]"); if (!b) return;
+    if (!confirm("Dừng việc " + b.dataset.killClaude + " của Claude?")) return;
+    b.disabled = true;
+    try { await request("/ctl/jobs/" + encodeURIComponent(b.dataset.killClaude) + "/kill", {}); }
+    catch (err) { $("autoMessage").textContent = err.message; }
+    finally { await refresh(); }
+  });
   $("autoRuns").addEventListener("click", async (e) => {
     const ans = e.target.closest("[data-auto-answer]");
     if (ans) {

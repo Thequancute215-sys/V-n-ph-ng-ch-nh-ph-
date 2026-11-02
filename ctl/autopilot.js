@@ -13,6 +13,8 @@ const { readTurn } = require("./handoff");
 const ACTIVE = new Set(["running", "reporting", "awaiting_approval", "awaiting_answer", "attention", "waiting_quota"]);
 const PROVIDER = { CODEX_ASTRA_DEV: "codex", SOL_ARCHITECT_PLANNER: "codex", SOL_ARCHITECT_ADVISOR: "codex", CLAUDE_AUDITOR: "claude", SPEC_ARCHITECT: "antigravity" };
 const PROVIDER_NAME = { codex: "Codex", claude: "Claude", antigravity: "Antigravity" };
+const WRITER_NAME = { claude: "Claude (đội trưởng)", codex: "Codex (Sol/Astra)", antigravity: "Antigravity (Hinata)" };
+const WRITER_ORDER = ["claude", "codex", "antigravity"];
 // Dấu hiệu CLI báo hết hạn mức gói (khác lỗi mạng thường). Chỉ xét phần cuối log của lượt không có bàn giao hợp lệ.
 const QUOTA_HIT = /usage[_ ]limit|hit your (?:usage )?limit|limit reached|quota (?:exceeded|exhausted)|insufficient_quota|rate_limit_exceeded|out of (?:credits|quota)/i;
 const MIN_WAIT = 2 * 60000, DEFAULT_WAIT = 30 * 60000, MAX_WAIT = 8 * 3600000, BUFFER = 60000;
@@ -42,7 +44,12 @@ const err = (code, message) => Object.assign(new Error(message), { code });
 function responseText(log) {
   const lines = String(log).trim().split(/\r?\n/);
   for (let i = lines.length - 1; i >= 0; i--) {
-    try { const v = JSON.parse(lines[i]); if (typeof v.result === "string") return v.result; if (typeof v.response === "string") return v.response; } catch {}
+    try {
+      const v = JSON.parse(lines[i]);
+      if (typeof v.result === "string") return v.result;
+      if (typeof v.response === "string") return v.response;
+      if (v.item && v.item.type === "agent_message" && typeof v.item.text === "string") return v.item.text;   // codex exec --json
+    } catch {}
   }
   return String(log).slice(-40000);
 }
@@ -133,27 +140,54 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     if (run.web?.status === "writing") throw err("AI_BUSY", "Đội trưởng đang soạn master prompt.");
     const list = providers();
     const quotas = ["codex", "claude", "antigravity"].map((id) => ({ id, name: PROVIDER_NAME[id], ...quotaState(list.find((p) => p.id === id)) }));
-    const base = { requestedAt: Date.now(), role: run.wait.role, quotas };
-    const claude = quotas.find((q) => q.id === "claude");
-    if (run.wait.provider !== "claude" && claude.state !== "hết") {
-      const decisions = (run.decisions || []).map((d) => "- " + d.text).join("\n");
-      const job = runner.webPrompt({ workspace: run.workspace, role: run.wait.role, task: run.task, decisions, provider: run.wait.providerName });
-      run.web = { ...base, status: "writing", writer: "Claude (đội trưởng)", jobId: job.id };
-    } else {
-      run.web = { ...base, status: "ready", ...templatePrompt(run, "Claude cũng đang hết hạn mức nên văn phòng soạn mẫu từ agent.md (không kèm mã nguồn).") };
-    }
+    run.web = { requestedAt: Date.now(), role: run.wait.role, quotas, tried: [], failures: [] };
+    nextWriter(run);
     save(run);
     audit.log("ceo", "quota.web_prompt", run.id, { role: run.wait.role, writer: run.web.writer });
     return run;
   }
 
+  // Đội trưởng toàn quyền giao việc: chọn AI còn nhiều hạn mức nhất (trừ AI vừa hết, trừ AI đã thử hỏng);
+  // không còn ai thì văn phòng soạn mẫu từ agent.md.
+  function nextWriter(run) {
+    const w = run.web;
+    const left = w.quotas.filter((q) => q.id !== run.wait.provider && q.state !== "hết" && !w.tried.includes(q.id))
+      .sort((a, b) => (b.state === "còn" ? b.remaining : -1) - (a.state === "còn" ? a.remaining : -1) || WRITER_ORDER.indexOf(a.id) - WRITER_ORDER.indexOf(b.id));
+    for (const q of left) {
+      w.tried.push(q.id);
+      try {
+        const decisions = (run.decisions || []).map((d) => "- " + d.text).join("\n");
+        const job = runner.webPrompt({ workspace: run.workspace, role: run.wait.role, task: run.task, decisions, provider: run.wait.providerName, writer: q.id });
+        Object.assign(w, { status: "writing", writer: WRITER_NAME[q.id], writerId: q.id, jobId: job.id });
+        return;
+      } catch (e) { w.failures.push(WRITER_NAME[q.id] + ": " + maskSecrets(e.message)); }
+    }
+    const why = w.failures.length ? "Không AI nào soạn được (" + w.failures.join("; ") + ")" : "Không còn AI nào có hạn mức";
+    Object.assign(w, { status: "ready", jobId: null, ...templatePrompt(run, why + " nên văn phòng soạn mẫu từ agent.md (không kèm mã nguồn).") });
+  }
+
+  // Tìm đoạn có hai mốc ===MASTER_PROMPT=== / ===CHUAN_DAU_RA=== trong log (văn bản thường hoặc chuỗi trong dòng JSON).
+  function markedText(log) {
+    const direct = responseText(log);
+    if (SECTION.test(direct)) return direct;
+    const walk = (v) => typeof v === "string" ? (v.includes("===MASTER_PROMPT===") ? v : null) : v && typeof v === "object" ? Object.values(v).reduce((hit, x) => hit || walk(x), null) : null;
+    for (const line of String(log).split(/\r?\n/).reverse()) { try { const hit = walk(JSON.parse(line)); if (hit) return hit; } catch {} }
+    return direct;
+  }
+
   function finishWeb(run) {
     const job = jobs.get(run.web.jobId);
     if (!job || job.status === "running") return;
-    const text = responseText(logOf(job.id));
+    const raw = logOf(job.id), text = markedText(raw);
     const m = job.status === "done" ? SECTION.exec(text) : null;
-    if (m && m[1].trim() && m[2].trim()) Object.assign(run.web, { status: "ready", prompt: maskSecrets(m[1].trim()), spec: maskSecrets(m[2].trim()), note: "" });
-    else Object.assign(run.web, { status: "ready", ...templatePrompt(run, (QUOTA_HIT.test(text) ? "Claude vừa báo hết hạn mức" : "Claude không trả đúng định dạng") + " nên văn phòng dùng mẫu từ agent.md (không kèm mã nguồn).") });
+    if (m && m[1].trim() && m[2].trim()) Object.assign(run.web, { status: "ready", prompt: maskSecrets(m[1].trim()), spec: maskSecrets(m[2].trim()), note: run.web.failures.length ? "Đã thử trước: " + run.web.failures.join("; ") : "" });
+    else {
+      // AI này hỏng hoặc vừa hết hạn mức: giao cho AI kế tiếp còn hạn mức
+      run.web.failures.push(run.web.writer + ": " + (QUOTA_HIT.test(raw.slice(-8000)) ? "vừa báo hết hạn mức" : job.status !== "done" ? "kết thúc với trạng thái " + job.status : "không trả đúng định dạng"));
+      nextWriter(run);
+      save(run);
+      return;
+    }
     if (looksLikeKey(run.web.prompt + "\n" + run.web.spec)) run.web.warning = "Có chuỗi giống khóa API trong prompt: kiểm tra và xoá trước khi dán vào ChatGPT.";
     save(run);
   }
