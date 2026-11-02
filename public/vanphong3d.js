@@ -334,19 +334,19 @@ for (const z of [28, 38, 48]) { lamp(-3.4, z); lamp(3.4, z); }
 for (let x = -60; x <= 60; x += 20) lamp(x, ROAD_Z - 8.4);
 
 // ================= Cây cối (instancing + gió lay) =================
-const wind = { value: 0 };
+const wind = { value: 0 }, windStrength = { value: 1 };
 function windMat(o = {}) {
   const m = std(0xffffff, o);
   m.onBeforeCompile = (sh) => {
-    sh.uniforms.uTime = wind;
-    sh.vertexShader = "uniform float uTime;\n" + sh.vertexShader.replace("#include <begin_vertex>", `#include <begin_vertex>
+    sh.uniforms.uTime = wind; sh.uniforms.uWind = windStrength;
+    sh.vertexShader = "uniform float uTime;\nuniform float uWind;\n" + sh.vertexShader.replace("#include <begin_vertex>", `#include <begin_vertex>
       #ifdef USE_INSTANCING
         vec3 ip = instanceMatrix[3].xyz;
       #else
         vec3 ip = vec3(0.0);
       #endif
       float hgt = max(position.y + 1.0, 0.0);
-      float sw = sin(uTime * 1.3 + ip.x * 0.21 + ip.z * 0.17) * 0.045 + sin(uTime * 2.9 + ip.z * 0.37) * 0.016;
+      float sw = (sin(uTime * 1.3 + ip.x * 0.21 + ip.z * 0.17) * 0.045 + sin(uTime * 2.9 + ip.z * 0.37) * 0.016) * uWind;
       transformed.x += sw * hgt;
       transformed.z += sw * 0.6 * hgt;`);
   };
@@ -1009,16 +1009,25 @@ const SUN_WHITE = new THREE.Color(0xfff6ea), SUN_GOLD = new THREE.Color(0xffa860
 const CLOUD_DAY = new THREE.Color(0xffffff), CLOUD_GOLD = new THREE.Color(0xffc8a0), CLOUD_NIGHT = new THREE.Color(0x3a4458);
 const sunDir = new THREE.Vector3();
 let day = 1, golden = 0;
-function setHour(h) {
+// Thời tiết đang hiển thị (đổi dần về weatherTarget): mây, mưa, sương, giông 0..1; gió = hệ số lay cây.
+const WEATHER_CLEAR = { cloud: 0.2, rain: 0, fog: 0, storm: 0, wind: 1 };
+const weather = { ...WEATHER_CLEAR }, weatherTarget = { ...WEATHER_CLEAR };
+const OVERCAST_TOP = new THREE.Color(0x6b7787), OVERCAST_HOR = new THREE.Color(0xa9b3bd), CLOUD_RAIN = new THREE.Color(0x5b6472), FLASH = new THREE.Color(0xdde6ff);
+const tmpCol = new THREE.Color();
+let hourNow = 15.5, flash = 0;
+function setHour(h) { hourNow = h; applySky(); }
+function applySky() {
+  const h = hourNow, w = weather;
   const t = (h - 6) / 13;                                   // 6:00 → 0, 19:00 → 1
   const elev = Math.sin(Math.PI * clamp(t, -0.16, 1.16)) * 62;
   const theta = lerp(115, -115, clamp(t, 0, 1));            // mọc đông (+x), lặn tây (-x), đi ngang phía trước sảnh
   sunDir.setFromSphericalCoords(1, degToRad(90 - elev), degToRad(theta));
   day = smoothstep(elev, -5, 9);
   golden = day * (1 - smoothstep(elev, 3, 26));
-  sun.intensity = 5.2 * day * smoothstep(elev, -2, 6);
+  const gloom = clamp(w.cloud * 0.7 + w.rain * 0.35 + w.fog * 0.3, 0, 0.92);   // trời u ám: nắng yếu, màu xám
+  sun.intensity = 5.2 * day * smoothstep(elev, -2, 6) * (1 - gloom);
   sun.color.copy(SUN_WHITE).lerp(SUN_GOLD, golden);
-  hemi.intensity = 0.25 + 0.9 * day;
+  hemi.intensity = (0.25 + 0.9 * day) * (1 - gloom * 0.3) + flash * 2.5;
   hemi.color.set(0xcfe7ff).lerp(new THREE.Color(0x30406a), 1 - day);
   gl.toneMappingExposure = lerp(0.85, 0.5, day);
 
@@ -1026,14 +1035,18 @@ function setHour(h) {
   u.uTop.value.copy(SKY.night.top).lerp(SKY.day.top, day).lerp(SKY.gold.top, golden * 0.55);
   u.uHor.value.copy(SKY.night.hor).lerp(SKY.day.hor, day).lerp(SKY.gold.hor, golden * 0.85);
   u.uSun.value.copy(sunDir);
-  u.uSunCol.value.copy(SUN_WHITE).lerp(SUN_GOLD, golden).multiplyScalar(smoothstep(elev, -3, 2));
+  u.uTop.value.lerp(tmpCol.copy(OVERCAST_TOP).multiplyScalar(0.12 + 0.88 * day), gloom * 0.85).lerp(FLASH, flash * 0.5);
+  u.uHor.value.lerp(tmpCol.copy(OVERCAST_HOR).multiplyScalar(0.12 + 0.88 * day), gloom * 0.8).lerp(FLASH, flash * 0.4);
+  u.uSunCol.value.copy(SUN_WHITE).lerp(SUN_GOLD, golden).multiplyScalar(smoothstep(elev, -3, 2) * (1 - gloom));
   u.uMoon.value.set(-sunDir.x, Math.max(0.45, -sunDir.y), -sunDir.z);
   u.uNight.value = smoothstep(night, 0.4, 1);
   scene.fog.color.copy(u.uHor.value);
-  starMat.opacity = smoothstep(night, 0.4, 1);
+  starMat.opacity = smoothstep(night, 0.4, 1) * (1 - w.cloud);
+  scene.fog.density = 0.0014 + w.rain * 0.0035 + w.fog * 0.012;
+  rainMat.opacity = 0.75 * (0.45 + 0.55 * day) + flash * 0.25;
   for (const c of clouds) {
-    c.material.color.copy(CLOUD_DAY).lerp(CLOUD_GOLD, golden).lerp(CLOUD_NIGHT, night);
-    c.material.opacity = c.userData.alpha * (0.35 + 0.65 * day);
+    c.material.color.copy(CLOUD_DAY).lerp(CLOUD_GOLD, golden * (1 - gloom)).lerp(CLOUD_RAIN, Math.min(1, w.rain + w.storm * 0.5) * 0.85).lerp(CLOUD_NIGHT, night);
+    c.material.opacity = c.userData.alpha * (0.35 + 0.65 * day) * (0.3 + 0.7 * w.cloud);
   }
   for (const m of lampMats) m.emissiveIntensity = 0.2 + 3 * night;
   for (const g of glows) g.material.opacity = 0.85 * smoothstep(night, 0.3, 0.9);
@@ -1043,6 +1056,50 @@ function setHour(h) {
 
   envDirty = true;
 }
+
+// ================= Mưa =================
+const RAIN_N = 4500, RAIN_BOX = 40, RAIN_H = 34;
+const drops = Array.from({ length: RAIN_N }, () => ({ x: range(-RAIN_BOX, RAIN_BOX), y: range(0, RAIN_H), z: range(-RAIN_BOX, RAIN_BOX), sp: range(24, 32) }));
+const rainPos = new Float32Array(RAIN_N * 6);
+const rainGeo = new THREE.BufferGeometry();
+rainGeo.setAttribute("position", new THREE.BufferAttribute(rainPos, 3));
+const rainMat = new THREE.LineBasicMaterial({ color: 0xdbe7f3, transparent: true, opacity: 0.7, depthWrite: false });
+const rain = new THREE.LineSegments(rainGeo, rainMat);
+rain.frustumCulled = false; rain.visible = false;
+scene.add(rain);
+const wrap = (v, c) => c + ((((v - c) % (2 * RAIN_BOX)) + 3 * RAIN_BOX) % (2 * RAIN_BOX)) - RAIN_BOX;
+function updateRain(dt) {
+  rain.visible = weather.rain > 0.02;
+  if (!rain.visible) return;
+  const active = Math.floor(RAIN_N * weather.rain), cx = camera.position.x, cz = camera.position.z, slant = 0.12 * weather.wind;
+  for (let i = 0; i < RAIN_N; i++) {
+    const d = drops[i], o = i * 6;
+    d.y -= d.sp * dt; if (d.y < 0) d.y += RAIN_H;
+    const x = wrap(d.x, cx), z = wrap(d.z, cz);
+    const indoors = Math.abs(x) < W / 2 + 1.6 && Math.abs(z) < D / 2 + 1.6 && d.y < roofY + 0.8;
+    if (i >= active || indoors) { rainPos.fill(-50, o, o + 6); continue; }
+    rainPos[o] = x; rainPos[o + 1] = d.y; rainPos[o + 2] = z;
+    rainPos[o + 3] = x - slant * 1.4; rainPos[o + 4] = d.y + 1.4; rainPos[o + 5] = z;
+  }
+  rainGeo.attributes.position.needsUpdate = true;
+}
+let nextBolt = 4;
+function updateWeather(dt) {
+  let moving = false;
+  for (const k in weatherTarget) {
+    const before = weather[k];
+    weather[k] = lerp(before, weatherTarget[k], 1 - Math.exp(-0.5 * dt));   // đổi dần trong vài giây
+    if (Math.abs(weather[k] - weatherTarget[k]) > 0.002) moving = true;
+  }
+  windStrength.value = weather.wind;
+  // Giông: chớp loé ngẫu nhiên 5–14 giây một lần
+  if (weather.storm > 0.5 && !reduceMotion) { nextBolt -= dt; if (nextBolt <= 0) { flash = 1; nextBolt = range(5, 14); } }
+  const flashing = flash > 0;
+  flash = Math.max(0, flash - dt * 4);
+  if (moving || flashing) applySky();
+  updateRain(dt);
+}
+
 setHour(clamp(opts.hour ?? 15.5, 5, 21));
 
 // ================= Vòng lặp =================
@@ -1055,6 +1112,7 @@ const plaqueMeshes = plaques.flatMap((p) => [p.front, p.back]);
 gl.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
   if (!reduceMotion) wind.value = t;
+  updateWeather(dt);
 
   for (const c of clouds) {
     c.position.x += dt * c.userData.speed;
@@ -1133,6 +1191,8 @@ function setDistance(d) {
 return {
   camera, controls, ZONES, npcIds: NPCS.map((n) => n.room),
   setHour: (h) => setHour(clamp(h, 5, 21)),
+  // Thời tiết: { cloud, rain, fog, storm (0..1), wind (hệ số lay cây) }; cảnh đổi dần sang trạng thái mới.
+  setWeather: (w) => Object.assign(weatherTarget, WEATHER_CLEAR, w),
   goToRoom, goHome, cameraBehind, jump, setDistance,
   getDistance: () => camera.position.distanceTo(controls.target),
   // Bong bóng việc được giao trên đầu nhân vật (chỉ dùng textContent, không chèn HTML)

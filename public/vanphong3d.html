@@ -29,6 +29,10 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 .time { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
 .time input { width: 150px; accent-color: var(--accent); }
 .time b { color: var(--text); min-width: 44px; font-variant-numeric: tabular-nums; }
+.time select { font: inherit; font-size: 13px; color: var(--text); background: rgba(255, 255, 255, .08); border: 1px solid var(--line); border-radius: 8px; padding: 5px 6px; }
+.time select option { color: #0f172a; }
+.wx { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; }
+button[aria-pressed="true"] { background: var(--accent); color: #111827; border-color: transparent; }
 #state { position: fixed; inset: 0; display: grid; place-items: center; text-align: center; padding: 16px; background: var(--bg); z-index: 5; transition: opacity .8s; }
 #state.done { opacity: 0; pointer-events: none; }
 #state p { margin: 0; color: var(--muted); }
@@ -63,7 +67,13 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 <div class="bar panel" role="toolbar" aria-label="Điều khiển">
   <button id="btnCam" title="Phím C">Camera sau lưng</button>
   <button id="btnHome" title="Phím R">Về cổng</button>
+  <span class="wx" id="wxTxt" role="status">Hà Nội · đang lấy thời tiết…</span>
+  <button id="btnLive" aria-pressed="true" title="Giờ Việt Nam và thời tiết Hà Nội thật">Giờ thật VN</button>
   <label class="time">Giờ <input id="hour" type="range" min="5" max="21" step="0.25" value="15.5" aria-label="Giờ trong ngày"> <b id="hourTxt">15:30</b></label>
+  <label class="time">Thời tiết <select id="wxPick" aria-label="Chọn thời tiết">
+    <option value="live">Thật (Hà Nội)</option><option value="clear">Nắng</option><option value="cloudy">Nhiều mây</option>
+    <option value="rain">Mưa</option><option value="storm">Giông</option><option value="fog">Sương mù</option>
+  </select></label>
 </div>
 
 <div id="state" role="status"><div><div class="spin"></div><p id="stateTxt">Đang dựng văn phòng…</p></div></div>
@@ -81,6 +91,7 @@ setTimeout(() => { if (!window.vp3dReady) window.vp3dFail("Không tải được
 
 <script type="module">
 import { createOffice } from "./vanphong3d.js";
+import { connectLive, vietnamHour } from "./thoitiet.js";
 const $ = (id) => document.getElementById(id);
 let office;
 try {
@@ -96,6 +107,32 @@ const showHour = (h) => { const hh = Math.floor(h), mm = Math.round((h - hh) * 6
 showHour(parseFloat($("hour").value));
 $("hour").addEventListener("input", (e) => { const h = parseFloat(e.target.value); office.setHour(h); showHour(h); });
 $("hour").addEventListener("change", (e) => e.target.blur());
+// Giờ Việt Nam + thời tiết Hà Nội thật; kéo thanh giờ hoặc chọn thời tiết thì chuyển sang tự chỉnh để xem thử.
+const PRESETS = {
+  clear: { cloud: 0.15 }, cloudy: { cloud: 0.95, wind: 1.4 }, rain: { cloud: 1, rain: 0.75, wind: 1.6 },
+  storm: { cloud: 1, rain: 1, storm: 1, wind: 2.6 }, fog: { cloud: 0.7, fog: 1, wind: 0.5 },
+};
+const wxLine = (w) => !w ? "đang lấy thời tiết…" : w.error ? "chưa lấy được thời tiết" : `${w.temp}°C · ${w.text}${w.stale ? " (cũ)" : ""}`;
+let live = null;   // onUpdate chạy ngay lần đầu, trước khi connectLive trả về
+live = connectLive(office, {
+  onUpdate: ({ place, clock, weather }) => {
+    $("wxTxt").textContent = `${place} · ${clock} · ${wxLine(weather)}`;
+    if (!live?.manualHour) { const h = vietnamHour(); $("hour").value = Math.min(21, Math.max(5, h)); showHour(h); }
+  },
+});
+const setLive = (on) => {
+  live.manualHour = !on;
+  $("btnLive").setAttribute("aria-pressed", String(on));
+  if (on) live.refresh();
+};
+$("btnLive").onclick = (e) => { setLive(live.manualHour); e.currentTarget.blur(); };
+$("hour").addEventListener("input", () => setLive(false), { capture: true });
+$("wxPick").addEventListener("change", (e) => {
+  const v = e.target.value;
+  live.manualWeather = v !== "live";
+  if (v === "live") { if (live.weather?.scene) office.setWeather(live.weather.scene); } else office.setWeather(PRESETS[v]);
+  e.target.blur();
+});
 $("btnCam").onclick = (e) => { office.cameraBehind(); e.currentTarget.blur(); };
 $("btnHome").onclick = (e) => { office.goHome(); e.currentTarget.blur(); };
 </script>
