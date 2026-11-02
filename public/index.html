@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Văn phòng AI Chibi & Cảnh Thành Phố</title>
+<title>Văn phòng AI 3D</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
 <style>
@@ -124,6 +124,12 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
   display: flex;
   align-items: center;
   justify-content: center;
+}
+/* Màn hẹp: thanh chọn phòng cuộn ngang thay vì tràn khỏi màn hình */
+@media (max-width: 1240px) {
+  .room-nav-pill { left: 16px; right: 16px; transform: none; overflow-x: auto; border-radius: 16px; scrollbar-width: none; }
+  .room-nav-pill::-webkit-scrollbar { display: none; }
+  .room-nav-pill > * { flex-shrink: 0; }
 }
 
 /* Modal Overlay: Phân việc ngoài lề */
@@ -680,6 +686,13 @@ try {
     },
   });
   setInterval(() => office.setHour(realHour()), 60000);
+  // Thẻ "Bạn đang ở" nằm ngay dưới thanh trên (trên màn hẹp thanh trên xuống nhiều dòng)
+  const placeCard = () => {
+    const card = document.querySelector(".vp-room"), bar = document.querySelector(".bar");
+    if (card && bar) card.style.top = Math.round(bar.getBoundingClientRect().bottom + 8) + "px";
+  };
+  addEventListener("resize", placeCard);
+  placeCard();
 } catch (err) {
   console.error(err);
   const msg = document.createElement("div");
