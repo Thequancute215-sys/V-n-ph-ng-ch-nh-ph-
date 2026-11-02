@@ -1,26 +1,60 @@
 // CEO giao một việc; các bàn giao nội bộ chạy theo NEXT_OWNER, kết thúc ở báo cáo Claude chờ CEO duyệt.
-// Mỗi dự án chỉ có một luồng. Lưu ngoài repo; khi ctl khởi động lại không tự chạy lại việc đang dang dở.
+// Mỗi dự án chỉ có một luồng. Lưu ngoài repo; khi ctl khởi động lại không tự chạy lại việc đang dang dở (luồng đang chờ hạn mức thì vẫn chờ tới giờ rồi chạy lại).
 // Ngắt mạch (dừng, Claude báo cáo cho CEO): bàn giao sai, hết lượt/thời gian, log có chuỗi hình dạng khóa API, xung đột git,
 // Claude trả việc về Codex quá MAX_REWORK lần. Claude (đội trưởng) hỏi CEO bằng ask_ceo → luồng chờ "awaiting_answer", CEO chọn phương án.
+// AI của lượt hết hạn mức gói → "waiting_quota": tự chạy lại đúng lượt đó khi hạn mức mở lại (ngữ cảnh nằm trong agent.md/repo nên không mất);
+// CEO có thể yêu cầu đội trưởng soạn master prompt + chuẩn đầu ra để tự làm lượt đó trên ChatGPT web bằng tài khoản khác.
 "use strict";
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const { maskSecrets, looksLikeKey } = require("../lib/mask");
 const { readTurn } = require("./handoff");
-const ACTIVE = new Set(["running", "reporting", "awaiting_approval", "awaiting_answer", "attention"]);
+const ACTIVE = new Set(["running", "reporting", "awaiting_approval", "awaiting_answer", "attention", "waiting_quota"]);
+const PROVIDER = { CODEX_ASTRA_DEV: "codex", SOL_ARCHITECT_PLANNER: "codex", SOL_ARCHITECT_ADVISOR: "codex", CLAUDE_AUDITOR: "claude", SPEC_ARCHITECT: "antigravity" };
+const PROVIDER_NAME = { codex: "Codex", claude: "Claude", antigravity: "Antigravity" };
+const WRITER_NAME = { claude: "Claude (đội trưởng)", codex: "Codex (Sol/Astra)", antigravity: "Antigravity (Hinata)" };
+const WRITER_ORDER = ["claude", "codex", "antigravity"];
+// Dấu hiệu CLI báo hết hạn mức gói (khác lỗi mạng thường). Chỉ xét phần cuối log của lượt không có bàn giao hợp lệ.
+const QUOTA_HIT = /usage[_ ]limit|hit your (?:usage )?limit|limit reached|quota (?:exceeded|exhausted)|insufficient_quota|rate_limit_exceeded|out of (?:credits|quota)/i;
+const MIN_WAIT = 2 * 60000, DEFAULT_WAIT = 30 * 60000, MAX_WAIT = 8 * 3600000, BUFFER = 60000;
+const SECTION = /===MASTER_PROMPT===\s*([\s\S]*?)\s*===CHUAN_DAU_RA===\s*([\s\S]*)$/;
+
+// "try again in 2 hours 15 minutes" / "in 45 minutes" → mốc thời gian; không đọc được thì null.
+function waitFromMessage(text, now) {
+  const m = /(?:try again|resets?|available again)\s+in\s+((?:\d+\s*(?:days?|d|hours?|hrs?|h|minutes?|mins?|m|seconds?|secs?|s)\b[\s,]*(?:and\s+)?)+)/i.exec(text);
+  if (!m) return null;
+  let ms = 0;
+  for (const [, n, u] of m[1].matchAll(/(\d+)\s*(days?|d|hours?|hrs?|h|minutes?|mins?|m|seconds?|secs?|s)\b/gi)) {
+    const k = u[0].toLowerCase();
+    ms += Number(n) * (k === "d" ? 86400000 : k === "h" ? 3600000 : k === "m" ? 60000 : 1000);
+  }
+  return ms ? now + ms : null;
+}
+// Hạn mức từ bộ theo dõi /quotas: "còn" / "hết" (kèm giờ mở lại) / "chưa rõ".
+function quotaState(provider) {
+  if (!provider || provider.status !== "ready" || !provider.buckets.length) return { state: "chưa rõ" };
+  const min = Math.min(...provider.buckets.map((b) => b.remainingPercent));
+  const out = provider.buckets.filter((b) => b.remainingPercent <= 1 && b.resetAt && Date.parse(b.resetAt) > Date.now());
+  return out.length ? { state: "hết", resetAt: new Date(Math.max(...out.map((b) => Date.parse(b.resetAt)))).toISOString(), remaining: min } : { state: "còn", remaining: min };
+}
 const MAX_REWORK = 2; // Codex sửa lại tối đa 2 lần sau khi Claude trả về, quá thì CEO quyết
 const err = (code, message) => Object.assign(new Error(message), { code });
 
 function responseText(log) {
   const lines = String(log).trim().split(/\r?\n/);
   for (let i = lines.length - 1; i >= 0; i--) {
-    try { const v = JSON.parse(lines[i]); if (typeof v.result === "string") return v.result; if (typeof v.response === "string") return v.response; } catch {}
+    try {
+      const v = JSON.parse(lines[i]);
+      if (typeof v.result === "string") return v.result;
+      if (typeof v.response === "string") return v.response;
+      if (v.item && v.item.type === "agent_message" && typeof v.item.text === "string") return v.item.text;   // codex exec --json
+    } catch {}
   }
   return String(log).slice(-40000);
 }
 
-function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500 }) {
+function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quotaSnapshot = () => ({ providers: [] }) }) {
   const folder = path.join(dir, "autopilot");
   fs.mkdirSync(folder, { recursive: true, mode: 0o700 });
   const runs = new Map();
@@ -43,7 +77,120 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500 }) {
   const busy = (workspace) => [...runs.values()].some((r) => r.workspace === workspace && ACTIVE.has(r.status));
   const logOf = (id) => maskSecrets(jobs.rawLog(id) || "").slice(-40000);
   // Giới hạn lượt tính từ lần CEO quyết gần nhất (trả lời câu hỏi của Claude = CEO cho phép đi tiếp).
-  const stepsSinceCeo = (run) => run.steps.length - (run.stepBase || 0);
+  // Lượt bị ngắt vì hết hạn mức (quota) không tính vào giới hạn lượt và số lần sửa lại.
+  const stepsSinceCeo = (run) => run.steps.slice(run.stepBase || 0).filter((s) => !s.quota).length;
+  const providers = () => { try { return quotaSnapshot().providers || []; } catch { return []; } };
+
+  // Giờ chạy lại: ưu tiên giờ mở lại từ bộ theo dõi hạn mức, rồi thông báo của CLI, cuối cùng là mặc định 30 phút.
+  function resumeTime(provider, text, now) {
+    const q = quotaState(providers().find((p) => p.id === provider));
+    let at = q.state === "hết" ? Date.parse(q.resetAt) + BUFFER : null, source = "theo dõi hạn mức";
+    if (!at) { at = waitFromMessage(text, now); source = "thông báo của CLI"; if (at) at += BUFFER; }
+    if (!at) { at = now + DEFAULT_WAIT; source = "mặc định 30 phút (không đọc được giờ mở lại)"; }
+    return { at: Math.min(Math.max(at, now + MIN_WAIT), now + MAX_WAIT), source };
+  }
+
+  function waitQuota(run, text) {
+    const step = run.steps[run.steps.length - 1];
+    step.quota = true;
+    const provider = PROVIDER[step.role] || "codex", now = Date.now();
+    const { at, source } = resumeTime(provider, text, now);
+    const line = String(text).split(/\r?\n/).reverse().find((l) => QUOTA_HIT.test(l)) || "";
+    run.status = "waiting_quota";
+    run.wait = { role: step.role, provider, providerName: PROVIDER_NAME[provider], since: now, until: at, source, message: maskSecrets(line).slice(0, 400) };
+    run.web = null;
+    save(run);
+    audit.log("autopilot", "quota.wait", run.id, { role: step.role, provider, until: new Date(at).toISOString(), source });
+  }
+
+  function resume(run, actor) {
+    const waited = Date.now() - (run.wait?.since || Date.now());
+    run.deadline += waited;   // thời gian chờ hạn mức không tính vào giới hạn 90 phút
+    run.status = "running"; run.wait = null; save(run);
+    audit.log(actor, "quota.resume", run.id);
+    try { launch(run); } catch (e) { report(run, e.message); }
+  }
+
+  // Ghi master prompt của đội trưởng (hoặc mẫu tự động) vào luồng.
+  function templatePrompt(run, why) {
+    const role = run.wait.role;
+    let book = "";
+    try { book = maskSecrets(fs.readFileSync(path.join(run.workspace, "agent.md"), "utf8")).slice(0, 30000); } catch { book = "(không đọc được agent.md)"; }
+    const decisions = (run.decisions || []).map((d) => "- " + d.text).join("\n");
+    const out = {
+      CODEX_ASTRA_DEV: "Mỗi file thay đổi: một dòng `FILE: đường/dẫn` rồi TOÀN BỘ nội dung mới của file trong một khối ```. Sau đó: lệnh kiểm tra cần chạy (ví dụ npm test), các dòng ghi vào Vùng [4.1] (danh sách file đã sửa, CLAIM_FIXED: <ID> -> <file> nếu có), và dòng JSON bàn giao.",
+      SOL_ARCHITECT_PLANNER: "Nguyên văn Vùng [1] và [3] mới của agent.md (cây thư mục, schema DB kèm lý do index, API contract đủ method/path/request/response/mã lỗi, lộ trình Phase có điều kiện nghiệm thu đo được), rồi dòng JSON bàn giao.",
+      SOL_ARCHITECT_ADVISOR: "Các dòng nhận xét ghi vào Vùng [4.1] (đối chiếu code với Vùng [3], đề xuất ngắn), rồi dòng JSON bàn giao.",
+      SPEC_ARCHITECT: "Nguyên văn Vùng [2] mới (phạm vi MVP, luồng người dùng, luồng AI Agent, Design Tokens, Component Tree, 5 trạng thái, trường hợp biên), dòng ghi [4.1], rồi dòng JSON bàn giao.",
+      CLAUDE_AUDITOR: "Nguyên văn Vùng [5] mới (AUDIT_STATUS, blocker theo mẫu `- [ ] OPEN P{phase}-C{số} [...]`), hai dòng LAST_UPDATED_BY/NEXT_OWNER của Vùng [4], rồi dòng JSON bàn giao.",
+    }[role] || "Kết quả theo đúng quyền của vai, rồi dòng JSON bàn giao.";
+    return {
+      prompt: `Bạn đóng vai ${role} trong đội AI của dự án dưới đây, làm theo giao thức agent.md (khóa lượt NEXT_OWNER, chỉ sửa vùng thuộc quyền của vai).\n` +
+        `Nhiệm vụ của vai: ${(runner.AGENTS[role] && runner.AGENTS[role].prompt) || ""}\n\nVIỆC CEO GIAO:\n${run.task}\n` + (decisions ? `\nQUYẾT ĐỊNH CỦA CEO:\n${decisions}\n` : "") +
+        `\nSỔ agent.md HIỆN TẠI (nguyên văn):\n<<<\n${book}\n>>>\n\nLưu ý: bạn không đọc được repo. Nếu cần nội dung file nào, hỏi lại tôi tên file trước khi viết; không bịa nội dung file. Không TODO/placeholder.`,
+      spec: `${out}\nDòng JSON bàn giao (một dòng, đúng mẫu): {"role":"${role}","next_owner":"<VAI tiếp theo>","files":["..."],"claim_fixed":[]}\nTiêu chí nghiệm thu: làm đúng việc CEO giao, không đổi ngoài phạm vi, giữ phong cách code hiện có, không lộ secret.`,
+      writer: "Mẫu tự động từ agent.md", note: why,
+    };
+  }
+
+  // CEO yêu cầu: đội trưởng xem ai còn hạn mức; Claude còn thì Claude đọc repo và soạn, không thì dùng mẫu từ agent.md.
+  function webPrompt(id) {
+    const run = get(id);
+    if (run.status !== "waiting_quota" || !run.wait) throw err("NOT_WAITING", "Chỉ soạn master prompt khi luồng đang chờ hạn mức.");
+    if (run.web?.status === "writing") throw err("AI_BUSY", "Đội trưởng đang soạn master prompt.");
+    const list = providers();
+    const quotas = ["codex", "claude", "antigravity"].map((id) => ({ id, name: PROVIDER_NAME[id], ...quotaState(list.find((p) => p.id === id)) }));
+    run.web = { requestedAt: Date.now(), role: run.wait.role, quotas, tried: [], failures: [] };
+    nextWriter(run);
+    save(run);
+    audit.log("ceo", "quota.web_prompt", run.id, { role: run.wait.role, writer: run.web.writer });
+    return run;
+  }
+
+  // Đội trưởng toàn quyền giao việc: chọn AI còn nhiều hạn mức nhất (trừ AI vừa hết, trừ AI đã thử hỏng);
+  // không còn ai thì văn phòng soạn mẫu từ agent.md.
+  function nextWriter(run) {
+    const w = run.web;
+    const left = w.quotas.filter((q) => q.id !== run.wait.provider && q.state !== "hết" && !w.tried.includes(q.id))
+      .sort((a, b) => (b.state === "còn" ? b.remaining : -1) - (a.state === "còn" ? a.remaining : -1) || WRITER_ORDER.indexOf(a.id) - WRITER_ORDER.indexOf(b.id));
+    for (const q of left) {
+      w.tried.push(q.id);
+      try {
+        const decisions = (run.decisions || []).map((d) => "- " + d.text).join("\n");
+        const job = runner.webPrompt({ workspace: run.workspace, role: run.wait.role, task: run.task, decisions, provider: run.wait.providerName, writer: q.id });
+        Object.assign(w, { status: "writing", writer: WRITER_NAME[q.id], writerId: q.id, jobId: job.id });
+        return;
+      } catch (e) { w.failures.push(WRITER_NAME[q.id] + ": " + maskSecrets(e.message)); }
+    }
+    const why = w.failures.length ? "Không AI nào soạn được (" + w.failures.join("; ") + ")" : "Không còn AI nào có hạn mức";
+    Object.assign(w, { status: "ready", jobId: null, ...templatePrompt(run, why + " nên văn phòng soạn mẫu từ agent.md (không kèm mã nguồn).") });
+  }
+
+  // Tìm đoạn có hai mốc ===MASTER_PROMPT=== / ===CHUAN_DAU_RA=== trong log (văn bản thường hoặc chuỗi trong dòng JSON).
+  function markedText(log) {
+    const direct = responseText(log);
+    if (SECTION.test(direct)) return direct;
+    const walk = (v) => typeof v === "string" ? (v.includes("===MASTER_PROMPT===") ? v : null) : v && typeof v === "object" ? Object.values(v).reduce((hit, x) => hit || walk(x), null) : null;
+    for (const line of String(log).split(/\r?\n/).reverse()) { try { const hit = walk(JSON.parse(line)); if (hit) return hit; } catch {} }
+    return direct;
+  }
+
+  function finishWeb(run) {
+    const job = jobs.get(run.web.jobId);
+    if (!job || job.status === "running") return;
+    const raw = logOf(job.id), text = markedText(raw);
+    const m = job.status === "done" ? SECTION.exec(text) : null;
+    if (m && m[1].trim() && m[2].trim()) Object.assign(run.web, { status: "ready", prompt: maskSecrets(m[1].trim()), spec: maskSecrets(m[2].trim()), note: run.web.failures.length ? "Đã thử trước: " + run.web.failures.join("; ") : "" });
+    else {
+      // AI này hỏng hoặc vừa hết hạn mức: giao cho AI kế tiếp còn hạn mức
+      run.web.failures.push(run.web.writer + ": " + (QUOTA_HIT.test(raw.slice(-8000)) ? "vừa báo hết hạn mức" : job.status !== "done" ? "kết thúc với trạng thái " + job.status : "không trả đúng định dạng"));
+      nextWriter(run);
+      save(run);
+      return;
+    }
+    if (looksLikeKey(run.web.prompt + "\n" + run.web.spec)) run.web.warning = "Có chuỗi giống khóa API trong prompt: kiểm tra và xoá trước khi dán vào ChatGPT.";
+    save(run);
+  }
 
   function launch(run) {
     if (closing || run.status !== "running") return;
@@ -89,6 +236,11 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500 }) {
     try {
       for (const run of runs.values()) {
         if (run.status === "stopped") { rejectPending(run); continue; }
+        if (run.status === "waiting_quota") {
+          if (run.web?.status === "writing") finishWeb(run);
+          if (Date.now() >= run.wait.until) resume(run, "autopilot");
+          continue;
+        }
         if (!["running", "reporting"].includes(run.status)) continue;
         try {
           const job = jobs.get(run.jobId);
@@ -104,6 +256,9 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500 }) {
             save(run); continue;
           }
           const handoff = runner.get(job.id);
+          // Lượt không có bàn giao hợp lệ vì AI hết hạn mức: chờ hạn mức rồi chạy lại đúng lượt đó.
+          const quotaText = !handoff || handoff.problems.length ? (QUOTA_HIT.test((jobs.rawLog(job.id) || "").slice(-8000)) ? (jobs.rawLog(job.id) || "").slice(-8000) : null) : null;
+          if (quotaText) { if (handoff && !handoff.decided) runner.reject(job.id, "ceo-autopilot"); waitQuota(run, quotaText); continue; }
           if (!handoff) { report(run, "Công việc " + job.id + " kết thúc mà không có bàn giao."); continue; }
           if (handoff.problems.length) { report(run, handoff.problems.join("; ")); continue; }
           if (handoff.decided === "rejected") { run.status = "stopped"; run.problem = "Bàn giao đã bị từ chối."; save(run); continue; }
@@ -121,7 +276,7 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500 }) {
             audit.log("autopilot", "report.ready", run.id, { job: job.id }); continue;
           }
           // Claude trả việc về Codex sau khi Codex đã làm trong luồng = một lần sửa lại.
-          if (handoff.role === "CLAUDE_AUDITOR" && run.steps.slice(run.stepBase || 0, -1).some((s) => s.role === "CODEX_ASTRA_DEV") && ++run.rework > MAX_REWORK) {
+          if (handoff.role === "CLAUDE_AUDITOR" && run.steps.slice(run.stepBase || 0, -1).some((s) => s.role === "CODEX_ASTRA_DEV" && !s.quota) && ++run.rework > MAX_REWORK) {
             report(run, `Codex đã sửa ${MAX_REWORK} lần mà Claude vẫn trả về: CEO quyết hướng xử lý.`); continue;
           }
           if (Date.now() > run.deadline || stepsSinceCeo(run) >= run.maxSteps) { report(run, "Đã chạm giới hạn thời gian hoặc số lượt. Bàn giao còn chờ xử lý."); continue; }
@@ -148,7 +303,7 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500 }) {
 
   async function stop(id) {
     const run = get(id);
-    if (!["running", "reporting", "awaiting_answer"].includes(run.status)) throw err("NOT_RUNNING", "Luồng không còn chạy.");
+    if (!["running", "reporting", "awaiting_answer", "waiting_quota"].includes(run.status)) throw err("NOT_RUNNING", "Luồng không còn chạy.");
     run.status = "stopped"; run.problem = "CEO đã dừng luồng."; save(run);
     audit.log("ceo", "autopilot.stop", run.id);
     const job = jobs.get(run.jobId); if (job?.status === "running") await jobs.kill(job.id, "ceo");
@@ -181,7 +336,14 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500 }) {
   function cancelAll() { for (const r of runs.values()) if (["running", "reporting"].includes(r.status)) cancelJob(r.jobId); }
   const timer = setInterval(tick, intervalMs); timer.unref();
   function close() { closing = true; clearInterval(timer); for (const r of runs.values()) if (["running", "reporting"].includes(r.status)) { r.status = "attention"; r.problem = "Controller đã tắt khi luồng chưa hoàn thành."; save(r); } }
-  return { start, stop, answer, decide, list, get, busy, cancelJob, cancelAll, close, tick };
+  // CEO bấm "Chạy lại ngay" khi đang chờ hạn mức (ví dụ đã đổi gói hoặc hạn mức mở sớm).
+  function resumeNow(id) {
+    const run = get(id);
+    if (run.status !== "waiting_quota") throw err("NOT_WAITING", "Luồng này không chờ hạn mức.");
+    resume(run, "ceo");
+    return run;
+  }
+  return { start, stop, answer, decide, resumeNow, webPrompt, list, get, busy, cancelJob, cancelAll, close, tick };
 }
 
 module.exports = { createAutopilot, responseText };

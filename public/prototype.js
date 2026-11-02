@@ -83,7 +83,23 @@
   const dateTime = (v) => v && Number.isFinite(Date.parse(v)) ? new Date(v).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }) : "Chưa rõ";
   const expired = (b) => b.resetAt && Date.parse(b.resetAt) <= Date.now();
   const quotaStale = (p) => !!quotaError || p.status === "stale" || (p.lastSuccessAt && Date.now() - Date.parse(p.lastSuccessAt) > 3 * (quotaData?.intervalMs || 120000));
+  // CEO dặn: Claude còn ≤ 8% hạn mức thì báo ngay để CEO dừng các việc Claude đang chạy, dành hạn mức cho điều phối.
+  const CLAUDE_LOW = 8;
+  function renderClaudeLow() {
+    const p = (quotaData?.providers || []).find((x) => x.id === "claude");
+    const live = p && p.status === "ready" && !quotaStale(p) ? p.buckets.filter((b) => !expired(b)) : [];
+    const low = live.length ? live.reduce((a, b) => (b.remainingPercent < a.remainingPercent ? b : a)) : null;
+    const box = $("claudeLow");
+    if (!low || low.remainingPercent > CLAUDE_LOW) { box.hidden = true; return; }
+    const running = jobs.filter((j) => j.status === "running" && String(j.agent).startsWith("CLAUDE"));
+    box.hidden = false;
+    setMarkup("claudeLow", `<strong>⚠️ Claude (đội trưởng) chỉ còn ${pct(low.remainingPercent)} hạn mức (${esc(low.label)}${low.resetAt ? ", mở lại " + esc(dateTime(low.resetAt)) : low.resetLabel ? ", mở lại " + esc(low.resetLabel) : ""}).</strong>` +
+      `<p>Anh nên dừng các việc Claude đang chạy để dành phần còn lại cho điều phối. Văn phòng không tự dừng; anh quyết.</p>` +
+      (running.length ? running.map((j) => `<div class="entry"><div class="entry-head"><span class="mono">${esc(j.agent)} · ${esc(j.id)}</span><button data-kill-claude="${esc(j.id)}">Dừng việc này</button></div></div>`).join("") : '<p class="muted">Hiện không có việc nào của Claude đang chạy.</p>'));
+  }
+
   function renderQuotas() {
+    renderClaudeLow();
     const providers = quotaData?.providers || [];
     const alerts = [];
     for (const p of providers) if (p.status === "ready" && !quotaStale(p)) for (const b of p.buckets) if (!expired(b) && b.usedPercent >= 80) alerts.push({ provider: p.name, bucket: b.label, used: b.usedPercent });
@@ -168,12 +184,33 @@
       `<div class="actions"><button class="primary" ${attr}="${esc(id)}" data-opt="${esc(o.id)}">${esc(o.id)}</button><span>${esc(o.label)}${o.next_owner ? ` <span class="mono muted">→ ${esc(o.next_owner)}</span>` : ""}${o.task ? `<br><span class="muted">Lệnh: ${esc(o.task)}</span>` : ""}</span></div>`).join("") + "</div>";
   }
 
+  // Luồng chờ hạn mức: giờ tự chạy lại + master prompt đội trưởng soạn để CEO tự làm lượt đó trên ChatGPT web.
+  const hhmm = (t) => { const d = new Date(t); return d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) + (d.toDateString() !== new Date().toDateString() ? " ngày " + d.toLocaleDateString("vi-VN") : ""); };
+  function waitHtml(r) {
+    const w = r.wait, web = r.web;
+    return `<div class="entry warn"><strong>⏳ ${esc(w.providerName)} hết hạn mức ở lượt ${esc(w.role)}</strong>` +
+      `<p>Tự chạy lại đúng lượt này lúc ${esc(hhmm(w.until))} (giờ lấy từ ${esc(w.source)}). Ngữ cảnh nằm trong agent.md và repo nên không mất.</p>` +
+      (w.message ? `<p class="muted mono">${esc(w.message)}</p>` : "") +
+      `<div class="actions"><button class="primary" data-auto-web="${esc(r.id)}" ${web?.status === "writing" ? "disabled" : ""}>${web ? "Soạn lại master prompt" : "Nhờ đội trưởng soạn master prompt cho GPT web"}</button><button data-auto-resume="${esc(r.id)}">Chạy lại ngay</button></div>` +
+      (web ? webHtml(r) : "") + "</div>";
+  }
+  function webHtml(r) {
+    const w = r.web;
+    const q = w.quotas.map((x) => x.name + ": " + (x.state === "còn" ? "còn " + Math.round(x.remaining) + "%" : x.state === "hết" ? "hết, mở lại " + hhmm(x.resetAt) : "chưa rõ")).join(" · ");
+    if (w.status === "writing") return `<p class="muted">Hạn mức hiện tại: ${esc(q)}</p><p>${esc(w.writer)} đang đọc repo và soạn master prompt…</p>`;
+    return `<p class="muted">Hạn mức hiện tại: ${esc(q)}<br>Người soạn: ${esc(w.writer)}${w.note ? ". " + esc(w.note) : ""}</p>` +
+      (w.warning ? `<p class="error">${esc(w.warning)}</p>` : "") +
+      `<p class="muted">Dán master prompt vào ChatGPT web (tài khoản của anh/CLB). Prompt có mô tả dự án${w.writer.startsWith("Claude") ? " và đoạn mã nguồn liên quan" : ""}.</p>` +
+      `<div class="web-copy"><div class="entry-head"><strong>Master prompt</strong><button data-copy="prompt" data-run="${esc(r.id)}">Sao chép</button></div><textarea readonly rows="8" aria-label="Master prompt">${esc(w.prompt)}</textarea></div>` +
+      `<div class="web-copy"><div class="entry-head"><strong>Chuẩn kết quả đầu ra</strong><button data-copy="spec" data-run="${esc(r.id)}">Sao chép</button></div><textarea readonly rows="6" aria-label="Chuẩn kết quả đầu ra">${esc(w.spec)}</textarea></div>`;
+  }
+
   function renderBoard() {
     const currentRuns = autoRuns.filter((r) => r.workspace === active);
-    const busy = currentRuns.some((r) => ["running", "reporting", "awaiting_approval", "awaiting_answer", "attention"].includes(r.status));
+    const busy = currentRuns.some((r) => ["running", "reporting", "awaiting_approval", "awaiting_answer", "attention", "waiting_quota"].includes(r.status));
     $("autoStart").disabled = !controller || !active || !turn || busy;
-    const statuses = { running: "Đội đang làm việc", reporting: "Claude đang tổng hợp", awaiting_approval: "Chờ bạn duyệt báo cáo", awaiting_answer: "Claude hỏi anh: chọn phương án", approved: "Bạn đã duyệt", acknowledged: "Bạn đã nhận báo cáo lỗi", rejected: "Đã từ chối", attention: "Claude chưa gửi được báo cáo", stopped: "Đã dừng" };
-    setMarkup("autoRuns", !controller ? '<p class="muted">Chưa kết nối được OS Controller.</p>' : currentRuns.length ? currentRuns.slice(0, 8).map((r) => `<article class="entry"><div class="entry-head"><strong>${esc(r.task)}</strong>${badge(statuses[r.status] || r.status, ["awaiting_approval", "awaiting_answer", "attention"].includes(r.status) ? "warn" : r.status === "approved" ? "good" : "")}</div><p>${esc(r.steps.length)}/${esc(r.maxSteps)} lượt · ${esc(r.steps.map((s) => s.role).join(" → ") || "Đang chuẩn bị")}</p>${(r.decisions || []).map((d) => `<p class="muted">✔ Anh đã chọn ${esc(d.option)}: ${esc(d.label)} → ${esc(d.next)}</p>`).join("")}${r.status === "awaiting_answer" && r.question ? askHtml(r.question, "data-auto-answer", r.id) : ""}${r.problem ? `<p class="error">${esc(r.problem)}</p>` : ""}${r.report ? `<pre>${esc(r.report)}</pre>` : ""}<div class="actions">${["running", "reporting", "awaiting_answer"].includes(r.status) ? `<button data-auto-stop="${esc(r.id)}">Dừng luồng này</button>` : ""}${["awaiting_approval", "attention"].includes(r.status) ? `<button class="primary" data-auto-approve="${esc(r.id)}">${r.status === "attention" ? "Đã xem lỗi" : r.problem ? "Đã nhận báo cáo" : "Duyệt báo cáo Claude"}</button><button data-auto-reject="${esc(r.id)}">Từ chối</button>` : ""}</div></article>`).join("") : '<p class="muted">Chưa có việc tự động nào cho dự án này. Giao một việc ở trên để bắt đầu.</p>');
+    const statuses = { running: "Đội đang làm việc", reporting: "Claude đang tổng hợp", awaiting_approval: "Chờ bạn duyệt báo cáo", awaiting_answer: "Claude hỏi anh: chọn phương án", waiting_quota: "Chờ hạn mức", approved: "Bạn đã duyệt", acknowledged: "Bạn đã nhận báo cáo lỗi", rejected: "Đã từ chối", attention: "Claude chưa gửi được báo cáo", stopped: "Đã dừng" };
+    setMarkup("autoRuns", !controller ? '<p class="muted">Chưa kết nối được OS Controller.</p>' : currentRuns.length ? currentRuns.slice(0, 8).map((r) => `<article class="entry"><div class="entry-head"><strong>${esc(r.task)}</strong>${badge(statuses[r.status] || r.status, ["awaiting_approval", "awaiting_answer", "attention", "waiting_quota"].includes(r.status) ? "warn" : r.status === "approved" ? "good" : "")}</div><p>${esc(r.steps.filter((s) => !s.quota).length)}/${esc(r.maxSteps)} lượt · ${esc(r.steps.map((s) => s.role + (s.quota ? " (hết hạn mức)" : "")).join(" → ") || "Đang chuẩn bị")}</p>${(r.decisions || []).map((d) => `<p class="muted">✔ Anh đã chọn ${esc(d.option)}: ${esc(d.label)} → ${esc(d.next)}</p>`).join("")}${r.status === "awaiting_answer" && r.question ? askHtml(r.question, "data-auto-answer", r.id) : ""}${r.status === "waiting_quota" && r.wait ? waitHtml(r) : ""}${r.problem ? `<p class="error">${esc(r.problem)}</p>` : ""}${r.report ? `<pre>${esc(r.report)}</pre>` : ""}<div class="actions">${["running", "reporting", "awaiting_answer", "waiting_quota"].includes(r.status) ? `<button data-auto-stop="${esc(r.id)}">Dừng luồng này</button>` : ""}${["awaiting_approval", "attention"].includes(r.status) ? `<button class="primary" data-auto-approve="${esc(r.id)}">${r.status === "attention" ? "Đã xem lỗi" : r.problem ? "Đã nhận báo cáo" : "Duyệt báo cáo Claude"}</button><button data-auto-reject="${esc(r.id)}">Từ chối</button>` : ""}</div></article>`).join("") : '<p class="muted">Chưa có việc tự động nào cho dự án này. Giao một việc ở trên để bắt đầu.</p>');
     const unavailable = !controller ? `<p class="muted">${esc(controlError || "OS Controller chưa kết nối.")}</p>` : !active ? '<p class="muted">Chọn dự án để xem bàn giao.</p>' : null;
     setMarkup("handoffs", unavailable || (ownHandoffs().length ? ownHandoffs().map((h) => `<article class="entry"><strong class="mono">${esc(h.role)} → ${esc(h.next_owner || "Chưa xác định")}</strong><p>File: ${esc((h.payload?.files || []).join(", ") || "Không có file được khai báo")}</p><p class="mono">${esc(h.job_id)}</p>${h.problems.length ? `<p class="error">${h.problems.map(esc).join("; ")}</p>` : ""}${h.payload?.ask_ceo && !h.problems.length ? askHtml(h.payload.ask_ceo, "data-handoff-answer", h.job_id) : ""}<div class="actions">${h.payload?.ask_ceo && !h.problems.length ? "" : `<button class="primary" data-approve="${esc(h.job_id)}" ${h.problems.length ? "disabled" : ""}>Duyệt chuyển lượt</button>`}<button data-job="${esc(h.job_id)}">Xem nhật ký</button></div></article>`).join("") : '<p class="muted">Không có bàn giao chờ duyệt cho dự án này.</p>'));
     setMarkup("blockerList", blockerLines === null ? '<p class="muted">Chưa đọc được chốt chặn từ agent.md.</p>' : blockerLines.length ? blockerLines.map((l) => `<div class="entry error">${esc(l.replace(/^\s*-\s*/, ""))}</div>`).join("") : '<p class="muted">Sổ agent.md không có mục OPEN ở Vùng [5].</p>');
@@ -318,12 +355,37 @@
     catch (err) { $("autoMessage").textContent = err.message; }
     finally { await refresh(); }
   };
+  $("claudeLow").addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-kill-claude]"); if (!b) return;
+    if (!confirm("Dừng việc " + b.dataset.killClaude + " của Claude?")) return;
+    b.disabled = true;
+    try { await request("/ctl/jobs/" + encodeURIComponent(b.dataset.killClaude) + "/kill", {}); }
+    catch (err) { $("autoMessage").textContent = err.message; }
+    finally { await refresh(); }
+  });
   $("autoRuns").addEventListener("click", async (e) => {
     const ans = e.target.closest("[data-auto-answer]");
     if (ans) {
       if (!confirm("Chọn phương án " + ans.dataset.opt + " cho câu hỏi của Claude?\nLuồng tự động chạy tiếp theo phương án này.")) return;
       ans.disabled = true;
       try { const r = await request("/ctl/autopilot/" + encodeURIComponent(ans.dataset.autoAnswer) + "/answer", { option: ans.dataset.opt }); $("autoMessage").textContent = "Đã chọn " + ans.dataset.opt + ": luồng chạy tiếp (" + (r.run.steps.at(-1)?.role || "") + ")."; }
+      catch (err) { $("autoMessage").textContent = err.message; }
+      finally { await refresh(); }
+      return;
+    }
+    const copy = e.target.closest("[data-copy]");
+    if (copy) {
+      const text = autoRuns.find((x) => x.id === copy.dataset.run)?.web?.[copy.dataset.copy] || "";
+      try { await navigator.clipboard.writeText(text); }
+      catch { const ta = copy.closest(".web-copy").querySelector("textarea"); ta.focus(); ta.select(); document.execCommand("copy"); }
+      copy.textContent = "Đã sao chép"; setTimeout(() => { copy.textContent = "Sao chép"; }, 1500);
+      return;
+    }
+    const web = e.target.closest("[data-auto-web],[data-auto-resume]");
+    if (web) {
+      const id = web.dataset.autoWeb || web.dataset.autoResume, action = web.dataset.autoWeb ? "web-prompt" : "resume";
+      web.disabled = true;
+      try { await request("/ctl/autopilot/" + encodeURIComponent(id) + "/" + action, {}); $("autoMessage").textContent = action === "resume" ? "Đã chạy lại lượt đang chờ hạn mức." : "Đội trưởng đang xem ai còn hạn mức và soạn master prompt…"; }
       catch (err) { $("autoMessage").textContent = err.message; }
       finally { await refresh(); }
       return;
