@@ -20,6 +20,8 @@ const { createAutopilot } = require("./autopilot");
 const { createGitHub } = require("./github");
 const { createQuotas } = require("./quotas");
 const { classify } = require("./policy");
+const { readTurn } = require("./handoff");
+const { maskSecrets } = require("../lib/mask");
 
 const VERSION = "1.0.0";
 const LOOPBACK = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i;
@@ -78,6 +80,44 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
   const snap = () => monitor.snapshot(jobs.list("running"));
   const wsOf = (v) => { const w = v || ws.current(); if (!w) throw Object.assign(new Error("Chưa đăng ký workspace nào"), { code: "WORKSPACE_DENIED" }); return w; };
 
+  // Truy vấn riêng: không bị giới hạn lịch sử chung của jobs.list().
+  const projectPath = process.platform === "win32" ? "workspace COLLATE NOCASE = ?" : "workspace = ?";
+  const projectCols = "id, agent, kind, status, started_at, ended_at, argv";
+  const projectJobs = {
+    running: db.prepare(`SELECT ${projectCols} FROM jobs WHERE ${projectPath} AND status = 'running' ORDER BY started_at DESC`),
+    recent: db.prepare(`SELECT ${projectCols} FROM jobs WHERE ${projectPath} AND status NOT IN ('running', 'pending_approval') ORDER BY ended_at DESC, id DESC LIMIT 10`),
+    counts: db.prepare(`SELECT status, COUNT(*) AS n FROM jobs WHERE ${projectPath} GROUP BY status`),
+  };
+  const safe = (v) => typeof v === "string" ? maskSecrets(v) : Array.isArray(v) ? v.map(safe) : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).map(([k, x]) => [maskSecrets(k), safe(x)])) : v;
+  const jobSummary = (j) => {
+    const argv = JSON.parse(j.argv);
+    const label = j.kind === "ai" ? j.agent : argv.slice(0, 3).map((s) => maskSecrets(s).replace(/\\/g, "/").split("/").pop()).join(" ");
+    return { id: j.id, agent: j.agent, kind: j.kind, status: j.status, startedAt: j.started_at, endedAt: j.ended_at,
+      durationS: j.started_at === null ? null : Math.max(0, Math.round(((j.ended_at ?? Date.now()) - j.started_at) / 1000)), label: maskSecrets(label).slice(0, 120) };
+  };
+  function projects() {
+    const runs = autopilot.list();
+    ws.current();
+    return ws.list().map((w) => {
+      let turn = null, auditStatus = null, openBlockers = null, handoffPending = null, problem = null;
+      try { turn = readTurn(w.path); } catch (e) { problem = e.message; }
+      try {
+        const txt = fs.readFileSync(path.join(w.path, "agent.md"), "utf8");
+        auditStatus = (/^- AUDIT_STATUS:[ \t]*(.*)$/m.exec(txt) || [])[1]?.trim() || null;
+        const section = (txt.split(/^## \[5\][^\n]*\n/m)[1] || "").split(/^##\s/m)[0];
+        openBlockers = section.split(/\r?\n/).filter((l) => /^\s*-\s*\[ \]\s+OPEN\b/.test(l)).length;
+      } catch (e) { problem ||= e.message; }
+      try { handoffPending = runner.status(w.path).handoffPending; } catch (e) { problem ||= e.message; }
+      const same = (p) => typeof p === "string" && (process.platform === "win32" ? p.toLowerCase() === w.path.toLowerCase() : p === w.path);
+      return safe({ name: w.name, path: w.path, active: w.active, turn, auditStatus, openBlockers, handoffPending, problem,
+        running: projectJobs.running.all(w.path).map(jobSummary), recent: projectJobs.recent.all(w.path).map(jobSummary),
+        counts: Object.fromEntries(projectJobs.counts.all(w.path).map((r) => [r.status, r.n])),
+        runs: runs.filter((r) => same(r.workspace)).map((r) => ({ id: r.id, task: maskSecrets(r.task).slice(0, 200), status: r.status,
+          steps: r.steps.length, roles: r.steps.map((s) => s.role).join(" → "), updatedAt: r.updatedAt })),
+      });
+    });
+  }
+
   const tick = setInterval(() => {
     if (!streams.size) return;
     const line = "data: " + JSON.stringify(snap()) + "\n\n";
@@ -118,6 +158,7 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     }],
 
     ["GET", "/workspaces", () => ({ workspaces: ws.list(), active: ws.current() })],
+    ["GET", "/projects", () => ({ projects: projects() })],
     ["GET", "/github/repos", (p, qs) => github.list(qs.get("page") || 1)],
     ["POST", "/github/open", (p, qs, b) => [202, { operation: github.open(b.fullName) }]],
     ["GET", "/github/operations/:id", (p) => ({ operation: github.get(p.id) })],

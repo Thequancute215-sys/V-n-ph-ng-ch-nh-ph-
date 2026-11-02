@@ -18,6 +18,7 @@
   let docText = null, docError = "", signatures = {}, lastRefresh = null, logSequence = 0;
   let githubRepos = [], githubPage = 0, githubHasMore = false, githubLoading = false, githubOpening = false;
   let quotaData = null, quotaError = "";
+  let projects = null, projectsError = "";
   const setMarkup = (id, html) => { if (signatures[id] !== html) { $(id).innerHTML = html; signatures[id] = html; } };
   const badge = (text, kind = "") => `<span class="badge ${kind}">${esc(text)}</span>`;
   const avatar = (r) => `<div class="avatar-wrap" aria-hidden="true"><div class="chibi" style="--accent:${r.color}"><span>${r.symbol}</span></div></div>`;
@@ -122,7 +123,7 @@
   }
 
   function setView(name) {
-    if (!["office", "meeting", "board", "transcript", "account"].includes(name)) name = "office";
+    if (!["office", "projects", "meeting", "board", "transcript", "account"].includes(name)) name = "office";
     view = name;
     document.querySelectorAll(".view").forEach((el) => { el.hidden = el.id !== "view-" + name; });
     document.querySelectorAll("[data-view]").forEach((el) => { if (el.dataset.view === name) el.setAttribute("aria-current", "page"); else el.removeAttribute("aria-current"); });
@@ -306,17 +307,36 @@
       <details><summary>${o.totalEntries} mục ở gốc repo</summary><ul>${o.entries.map((e) => `<li class="mono">${esc(e)}</li>`).join("")}${o.totalEntries > o.entries.length ? `<li>… và ${o.totalEntries - o.entries.length} mục khác</li>` : ""}</ul></details>`);
   }
 
+  function renderProjects() {
+    const live = new Set(["running", "reporting", "awaiting_approval", "awaiting_answer", "attention", "waiting_quota"]);
+    const name = (s) => ({ done: "Xong", failed: "Lỗi", killed: "Đã dừng", rejected: "Từ chối" })[s] || s;
+    const when = (t) => t == null ? "Chưa có thời gian" : new Date(t).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+    const job = (j) => `<div class="entry"><div class="entry-head"><strong>${esc(j.label)}</strong>${badge(name(j.status))}</div><p>${esc(j.endedAt == null ? "Bắt đầu: " + when(j.startedAt) : "Kết thúc: " + when(j.endedAt))} · ${esc(j.durationS == null ? "Chưa rõ thời lượng" : j.durationS + " giây")}</p></div>`;
+    const run = (r) => `<div class="entry"><div class="entry-head"><strong>Luồng tự động: ${esc(r.task)}</strong>${badge(name(r.status))}</div><p>${esc(r.steps)} lượt · ${esc(r.roles || "Chưa có lượt")}</p><p>Cập nhật: ${esc(when(r.updatedAt))}</p></div>`;
+    setMarkup("projects", projectsError ? `<p class="error" role="alert">${esc(projectsError)}</p>` : projects === null ? '<p class="muted">Đang đọc dự án…</p>' : !projects.length ? '<p class="muted">Chưa đăng ký dự án nào.</p>' : projects.map((p) => {
+      const running = p.running.map(job).join("") + p.runs.filter((r) => live.has(r.status)).map(run).join("");
+      const recent = p.recent.map(job).join("") + p.runs.filter((r) => !live.has(r.status)).map(run).join("");
+      return `<article class="panel project"><div class="entry-head"><h2>${esc(p.name)}</h2>${p.active ? badge("Đang chọn", "good") : ""}</div><p class="mono">${esc(p.path)}</p>
+        <p>Phase: ${esc(p.turn?.phase || "Chưa đọc được")}<br>Đang giữ lượt: ${esc(p.turn?.nextOwner || "Chưa đọc được")}<br>Kiểm duyệt: ${esc(p.auditStatus || "Chưa rõ")} · ${esc(p.openBlockers ?? "Chưa rõ")} blocker OPEN</p>
+        ${p.handoffPending ? `<p>Bàn giao chờ duyệt: ${esc(p.handoffPending)}</p>` : ""}${p.problem ? `<p class="error">${esc(p.problem)}</p>` : ""}
+        <h3>Đang chạy</h3>${running || '<p class="muted">Không có việc nào đang chạy</p>'}
+        <h3>Đã xong gần đây</h3>${recent || '<p class="muted">Chưa có việc nào đã kết thúc.</p>'}
+        ${p.active ? "" : `<button data-project="${esc(p.path)}" ${switching ? "disabled" : ""}>Chọn dự án này</button>`}</article>`;
+    }).join(""));
+  }
+
   async function refresh() {
     if (loading || switching) return;
     loading = true; $("refresh").disabled = true;
     await Promise.all([
+      request("/ctl/projects").then((value) => { projects = value.projects; projectsError = ""; }).catch((e) => { projects = null; projectsError = "Không đọc được dự án: " + e.message; }),
       request("/state").then((value) => { snapshot = value; stateError = ""; }).catch((e) => { snapshot = null; stateError = "Không đọc được văn phòng: " + e.message; }),
       loadControl().catch((e) => { controller = false; turn = null; blockerLines = null; jobs = []; handoffs = []; autoRuns = []; docText = null; docError = "Không đọc được biên bản khi Controller mất kết nối."; controlError = "Không đọc được điều phối: " + e.message; }),
       request("/api/accounts").then((value) => { accounts = value.accounts; accountError = ""; }).catch((e) => { accounts = null; accountError = "Không đọc được tài khoản: " + e.message; }),
       request("/ctl/quotas").then((value) => { quotaData = value; quotaError = ""; }).catch((e) => { quotaError = "Chưa tải được hạn mức: " + e.message; }),
     ]);
     loading = false; $("refresh").disabled = false; lastRefresh = new Date();
-    renderProtocol(); renderOffice(); renderBoard(); renderQuotas(); renderAccounts();
+    renderProtocol(); renderOffice(); renderBoard(); renderQuotas(); renderAccounts(); renderProjects();
     loadRepo();
     if (view === "transcript" && $("logJob").value) readLog();
   }
@@ -399,14 +419,16 @@
     finally { await refresh(); b.disabled = false; }
   });
   $("handoffButton").onclick = () => { setView("board"); $("boardTitle").tabIndex = -1; $("boardTitle").focus(); };
-  $("workspace").onchange = async () => {
-    const path = $("workspace").value, old = active;
+  $("projects").onclick = (e) => { const b = e.target.closest("[data-project]"); if (b) switchProject(b.dataset.project); };
+  $("workspace").onchange = () => switchProject($("workspace").value);
+  async function switchProject(path) {
+    const old = active;
     if (switching) return;
     switching = true; $("workspace").disabled = true;
     try { const r = await request("/ctl/workspaces/switch", { path }); active = path; repoFor = ""; if (r.agentMd?.created) createdFor = path; turn = null; blockerLines = null; docText = null; $("logJob").value = ""; $("jobLog").textContent = "Chọn công việc để đọc nhật ký."; }
-    catch (e) { active = old; controlError = e.message; renderProtocol(); }
+    catch (e) { active = old; controlError = e.message; renderProtocol(); alert("Không chọn được dự án: " + e.message); }
     finally { switching = false; $("workspace").disabled = false; await refresh(); }
-  };
+  }
   document.addEventListener("click", async (e) => {
     const handAns = e.target.closest("[data-handoff-answer]");
     if (handAns) {
