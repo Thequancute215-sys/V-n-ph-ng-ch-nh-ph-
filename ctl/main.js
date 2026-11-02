@@ -28,7 +28,7 @@ const HTTP_CODE = {
   WORKSPACE_DENIED: 403, PATH_ESCAPE: 403, PATH_DENIED: 403, TOO_BROAD: 403, TOO_SENSITIVE: 403, COMMAND_DENIED: 403,
   NOT_FOUND: 404, TOO_LARGE: 413,
   GITHUB_AUTH: 401, GITHUB_LIMIT: 429, GITHUB_OFFLINE: 502, GITHUB_CLONE: 502,
-  CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409, HANDOFF_PENDING: 409, NEEDS_ANSWER: 409, NO_QUESTION: 422, BAD_OPTION: 400,
+  CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_WAITING: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409, HANDOFF_PENDING: 409, NEEDS_ANSWER: 409, NO_QUESTION: 422, BAD_OPTION: 400,
 };
 
 function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {}, quotaOptions = {} } = {}) {
@@ -40,7 +40,7 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
   try { ws.switchTo(JSON.parse(fs.readFileSync(activeFile, "utf8")).path, "ctl-restore"); } catch (e) { if (e.code !== "ENOENT") audit.log("ctl", "workspace.restore_skipped", null, e.message); }
   const files = createFiles(ws, audit);
   const runner = createRunner({ jobs, ws, audit, db, dir });
-  const autopilot = createAutopilot({ runner, jobs, ws, audit, dir });
+  const autopilot = createAutopilot({ runner, jobs, ws, audit, dir, quotaSnapshot: () => quotas.snapshot() });
   const selectWorkspace = (p) => {
     const w = ws.switchTo(p, "ceo");
     fs.writeFileSync(activeFile + ".tmp", JSON.stringify({ path: w.path }), { mode: 0o600 }); fs.renameSync(activeFile + ".tmp", activeFile);
@@ -153,6 +153,8 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     ["POST", "/autopilot", (p, qs, b) => [201, { run: autopilot.start({ workspace: wsOf(b.workspace), task: b.task, maxSteps: b.maxSteps, timeoutMs: b.timeoutMs }) }]],
     ["POST", "/autopilot/:id/stop", async (p) => ({ run: await autopilot.stop(p.id) })],
     ["POST", "/autopilot/:id/answer", (p, qs, b) => ({ run: autopilot.answer(p.id, b.option) })],
+    ["POST", "/autopilot/:id/resume", (p) => ({ run: autopilot.resumeNow(p.id) })],
+    ["POST", "/autopilot/:id/web-prompt", (p) => [202, { run: autopilot.webPrompt(p.id) }]],
     ["POST", "/autopilot/:id/approve", (p) => ({ run: autopilot.decide(p.id, true) })],
     ["POST", "/autopilot/:id/reject", (p) => ({ run: autopilot.decide(p.id, false) })],
     ["GET", "/handoffs", () => ({ handoffs: runner.pending() })],
