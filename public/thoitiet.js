@@ -2,7 +2,7 @@
 // Không cần khóa API; trình duyệt chỉ gửi toạ độ thành phố tới api.open-meteo.com, không gửi dữ liệu dự án.
 
 export const HANOI = { name: "Hà Nội", lat: 21.0285, lon: 105.8542 };
-const REFRESH_MS = 15 * 60 * 1000, CLOCK_MS = 30 * 1000, TIMEOUT_MS = 10000;
+const REFRESH_MS = 15 * 60 * 1000, RETRY_MS = 2 * 60 * 1000, CLOCK_MS = 30 * 1000, TIMEOUT_MS = 10000;
 
 export function vietnamHour(date = new Date()) {
   return ((date.getUTCHours() + 7) % 24) + date.getUTCMinutes() / 60 + date.getUTCSeconds() / 3600;
@@ -65,13 +65,13 @@ export async function fetchWeather({ lat, lon } = HANOI, fetchFn = (u, o) => fet
  * manualHour/manualWeather = true thì không ghi đè giờ/thời tiết người dùng tự chọn.
  */
 export function connectLive(office, { place = HANOI, onUpdate = () => {}, fetchFn } = {}) {
-  let weather = null, stopped = false, t1 = 0, t2 = 0;
+  let weather = null, stopped = false, t1 = 0, t2 = 0, retry = 0;
   const live = {
     manualHour: false,
     manualWeather: false,
     refresh: () => pull(),
     get weather() { return weather; },
-    stop() { stopped = true; clearInterval(t1); clearInterval(t2); },
+    stop() { stopped = true; clearInterval(t1); clearInterval(t2); clearTimeout(retry); },
   };
   const tick = () => {
     if (stopped) return;
@@ -85,6 +85,9 @@ export function connectLive(office, { place = HANOI, onUpdate = () => {}, fetchF
       if (!live.manualWeather && !stopped) office.setWeather(weather.scene);
     } catch (err) {
       weather = weather && !weather.error ? { ...weather, stale: true } : { error: err.message };
+      // Open-Meteo quá tải hoặc mất mạng: thử lại sau 2 phút thay vì chờ tới lần 15 phút sau
+      clearTimeout(retry);
+      if (!stopped) retry = setTimeout(pull, RETRY_MS);
     }
     tick();
   };
