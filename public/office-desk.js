@@ -2,11 +2,11 @@ import "./progress-view.js";
 
 const { esc, statuses } = globalThis.RepoProgress;
 const $ = (id) => document.getElementById(id);
-const live = new Set(["running", "reporting", "awaiting_answer", "awaiting_approval", "attention", "waiting_quota"]);
+const live = new Set(["running", "reporting", "awaiting_answer", "awaiting_approval", "attention", "waiting_quota", "awaiting_scan"]);
 const roomOf = (role = "") => role === "SPEC_ARCHITECT" || role.startsWith("AGY_") ? "hinata" : role.startsWith("SOL_") ? "itachi" : role.startsWith("CODEX_") ? "sasuke" : role.startsWith("CLAUDE_") ? "sakura" : null;
 const time = (v) => v && Number.isFinite(new Date(v).getTime()) ? new Date(v).toLocaleString("vi-VN") : "Chưa có giờ xác nhận";
 const first = (text) => String(text || "").split(/\r?\n/)[0];
-const pendingRun = (r) => ["awaiting_answer", "awaiting_approval", "attention", "waiting_quota"].includes(r.status) || (["approved", "acknowledged"].includes(r.status) && r.git && !r.git.pushed);
+const pendingRun = (r) => ["awaiting_answer", "awaiting_approval", "attention", "waiting_quota", "awaiting_scan"].includes(r.status) || (["approved", "acknowledged"].includes(r.status) && r.git && !r.git.pushed);
 const safeCompare = (value) => { try { const u = new URL(value); return u.protocol === "https:" && u.hostname === "github.com" && !u.username && !u.password ? u.href : null; } catch { return null; } };
 
 async function request(path, body, timeout = 15000) {
@@ -38,7 +38,7 @@ export function createDesk(getOffice) {
     <div class="desk-actions"><button type="button" id="deskRefresh">Làm mới</button><button type="button" data-desk="approvals">Việc chờ anh duyệt</button></div></div>`;
   document.body.append(dialog);
   let active = null, workspaces = [], view = "progress", inFlight = null, mutating = false, firstLoad = true;
-  let runs = [], jobs = [], handoffs = [], ideas = [], quotas = null, overview = null, turn = null;
+  let runs = [], jobs = [], handoffs = [], ideas = [], quotas = null, overview = null, turn = null, scan = null;
   let errors = {}, dataReady = false, liveNpc = new Set(), github = [], githubPage = 0, githubMore = false, githubLoading = false, githubLoaded = false, githubError = "", compareUrl = null;
   const own = (items) => items.filter((x) => active && x.workspace === active);
   const ownRuns = () => own(runs);
@@ -89,10 +89,12 @@ export function createDesk(getOffice) {
   }
   function renderApprovals() {
     const waiting = ownRuns().filter(pendingRun), manual = ownHandoffs();
-    let html = waiting.map((r) => {
+    let html = errors.scan ? `<p class="error">${esc(errors.scan)}</p>` : globalThis.RepoProgress.scanHtml(scan, active, "data-scan");
+    html += waiting.map((r) => {
       let body = r.problem ? `<p class="error">${esc(r.problem)}</p>` : "";
       if (r.status === "awaiting_answer") body += (r.report ? `<details open><summary>Phân tích của Claude</summary><pre class="desk-report" tabindex="0">${esc(r.report)}</pre></details>` : "") + question(r.question, "autopilot", r.id);
-      body += globalThis.RepoProgress.explainHtml(r);
+      body += globalThis.RepoProgress.explainHtml(r) + globalThis.RepoProgress.deleteHtml(r);
+      if (r.status === "awaiting_scan") body += '<p class="error">Luồng tạm dừng vì file .md / thư viện có điểm bất thường mới: duyệt ở mục rà soát phía trên để chạy tiếp.</p>';
       if (r.status === "awaiting_approval") body += `<pre class="desk-report" tabindex="0">${esc(r.report || "Chưa có nội dung báo cáo.")}</pre><div class="desk-actions">${action("autopilot", r.id, "approve", "Duyệt báo cáo")}${action("autopilot", r.id, "reject", "Từ chối")}</div>`;
       if (r.status === "attention") body += action("autopilot", r.id, "approve", "Đã xem lỗi");
       if (r.status === "waiting_quota") body += `<p>${esc(r.wait?.providerName || r.wait?.role || "AI")} hết hạn mức. Tự chạy lại: ${esc(time(r.wait?.until))}</p><div class="desk-actions">${action("autopilot", r.id, "resume", "Chạy lại ngay")}<a href="prototype.html#board">Dán kết quả GPT web</a></div>`;
@@ -103,7 +105,7 @@ export function createDesk(getOffice) {
     if (compareUrl) html += `<p><a href="${esc(compareUrl)}" target="_blank" rel="noopener noreferrer">Mở trang tạo PR trên GitHub</a></p>`;
     $("deskApprovals").innerHTML = errors.workspace || !active || !dataReady ? messageHtml("runs", "") :
       (errors.runs ? messageHtml("runs", "") : "") + (errors.handoffs ? messageHtml("handoffs", "") : "") + (html || (!errors.runs && !errors.handoffs ? messageHtml("runs", "Không có việc chờ anh duyệt.") : ""));
-    const count = waiting.length + manual.length, unknown = !!(errors.workspace || errors.runs || errors.handoffs);
+    const count = waiting.length + manual.length + (scan && !scan.approved ? 1 : 0), unknown = !!(errors.workspace || errors.runs || errors.handoffs);
     $("ceoWaitPill").hidden = !count && !unknown;
     $("ceoWaitTxt").textContent = unknown ? "Chưa đọc được việc chờ" : count + " việc chờ anh";
     document.title = (count ? `(${count}) ` : "") + "Văn phòng AI";
@@ -174,6 +176,7 @@ export function createDesk(getOffice) {
           ["jobs", "/jobs?status=running", (d) => { jobs = d.jobs || []; }],
           ["handoffs", "/handoffs", (d) => { handoffs = d.handoffs || []; }],
           ["quotas", "/quotas", (d) => { quotas = d; }],
+          ...(active ? [["scan", "/scan?workspace=" + encodeURIComponent(active), (d) => { scan = d.scan || null; }]] : []),
           ...(active ? [["turn", "/ai/status?workspace=" + encodeURIComponent(active), (d) => { turn = d; }],
             ["ideas", "/ideas?workspace=" + encodeURIComponent(active), (d) => { ideas = d.ideas || []; }],
             ...(!overview || (dialog.open && view === "progress") ? [["overview", "/workspaces/overview?workspace=" + encodeURIComponent(active), (d) => { overview = d.overview; }]] : [])] : []),
@@ -237,6 +240,8 @@ export function createDesk(getOffice) {
     if (title && workspace) mutate("Lưu ý tưởng vào " + workspace, async () => { await request("/ideas", { workspace, title, detail }); $("deskIdea").reset(); });
   };
   dialog.addEventListener("click", (e) => {
+    const sb = e.target.closest("[data-scan]");
+    if (sb && !sb.disabled) { mutate("Anh đã đọc các điểm bất thường và đồng ý cho AI chạy toàn quyền trong dự án này", async () => { await request("/scan/approve", { workspace: sb.dataset.scanWorkspace, fingerprint: sb.dataset.scan }, 30000); }); return; }
     const room = e.target.closest("[data-room]"); if (room?.dataset.room) { getOffice()?.goToRoom(room.dataset.room); dialog.close(); return; }
     const repo = e.target.closest("[data-repo]"); if (repo && !mutating) { openGithub(repo.dataset.repo); return; }
     const b = e.target.closest("[data-action]"); if (!b || b.disabled) return;

@@ -2,7 +2,7 @@
 // Dùng chung ba phần tiến độ trên văn phòng 3D và Tổng quan.
 (() => {
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-  const statuses = { running: "Đội đang làm", reporting: "Claude đang tổng hợp", awaiting_answer: "Claude hỏi anh", awaiting_approval: "Chờ anh duyệt báo cáo", attention: "Cần anh xem lỗi", waiting_quota: "Chờ hạn mức", approved: "Đã duyệt", acknowledged: "Đã xem báo cáo", rejected: "Đã từ chối", stopped: "Đã dừng" };
+  const statuses = { running: "Đội đang làm", reporting: "Claude đang tổng hợp", awaiting_answer: "Claude hỏi anh", awaiting_approval: "Chờ anh duyệt báo cáo", attention: "Cần anh xem lỗi", waiting_quota: "Chờ hạn mức", approved: "Đã duyệt", acknowledged: "Đã xem báo cáo", rejected: "Đã từ chối", stopped: "Đã dừng", awaiting_scan: "Tạm dừng: chờ anh duyệt rà soát" };
   const list = (items, empty) => items.length ? `<ul>${items.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>` : `<p class="muted">${esc(empty)}</p>`;
   function html(o, runs = [], handoffs = [], errors = {}) {
     const p = o.progress, r = o.repo;
@@ -34,5 +34,27 @@
         (x.phuong_an_khac && x.phuong_an_khac.length ? `<p><b>Cách khác đã cân nhắc:</b></p><ul>${x.phuong_an_khac.map((a) => `<li>${esc(a.cach)} — <i>không chọn vì</i> ${esc(a.vi_sao_khong)}</li>`).join("")}</ul>` : '<p class="muted">Không nêu cách khác (lý do nằm trong phần "Vì sao").</p>') + "</li>").join("")}</ol>`;
     }).join("") + '<p class="muted">Đây là lời các AI tự khai. Claude đối chiếu với diff thật trong báo cáo (mục "VÌ SAO LÀM VẬY & PHƯƠNG ÁN KHÁC"); anh xem thêm "Xem file đã đổi" của từng lượt.</p></details>';
   }
-  globalThis.RepoProgress = { html, esc, statuses, explainHtml };
+  // Rà soát file .md và thư viện trước khi AI chạy toàn quyền: điểm bất thường chưa duyệt thì CEO xem và bấm duyệt.
+  function scanHtml(scan, workspace, attr = "data-scan-approve") {
+    if (!scan || scan.approved) return "";
+    const items = scan.findings.map((f) => `<li><span class="mono">${esc(f.file)}${f.line ? ":" + esc(f.line) : ""}</span> — <b>${esc(f.name)}</b><br><code>${esc(f.text)}</code></li>`).join("");
+    return `<div class="scan-box"><strong>⚠️ ${esc(scan.total)} điểm bất thường trong file .md / thư viện của dự án — AI chưa được chạy toàn quyền</strong>` +
+      `<p class="muted">Văn phòng rà bằng quy tắc so mẫu (không gọi AI) nên có thể báo nhầm. Anh đọc từng điểm; thấy an toàn thì duyệt, AI chạy toàn quyền bình thường. File đổi thêm điểm mới thì phải duyệt lại.</p>` +
+      `<ol>${items}</ol>${scan.total > scan.findings.length ? `<p class="muted">… và ${esc(scan.total - scan.findings.length)} điểm khác.</p>` : ""}` +
+      `<div class="actions desk-actions"><button class="primary" ${attr}="${esc(scan.fingerprint)}" data-scan-workspace="${esc(workspace)}">Đã xem, cho AI chạy toàn quyền</button></div></div>`;
+  }
+  // Xoá file trong luồng: đề nghị của AI khác, Claude đã xoá (kèm vì sao, đã kiểm gì), AI tự xoá bị khôi phục / không khôi phục được.
+  function deleteHtml(run) {
+    const steps = (run.steps || []).map((s, i) => [s, i + 1]);
+    const rows = [];
+    for (const [s, n] of steps) {
+      for (const d of s.deleted || []) rows.push(`<li>🗑 <b>Claude đã xoá</b> <span class="mono">${esc(d.path)}</span> (lượt ${n})<br><b>Vì sao:</b> ${esc(d.reason)}<br><b>Đã kiểm:</b> ${esc(d.checked)}</li>`);
+      for (const f of s.deleteUnexplained || []) rows.push(`<li class="error">⚠️ Claude xoá <span class="mono">${esc(f)}</span> (lượt ${n}) nhưng không ghi giải thích</li>`);
+      for (const d of s.deleteBlocked || []) rows.push(`<li class="error">⛔ ${esc(s.role)} tự xoá <span class="mono">${esc(d.path)}</span> (lượt ${n}) khi chưa được Claude đồng ý — ${d.restored ? "văn phòng đã khôi phục" : "KHÔNG khôi phục được"}</li>`);
+      for (const f of s.deleteLost || []) rows.push(`<li class="error">⛔ ${esc(s.role)} tự xoá <span class="mono">${esc(f)}</span> (lượt ${n}), file ngoài git — KHÔNG khôi phục được</li>`);
+    }
+    for (const d of run.deleteProposals || []) rows.push(`<li>📝 ${esc(d.by)} đề nghị xoá <span class="mono">${esc(d.path)}</span> — ${esc(d.reason)} · <i>${esc(d.status)}</i></li>`);
+    return rows.length ? `<details class="explain" open><summary>Xoá file / thư mục · ${rows.length} mục</summary><ul>${rows.join("")}</ul></details>` : "";
+  }
+  globalThis.RepoProgress = { html, esc, statuses, explainHtml, scanHtml, deleteHtml };
 })();

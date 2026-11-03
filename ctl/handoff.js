@@ -47,6 +47,25 @@ function checkHandoff(h, role) {
     else if (!EFFORTS.includes(h.effort)) bad.push("effort phải là một trong " + EFFORTS.join(", "));
   }
   if (h.giai_thich !== undefined || EXPLAIN_REQUIRED.includes(role)) bad.push(...checkExplain(h.giai_thich));
+  // Xoá file/thư mục (CEO quyết 03/11/2026): chỉ Claude được xoá và phải giải thích; vai khác chỉ đề nghị.
+  if (h.de_nghi_xoa !== undefined) bad.push(...checkList(h.de_nghi_xoa, "de_nghi_xoa", { duong_dan: 1, ly_do: 10 }));
+  if (h.da_xoa !== undefined) {
+    if (role !== "CLAUDE_AUDITOR") bad.push("chỉ CLAUDE_AUDITOR được xoá (da_xoa); vai khác ghi đề nghị vào de_nghi_xoa");
+    else bad.push(...checkList(h.da_xoa, "da_xoa", { duong_dan: 1, ly_do: 10, da_kiem: 10 }));
+  }
+  return bad;
+}
+
+// Danh sách xoá: mảng tối đa 50 mục, mỗi trường là chuỗi đủ dài (ly_do / da_kiem viết rõ, không viết cho có).
+function checkList(list, name, fields) {
+  if (!Array.isArray(list) || list.length > 50) return [name + " phải là mảng tối đa 50 mục"];
+  const bad = [];
+  list.forEach((x, i) => {
+    for (const [k, min] of Object.entries(fields)) {
+      const v = x && x[k];
+      if (typeof v !== "string" || v.trim().length < min || v.length > 1000 || (min > 1 && filler(v))) bad.push(`${name}[${i + 1}].${k} phải viết rõ (${min}–1000 ký tự)`);
+    }
+  });
   return bad;
 }
 
