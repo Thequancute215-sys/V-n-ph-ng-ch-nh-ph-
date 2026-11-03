@@ -91,7 +91,8 @@ export function createDesk(getOffice) {
     const waiting = ownRuns().filter(pendingRun), manual = ownHandoffs();
     let html = waiting.map((r) => {
       let body = r.problem ? `<p class="error">${esc(r.problem)}</p>` : "";
-      if (r.status === "awaiting_answer") body += question(r.question, "autopilot", r.id);
+      if (r.status === "awaiting_answer") body += (r.report ? `<details open><summary>Phân tích của Claude</summary><pre class="desk-report" tabindex="0">${esc(r.report)}</pre></details>` : "") + question(r.question, "autopilot", r.id);
+      body += globalThis.RepoProgress.explainHtml(r);
       if (r.status === "awaiting_approval") body += `<pre class="desk-report" tabindex="0">${esc(r.report || "Chưa có nội dung báo cáo.")}</pre><div class="desk-actions">${action("autopilot", r.id, "approve", "Duyệt báo cáo")}${action("autopilot", r.id, "reject", "Từ chối")}</div>`;
       if (r.status === "attention") body += action("autopilot", r.id, "approve", "Đã xem lỗi");
       if (r.status === "waiting_quota") body += `<p>${esc(r.wait?.providerName || r.wait?.role || "AI")} hết hạn mức. Tự chạy lại: ${esc(time(r.wait?.until))}</p><div class="desk-actions">${action("autopilot", r.id, "resume", "Chạy lại ngay")}<a href="prototype.html#board">Dán kết quả GPT web</a></div>`;

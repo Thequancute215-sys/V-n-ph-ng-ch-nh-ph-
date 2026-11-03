@@ -46,6 +46,36 @@ function checkHandoff(h, role) {
     if (role !== "CLAUDE_AUDITOR") bad.push("chỉ CLAUDE_AUDITOR được đặt effort cho lượt kế tiếp");
     else if (!EFFORTS.includes(h.effort)) bad.push("effort phải là một trong " + EFFORTS.join(", "));
   }
+  if (h.giai_thich !== undefined || EXPLAIN_REQUIRED.includes(role)) bad.push(...checkExplain(h.giai_thich));
+  return bad;
+}
+
+// CEO yêu cầu (03/11/2026): mỗi lượt của Hinata, Sol, Astra phải giải thích cho CEO duyệt: vấn đề/lỗi gì, đã làm gì,
+// vì sao làm vậy, cách khác đã cân nhắc và vì sao bỏ. Claude (đội trưởng) có báo cáo riêng nên không bắt buộc.
+// Mọi lỗi ở đây bắt đầu bằng "giai_thich" để bộ điều phối nhận ra và trả lại đúng lượt đó bổ sung (không dừng cả luồng).
+const EXPLAIN_REQUIRED = ["SPEC_ARCHITECT", "SOL_ARCHITECT_PLANNER", "SOL_ARCHITECT_ADVISOR", "CODEX_ASTRA_DEV"];
+const EXPLAIN_FIELDS = { van_de: "vấn đề hoặc lỗi", da_lam: "đã làm gì", vi_sao: "vì sao làm vậy" };
+// Chép nguyên mẫu (<...>) hoặc viết cho có ("ok", "như trên") thì không tính là giải thích.
+const filler = (s) => /^\s*<[^>]*>\s*$/.test(s) || /^\s*(ok|xong|như trên|n\/a|không có|đã sửa|đã làm|done|fixed)\.?\s*$/i.test(s);
+function checkExplain(list) {
+  if (!Array.isArray(list) || !list.length) return ["giai_thich bắt buộc: mảng 1–20 mục, mỗi thay đổi một mục {van_de, da_lam, vi_sao, phuong_an_khac}"];
+  if (list.length > 20) return ["giai_thich tối đa 20 mục: gộp các thay đổi nhỏ cùng lý do"];
+  const bad = [];
+  list.forEach((x, i) => {
+    const at = "giai_thich[" + (i + 1) + "]";
+    if (!x || typeof x !== "object" || Array.isArray(x)) { bad.push(at + " phải là object"); return; }
+    for (const [k, name] of Object.entries(EXPLAIN_FIELDS)) {
+      const v = x[k];
+      if (typeof v !== "string" || v.trim().length < 15 || v.length > 2000) bad.push(`${at}.${k} (${name}) phải viết rõ, 15–2000 ký tự`);
+      else if (filler(v)) bad.push(`${at}.${k} (${name}) đang là chữ mẫu hoặc viết cho có`);
+    }
+    const alt = x.phuong_an_khac;
+    if (!Array.isArray(alt) || alt.length > 5) { bad.push(`${at}.phuong_an_khac phải là mảng 0–5 phương án {cach, vi_sao_khong} (không có cách khác hợp lý thì [] và nói rõ trong vi_sao)`); return; }
+    alt.forEach((a, j) => {
+      const ok = (v) => typeof v === "string" && v.trim().length >= 8 && v.length <= 1000 && !filler(v);
+      if (!a || typeof a !== "object" || !ok(a.cach) || !ok(a.vi_sao_khong)) bad.push(`${at}.phuong_an_khac[${j + 1}] cần cach và vi_sao_khong, mỗi phần 8–1000 ký tự`);
+    });
+  });
   return bad;
 }
 
@@ -96,4 +126,4 @@ function findHandoff(log) {
   return null;
 }
 
-module.exports = { ROLES, EFFORTS, readTurn, setTurn, checkHandoff, findHandoff };
+module.exports = { ROLES, EFFORTS, EXPLAIN_REQUIRED, readTurn, setTurn, checkHandoff, checkExplain, findHandoff };

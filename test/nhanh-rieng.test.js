@@ -29,12 +29,12 @@ async function fixture(t, { owner = "SOL_ARCHITECT_PLANNER", mode = "ok" } = {})
     if(role==='CLAUDE_WEB_APPLY'){const f=/trong file "([^"]+)"/.exec(prompt)[1];const txt=fs.readFileSync(f,'utf8');
       if(/SAI/.test(txt)){console.log(JSON.stringify({result:'WEB_RESULT_REJECTED: thiếu file src/web.js'}));return;}
       fs.mkdirSync('src',{recursive:true});fs.writeFileSync('src/web.js',txt);
-      console.log(JSON.stringify({result:'Đã áp.\\n'+JSON.stringify({role:'CODEX_ASTRA_DEV',next_owner:'CLAUDE_AUDITOR',files:['src/web.js'],claim_fixed:[]})}));return;}
+      console.log(JSON.stringify({result:'Đã áp.\\n'+JSON.stringify({role:'CODEX_ASTRA_DEV',next_owner:'CLAUDE_AUDITOR',files:['src/web.js'],claim_fixed:[],giai_thich:[{van_de:'Vấn đề của lượt thử nghiệm',da_lam:'Đã làm phần việc thử nghiệm',vi_sao:'Vì đây là CLI giả dùng cho test',phuong_an_khac:[]}]})}));return;}
     if(role==='CODEX_ASTRA_DEV'){
       if(mode==='quota'&&!fs.existsSync(${JSON.stringify(marker)})){fs.writeFileSync(${JSON.stringify(marker)},'1');console.log(JSON.stringify({type:'error',message:"You've hit your usage limit. Try again in 3 hours."}));process.exit(1);}
       fs.mkdirSync('src',{recursive:true});fs.writeFileSync('src/app.js','module.exports = 1;\\n'+(mode==='secret'?'const k = "sk-ant-'+'a'.repeat(30)+'";\\n':''));}
     if(role==='SOL_ARCHITECT_PLANNER') fs.writeFileSync('KE-HOACH.md','# Kế hoạch\\n');
-    console.log(JSON.stringify({result:'Xong.\\n'+JSON.stringify({role,next_owner:next[role],files:[],claim_fixed:[],...(role==='CLAUDE_AUDITOR'?{done:true}:{})})}));`);
+    console.log(JSON.stringify({result:'Xong.\\n'+JSON.stringify({role,next_owner:next[role],files:[],claim_fixed:[],giai_thich:[{van_de:'Vấn đề của lượt thử nghiệm',da_lam:'Đã làm phần việc thử nghiệm',vi_sao:'Vì đây là CLI giả dùng cho test',phuong_an_khac:[]}],...(role==='CLAUDE_AUDITOR'?{done:true}:{})})}));`);
   fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify(Object.fromEntries(ROLES.map((r) => [r, [process.execPath, fake, r, mode, "{prompt}"]]))));
   const notes = [];
   const ctl = createCtl({ dir });

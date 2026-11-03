@@ -19,5 +19,20 @@
       `<h4>Bàn giao chờ duyệt</h4>${errors.handoffs ? `<p>${esc(errors.handoffs)}</p>` : list(pending.map((h) => `${h.role} → ${h.next_owner || "Chờ phương án"}${h.payload?.ask_ceo ? ": " + h.payload.ask_ceo.question : ""}`), "Không có bàn giao chờ duyệt.")}` +
       `<h4>Mục còn nội dung mẫu</h4>${list(p?.emptySections || [], p ? "Không phát hiện nội dung mẫu ở Vùng [1]–[3]." : "Chưa đọc được các vùng đặc tả.")}</section></div>`;
   }
-  globalThis.RepoProgress = { html, esc, statuses };
+  // Lời giải thích của từng lượt (Hinata, Sol, Astra) để CEO đọc khi duyệt: vấn đề, đã làm, vì sao, cách khác và vì sao bỏ.
+  // Lượt bắt buộc giải thích mà không có thì cảnh báo rõ, không im lặng. Kết luận khớp/không khớp diff nằm trong báo cáo của Claude.
+  const MUST = ["SPEC_ARCHITECT", "SOL_ARCHITECT_PLANNER", "SOL_ARCHITECT_ADVISOR", "CODEX_ASTRA_DEV"];
+  function explainHtml(run) {
+    const steps = (run.steps || []).map((s, i) => [s, i + 1]).filter(([s]) => (s.explain && s.explain.length) || s.explainRejected || (MUST.includes(s.role) && !s.quota && s.jobId !== run.jobId));
+    if (!steps.length) return "";
+    const has = steps.filter(([s]) => s.explain && s.explain.length).length;
+    return `<details class="explain"${["awaiting_approval", "awaiting_answer"].includes(run.status) ? " open" : ""}><summary>Vì sao làm vậy · ${has}/${steps.length} lượt có giải thích</summary>` + steps.map(([s, n]) => {
+      const head = `<p class="explain-step"><strong>Lượt ${n} · ${esc(s.role)}</strong>${s.via === "web" ? " (kết quả GPT web)" : ""}</p>`;
+      const back = s.explainRejected ? `<p class="muted">Bị trả lại một lần vì: ${esc(s.explainRejected)}</p>` : "";
+      if (!s.explain || !s.explain.length) return head + back + (s.explainRejected ? "" : '<p class="error">⚠️ Lượt này không có giải thích. Hỏi lại hoặc từ chối trước khi duyệt.</p>');
+      return head + back + `<ol>${s.explain.map((x) => `<li><p><b>Vấn đề:</b> ${esc(x.van_de)}</p><p><b>Đã làm:</b> ${esc(x.da_lam)}</p><p><b>Vì sao:</b> ${esc(x.vi_sao)}</p>` +
+        (x.phuong_an_khac && x.phuong_an_khac.length ? `<p><b>Cách khác đã cân nhắc:</b></p><ul>${x.phuong_an_khac.map((a) => `<li>${esc(a.cach)} — <i>không chọn vì</i> ${esc(a.vi_sao_khong)}</li>`).join("")}</ul>` : '<p class="muted">Không nêu cách khác (lý do nằm trong phần "Vì sao").</p>') + "</li>").join("")}</ol>`;
+    }).join("") + '<p class="muted">Đây là lời các AI tự khai. Claude đối chiếu với diff thật trong báo cáo (mục "VÌ SAO LÀM VẬY & PHƯƠNG ÁN KHÁC"); anh xem thêm "Xem file đã đổi" của từng lượt.</p></details>';
+  }
+  globalThis.RepoProgress = { html, esc, statuses, explainHtml };
 })();
