@@ -3,6 +3,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { CSS2DRenderer, CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
 // Thẻ phòng, nhãn nhân vật, cần điều khiển cảm ứng: module tự tạo và tự gắn CSS (tiền tố vp-)
 // để trang chính (index.html) và trang xem trước (vanphong3d.html) dùng chung một cảnh.
@@ -61,6 +62,7 @@ gl.toneMapping = THREE.ACESFilmicToneMapping;
 gl.toneMappingExposure = 0.5;
 gl.shadowMap.enabled = true;
 gl.shadowMap.type = THREE.PCFSoftShadowMap;
+gl.shadowMap.autoUpdate = false;   // vẽ lại bóng cách một khung (xem vòng lặp): bóng trễ 1/60 giây, khó thấy, đỡ ~1/4 thời gian mỗi khung
 opts.gl.appendChild(gl.domElement);
 gl.domElement.style.touchAction = "none";
 const lblR = new CSS2DRenderer();
@@ -179,6 +181,7 @@ const skyMat = new THREE.ShaderMaterial({
 });
 const skyGeo = new THREE.SphereGeometry(1000, 48, 24);
 const skyDome = new THREE.Mesh(skyGeo, skyMat);
+skyDome.userData.live = true;   // đi theo camera
 skyDome.renderOrder = -1;
 scene.add(skyDome);
 
@@ -263,9 +266,10 @@ ground.receiveShadow = true;
 scene.add(ground);
 
 const hillGeo = new THREE.SphereGeometry(1, 32, 16);
+const hillMats = [0x4c7a3d, 0x557f40, 0x3f6b35].map((c) => std(c, { roughness: 1 }));
 for (let i = 0; i < 18; i++) {
   const a = (i / 18) * Math.PI * 2 + rnd() * 0.25, r = range(430, 720);
-  const hill = new THREE.Mesh(hillGeo, std(pick([0x4c7a3d, 0x557f40, 0x3f6b35]), { roughness: 1 }));
+  const hill = new THREE.Mesh(hillGeo, pick(hillMats));
   hill.scale.set(range(110, 220), range(30, 75), range(100, 190));
   hill.position.set(Math.cos(a) * r, -10, Math.sin(a) * r);
   scene.add(hill);
@@ -325,11 +329,11 @@ const glowTex = canvasTex(64, 64, (g) => {
 });
 const glows = [];
 let glowNight = 0;   // độ sáng quầng đèn theo giờ; mờ dần khi camera đứng sát để không thành đốm to che màn hình
+const lampMat = std(0xfff1d6, { emissive: 0xffd9a0, emissiveIntensity: 0.2, roughness: 0.3 });
+lampMats.push(lampMat);
 function lamp(x, z) {
   cyl(ironMat, 0.07, 0.1, 4, x, 2, z, scene, 10);
-  const mat = std(0xfff1d6, { emissive: 0xffd9a0, emissiveIntensity: 0.2, roughness: 0.3 });
-  lampMats.push(mat);
-  const bulb = cyl(mat, 0.3, 0.22, 0.45, x, 4.1, z, scene, 16);
+  const bulb = cyl(lampMat, 0.3, 0.22, 0.45, x, 4.1, z, scene, 16);
   bulb.castShadow = false;
   const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 }));
   glow.position.set(x, 4.1, z); glow.scale.setScalar(2.2);
@@ -850,7 +854,7 @@ const HAIR = {
 };
 const eyeDark = std(0x111827, { roughness: 0.3 });
 function makeChar(o) {
-  const root = new THREE.Group();
+  const root = new THREE.Group(); root.userData.live = true;
   const body = new THREE.Group(); body.scale.setScalar(0.85); root.add(body);
   const M = (c, extra) => std(c, { roughness: 0.65, ...extra });
   const skin = M(0xf1c9a5), top = M(o.top), pants = M(o.pants ?? 0x1f2937), shoes = M(0x111827), hair = M(o.hair, { roughness: 0.5 });
@@ -994,7 +998,7 @@ for (const [bx, bz] of [[-2.8, 16.4], [2.8, 16.4]]) {
   const strings = [], balloons = [];
   [0xf43f5e, 0x38bdf8, 0xfacc15].forEach((hex, i) => {
     const b = new THREE.Mesh(new THREE.SphereGeometry(0.28, 18, 14), std(hex, { roughness: 0.25 }));
-    b.scale.set(1, 1.18, 1); b.castShadow = true; inn.add(b); balloons.push({ b, i, ox: (i - 1) * 0.35, oy: 2.7 + i * 0.35 });
+    b.scale.set(1, 1.18, 1); b.castShadow = true; b.userData.live = true; inn.add(b); balloons.push({ b, i, ox: (i - 1) * 0.35, oy: 2.7 + i * 0.35 });
     const lg = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
     const ln = new THREE.Line(lg, new THREE.LineBasicMaterial({ color: 0xe2e8f0 })); inn.add(ln); strings.push(ln);
   });
@@ -1016,7 +1020,7 @@ for (const [bx, bz] of [[-2.8, 16.4], [2.8, 16.4]]) {
   box(std(0xd6c7a1, { roughness: 1 }), 0.48, 0.06, 1.93, fx, 0.96, fz, inn);
   box(metal, 0.54, 0.04, 2.0, fx, 1.69, fz, inn);
   const fishes = [0xf97316, 0xfacc15, 0xef4444, 0x60a5fa].map((hex, i) => {
-    const g = new THREE.Group(); inn.add(g);
+    const g = new THREE.Group(); g.userData.live = true; inn.add(g);
     const m = std(hex, { roughness: 0.4 });
     const body = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), m); body.scale.set(0.6, 0.8, 1.4); g.add(body);
     const tail = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.08, 6), m); tail.rotation.x = -Math.PI / 2; tail.position.z = -0.1; g.add(tail);
@@ -1043,7 +1047,7 @@ for (const [bx, bz] of [[-2.8, 16.4], [2.8, 16.4]]) {
   });
   const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.4), new THREE.MeshStandardMaterial({ map: plateTex, emissive: 0xffffff, emissiveMap: plateTex, emissiveIntensity: 0.3 }));
   plate.position.set(tx, 0.55, tz + 0.505); inn.add(plate);
-  const cup = new THREE.Group(); cup.position.set(tx, 1.0, tz); inn.add(cup);
+  const cup = new THREE.Group(); cup.userData.live = true; cup.position.set(tx, 1.0, tz); inn.add(cup);
   const profile = [[0, 0], [0.22, 0], [0.22, 0.05], [0.08, 0.1], [0.05, 0.3], [0.08, 0.35], [0.25, 0.45], [0.3, 0.75], [0.27, 0.78]].map(([x, y]) => new THREE.Vector2(x, y));
   const body = new THREE.Mesh(new THREE.LatheGeometry(profile, 40), gold); body.castShadow = true; cup.add(body);
   for (const sx of [-1, 1]) { const hdl = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.025, 8, 20, Math.PI * 1.2), gold); hdl.position.set(sx * 0.3, 0.6, 0); hdl.rotation.z = sx > 0 ? -Math.PI * 0.6 : Math.PI * 1.6; cup.add(hdl); }
@@ -1061,7 +1065,7 @@ for (const [bx, bz] of [[-2.8, 16.4], [2.8, 16.4]]) {
   for (const [lx, lz] of [[-1.2, -0.65], [1.2, -0.65], [-1.2, 0.65], [1.2, 0.65]]) box(metal, 0.06, 0.74, 0.06, px + lx, 0.37, pz + lz, inn);
   for (const sx of [-1, 1]) { const pd = cyl(std(0xdc2626), 0.08, 0.08, 0.015, px + sx * 1.1, 0.8, pz + 0.4 * sx, inn, 16); pd.rotation.z = Math.PI / 2 * 0.2; }
   const ball = new THREE.Mesh(new THREE.SphereGeometry(0.025, 10, 8), std(0xffffff, { emissive: 0xffffff, emissiveIntensity: 0.3 }));
-  inn.add(ball);
+  ball.userData.live = true; inn.add(ball);
   solidBox(px - 1.4, pz - 0.8, px + 1.4, pz + 0.8);
   funTick.push((dt, t) => {
     const u = (t * 0.7) % 2, s = u < 1 ? u : 2 - u;   // qua lại giữa hai đầu bàn
@@ -1106,7 +1110,7 @@ for (const [bx, bz] of [[-2.8, 16.4], [2.8, 16.4]]) {
 // Mèo văn phòng đi dạo hành lang & sảnh, gặp bạn thì ngồi xuống "meo"
 {
   const fur = std(0xf59e0b, { roughness: 0.85 }), belly = std(0xfff7ed, { roughness: 0.85 });
-  const cat = new THREE.Group(); scene.add(cat);
+  const cat = new THREE.Group(); cat.userData.live = true; scene.add(cat);
   const mk = (geo, mat, x, y, z, parent = cat) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m; };
   const body = mk(new THREE.CapsuleGeometry(0.15, 0.36, 4, 10), fur, 0, 0.3, 0); body.rotation.x = Math.PI / 2;
   const head = new THREE.Group(); head.position.set(0, 0.45, 0.3); cat.add(head);
@@ -1162,7 +1166,7 @@ for (const [bx, bz] of [[-2.8, 16.4], [2.8, 16.4]]) {
 
 // Robot hút bụi chạy dọc hành lang
 {
-  const rb = new THREE.Group(); scene.add(rb);
+  const rb = new THREE.Group(); rb.userData.live = true; scene.add(rb);
   const base = cyl(std(0x334155, { roughness: 0.4, metalness: 0.3 }), 0.3, 0.3, 0.09, 0, 0.05, 0, rb, 28);
   cyl(std(0xe2e8f0, { roughness: 0.3 }), 0.24, 0.26, 0.02, 0, 0.1, 0, rb, 28);
   const led = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0x22c55e, emissiveIntensity: 1.5 });
@@ -1196,13 +1200,14 @@ function toilet(x, z, ry) {
   box(ceramic, 0.42, 0.42, 0.18, 0, 0.65, -0.2, g);
 }
 // Dãy buồng vệ sinh dựa vào tường ngoài (zWall), cửa buồng quay vào giữa phòng
+const stallDoorMat = std(0x64748b, { roughness: 0.5 });
 function stalls(x0, n, zWall, dir) {
   const w = 1.6, depth = 1.7;
   for (let i = 0; i < n; i++) {
     const cx = x0 + i * w + w / 2, zc = zWall + dir * depth / 2;
     toilet(cx, zWall + dir * 0.35, dir > 0 ? 0 : Math.PI);
     box(stallMat, 0.6, 2.0, 0.04, cx - w / 2 + 0.3, 1.1, zWall + dir * depth, inn);       // vách trước
-    const door = box(std(0x64748b, { roughness: 0.5 }), 0.7, 1.9, 0.04, cx + 0.32, 1.05, zWall + dir * (depth - 0.25), inn); door.rotation.y = dir * 0.6;   // cửa hé
+    const door = box(stallDoorMat, 0.7, 1.9, 0.04, cx + 0.32, 1.05, zWall + dir * (depth - 0.25), inn); door.rotation.y = dir * 0.6;   // cửa hé
   }
   for (let i = 0; i <= n; i++) box(stallMat, 0.04, 2.0, depth, x0 + i * w, 1.1, zWall + dir * depth / 2, inn);
   solidBox(x0, Math.min(zWall, zWall + dir * depth), x0 + n * w, Math.max(zWall, zWall + dir * depth));
@@ -1482,10 +1487,59 @@ let first = true, indoor = 0;   // indoor: 0 ngoài trời → 1 trong nhà (đ�
 const ray = new THREE.Raycaster();
 const camBlockersAll = [...camBlockers, roofSlab];
 const desiredCam = new THREE.Vector3(), renderedCam = new THREE.Vector3(NaN, NaN, NaN), armDir = new THREE.Vector3();
-let arm = 9;
+let arm = 9, frameNo = 0;
 const plaqueMeshes = plaques.flatMap((p) => [p.front, p.back]);
+
+// Gộp vật đứng yên: cảnh có hơn nghìn khối nhỏ, mỗi khối là một lệnh vẽ (cả lượt vẽ bóng) nên card đồ hoạ tích hợp
+// nghẽn ở khâu gửi lệnh chứ không phải ở số điểm ảnh. Khối không bao giờ di chuyển, cùng chất liệu và cùng cách đổ bóng
+// được gộp thành một lưới. Chất liệu vẫn dùng chung nên đèn nhấp nháy, màn hình đổi màu… vẫn chạy như cũ.
+// Không gộp: vật đánh dấu userData.live (nhân vật, mèo, robot, cá, bóng bay, cúp…), tường/kính/biển phòng dùng để dò camera
+// (raycast cần đúng vật). Vật trong suốt chỉ gộp với vật cùng chất liệu và cùng thứ tự vẽ.
+function mergeStatic() {
+  scene.updateMatrixWorld(true);
+  const keep = new Set([...camBlockersAll, ...plaqueMeshes]), groups = new Map();
+  scene.traverse((o) => {
+    if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || keep.has(o)) return;
+    for (let p = o; p; p = p.parent) if (p.userData.live || !p.visible) return;
+    const m = o.material, g = o.geometry;
+    if (Array.isArray(m) || o.matrixWorld.determinant() <= 0 || Object.keys(g.morphAttributes).length) return;
+    const key = [m.uuid, o.castShadow, o.receiveShadow, o.renderOrder, Boolean(g.index), Object.keys(g.attributes).sort()].join("|");
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(o);
+  });
+  for (const list of groups.values()) {
+    if (list.length < 2) continue;
+    const geos = list.map((o) => o.geometry.clone().applyMatrix4(o.matrixWorld));
+    const merged = mergeGeometries(geos, false);
+    for (const g of geos) g.dispose();
+    if (!merged) continue;
+    const mesh = new THREE.Mesh(merged, list[0].material);
+    mesh.castShadow = list[0].castShadow; mesh.receiveShadow = list[0].receiveShadow; mesh.renderOrder = list[0].renderOrder;
+    mesh.matrixAutoUpdate = false;   // toạ độ đã là toạ độ thế giới
+    scene.add(mesh);
+    for (const o of list) o.removeFromParent();
+  }
+}
+mergeStatic();
+
+// Tự chỉnh độ phân giải theo sức máy: chậm (dưới ~45 khung/giây) thì hạ từng nấc, đủ nhanh thì nâng lại.
+// Nấc vừa bị hạ vì chậm thì 30 giây sau mới thử lại, để hình không nhoè–nét liên tục.
+const PR_MAX = Math.min(devicePixelRatio, 1.5), PR_MIN = Math.min(PR_MAX, 1);
+let pr = PR_MAX, prBad = Infinity, prBadUntil = 0, qFrames = 0, qTime = 0;
+function adaptQuality(raw) {
+  if (raw > 0.25) return;   // vừa quay lại tab hoặc máy khựng một nhịp: bỏ qua
+  qFrames++; qTime += raw;
+  if (qTime < 2) return;
+  const avg = qTime / qFrames, now = performance.now();
+  qFrames = 0; qTime = 0;
+  let next = pr;
+  if (avg > 1 / 45 && pr > PR_MIN) { prBad = pr; prBadUntil = now + 30000; next = Math.max(PR_MIN, pr - 0.25); }
+  else if (avg < 1 / 55 && pr < PR_MAX && (pr + 0.25 < prBad || now > prBadUntil)) next = Math.min(PR_MAX, pr + 0.25);
+  if (next !== pr) { pr = next; gl.setPixelRatio(pr); gl.setSize(innerWidth, innerHeight); }
+}
 gl.setAnimationLoop(() => {
-  const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
+  const raw = clock.getDelta(), dt = Math.min(raw, 0.05), t = clock.elapsedTime;
+  adaptQuality(raw);
   if (!reduceMotion) wind.value = t;
   updateWeather(dt);
 
@@ -1536,8 +1590,9 @@ gl.setAnimationLoop(() => {
     n.yaw += dd * (1 - Math.exp(-5 * dt));
     n.c.root.rotation.y = n.yaw;
     animateChar(n.c, dt, t + n.x);
-    n.tag.classList.toggle("near", d < 4);
-    n.tag.style.opacity = d < 22 ? 1 : 0;
+    const near = d < 4, show = d < 22;
+    if (n.near !== near) { n.near = near; n.tag.classList.toggle("near", near); }
+    if (n.show !== show) { n.show = show; n.tag.style.opacity = show ? 1 : 0; }
   }
   for (const m of ledMats) if (rnd() < 0.04) m.emissiveIntensity = rnd() < 0.5 ? 0.2 : 1.4;
   logoMat.emissiveIntensity = 0.7 + Math.sin(t * 2) * 0.2;
@@ -1560,6 +1615,7 @@ gl.setAnimationLoop(() => {
 
   if (envDirty && performance.now() - envAt > 180) updateEnv();
   skyDome.position.copy(camera.position);
+  gl.shadowMap.needsUpdate = (frameNo++ & 1) === 0;
   gl.render(scene, camera);
   lblR.render(scene, camera);
   if (first) { first = false; if (opts.onReady) opts.onReady(); }
