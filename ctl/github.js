@@ -32,7 +32,7 @@ function remoteName(url) {
   return m && validName(m[1]) ? m[1].toLowerCase() : null;
 }
 
-function createGitHub({ ws, jobs, audit, select, projectsDir = path.join(os.homedir(), "Projects"), getCredential = credential, fetcher = fetch, runGit = git }) {
+function createGitHub({ ws, jobs, audit, select, projectsDir = path.join(os.homedir(), "Projects"), alsoLook = [], getCredential = credential, fetcher = fetch, runGit = git }) {
   const operations = new Map();
   let closed = false;
   async function api(route) {
@@ -58,9 +58,11 @@ function createGitHub({ ws, jobs, audit, select, projectsDir = path.join(os.home
   }
   async function local(fullName) {
     const registered = ws.list().map((w) => w.path), candidates = new Set([ws.current(), ...registered].filter(Boolean));
-    // Chỉ xem các thư mục dự án ngay dưới Projects; không quét đệ quy toàn máy.
-    try { for (const d of fs.readdirSync(projectsDir, { withFileTypes: true })) if (d.isDirectory()) candidates.add(path.join(projectsDir, d.name)); } catch {}
-    candidates.add(path.join(projectsDir, ...fullName.split("/")));
+    // Chỉ xem các thư mục dự án ngay dưới Projects (và thư mục Projects cũ khi đã chuyển sang ổ khác); không quét đệ quy toàn máy.
+    for (const dir of [projectsDir, ...alsoLook]) {
+      try { for (const d of fs.readdirSync(dir, { withFileTypes: true })) if (d.isDirectory()) candidates.add(path.join(dir, d.name)); } catch {}
+      candidates.add(path.join(dir, ...fullName.split("/")));
+    }
     for (const candidate of candidates) {
       if (!fs.existsSync(path.join(candidate, ".git"))) continue;
       try { if (remoteName(await runGit(["remote", "get-url", "origin"], null, candidate)) === fullName.toLowerCase()) return candidate; } catch {}

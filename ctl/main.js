@@ -7,6 +7,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
 const crypto = require("crypto");
 const guard = require("../lib/guard");
 const { open, home } = require("./db");
@@ -71,7 +72,9 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     }).catch(() => {}).finally(() => background.delete(job));
     background.add(job);
   };
-  const github = createGitHub({ ...githubOptions, ws, jobs, audit, select: selectWorkspace });
+  // Repo mới tải về VP_PROJECTS_DIR (CEO đặt D:\Projects 04/11/2026 vì ổ C: đầy); bản sao cũ ở ~/Projects vẫn được tìm thấy.
+  const defaultProjects = path.join(os.homedir(), "Projects"), projectsDir = githubOptions.projectsDir || process.env.VP_PROJECTS_DIR || defaultProjects;
+  const github = createGitHub({ alsoLook: githubOptions.projectsDir || projectsDir === defaultProjects ? [] : [defaultProjects], ...githubOptions, projectsDir, ws, jobs, audit, select: selectWorkspace });
   const quotas = createQuotas({ ...quotaOptions, dir });
   const monitor = createMonitor();
   const tokenBuf = Buffer.from(token);

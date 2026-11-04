@@ -73,6 +73,17 @@ test("GitHub: nhận repo chưa đăng ký qua origin HTTPS/SSH, không tạo cl
   } finally { await f.cleanup(); }
 });
 
+test("GitHub: đã chuyển thư mục dự án sang ổ khác thì vẫn nhận bản sao ở thư mục Projects cũ, không clone lại", async () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "vp-github-cu-")), old = path.join(tmp, "Projects-cu");
+  const f = await fixture({ alsoLook: [old] });
+  try {
+    const root = path.join(old, "owner", "project"); makeRepo(root);
+    const op = await f.finish((await f.call("/github/open", { fullName: "owner/project" })).data.operation.id);
+    assert.equal(op.status, "done"); assert.equal(op.cloned, undefined); assert.equal(op.workspace, fs.realpathSync(root));
+    assert.equal(fs.existsSync(path.join(f.projectsDir, "owner", "project")), false, "không tạo bản sao thứ hai ở thư mục mới");
+  } finally { await f.cleanup(); fs.rmSync(tmp, { recursive: true, force: true }); }
+});
+
 test("GitHub: chặn tên repo chèn lệnh/thoát đường dẫn trước khi gọi GitHub", async () => {
   const f = await fixture();
   try {
