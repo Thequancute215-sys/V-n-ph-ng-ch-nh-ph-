@@ -184,6 +184,20 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
 .links a { font-size: 11px; font-weight: 600; color: var(--mute); text-decoration: none; border: 1px solid var(--panel-border); border-radius: 999px; padding: 5px 12px; background: var(--panel-bg); backdrop-filter: blur(10px); transition: all .2s; }
 .links a:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
 .hint { position: fixed; left: 16px; bottom: 16px; font-size: 11px; color: var(--mute2); z-index: 20; pointer-events: none; }
+/* Chat trực tiếp với từng AI (khung phải) */
+.chat-log { display: flex; flex-direction: column; gap: 8px; max-height: 46vh; overflow-y: auto; margin-bottom: 8px; padding-right: 2px; }
+.chat-msg { max-width: 92%; padding: 8px 10px; border-radius: 12px; font-size: 12px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.chat-msg.ceo { align-self: flex-end; background: rgba(236,201,112,.16); border: 1px solid rgba(236,201,112,.35); color: #fff; }
+.chat-msg.ai { align-self: flex-start; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); color: #e2e8f0; }
+.chat-msg.cho { color: var(--mute); font-style: italic; }
+.chat-msg.loi { border-color: rgba(232,163,155,.5); color: var(--bad); }
+.chat-route { margin-top: 8px; padding: 8px; border-radius: 10px; background: rgba(56,189,248,.08); border: 1px solid rgba(56,189,248,.35); white-space: normal; }
+.chat-route b { color: var(--cyan); }
+.chat-route pre { margin: 6px 0; max-height: 160px; overflow: auto; white-space: pre-wrap; font: 11px/1.45 ui-monospace, Consolas, monospace; color: #fde68a; background: rgba(0,0,0,.3); padding: 6px 8px; border-radius: 8px; }
+.chat-acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.chat-acts button { cursor: pointer; font: inherit; font-size: 11px; font-weight: 700; border-radius: 8px; padding: 5px 9px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.06); color: #fff; }
+.chat-acts button.go { background: var(--cyan); color: #00121c; border-color: transparent; }
+.chat-note { font-size: 10.5px; color: var(--mute2); margin-top: 6px; line-height: 1.45; }
 </style>
 <link rel="stylesheet" href="office-desk.css">
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
@@ -649,6 +663,15 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
       </div>
     </div>
 
+    <!-- Chat trực tiếp với AI đang chọn (ctl /chat, chỉ đọc) -->
+    <div class="box" id="chatBox">
+      <div class="box-title"><span id="chatTitle">Hỏi trực tiếp</span><button id="chatClearBtn" type="button" style="pointer-events:auto;cursor:pointer;background:none;border:0;color:var(--mute);font:inherit;font-size:10px">Xoá cuộc chat</button></div>
+      <div class="chat-log" id="chatLog" aria-live="polite"></div>
+      <textarea id="chatInp" rows="3" placeholder="Bấm vào một AI trong văn phòng rồi nhắn ở đây…" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px;color:#fff;font-family:inherit;font-size:12px;resize:vertical;outline:none"></textarea>
+      <button class="btn" id="chatSendBtn" type="button" style="width:100%;margin-top:6px;justify-content:center">Gửi (Ctrl+Enter)</button>
+      <div class="chat-note">Chat chỉ đọc: AI xem repo để trả lời, không sửa file, không chuyển lượt. Việc ngoài phạm vi, AI sẽ chỉ sếp sang đúng phòng kèm prompt soạn sẵn. Mỗi câu hỏi tốn hạn mức gói của AI đó.</div>
+    </div>
+
     <!-- Subagents satellite list -->
     <div class="box">
       <div class="box-title"><span>Vệ Tinh Subagents</span><span style="color:var(--purple)">3 Đang Chạy</span></div>
@@ -668,14 +691,6 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
       </div>
     </div>
 
-    <!-- Quick Message Box -->
-    <div class="box">
-      <div class="box-title"><span>Gửi Tin Nhắn Nhanh (vp gui)</span></div>
-      <textarea id="quickMsgInp" rows="2" placeholder="Nhập tin nhắn giao việc cho phiên này..." style="width:100%;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px;color:#fff;font-family:inherit;font-size:11.5px;resize:none;outline:none"></textarea>
-      <button class="btn" style="width:100%;margin-top:6px;justify-content:center" onclick="sendQuickMsg()">
-        Gửi Vào Hòm Thư
-      </button>
-    </div>
   </div>
 </aside>
 
@@ -721,6 +736,7 @@ try {
       if (!a) return;
       selected = a.key;
       updateSidebarAgentInfo(a);
+      chatWith(a.key);
       openRightSidebar();
     },
   });
@@ -1023,13 +1039,80 @@ function updateSidebarAgentInfo(a) {
   $("agentLastTextTxt").textContent = a.lastText ? `“${a.lastText}”` : "Chưa có báo cáo mới.";
 }
 
-window.sendQuickMsg = () => {
-  const txt = $("quickMsgInp").value.trim();
-  if (txt) {
-    alert(`Đã gửi tin nhắn cho ${selected}:\n"${txt}"\nNội dung đã được lưu vào hòm thư local data/hop-thu.`);
-    $("quickMsgInp").value = "";
+// ================= CHAT TRỰC TIẾP VỚI TỪNG AI =================
+// Bấm nhân vật → khung phải → nhắn. ctl chạy AI ở chế độ chỉ đọc; việc ngoài phạm vi thì AI chỉ sang phòng khác kèm prompt.
+const chatState = { who: null, data: null, timer: null };
+const escChat = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+async function chatReq(path, body) {
+  const res = await fetch("/ctl" + path, { cache: "no-store", method: body ? "POST" : "GET", headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(20000) });
+  let data; try { data = await res.json(); } catch { throw new Error("Controller chưa trả JSON hợp lệ (Controller có đang chạy không?)"); }
+  if (!res.ok || data.ok === false) throw new Error(data.error || "Lỗi HTTP " + res.status);
+  return data.chat;
+}
+function renderChat(err) {
+  const log = $("chatLog"), who = chatState.who, d = chatState.data;
+  $("chatInp").disabled = $("chatSendBtn").disabled = !who || Boolean(d && d.busy);
+  $("chatClearBtn").hidden = !who;
+  if (!who) { $("chatTitle").textContent = "Hỏi trực tiếp"; log.innerHTML = '<div class="chat-note">Bấm vào Pain, Hinata, Itachi, Sasuke hoặc Sakura trong văn phòng để chat.</div>'; return; }
+  $("chatTitle").textContent = d ? "Hỏi " + d.name + " · " + d.room : "Hỏi trực tiếp";
+  if (d) $("chatInp").placeholder = "Nhắn cho " + d.name + " (" + d.room + ")…";
+  const msgs = d ? d.messages : [];
+  log.innerHTML = (msgs.length ? msgs.map((m) => {
+    let h = escChat(m.status === "cho" ? (d.name + " đang đọc repo và trả lời…") : m.text);
+    if (m.route) h += `<div class="chat-route">➡ Sếp nên sang <b>${escChat(m.route.room)}</b> gặp <b>${escChat(m.route.name)}</b>${m.route.why ? ": " + escChat(m.route.why) : ""}` +
+      (m.route.prompt ? `<pre>${escChat(m.route.prompt)}</pre>` : "") +
+      `<div class="chat-acts">${m.route.prompt ? `<button data-copy="${m.id}">Chép prompt</button>` : ""}<button data-go="${escChat(m.route.to)}">Đi tới ${escChat(m.route.room)}</button>` +
+      (m.route.prompt ? `<button class="go" data-ask="${m.id}">Hỏi ${escChat(m.route.name)} luôn</button>` : "") + "</div></div>";
+    else if (m.task) h += `<div class="chat-route">📝 Việc này cần sửa file thật${m.task.why ? ": " + escChat(m.task.why) : ""}. Prompt giao việc:<pre>${escChat(m.task.prompt)}</pre><div class="chat-acts"><button data-copy="${m.id}">Chép prompt giao việc</button></div></div>`;
+    return `<div class="chat-msg ${m.from} ${m.status}">${h}</div>`;
+  }).join("") : `<div class="chat-note">Chưa có tin nào. Hỏi ${escChat(d ? d.name : "")} về đúng việc của phòng này nhé.</div>`) +
+    (err ? `<div class="chat-msg ai loi">${escChat(err)}</div>` : "");
+  log.scrollTop = log.scrollHeight;
+}
+async function loadChat() {
+  const who = chatState.who;
+  clearTimeout(chatState.timer);
+  if (!who) return renderChat();
+  try { const d = await chatReq("/chat?who=" + encodeURIComponent(who)); if (who !== chatState.who) return; chatState.data = d; renderChat(); if (d.busy) chatState.timer = setTimeout(loadChat, 2000); }
+  catch (e) { if (who === chatState.who) renderChat(e.message); }
+}
+function chatWith(agentKey) {
+  const npc = NPC_OF[agentKey];
+  chatState.who = ["pain", "hinata", "itachi", "sasuke", "sakura"].includes(npc) ? npc : null;
+  chatState.data = null;
+  loadChat();
+}
+async function sendChat(text) {
+  if (!chatState.who || !text.trim()) return;
+  $("chatSendBtn").disabled = true;
+  try { chatState.data = await chatReq("/chat", { who: chatState.who, text }); $("chatInp").value = ""; renderChat(); loadChat(); }
+  catch (e) { renderChat(e.message); }
+}
+$("chatSendBtn").addEventListener("click", () => sendChat($("chatInp").value));
+$("chatInp").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); sendChat($("chatInp").value); } });
+$("chatClearBtn").addEventListener("click", async () => {
+  if (!chatState.who || !confirm("Xoá toàn bộ cuộc chat với người này?")) return;
+  try { chatState.data = await chatReq("/chat/clear", { who: chatState.who }); renderChat(); } catch (e) { renderChat(e.message); }
+});
+$("chatLog").addEventListener("click", async (e) => {
+  const b = e.target.closest("button"); if (!b || !chatState.data) return;
+  const m = chatState.data.messages.find((x) => x.id === (b.dataset.copy || b.dataset.ask));
+  if (b.dataset.copy && m) {
+    const text = (m.route || m.task).prompt;
+    try { await navigator.clipboard.writeText(text); b.textContent = "Đã chép ✓"; } catch { prompt("Chép prompt:", text); }
+  } else if (b.dataset.go) {
+    focusRoom(KEY_OF[b.dataset.go] || b.dataset.go);
+  } else if (b.dataset.ask && m && m.route) {
+    // Sang phòng người được chỉ, mở chat với người đó và gửi luôn prompt
+    const key = KEY_OF[m.route.to] || m.route.to, a = defaultAgents.find((x) => x.key === key);
+    focusRoom(key);
+    if (a) { selected = a.key; updateSidebarAgentInfo(a); }
+    chatState.who = m.route.to; chatState.data = null;
+    await loadChat();
+    sendChat(m.route.prompt);
   }
-};
+});
+renderChat();
 
 
 // ================= QUẢN LÝ & ĐĂNG NHẬP TÀI KHOẢN AI =================

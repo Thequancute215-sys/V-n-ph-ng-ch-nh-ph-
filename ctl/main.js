@@ -22,6 +22,7 @@ const { createGitHub } = require("./github");
 const { createQuotas } = require("./quotas");
 const { createIdeas } = require("./ideas");
 const { createPublisher } = require("./xuat-ban");
+const { createChat } = require("./chat");
 const { createNotifier } = require("./thongbao");
 const { createScanner } = require("./ra-soat");
 const { classify } = require("./policy");
@@ -36,7 +37,7 @@ const HTTP_CODE = {
   NOT_FOUND: 404, TOO_LARGE: 413,
   GITHUB_AUTH: 401, GITHUB_LIMIT: 429, GITHUB_OFFLINE: 502, GITHUB_CLONE: 502,
   CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_WAITING: 409, NEEDS_SPEC_TURN: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409, HANDOFF_PENDING: 409, NEEDS_ANSWER: 409, NO_QUESTION: 422, BAD_OPTION: 400,
-  PUBLISH_BUSY: 409, NOT_READY: 409, NO_TARGET: 422, DIRTY_REPO: 409, NEEDS_SCAN_APPROVAL: 409, NO_COMMIT: 409, NO_QUOTA: 409, NO_GIT: 422, NO_REMOTE: 422, GIT_PUSH: 502,
+  CHAT_BUSY: 409, PUBLISH_BUSY: 409, NOT_READY: 409, NO_TARGET: 422, DIRTY_REPO: 409, NEEDS_SCAN_APPROVAL: 409, NO_COMMIT: 409, NO_QUOTA: 409, NO_GIT: 422, NO_REMOTE: 422, GIT_PUSH: 502,
 };
 
 function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {}, quotaOptions = {}, notify = false } = {}) {
@@ -54,6 +55,7 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
   const autopilot = createAutopilot({ runner, jobs, ws, audit, dir, quotaSnapshot: () => quotas.snapshot(), notify: notifier, scanner });
   const ideas = createIdeas({ dir, ws, runner, autopilot, audit });
   const publisher = createPublisher({ jobs, ws, audit, dir, notify: notifier });
+  const chat = createChat({ jobs, ws, runner, audit, dir });
   const selectWorkspace = (p) => {
     const w = ws.switchTo(p, "ceo");
     fs.writeFileSync(activeFile + ".tmp", JSON.stringify({ path: w.path }), { mode: 0o600 }); fs.renameSync(activeFile + ".tmp", activeFile);
@@ -181,6 +183,9 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     ["POST", "/publish/target", (p, qs, b) => ({ publish: publisher.setTarget(wsOf(b.workspace), b.image) })],
     ["POST", "/publish/prepare", (p, qs, b) => [202, { run: publisher.prepare(wsOf(b.workspace)) }]],
     ["POST", "/publish/:id/push", (p, qs, b) => [202, { run: publisher.push(p.id, b.tag) }]],
+    ["GET", "/chat", (p, qs) => ({ chat: chat.get(wsOf(qs.get("workspace")), String(qs.get("who") || "")) })],
+    ["POST", "/chat", (p, qs, b) => [202, { chat: chat.send({ workspace: wsOf(b.workspace), who: String(b.who || ""), text: b.text }) }]],
+    ["POST", "/chat/clear", (p, qs, b) => ({ chat: chat.clear(wsOf(b.workspace), String(b.who || "")) })],
     ["GET", "/scan", (p, qs) => { const root = ws.find(wsOf(qs.get("workspace"))).path; return { scan: scanner.status(root, { fresh: qs.get("fresh") === "1" }), fullAccess: runner.fullOn() }; }],
     ["POST", "/scan/approve", (p, qs, b) => { const root = ws.find(wsOf(b.workspace)).path; const scan = scanner.approve(root, String(b.fingerprint || "")); return { scan, resumed: autopilot.resumeScan(root) }; }],
     ["GET", "/github/repos", (p, qs) => github.list(qs.get("page") || 1)],
@@ -297,7 +302,7 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     db.close();
   }
 
-  return { server, jobs, ws, files, runner, autopilot, scanner, publisher, github, quotas, audit, token, close };
+  return { server, jobs, ws, files, runner, autopilot, scanner, publisher, chat, github, quotas, audit, token, close };
 }
 
 if (require.main === module) {
