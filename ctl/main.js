@@ -7,6 +7,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
 const crypto = require("crypto");
 const guard = require("../lib/guard");
 const { open, home } = require("./db");
@@ -20,6 +21,7 @@ const { createAutopilot } = require("./autopilot");
 const { createGitHub } = require("./github");
 const { createQuotas } = require("./quotas");
 const { createIdeas } = require("./ideas");
+const { createPublisher } = require("./xuat-ban");
 const { createChat } = require("./chat");
 const { createNotifier } = require("./thongbao");
 const { createScanner } = require("./ra-soat");
@@ -35,7 +37,7 @@ const HTTP_CODE = {
   NOT_FOUND: 404, TOO_LARGE: 413,
   GITHUB_AUTH: 401, GITHUB_LIMIT: 429, GITHUB_OFFLINE: 502, GITHUB_CLONE: 502,
   CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_WAITING: 409, NEEDS_SPEC_TURN: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409, HANDOFF_PENDING: 409, NEEDS_ANSWER: 409, NO_QUESTION: 422, BAD_OPTION: 400,
-  CHAT_BUSY: 409, DIRTY_REPO: 409, NEEDS_SCAN_APPROVAL: 409, NO_COMMIT: 409, NO_QUOTA: 409, NO_GIT: 422, NO_REMOTE: 422, GIT_PUSH: 502,
+  CHAT_BUSY: 409, PUBLISH_BUSY: 409, NOT_READY: 409, NO_TARGET: 422, DIRTY_REPO: 409, NEEDS_SCAN_APPROVAL: 409, NO_COMMIT: 409, NO_QUOTA: 409, NO_GIT: 422, NO_REMOTE: 422, GIT_PUSH: 502,
 };
 
 function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {}, quotaOptions = {}, notify = false } = {}) {
@@ -52,6 +54,7 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
   const runner = createRunner({ jobs, ws, audit, db, dir, scanner });
   const autopilot = createAutopilot({ runner, jobs, ws, audit, dir, quotaSnapshot: () => quotas.snapshot(), notify: notifier, scanner });
   const ideas = createIdeas({ dir, ws, runner, autopilot, audit });
+  const publisher = createPublisher({ jobs, ws, audit, dir, notify: notifier });
   const chat = createChat({ jobs, ws, runner, audit, dir });
   const selectWorkspace = (p) => {
     const w = ws.switchTo(p, "ceo");
@@ -71,7 +74,9 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     }).catch(() => {}).finally(() => background.delete(job));
     background.add(job);
   };
-  const github = createGitHub({ ...githubOptions, ws, jobs, audit, select: selectWorkspace });
+  // Repo mới tải về VP_PROJECTS_DIR (CEO đặt D:\Projects 04/11/2026 vì ổ C: đầy); bản sao cũ ở ~/Projects vẫn được tìm thấy.
+  const defaultProjects = path.join(os.homedir(), "Projects"), projectsDir = githubOptions.projectsDir || process.env.VP_PROJECTS_DIR || defaultProjects;
+  const github = createGitHub({ alsoLook: githubOptions.projectsDir || projectsDir === defaultProjects ? [] : [defaultProjects], ...githubOptions, projectsDir, ws, jobs, audit, select: selectWorkspace });
   const quotas = createQuotas({ ...quotaOptions, dir });
   const monitor = createMonitor();
   const tokenBuf = Buffer.from(token);
@@ -174,6 +179,10 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     ["POST", "/ideas", (p, qs, b) => [201, { idea: ideas.add({ workspace: wsOf(b.workspace), title: b.title, detail: b.detail }) }]],
     ["POST", "/ideas/:id/start", (p, qs, b) => ({ idea: ideas.start(p.id, { force: b.force === true }) })],
     // Rà file .md trước khi cho AI chạy toàn quyền; CEO duyệt điểm bất thường thì luồng đang tạm dừng chạy tiếp.
+    ["GET", "/publish", (p, qs) => ({ publish: publisher.status(wsOf(qs.get("workspace"))) })],
+    ["POST", "/publish/target", (p, qs, b) => ({ publish: publisher.setTarget(wsOf(b.workspace), b.image) })],
+    ["POST", "/publish/prepare", (p, qs, b) => [202, { run: publisher.prepare(wsOf(b.workspace)) }]],
+    ["POST", "/publish/:id/push", (p, qs, b) => [202, { run: publisher.push(p.id, b.tag) }]],
     ["GET", "/chat", (p, qs) => ({ chat: chat.get(wsOf(qs.get("workspace")), String(qs.get("who") || "")) })],
     ["POST", "/chat", (p, qs, b) => [202, { chat: chat.send({ workspace: wsOf(b.workspace), who: String(b.who || ""), text: b.text }) }]],
     ["POST", "/chat/clear", (p, qs, b) => ({ chat: chat.clear(wsOf(b.workspace), String(b.who || "")) })],
@@ -293,7 +302,7 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     db.close();
   }
 
-  return { server, jobs, ws, files, runner, autopilot, scanner, chat, github, quotas, audit, token, close };
+  return { server, jobs, ws, files, runner, autopilot, scanner, publisher, chat, github, quotas, audit, token, close };
 }
 
 if (require.main === module) {

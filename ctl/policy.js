@@ -69,6 +69,11 @@ function classify(argv) {
   if (prog === "pytest" || prog === "py.test") return { decision: "allow", reason: "pytest (kiểm thử)" };
   if (prog === "cargo" && ["test", "build", "check", "fmt", "clippy"].includes(a[0])) return { decision: "allow", reason: "cargo " + a[0] };
   if (prog === "go" && ["test", "build", "vet", "fmt"].includes(a[0])) return { decision: "allow", reason: "go " + a[0] };
+  if (prog === "docker") {
+    // Đọc trạng thái và build trên máy: chạy ngay. Đẩy image, đăng nhập kho, chạy/xoá container: CEO duyệt (xuất bản dùng nút riêng ctl/xuat-ban.js).
+    if (["version", "info", "images", "ps", "build"].includes(a[0]) || (a[0] === "compose" && ["build", "config", "ps"].includes(a[1]))) return { decision: "allow", reason: "docker " + a.slice(0, a[0] === "compose" ? 2 : 1).join(" ") };
+    return { decision: "approve", reason: "docker " + (a[0] || "") + " (đẩy image, đăng nhập, chạy/xoá container) cần duyệt" };
+  }
   if (prog === "gh") {
     const sub = a.slice(0, 2).join(" ");
     if (GH_ALLOW.some((r) => r.test(sub))) return { decision: "allow", reason: "gh " + sub + " (chỉ đọc)" };
