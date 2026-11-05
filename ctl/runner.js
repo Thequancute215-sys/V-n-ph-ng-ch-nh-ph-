@@ -56,8 +56,8 @@ function codexArgs(argv, role, effort) {
 }
 // Antigravity CLI (agy): chạy nền bằng -p; headless tự chặn lệnh terminal, chỉ mở git chỉ đọc + liệt kê thư mục (Codex kiểm trên máy CEO).
 // Máy cài agy từ trong app Codex thì agy.exe nằm ở thư mục ảo của gói Codex: đặt đường dẫn tuyệt đối trong ctl-agents.json.
-const AGY = ["agy", "-p", "{prompt}", "--output-format", "stream-json", "--mode", "accept-edits", "--print-timeout", "20m", "--settings",
-  JSON.stringify({ permissions: { allow: ["command(regex:^git (pull --ff-only|status(?: --short)?|diff(?: --stat)?|log(?: -[0-9]+)? --oneline|show --stat)$)", "command(regex:(?i)^Get-ChildItem( -Path \\.)?( -(Force|Name|File|Directory|Recurse))*$)"] } })];
+const AGY_READ = JSON.stringify({ permissions: { allow: ["command(regex:^git (pull --ff-only|status(?: --short)?|diff(?: --stat)?|log(?: -[0-9]+)? --oneline|show --stat)$)", "command(regex:(?i)^Get-ChildItem( -Path \\.)?( -(Force|Name|File|Directory|Recurse))*$)"] } });
+const AGY = ["agy", "-p", "{prompt}", "--output-format", "stream-json", "--mode", "accept-edits", "--print-timeout", "20m", "--settings", AGY_READ];
 
 const AGENTS = {
   CLAUDE_AUDITOR: { argv: CLAUDE, timeoutMs: 20 * MIN, prompt: "Bạn là CLAUDE_AUDITOR (Đội trưởng kiểm duyệt). Đọc toàn bộ ./agent.md và data/BAI-HOC.md nếu có. Thẩm định diff từ LAST_AUDITED_COMMIT đến HEAD (git diff), đối chiếu Vùng [2], [3] và các CLAIM_FIXED ở [4.1]. Chỉ được sửa Vùng [5] và 2 dòng LAST_UPDATED_BY/NEXT_OWNER của Vùng [4]; không sửa code. Lỗi mới ghi theo mẫu `- [ ] OPEN P{phase}-C{số} [...]`." },
@@ -74,6 +74,10 @@ const AGENTS = {
   CLAUDE_WEB_APPLY: { base: "CLAUDE_AUDITOR", argv: CLAUDE, timeoutMs: 20 * MIN, prompt: "" },
   CODEX_WEB_APPLY: { base: "CODEX_ASTRA_DEV", argv: CODEX, timeoutMs: 20 * MIN, prompt: "" },
   CLAUDE_REPORTER: { argv: ["claude", "-p", "{prompt}", "--output-format", "json", "--max-turns", "5", "--permission-mode", "plan", "--tools", "Read,Grep,Glob"], timeoutMs: 5 * MIN, prompt: "" },
+  // CEO chat trực tiếp với từng AI (ctl/chat.js): luôn chỉ đọc, không theo toàn quyền.
+  CLAUDE_CHAT: { base: "CLAUDE_AUDITOR", argv: ["claude", "-p", "{prompt}", "--output-format", "json", "--max-turns", "12", "--permission-mode", "plan", "--tools", "Read,Grep,Glob"], timeoutMs: 6 * MIN, prompt: "" },
+  CODEX_CHAT: { base: "CODEX_ASTRA_DEV", argv: ["codex", "exec", "--json", "--sandbox", "read-only", "{prompt}"], timeoutMs: 6 * MIN, prompt: "" },
+  AGY_CHAT: { base: "SPEC_ARCHITECT", argv: ["agy", "-p", "{prompt}", "--output-format", "json", "--mode", "plan", "--print-timeout", "5m", "--settings", AGY_READ], timeoutMs: 6 * MIN, prompt: "" },
 };
 // TOÀN QUYỀN (CEO chọn 03/11/2026, cách B): các vai làm việc chạy không giới hạn quyền trên máy để tiện kiểm thử
 // (Claude --dangerously-skip-permissions, Codex --dangerously-bypass-approvals-and-sandbox, agy --dangerously-skip-permissions).
@@ -297,7 +301,15 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null }) {
     return jobs.start({ kind: "ai", agent, workspace: root, argv, timeoutMs: AGENTS[agent].timeoutMs, onExit: (job) => done(job, { workspace: root, role, task, retried: false, allowRetry: false }) });
   }
 
-  return { run, report, webPrompt, applyWeb, fullOn, CODEX_MODEL, DEFAULT_EFFORT, status, approve, answer, reject, conflicts, get: (id) => view(q.get.get(id)), pending: () => q.open.all().map(view), AGENTS };
+  // Lệnh chat chỉ đọc theo AI: Sol và Astra cùng chạy Codex nhưng khác model.
+  const CHAT = { claude: ["CLAUDE_CHAT"], sol: ["CODEX_CHAT", "SOL_ARCHITECT_PLANNER"], astra: ["CODEX_CHAT", "CODEX_ASTRA_DEV"], antigravity: ["AGY_CHAT"] };
+  function chatArgv(ai) {
+    const c = CHAT[ai];
+    if (!c) throw err("BAD_REQUEST", "Không có AI để chat: " + ai);
+    return c[1] ? codexArgs(argvFor(c[0]), c[1], null) : argvFor(c[0]);
+  }
+
+  return { run, report, webPrompt, applyWeb, chatArgv, fullOn, CODEX_MODEL, DEFAULT_EFFORT, status, approve, answer, reject, conflicts, get: (id) => view(q.get.get(id)), pending: () => q.open.all().map(view), AGENTS };
 }
 
 module.exports = { createRunner, AGENTS, fullAccessArgs, FULL_ROLES };
