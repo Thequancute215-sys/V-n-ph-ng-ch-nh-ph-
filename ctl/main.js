@@ -311,7 +311,11 @@ if (require.main === module) {
   const ctl = createCtl({ dir, notify: true });
   const tokenFile = path.join(dir, "ctl-token");
   fs.writeFileSync(tokenFile + ".tmp", ctl.token, { mode: 0o600 });
-  fs.renameSync(tokenFile + ".tmp", tokenFile);
+  // server.js đọc lại token ở mỗi yêu cầu; Windows từ chối đổi tên (EPERM/EBUSY) khi đúng lúc đó file đang mở: thử lại thay vì sập.
+  for (let i = 0; ; i++) {
+    try { fs.renameSync(tokenFile + ".tmp", tokenFile); break; }
+    catch (e) { if (!["EPERM", "EBUSY", "EACCES"].includes(e.code) || i >= 40) throw e; Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50); }
+  }
   ctl.server.listen(port, "127.0.0.1", () => {
     ctl.audit.log("ctl", "start", null, { port, pid: process.pid });
     console.log(`\n  OS Controller (ctl) đang chạy tại http://127.0.0.1:${port}`);
