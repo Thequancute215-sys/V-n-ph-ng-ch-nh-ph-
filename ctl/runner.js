@@ -63,7 +63,8 @@ const AGY = ["agy", "-p", "{prompt}", "--output-format", "stream-json", "--mode"
 const DOCKER_DEV = " DOCKER: khi Phase hiện tại là Docker/Sẵn sàng Production hoặc việc CEO giao nhắc Docker: viết Dockerfile nhiều tầng (build riêng, tầng chạy gọn), " +
   "ghim phiên bản image gốc (không dùng :latest), chạy bằng user không phải root, .dockerignore loại .git, node_modules, .env*, agent.md, data/, logs; " +
   "KHÔNG COPY .env hay file khóa vào image, cấu hình bằng biến môi trường và ghi mẫu vào .env.example; docker-compose.yml có healthcheck, volume cho dữ liệu cần giữ, chỉ mở cổng cần thiết. " +
-  "Máy có Docker thì chạy `docker build` để kiểm, không có thì ghi \"chưa kiểm chứng build\" ở [4.1]. KHÔNG docker push, KHÔNG docker login, KHÔNG deploy: xuất bản là việc CEO tự bấm.";
+  "Máy có Docker thì chạy `docker build` để kiểm, không có thì ghi \"chưa kiểm chứng build\" ở [4.1]. Repo chưa có workflow xuất bản thì thêm .github/workflows/release.yml: chạy khi đẩy tag v*.*.*, kiểm tag khớp phiên bản trong code, build image (amd64 + arm64) đưa lên ghcr.io/<chủ repo>/<tên repo> và tạo GitHub Release (quyền packages: write, đăng nhập GHCR bằng GITHUB_TOKEN). " +
+  "KHÔNG docker push, KHÔNG docker login, KHÔNG đẩy tag, KHÔNG deploy: xuất bản là việc CEO tự bấm (văn phòng đẩy tag hoặc chạy workflow).";
 const DOCKER_AUDIT = " Diff có Dockerfile/docker-compose: kiểm image gốc đã ghim phiên bản, không chạy bằng root, không COPY .env/khóa/agent.md vào image, .dockerignore đủ, " +
   "không mở cổng thừa hay chạy --privileged, có healthcheck; thiếu là lỗi bảo mật ghi Vùng [5].";
 const AGENTS = {
