@@ -17,7 +17,8 @@ const G = [{ van_de: "Vấn đề của lượt thử nghiệm", da_lam: "Đã l
 
 test("toàn quyền: đổi đúng cờ của từng CLI, kể cả lệnh cấu hình sẵn trên máy; vai chỉ đọc không được toàn quyền", () => {
   const claude = ["C:/Users/x/.local/bin/claude.exe", "-p", "{prompt}", "--output-format", "json", "--permission-mode", "acceptEdits", "--allowedTools", "Read", "Edit", "Bash(npm test:*)", "--max-turns", "30"];
-  assert.deepEqual(fullAccessArgs(claude), ["C:/Users/x/.local/bin/claude.exe", "-p", "{prompt}", "--output-format", "json", "--max-turns", "30", "--dangerously-skip-permissions"]);
+  // Từ 07/11/2026: xuất stream-json cho Nhật ký và chặn kết nối gửi/triển khai (ctl/ket-noi.js)
+  assert.deepEqual(fullAccessArgs(claude), ["C:/Users/x/.local/bin/claude.exe", "-p", "{prompt}", "--output-format", "stream-json", "--max-turns", "30", "--dangerously-skip-permissions", "--verbose", "--disallowedTools", ...require("../ctl/ket-noi").CHAN_CLAUDE]);
   const codex = ["C:\\node\\node.exe", "C:\\node\\node_modules\\@openai\\codex\\bin\\codex.js", "exec", "-m", "gpt-6-astra", "--json", "--approve-for-me", "--sandbox", "workspace-write", "{prompt}"];
   assert.deepEqual(fullAccessArgs(codex), ["C:\\node\\node.exe", "C:\\node\\node_modules\\@openai\\codex\\bin\\codex.js", "exec", "--dangerously-bypass-approvals-and-sandbox", "-m", "gpt-6-astra", "--json", "{prompt}"]);
   const agy = ["C:/agy/bin/agy.exe", "-p", "{prompt}", "--mode", "accept-edits", "--settings", "{\"permissions\":{}}", "--print-timeout", "20m"];

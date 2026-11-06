@@ -22,6 +22,8 @@ const { createGitHub } = require("./github");
 const { createQuotas } = require("./quotas");
 const { createIdeas } = require("./ideas");
 const { createPublisher } = require("./xuat-ban");
+const { createConnectors } = require("./ket-noi");
+const { createJournal } = require("./nhat-ky");
 const { createChat } = require("./chat");
 const { createNotifier } = require("./thongbao");
 const { createScanner } = require("./ra-soat");
@@ -57,6 +59,8 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
   const ideas = createIdeas({ dir, ws, runner, autopilot, audit });
   const publisher = createPublisher({ jobs, ws, audit, dir, notify: notifier, github: () => github });
   const chat = createChat({ jobs, ws, runner, audit, dir });
+  const connectors = createConnectors({ runner, audit, dir });   // trang Kết nối (MCP) của đội
+  const journal = createJournal({ jobs, autopilot });           // Nhật ký: ai làm gì, lúc nào
   const selectWorkspace = (p) => {
     const w = ws.switchTo(p, "ceo");
     writeAtomic(activeFile, JSON.stringify({ path: w.path }));
@@ -180,6 +184,10 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     ["POST", "/ideas", (p, qs, b) => [201, { idea: ideas.add({ workspace: wsOf(b.workspace), title: b.title, detail: b.detail }) }]],
     ["POST", "/ideas/:id/start", (p, qs, b) => ({ idea: ideas.start(p.id, { force: b.force === true }) })],
     // Rà file .md trước khi cho AI chạy toàn quyền; CEO duyệt điểm bất thường thì luồng đang tạm dừng chạy tiếp.
+    ["GET", "/ket-noi", async (p, qs) => ({ ketNoi: await connectors.status({ fresh: qs.get("fresh") === "1" }) })],
+    ["POST", "/ket-noi/add", async (p, qs, b) => ({ ketNoi: await connectors.add(String(b.id || ""), String(b.ai || "")) })],
+    ["POST", "/ket-noi/login", async (p, qs, b) => ({ ketNoi: await connectors.login(String(b.id || "")) })],
+    ["GET", "/nhat-ky", (p, qs) => ({ nhatKy: journal.list(ws.find(wsOf(qs.get("workspace"))).path, qs.get("limit")) })],
     ["GET", "/publish", (p, qs) => ({ publish: publisher.status(wsOf(qs.get("workspace"))) })],
     ["POST", "/publish/prepare", (p, qs, b) => [202, { run: publisher.prepare(wsOf(b.workspace)) }]],
     ["POST", "/publish/:id/release", async (p, qs, b) => ({ run: await publisher.release(p.id, { version: b.version, confirm: b.confirm }) })],
@@ -302,7 +310,7 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     db.close();
   }
 
-  return { server, jobs, ws, files, runner, autopilot, scanner, publisher, chat, github, quotas, audit, token, close };
+  return { server, jobs, ws, files, runner, autopilot, scanner, publisher, chat, connectors, journal, github, quotas, audit, token, close };
 }
 
 if (require.main === module) {

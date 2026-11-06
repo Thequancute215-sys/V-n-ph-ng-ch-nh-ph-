@@ -21,9 +21,10 @@ async function request(path, body, timeout = 15000) {
 }
 
 export function createDesk(getOffice) {
-  const names = { tasks: "Việc đang làm", approvals: "Việc chờ anh duyệt", assign: "Giao việc cho cả đội", ideas: "Ý tưởng", projects: "Dự án", quotas: "Hạn mức", progress: "Dự án đang ở đâu", publish: "Xuất bản" };
+  const names = { tasks: "Việc đang làm", approvals: "Việc chờ anh duyệt", assign: "Giao việc cho cả đội", ideas: "Ý tưởng", projects: "Dự án", quotas: "Hạn mức", progress: "Dự án đang ở đâu", publish: "Xuất bản", journal: "Nhật ký" };
   const toolbar = document.createElement("nav"); toolbar.className = "desk-tools"; toolbar.setAttribute("aria-label", "Điều phối dự án");
-  toolbar.innerHTML = ["tasks", "assign", "ideas", "projects", "quotas", "progress", "publish"].map((key) => `<button type="button" class="btn ghost" data-desk="${key}" aria-controls="officeDesk" aria-expanded="false">${names[key]}</button>`).join("");
+  toolbar.innerHTML = ["journal", "tasks", "assign", "ideas", "projects", "quotas", "progress", "publish"].map((key) => `<button type="button" class="btn ghost" data-desk="${key}" aria-controls="officeDesk" aria-expanded="false">${names[key]}</button>`).join("") +
+    '<a class="btn ghost" href="ket-noi.html" title="Kết nối (MCP) của đội: Notion, Figma, Google Drive…">Kết nối</a>';
   document.querySelector(".bar").append(toolbar);
   const dialog = document.createElement("dialog"); dialog.id = "officeDesk"; dialog.className = "desk-dialog"; dialog.setAttribute("aria-labelledby", "deskTitle");
   dialog.innerHTML = `<div class="desk-head"><h2 id="deskTitle">Dự án đang ở đâu</h2><button type="button" id="deskClose">Thu gọn / Đóng</button></div><div class="desk-body">
@@ -35,13 +36,14 @@ export function createDesk(getOffice) {
     <section data-view="projects" hidden><label for="deskProject">Dự án đã đăng ký</label><select id="deskProject"><option value="">Đang tải…</option></select><div class="desk-actions"><button id="deskSwitch" data-write>Chọn dự án</button><button id="deskGithubLoad">Tải repo GitHub</button></div><p id="deskGithubState" role="status">Bấm tải repo GitHub để đọc danh sách.</p><div id="deskGithub"></div><button id="deskGithubMore" hidden>Tải thêm repo</button></section>
     <section data-view="quotas" hidden><div id="deskQuotas">Đang tải hạn mức…</div></section>
     <section data-view="progress" hidden><div id="deskProgress">Đang đọc tiến độ dự án…</div></section>
+    <section data-view="journal" hidden><div id="deskJournal" class="journal" aria-live="polite">Đang tải nhật ký…</div></section>
     <section data-view="publish" hidden><div class="desk-actions"><button type="button" id="deskPrepare" data-write>Kiểm tra &amp; build</button></div>
       <p class="muted">Bước 1 · Kiểm tra &amp; build chạy trên máy anh, chưa ra ngoài: repo sạch → có Dockerfile → Docker đang chạy → test → build thử image. Bước 2 · Xuất bản: văn phòng đẩy tag phiên bản hoặc chạy workflow của chính repo trên GitHub, GitHub Actions build và đưa image lên GHCR + GitHub Releases. Chỉ chạy khi anh bấm và xác nhận đúng phiên bản; máy anh không cần docker login.</p>
       <div id="deskPublish" aria-live="polite">Đang tải…</div></section>
     <div class="desk-actions"><button type="button" id="deskRefresh">Làm mới</button><button type="button" data-desk="approvals">Việc chờ anh duyệt</button></div></div>`;
   document.body.append(dialog);
   let active = null, workspaces = [], view = "progress", inFlight = null, mutating = false, firstLoad = true;
-  let runs = [], jobs = [], handoffs = [], ideas = [], quotas = null, overview = null, turn = null, scan = null, publish = null;
+  let runs = [], jobs = [], handoffs = [], ideas = [], quotas = null, overview = null, turn = null, scan = null, publish = null, journal = null;
   let errors = {}, dataReady = false, liveNpc = new Set(), github = [], githubPage = 0, githubMore = false, githubLoading = false, githubLoaded = false, githubError = "", compareUrl = null;
   const own = (items) => items.filter((x) => active && x.workspace === active);
   const ownRuns = () => own(runs);
@@ -149,6 +151,16 @@ export function createDesk(getOffice) {
     }).join("") || '<p class="muted">Chưa có lượt kiểm tra nào.</p>';
     box.innerHTML = html;
   }
+  // Nhật ký: dòng thời gian "ai làm gì, lúc nào" (ctl /nhat-ky), mới nhất trên cùng.
+  const NPC = { pain: ["Pain", "#dc2626"], hinata: ["Hinata", "#9333ea"], itachi: ["Itachi", "#059669"], sasuke: ["Sasuke", "#2563eb"], sakura: ["Sakura", "#db2777"] };
+  const hhmm = (t) => new Date(t).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+  function renderJournal() {
+    const box = $("deskJournal");
+    if (errors.workspace || errors.journal || !active || !journal) { box.innerHTML = messageHtml("journal", "Đang tải nhật ký…"); return; }
+    box.innerHTML = journal.length ? journal.map((e) => { const [name, color] = NPC[e.who] || NPC.pain;
+      return `<article class="j-item j-${esc(e.kind)}"><span class="j-av" style="background:${color}" title="${esc(name)}">${esc(name[0])}</span><p><b>${esc(name)}:</b> ${esc(e.text)} <time>${esc(hhmm(e.at))}</time></p></article>`; }).join("")
+      : messageHtml("journal", "Chưa có hoạt động nào của dự án này. Giao việc cho cả đội để bắt đầu.");
+  }
   function renderProgress() {
     $("deskProgress").innerHTML = errors.workspace || errors.overview || !overview || overview.workspace !== active ? messageHtml("overview", active ? "Đang đọc tiến độ dự án…" : "Chưa chọn dự án.") : globalThis.RepoProgress.html(overview, runs, ownHandoffs(), errors);
   }
@@ -158,7 +170,7 @@ export function createDesk(getOffice) {
     $("deskProject").innerHTML = workspaces.length ? workspaces.map((w) => `<option value="${esc(w.path)}">${esc(w.name)}${w.path === active ? " · Đang chọn" : ""}</option>`).join("") : '<option value="">Chưa có dự án đã đăng ký</option>';
     $("deskProject").value = workspaces.some((w) => w.path === selection) ? selection : active || "";
     $("deskAssignState").textContent = state("runs", ownRuns().some((r) => live.has(r.status)) ? "Dự án đang có luồng hoặc việc chờ xử lý. Xem Việc đang làm." : "Dự án chưa có luồng đang chạy; anh có thể giao việc mới.");
-    renderTasks(); renderApprovals(); renderIdeas(); renderQuotas(); renderProgress(); renderPublish(); lock();
+    renderTasks(); renderApprovals(); renderIdeas(); renderQuotas(); renderProgress(); renderPublish(); renderJournal(); lock();
   }
   function syncWork() {
     const office = getOffice(); if (!office) return;
@@ -204,6 +216,7 @@ export function createDesk(getOffice) {
           ["quotas", "/quotas", (d) => { quotas = d; }],
           ...(active ? [["scan", "/scan?workspace=" + encodeURIComponent(active), (d) => { scan = d.scan || null; }]] : []),
           ...(active ? [["publish", "/publish?workspace=" + encodeURIComponent(active), (d) => { publish = d.publish || null; }]] : []),
+          ...(active ? [["journal", "/nhat-ky?workspace=" + encodeURIComponent(active) + "&limit=120", (d) => { journal = d.nhatKy || null; }]] : []),
           ...(active ? [["turn", "/ai/status?workspace=" + encodeURIComponent(active), (d) => { turn = d; }],
             ["ideas", "/ideas?workspace=" + encodeURIComponent(active), (d) => { ideas = d.ideas || []; }],
             ...(!overview || (dialog.open && view === "progress") ? [["overview", "/workspaces/overview?workspace=" + encodeURIComponent(active), (d) => { overview = d.overview; }]] : [])] : []),
@@ -254,6 +267,7 @@ export function createDesk(getOffice) {
   });
   $("ceoWaitPill").addEventListener("click", (e) => { e.preventDefault(); show("approvals"); syncTurn(); });
   $("deskClose").onclick = () => dialog.close();
+  setInterval(() => { if (dialog.open && view === "journal" && !document.hidden) syncTurn(); }, 4000);
   dialog.addEventListener("close", () => toolbar.querySelectorAll("[data-desk]").forEach((b) => b.setAttribute("aria-expanded", "false")));
   $("deskRefresh").onclick = () => refreshNow();
   $("deskGithubLoad").onclick = () => loadGithub(); $("deskGithubMore").onclick = () => loadGithub(true);
