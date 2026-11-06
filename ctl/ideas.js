@@ -8,6 +8,7 @@ const crypto = require("crypto");
 const { execFileSync } = require("child_process");
 const { readTurn, setTurn } = require("./handoff");
 const { maskSecrets } = require("../lib/mask");
+const { writeAtomic } = require("../lib/ghi-file");
 
 const err = (code, message) => Object.assign(new Error(message), { code });
 const LIVE = new Set(["running", "reporting", "awaiting_approval", "awaiting_answer", "attention", "waiting_quota"]);
@@ -17,7 +18,7 @@ function createIdeas({ dir, ws, runner, autopilot, audit }) {
   const file = path.join(dir, "ideas.json");
   let ideas = [];
   try { ideas = JSON.parse(fs.readFileSync(file, "utf8")); } catch {}
-  const save = () => { fs.writeFileSync(file + ".tmp", JSON.stringify(ideas), { mode: 0o600 }); fs.renameSync(file + ".tmp", file); };
+  const save = () => writeAtomic(file, JSON.stringify(ideas));
 
   // Trạng thái lấy từ luồng tự động thật của ý tưởng, không tự đặt.
   function view(i) {

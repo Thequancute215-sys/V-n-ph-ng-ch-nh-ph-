@@ -1,6 +1,7 @@
 // Đọc/ghi file trong workspace. Ghi phải kèm sha256 của bản đang đọc (expectSha256) để không đè thay đổi của AI khác
 // hoặc của Giám đốc trong lúc đang sửa (409 CHANGED). File mới: expectSha256 = null.
 "use strict";
+const { renameRetry } = require("../lib/ghi-file");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
@@ -43,7 +44,7 @@ function createFiles(ws, audit) {
     if (cur !== (expectSha256 || null)) throw err("CHANGED", cur ? "File đã đổi từ lúc đọc (hoặc thiếu expectSha256)" : "File chưa có: expectSha256 phải là null");
     const tmp = r.real + ".ctl-" + crypto.randomBytes(4).toString("hex");
     fs.writeFileSync(tmp, data);
-    fs.renameSync(tmp, r.real);
+    renameRetry(tmp, r.real);
     const next = sha(data);
     audit.log(actor, "file.write", r.root + " :: " + r.rel, { from: cur, to: next, bytes: data.length });
     return { path: r.rel, sha256: next };

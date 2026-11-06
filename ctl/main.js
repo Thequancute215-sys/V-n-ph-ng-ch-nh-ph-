@@ -28,6 +28,7 @@ const { createScanner } = require("./ra-soat");
 const { classify } = require("./policy");
 const { readTurn } = require("./handoff");
 const { maskSecrets } = require("../lib/mask");
+const { writeAtomic } = require("../lib/ghi-file");
 
 const VERSION = "1.0.0";
 const LOOPBACK = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i;
@@ -37,7 +38,7 @@ const HTTP_CODE = {
   NOT_FOUND: 404, TOO_LARGE: 413,
   GITHUB_AUTH: 401, GITHUB_LIMIT: 429, GITHUB_OFFLINE: 502, GITHUB_CLONE: 502,
   CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_WAITING: 409, NEEDS_SPEC_TURN: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409, HANDOFF_PENDING: 409, NEEDS_ANSWER: 409, NO_QUESTION: 422, BAD_OPTION: 400,
-  CHAT_BUSY: 409, PUBLISH_BUSY: 409, NOT_READY: 409, NO_TARGET: 422, DIRTY_REPO: 409, NEEDS_SCAN_APPROVAL: 409, NO_COMMIT: 409, NO_QUOTA: 409, NO_GIT: 422, NO_REMOTE: 422, GIT_PUSH: 502,
+  CHAT_BUSY: 409, PUBLISH_BUSY: 409, NOT_READY: 409, NO_RELEASE_WORKFLOW: 422, NOT_ON_MAIN: 409, TAG_EXISTS: 409, DIRTY_REPO: 409, NEEDS_SCAN_APPROVAL: 409, NO_COMMIT: 409, NO_QUOTA: 409, NO_GIT: 422, NO_REMOTE: 422, GIT_PUSH: 502,
 };
 
 function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {}, quotaOptions = {}, notify = false } = {}) {
@@ -54,11 +55,11 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
   const runner = createRunner({ jobs, ws, audit, db, dir, scanner });
   const autopilot = createAutopilot({ runner, jobs, ws, audit, dir, quotaSnapshot: () => quotas.snapshot(), notify: notifier, scanner });
   const ideas = createIdeas({ dir, ws, runner, autopilot, audit });
-  const publisher = createPublisher({ jobs, ws, audit, dir, notify: notifier });
+  const publisher = createPublisher({ jobs, ws, audit, dir, notify: notifier, github: () => github });
   const chat = createChat({ jobs, ws, runner, audit, dir });
   const selectWorkspace = (p) => {
     const w = ws.switchTo(p, "ceo");
-    fs.writeFileSync(activeFile + ".tmp", JSON.stringify({ path: w.path }), { mode: 0o600 }); fs.renameSync(activeFile + ".tmp", activeFile);
+    writeAtomic(activeFile, JSON.stringify({ path: w.path }));
     lastSelect = w;
     protectPublic(w.path);
     return w.path;
@@ -180,9 +181,8 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     ["POST", "/ideas/:id/start", (p, qs, b) => ({ idea: ideas.start(p.id, { force: b.force === true }) })],
     // Rà file .md trước khi cho AI chạy toàn quyền; CEO duyệt điểm bất thường thì luồng đang tạm dừng chạy tiếp.
     ["GET", "/publish", (p, qs) => ({ publish: publisher.status(wsOf(qs.get("workspace"))) })],
-    ["POST", "/publish/target", (p, qs, b) => ({ publish: publisher.setTarget(wsOf(b.workspace), b.image) })],
     ["POST", "/publish/prepare", (p, qs, b) => [202, { run: publisher.prepare(wsOf(b.workspace)) }]],
-    ["POST", "/publish/:id/push", (p, qs, b) => [202, { run: publisher.push(p.id, b.tag) }]],
+    ["POST", "/publish/:id/release", async (p, qs, b) => ({ run: await publisher.release(p.id, { version: b.version, confirm: b.confirm }) })],
     ["GET", "/chat", (p, qs) => ({ chat: chat.get(wsOf(qs.get("workspace")), String(qs.get("who") || "")) })],
     ["POST", "/chat", (p, qs, b) => [202, { chat: chat.send({ workspace: wsOf(b.workspace), who: String(b.who || ""), text: b.text }) }]],
     ["POST", "/chat/clear", (p, qs, b) => ({ chat: chat.clear(wsOf(b.workspace), String(b.who || "")) })],
@@ -310,12 +310,8 @@ if (require.main === module) {
   const port = Number(process.env.CTL_PORT || 7790);
   const ctl = createCtl({ dir, notify: true });
   const tokenFile = path.join(dir, "ctl-token");
-  fs.writeFileSync(tokenFile + ".tmp", ctl.token, { mode: 0o600 });
-  // server.js đọc lại token ở mỗi yêu cầu; Windows từ chối đổi tên (EPERM/EBUSY) khi đúng lúc đó file đang mở: thử lại thay vì sập.
-  for (let i = 0; ; i++) {
-    try { fs.renameSync(tokenFile + ".tmp", tokenFile); break; }
-    catch (e) { if (!["EPERM", "EBUSY", "EACCES"].includes(e.code) || i >= 40) throw e; Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50); }
-  }
+  // server.js đọc lại token ở mỗi yêu cầu; writeAtomic thử lại khi Windows tạm khoá file (EPERM/EBUSY) thay vì sập.
+  writeAtomic(tokenFile, ctl.token);
   ctl.server.listen(port, "127.0.0.1", () => {
     ctl.audit.log("ctl", "start", null, { port, pid: process.pid });
     console.log(`\n  OS Controller (ctl) đang chạy tại http://127.0.0.1:${port}`);

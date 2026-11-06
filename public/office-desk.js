@@ -35,8 +35,8 @@ export function createDesk(getOffice) {
     <section data-view="projects" hidden><label for="deskProject">Dự án đã đăng ký</label><select id="deskProject"><option value="">Đang tải…</option></select><div class="desk-actions"><button id="deskSwitch" data-write>Chọn dự án</button><button id="deskGithubLoad">Tải repo GitHub</button></div><p id="deskGithubState" role="status">Bấm tải repo GitHub để đọc danh sách.</p><div id="deskGithub"></div><button id="deskGithubMore" hidden>Tải thêm repo</button></section>
     <section data-view="quotas" hidden><div id="deskQuotas">Đang tải hạn mức…</div></section>
     <section data-view="progress" hidden><div id="deskProgress">Đang đọc tiến độ dự án…</div></section>
-    <section data-view="publish" hidden><form id="deskTarget"><label for="deskImage">Đích xuất bản: tên image trên kho, không kèm :tag</label><input id="deskImage" maxlength="200" placeholder="ghcr.io/ten-ban/ten-app" autocomplete="off" spellcheck="false"><div class="desk-actions"><button type="submit" data-write>Lưu đích</button><button type="button" id="deskPrepare" data-write>Kiểm tra &amp; build</button></div></form>
-      <p class="muted">Kiểm tra &amp; build chạy trên máy anh: repo sạch → có Dockerfile → Docker đang chạy → test → docker build. Image chỉ được đẩy lên kho khi anh bấm Xuất bản và xác nhận đúng tên. Đăng nhập kho (docker login) anh tự làm trên máy; văn phòng không giữ mật khẩu của kho.</p>
+    <section data-view="publish" hidden><div class="desk-actions"><button type="button" id="deskPrepare" data-write>Kiểm tra &amp; build</button></div>
+      <p class="muted">Bước 1 · Kiểm tra &amp; build chạy trên máy anh, chưa ra ngoài: repo sạch → có Dockerfile → Docker đang chạy → test → build thử image. Bước 2 · Xuất bản: văn phòng đẩy tag phiên bản hoặc chạy workflow của chính repo trên GitHub, GitHub Actions build và đưa image lên GHCR + GitHub Releases. Chỉ chạy khi anh bấm và xác nhận đúng phiên bản; máy anh không cần docker login.</p>
       <div id="deskPublish" aria-live="polite">Đang tải…</div></section>
     <div class="desk-actions"><button type="button" id="deskRefresh">Làm mới</button><button type="button" data-desk="approvals">Việc chờ anh duyệt</button></div></div>`;
   document.body.append(dialog);
@@ -106,7 +106,7 @@ export function createDesk(getOffice) {
     }).join("");
     html += manual.map((h) => `<article class="desk-entry"><strong>Bàn giao: ${esc(h.role)} → ${esc(h.next_owner || "Chờ phương án")}</strong>${h.problems?.length ? `<p class="error">${esc(h.problems.join("; "))}</p>` : ""}${h.payload?.ask_ceo ? question(h.payload.ask_ceo, "handoffs", h.job_id) : action("handoffs", h.job_id, "approve", "Duyệt chuyển lượt", undefined, !!h.problems?.length)}</article>`).join("");
     const ready = publishReady();
-    if (ready) html += `<article class="desk-entry"><strong>Xuất bản ${esc(ready.tag)}</strong><p>Đã kiểm tra và build xong, chờ anh bấm Xuất bản.</p><div class="desk-actions"><button type="button" data-desk="publish">Mở mục Xuất bản</button></div></article>`;
+    if (ready) html += `<article class="desk-entry"><strong>Xuất bản ${esc(publish.repo || "dự án")}</strong><p>Đã kiểm tra và build thử xong (${esc(ready.sha?.slice(0, 7) || "")}), chờ anh bấm Xuất bản.</p><div class="desk-actions"><button type="button" data-desk="publish">Mở mục Xuất bản</button></div></article>`;
     if (compareUrl) html += `<p><a href="${esc(compareUrl)}" target="_blank" rel="noopener noreferrer">Mở trang tạo PR trên GitHub</a></p>`;
     $("deskApprovals").innerHTML = errors.workspace || !active || !dataReady ? messageHtml("runs", "") :
       (errors.runs ? messageHtml("runs", "") : "") + (errors.handoffs ? messageHtml("handoffs", "") : "") + (html || (!errors.runs && !errors.handoffs ? messageHtml("runs", "Không có việc chờ anh duyệt.") : ""));
@@ -128,20 +128,24 @@ export function createDesk(getOffice) {
     $("claudeLowPill").hidden = left === null || left > 8;
     if (left !== null && left <= 8) $("claudeLowTxt").textContent = `Claude còn ${Math.round(left)}% hạn mức: dành cho điều phối`;
   }
-  const PUBLISH = { running: "Đang kiểm tra & build", ready: "Sẵn sàng, chờ anh bấm Xuất bản", pushing: "Đang đẩy image lên kho", published: "Đã xuất bản", failed: "Chưa đạt" };
+  const PUBLISH = { running: "Đang kiểm tra & build", ready: "Sẵn sàng, chờ anh bấm Xuất bản", releasing: "Đang gửi lên GitHub", released: "Đã gửi xuất bản: GitHub Actions đang build", failed: "Chưa đạt" };
   const STEP = { done: "✓", failed: "✗", running: "…", skipped: "⏭" };
-  const publishReady = () => publish && publish.workspace === active ? (publish.runs || []).find((r) => r.status === "ready" && publish.image && r.tag?.startsWith(publish.image + ":")) : null;
+  const publishReady = () => publish && publish.workspace === active && publish.release ? (publish.runs || []).find((r, i) => i === 0 && r.status === "ready") : null;
+  const howRelease = (m) => !m ? '<span class="error">repo chưa có workflow xuất bản: giao Astra thêm .github/workflows/release.yml (đẩy tag v* → GHCR + Releases)</span>'
+    : m.mode === "tag" ? `đẩy tag <span class="mono">${esc(m.pattern)}</span> → workflow <span class="mono">${esc(m.file)}</span>`
+    : `chạy tay workflow <span class="mono">${esc(m.file)}</span>${m.publishInput ? " (" + esc(m.publishInput) + " = true" : ""}${m.versionInput ? ", " + esc(m.versionInput) + " = phiên bản)" : m.publishInput ? ")" : ""}`;
   function renderPublish() {
     const box = $("deskPublish");
     if (errors.workspace || errors.publish || !active || !publish || publish.workspace !== active) { box.innerHTML = messageHtml("publish", "Đang tải…"); return; }
-    if (document.activeElement !== $("deskImage")) $("deskImage").value = publish.image || "";
-    $("deskPrepare").dataset.invalid = String((publish.runs || []).some((r) => ["running", "pushing"].includes(r.status)));
-    let html = `<p>Đích: ${publish.image ? `<span class="mono">${esc(publish.image)}</span>` : '<span class="error">chưa khai (chỉ build được trên máy, chưa xuất bản được)</span>'} · Dockerfile: ${publish.dockerfile ? "có" : '<span class="error">chưa có, giao Astra viết ở Phase Docker</span>'}</p>`;
+
+    $("deskPrepare").dataset.invalid = String((publish.runs || []).some((r) => ["running", "releasing"].includes(r.status)));
+    let html = `<p>Repo: <span class="mono">${esc(publish.repo || "chưa nhận ra repo GitHub")}</span> · Dockerfile: ${publish.dockerfile ? "có" : '<span class="error">chưa có, giao Astra viết ở Phase Docker</span>'}<br>Cách xuất bản: ${howRelease(publish.release)}${publish.version ? ` · Phiên bản trong code: <b>${esc(publish.version)}</b>` : ""}</p>`;
     html += (publish.runs || []).map((r, i) => {
       const steps = (r.steps || []).map((st) => `<li>${STEP[st.status] || "·"} ${esc(st.name)}${st.note ? `<br><small>${esc(st.note)}</small>` : ""}</li>`).join("");
-      const can = i === 0 && r.status === "ready" && publish.image && r.tag?.startsWith(publish.image + ":");
-      return `<article class="desk-entry"><strong>${esc(r.tag || "Lượt " + r.id)}</strong><p>${esc(PUBLISH[r.status] || r.status)} · ${esc(time(r.publishedAt || r.createdAt))}</p>${r.problem ? `<p class="error">${esc(r.problem)}</p>` : ""}<ol class="desk-steps">${steps}</ol>` +
-        (can ? `<div class="desk-actions"><button type="button" data-publish="${esc(r.id)}" data-tag="${esc(r.tag)}" data-write>Xuất bản ${esc(r.tag)}</button></div>` : "") + "</article>";
+      const can = i === 0 && r.status === "ready" && publish.release;
+      return `<article class="desk-entry"><strong>${esc(r.tag || "Lượt " + r.id)}</strong><p>${esc(PUBLISH[r.status] || r.status)} · ${esc(time(r.release?.at || r.createdAt))}</p>${r.problem ? `<p class="error">${esc(r.problem)}</p>` : ""}<ol class="desk-steps">${steps}</ol>` +
+        (r.release ? `<p>Phiên bản <b>${esc(r.release.tag)}</b> · ${r.release.actionsUrl ? `<a href="${esc(r.release.actionsUrl)}" target="_blank" rel="noopener noreferrer">Xem GitHub Actions</a>` : "xem trang Actions của repo"}</p>` : "") +
+        (can ? `<div class="desk-actions"><label>Phiên bản <input data-version="${esc(r.id)}" value="${esc(publish.version || "")}" placeholder="X.Y.Z" maxlength="20" size="10"></label><button type="button" data-publish="${esc(r.id)}" data-write>Xuất bản qua GitHub</button></div>` : "") + "</article>";
     }).join("") || '<p class="muted">Chưa có lượt kiểm tra nào.</p>';
     box.innerHTML = html;
   }
@@ -264,15 +268,16 @@ export function createDesk(getOffice) {
   };
   // Đang kiểm tra/đẩy image thì đọc lại mỗi 3 giây cho tới khi xong.
   let publishTimer = null;
-  const followPublish = () => { clearTimeout(publishTimer); publishTimer = setTimeout(async () => { await refreshNow(); if ((publish?.runs || []).some((r) => ["running", "pushing"].includes(r.status))) followPublish(); }, 3000); };
-  $("deskTarget").onsubmit = (e) => {
-    e.preventDefault(); const workspace = active, image = $("deskImage").value.trim();
-    if (workspace) mutate(image ? "Đặt đích xuất bản " + image : "Xoá đích xuất bản", async () => { await request("/publish/target", { workspace, image }); });
-  };
+  const followPublish = () => { clearTimeout(publishTimer); publishTimer = setTimeout(async () => { await refreshNow(); if ((publish?.runs || []).some((r) => ["running", "releasing"].includes(r.status))) followPublish(); }, 3000); };
   $("deskPrepare").onclick = () => { const workspace = active; if (workspace) mutate("Kiểm tra & build image Docker của dự án trên máy (chưa đẩy ra ngoài)", async () => { await request("/publish/prepare", { workspace }); followPublish(); }); };
   dialog.addEventListener("click", (e) => {
     const pb = e.target.closest("[data-publish]");
-    if (pb && !pb.disabled) { mutate("XUẤT BẢN " + pb.dataset.tag + " lên kho image (ra ngoài máy, ai có quyền đọc kho đều tải được)", async () => { await request("/publish/" + encodeURIComponent(pb.dataset.publish) + "/push", { tag: pb.dataset.tag }); followPublish(); }); return; }
+    if (pb && !pb.disabled) {
+      const version = (dialog.querySelector(`[data-version="${CSS.escape(pb.dataset.publish)}"]`)?.value || "").trim().replace(/^v/, "");
+      if (!/^\d+\.\d+\.\d+$/.test(version)) { notice("Phiên bản phải có dạng X.Y.Z, ví dụ 6.2.3", true); return; }
+      mutate("XUẤT BẢN v" + version + " của " + (publish?.repo || "dự án") + " qua GitHub (GitHub Actions build và đưa lên GHCR + Releases, ai xem được repo đều tải được)", async () => { await request("/publish/" + encodeURIComponent(pb.dataset.publish) + "/release", { version, confirm: "v" + version }, 60000); followPublish(); });
+      return;
+    }
     const sb = e.target.closest("[data-scan]");
     if (sb && !sb.disabled) { mutate("Anh đã đọc các điểm bất thường và đồng ý cho AI chạy toàn quyền trong dự án này", async () => { await request("/scan/approve", { workspace: sb.dataset.scanWorkspace, fingerprint: sb.dataset.scan }, 30000); }); return; }
     const room = e.target.closest("[data-room]"); if (room?.dataset.room) { getOffice()?.goToRoom(room.dataset.room); dialog.close(); return; }

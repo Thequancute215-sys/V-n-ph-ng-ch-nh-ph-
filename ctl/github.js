@@ -133,7 +133,20 @@ function createGitHub({ ws, jobs, audit, select, projectsDir = path.join(os.home
     try { const { data } = await api("/repos/" + fullName); return remember(root, { kind: data.private ? "private" : "public", fullName }); }
     catch (e) { return { kind: "unknown", fullName, reason: e.message }; }   // không nhớ lỗi: lần sau thử lại
   }
+  // Chạy tay một workflow (workflow_dispatch) — nút Xuất bản dùng cho repo xuất bản bằng "Run workflow" (vd. cun-zoom).
+  async function dispatch(fullName, file, ref, inputs) {
+    if (!validName(fullName) || !/^[\w.-]+\.ya?ml$/.test(file)) throw err("BAD_REQUEST", "Tên repo hoặc workflow không hợp lệ");
+    const token = await getCredential();
+    let response;
+    try { response = await fetcher("https://api.github.com/repos/" + fullName + "/actions/workflows/" + file + "/dispatches", { method: "POST", headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json", "User-Agent": "VanPhongAI", "Content-Type": "application/json" }, body: JSON.stringify({ ref, inputs }), signal: AbortSignal.timeout(15000), redirect: "error" }); }
+    catch { throw err("GITHUB_OFFLINE", "Không kết nối được GitHub. Kiểm tra mạng rồi thử lại."); }
+    if (response.status === 204) return true;
+    let detail = ""; try { detail = (await response.json()).message || ""; } catch {}
+    if (response.status === 401) throw err("GITHUB_AUTH", "Đăng nhập GitHub đã hết hạn. Đăng nhập lại bằng Git Credential Manager.");
+    if (response.status === 403 || response.status === 404) throw err("GITHUB_LIMIT", "Tài khoản GitHub chưa có quyền chạy workflow " + file + " (cần quyền ghi repo/Actions). " + detail);
+    throw err("GITHUB_OFFLINE", "GitHub từ chối chạy workflow (HTTP " + response.status + "): " + detail);
+  }
   function get(id) { const op = operations.get(id); if (!op) throw err("NOT_FOUND", "Không tìm thấy phiên mở repo; kiểm tra lại dự án đang chọn."); return { ...op }; }
-  return { list, open, get, visibility, close: () => { closed = true; } };
+  return { list, open, get, visibility, dispatch, close: () => { closed = true; } };
 }
 module.exports = { createGitHub, remoteName };
