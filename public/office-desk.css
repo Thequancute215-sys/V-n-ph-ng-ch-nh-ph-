@@ -59,3 +59,12 @@
 .desk-dialog .desk-steps li { margin: 3px 0; overflow-wrap: anywhere; }
 .desk-dialog .desk-steps small { color: #94a3b8; }
 .desk-dialog .mono { font-family: ui-monospace, Consolas, monospace; overflow-wrap: anywhere; }
+.desk-dialog .journal { display: flex; flex-direction: column; gap: 8px; }
+.desk-dialog .j-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); }
+.desk-dialog .j-item p { margin: 0; font-size: 13.5px; line-height: 1.5; overflow-wrap: anywhere; }
+.desk-dialog .j-item time { color: #94a3b8; font-size: 11.5px; margin-left: 4px; white-space: nowrap; }
+.desk-dialog .j-av { flex: 0 0 28px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 13px; }
+.desk-dialog .j-xong { background: rgba(34,197,94,.10); border-color: rgba(34,197,94,.35); }
+.desk-dialog .j-loi { background: rgba(239,68,68,.10); border-color: rgba(239,68,68,.35); }
+.desk-dialog .j-cho-duyet { background: rgba(236,201,112,.12); border-color: rgba(236,201,112,.45); }
+.desk-dialog .j-lenh p, .desk-dialog .j-sua p { color: #cbd5e1; font-size: 12.5px; }

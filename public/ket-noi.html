@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kết nối của đội · Văn phòng AI</title>
+<link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="app.js" defer></script>
+<style>
+:root { --ink: #1b2a8a; --ink2: #3b4bb5; --paper: #f7f4ee; --line: #1b2a8a; --mute: #6b7280; --ok: #15803d; --warn: #b45309; --bad: #b91c1c; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.5 "Segoe UI", system-ui, sans-serif;
+  background-image: linear-gradient(rgba(27,42,138,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(27,42,138,.05) 1px, transparent 1px); background-size: 24px 24px; }
+header { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; padding: 20px 20px 12px; border-bottom: 2px solid var(--line); flex-wrap: wrap; }
+.kicker { font: 600 12px/1.2 ui-monospace, Consolas, monospace; letter-spacing: .12em; color: var(--ink2); }
+h1 { margin: 4px 0 0; font-size: clamp(24px, 4vw, 34px); font-weight: 800; letter-spacing: -.01em; }
+.back { border: 2px solid var(--line); padding: 7px 12px; color: var(--ink); text-decoration: none; font: 700 12px ui-monospace, Consolas, monospace; letter-spacing: .08em; background: #fff; }
+main { padding: 16px 20px 40px; max-width: 1280px; margin: 0 auto; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 12px; }
+.chip { border: 1.5px solid var(--line); background: #fff; color: var(--ink); padding: 5px 10px; font: 700 13px inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.chip[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.chip b { font-weight: 800; opacity: .8; }
+.tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+input[type=search] { flex: 1 1 280px; max-width: 520px; padding: 9px 12px; border: 1.5px solid var(--line); font: inherit; background: #fff; color: var(--ink); }
+button.act { border: 1.5px solid var(--line); background: #fff; color: var(--ink); padding: 5px 10px; font: 700 12px inherit; cursor: pointer; }
+button.act:disabled { opacity: .5; cursor: wait; }
+.note { font-size: 12.5px; color: var(--mute); margin: 8px 0 14px; }
+.table { border: 2px solid var(--line); background: #fffdf9; }
+.row { display: grid; grid-template-columns: 34px minmax(160px, 1.3fr) 100px repeat(3, minmax(110px, 1fr)) minmax(90px, auto) minmax(150px, auto); gap: 10px; align-items: center; padding: 10px 12px; border-top: 1px solid rgba(27,42,138,.18); }
+.row.head { border-top: 0; font: 700 11px ui-monospace, Consolas, monospace; letter-spacing: .08em; color: var(--ink2); background: rgba(27,42,138,.04); }
+.ico { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; background: #eef0ff; font-size: 17px; }
+.name { font-weight: 700; }
+.name small { display: block; font-weight: 400; color: var(--mute); font-size: 12px; }
+.tag { display: inline-block; border: 1px solid currentColor; padding: 0 6px; font: 600 11px ui-monospace, Consolas, monospace; color: var(--ink2); }
+.st { font-size: 13px; font-weight: 600; }
+.st.ok { color: var(--ok); } .st.warn { color: var(--warn); } .st.bad { color: var(--bad); } .st.none { color: var(--mute); font-weight: 400; }
+.rooms { display: flex; }
+.av { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; color: #fff; font: 800 12px inherit; border: 2px solid #fff; margin-left: -6px; box-shadow: 0 0 0 1.5px var(--line); }
+.av:first-child { margin-left: 0; }
+.acts { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.msg { margin: 10px 0; padding: 8px 12px; border: 1.5px solid var(--line); background: #fff; }
+.msg.err { border-color: var(--bad); color: var(--bad); }
+.cap { display: none; }
+@media (max-width: 900px) {
+  .row.head { display: none; }
+  .row { grid-template-columns: 34px 1fr; }
+  .row > :nth-child(n+3) { grid-column: 2; }
+  .cap { display: inline; color: var(--mute); font-weight: 400; font-size: 12px; margin-right: 4px; }
+  .acts { justify-content: flex-start; }
+  main, header { padding-left: 16px; padding-right: 16px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div><div class="kicker">VĂN PHÒNG AI · KHO KẾT NỐI</div><h1>Kết nối của đội</h1></div>
+  <a class="back" href="index.html">← VỀ VĂN PHÒNG</a>
+</header>
+<main>
+  <div class="chips" id="chips" role="group" aria-label="Lọc theo phòng"></div>
+  <div class="tools"><input type="search" id="q" placeholder="Tìm kết nối… (vd: figma, notion, blender)" aria-label="Tìm kết nối"><button class="act" id="refresh" type="button">Kiểm tra lại</button></div>
+  <p class="note">Claude dùng kết nối của tài khoản claude.ai; Codex (Itachi, Sasuke) và Antigravity (Hinata) thêm ở đây rồi đăng nhập một lần. Chính sách anh chọn: AI chạy toàn quyền được <b>đọc và làm việc</b>; nhóm <b>gửi / triển khai</b> (Gmail, lịch, Zoom, Composio, Vercel, AppDeploy, tạo/sửa/huỷ lịch Notion) <b>bị chặn</b> — cần thì AI hỏi anh.</p>
+  <div id="msg" role="status"></div>
+  <div class="table" id="table" aria-live="polite"><div class="row"><span></span><span>Đang đọc kết nối của Claude, Codex, Antigravity…</span></div></div>
+  <div id="extra"></div>
+</main>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const NPC = { pain: ["Pain", "P", "#dc2626"], hinata: ["Hinata", "H", "#9333ea"], itachi: ["Itachi", "I", "#059669"], sasuke: ["Sasuke", "S", "#2563eb"], sakura: ["Sakura", "S", "#db2777"] };
+  const ICON = { notion: "📝", figma: "🎨", canva: "🖌️", webflow: "🌐", gitbook: "📘", supabase: "🗄️", cloudflare: "☁️", "google-drive": "📁", "google-docs": "📄", "google-sheets": "📊", "google-slides": "📽️", "blaze-sql": "🧮", "claude-docs": "📚",
+    gmail: "✉️", "google-calendar": "📅", zoom: "🎥", composio: "🧩", vercel: "▲", appdeploy: "🚀", blender: "🧊", comfyui: "🖼️", capcut: "🎬", adobe: "🅰️", higgsfield: "🎞️", magnific: "🔍", topview: "📈" };
+  const GROUP = { "tai-lieu": "Tài liệu", "thiet-ke": "Thiết kế", "du-lieu": "Dữ liệu", gui: "Gửi đi", "trien-khai": "Triển khai", "sang-tao": "Sáng tạo" };
+  const ST = { "da-ket-noi": ["✓ Đã kết nối", "ok"], "da-cau-hinh": ["✓ Đã thêm", "ok"], "can-dang-nhap": ["⚠ Cần đăng nhập", "warn"], loi: ["⚠ Lỗi", "warn"], tat: ["Đang tắt", "none"], "chua-co": ["— Chưa có", "none"], "khong-ho-tro": ["·", "none"] };
+  let data = null, filter = "all", busy = false;
+  async function req(path, body) {
+    const r = await fetch("/ctl" + path, { cache: "no-store", method: body ? "POST" : "GET", headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(body ? 320000 : 120000) });
+    let d; try { d = await r.json(); } catch { throw new Error("Controller chưa trả JSON (Controller có đang chạy không?)"); }
+    if (!r.ok || d.ok === false) throw new Error(d.error || "Lỗi HTTP " + r.status);
+    return d.ketNoi;
+  }
+  const msg = (t, err) => { $("msg").innerHTML = t ? `<div class="msg${err ? " err" : ""}">${esc(t)}</div>` : ""; };
+  function st(row, ai) {
+    if (row.chan && row.ai[ai] !== "khong-ho-tro") return `<span class="st bad">🚫 Bị chặn</span>`;
+    const [t, c] = ST[row.ai[ai]] || [row.ai[ai], "none"];
+    return `<span class="st ${c}">${esc(t)}</span>`;
+  }
+  function render() {
+    if (!data) return;
+    const q = $("q").value.trim().toLowerCase();
+    const counts = { all: data.rows.length, chan: data.rows.filter((r) => r.chan).length, none: data.rows.filter((r) => !r.rooms.length && !r.chan).length };
+    for (const k of Object.keys(NPC)) counts[k] = data.rows.filter((r) => r.rooms.includes(k)).length;
+    $("chips").innerHTML = [["all", "Tất cả"], ...Object.entries(NPC).map(([k, v]) => [k, v[0]]), ["chan", "Bị chặn"], ["none", "Chưa giao"]]
+      .map(([k, t]) => `<button class="chip" type="button" data-f="${k}" aria-pressed="${filter === k}">${NPC[k] ? `<span class="av" style="background:${NPC[k][2]};width:18px;height:18px;font-size:10px;box-shadow:none;border:0">${NPC[k][1]}</span>` : ""}${esc(t)} <b>${counts[k]}</b></button>`).join("");
+    const rows = data.rows.filter((r) => (filter === "all" || (filter === "chan" ? r.chan : filter === "none" ? !r.rooms.length && !r.chan : r.rooms.includes(filter))) && (!q || (r.name + " " + r.id + " " + (GROUP[r.nhom] || "")).toLowerCase().includes(q)));
+    $("table").innerHTML = `<div class="row head"><span></span><span>KẾT NỐI</span><span>NHÓM</span><span>CLAUDE</span><span>CODEX</span><span>ANTIGRAVITY</span><span>PHÒNG DÙNG</span><span></span></div>` + (rows.map((r) => {
+      let acts = "";
+      if (r.url && !r.chan) {
+        if (r.ai.codex === "chua-co") acts += `<button class="act" data-add="${r.id}" data-ai="codex">+ Codex</button>`;
+        else acts += `<button class="act" data-login="${r.id}">Đăng nhập Codex</button>`;
+        if (r.ai.agy === "chua-co") acts += `<button class="act" data-add="${r.id}" data-ai="agy">+ Antigravity</button>`;
+      }
+      let sub = r.note || "";
+      if (r.nhom === "sang-tao" && !r.web) sub = (r.app ? "Đã cài app trên máy — chờ nối MCP" : "Chưa cài app") + (r.note ? " · " + r.note : "");
+      return `<div class="row"><span class="ico" aria-hidden="true">${ICON[r.id] || "🔌"}</span><span class="name">${esc(r.name)}${sub ? `<small>${esc(sub)}</small>` : ""}</span>` +
+        `<span><span class="tag">${esc(GROUP[r.nhom] || r.nhom)}</span></span><span><span class="cap">Claude</span>${st(r, "claude")}</span><span><span class="cap">Codex</span>${st(r, "codex")}</span><span><span class="cap">Antigravity</span>${st(r, "agy")}</span>` +
+        `<span class="rooms">${r.rooms.map((k) => `<span class="av" title="${NPC[k][0]}" style="background:${NPC[k][2]}">${NPC[k][1]}</span>`).join("") || '<span class="st none">—</span>'}</span><span class="acts">${acts}</span></div>`;
+    }).join("") || `<div class="row"><span></span><span>Không có kết nối khớp.</span></div>`);
+    $("extra").innerHTML = data.extra.length ? `<p class="note">Kết nối khác đang có trên máy: ${data.extra.map((e) => esc(e.ai + " · " + e.name)).join(", ")}.</p>` : "";
+    const errs = Object.entries(data.errors || {}).filter(([, v]) => v);
+    if (errs.length) msg("Chưa đọc được kết nối của " + errs.map(([k]) => k).join(", ") + ": " + errs.map(([, v]) => v).join("; ").slice(0, 300), true);
+    document.querySelectorAll("button.act").forEach((b) => { b.disabled = busy; });
+  }
+  async function load(fresh) {
+    busy = true; render();
+    try { data = await req("/ket-noi" + (fresh ? "?fresh=1" : "")); msg(fresh ? "Đã kiểm tra lại lúc " + new Date().toLocaleTimeString("vi-VN") : ""); }
+    catch (e) { msg(e.message, true); }
+    finally { busy = false; render(); }
+  }
+  $("chips").addEventListener("click", (e) => { const b = e.target.closest("[data-f]"); if (b) { filter = b.dataset.f; render(); } });
+  $("q").addEventListener("input", render);
+  $("refresh").addEventListener("click", () => load(true));
+  $("table").addEventListener("click", async (e) => {
+    const b = e.target.closest("button.act"); if (!b || busy) return;
+    const name = data.rows.find((r) => r.id === (b.dataset.add || b.dataset.login))?.name || "";
+    if (b.dataset.add) { if (!confirm(`Thêm ${name} cho ${b.dataset.ai === "codex" ? "Codex (Itachi, Sasuke)" : "Antigravity (Hinata)"}?`)) return; }
+    else if (!confirm(`Đăng nhập ${name} cho Codex: trình duyệt sẽ mở trang cho phép của ${name}, anh tự bấm đồng ý. Tiếp tục?`)) return;
+    busy = true; render(); msg(b.dataset.add ? "Đang thêm " + name + "…" : "Đang chờ anh đăng nhập " + name + " trong trình duyệt (tối đa 5 phút)…");
+    try { data = await req(b.dataset.add ? "/ket-noi/add" : "/ket-noi/login", b.dataset.add ? { id: b.dataset.add, ai: b.dataset.ai } : { id: b.dataset.login }); msg("Xong: " + name + "."); }
+    catch (err) { msg(err.message, true); }
+    finally { busy = false; render(); }
+  });
+  load(false);
+})();
+</script>
+</body>
+</html>
