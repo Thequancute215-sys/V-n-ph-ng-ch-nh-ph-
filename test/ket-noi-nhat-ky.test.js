@@ -44,7 +44,7 @@ test("trang Kết nối: trạng thái từng AI, phòng dùng, nhóm bị chặ
   let s = await c.status();
   const row = (id) => s.rows.find((r) => r.id === id);
   assert.deepEqual(row("notion").ai, { claude: "da-ket-noi", codex: "da-cau-hinh", agy: "chua-co" });
-  assert.deepEqual(row("notion").rooms, ["pain", "sakura", "itachi", "sasuke"]);
+  assert.deepEqual(row("notion").rooms, ["hinata", "itachi", "sakura"], "phòng được giao theo mặc định");
   assert.equal(row("gmail").chan, true); assert.deepEqual(row("gmail").rooms, [], "bị chặn thì không phòng nào dùng");
   assert.equal(row("google-drive").ai.codex, "khong-ho-tro");
   assert.deepEqual(row("capcut").ai, { claude: "da-ket-noi", codex: "chua-co", agy: "chua-co" }, "MCP chạy trên máy hiện đúng hàng của app");

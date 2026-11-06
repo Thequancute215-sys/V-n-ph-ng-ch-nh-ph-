@@ -9,7 +9,8 @@ const path = require("path");
 const { execFileSync } = require("child_process");
 const { readTurn, setTurn, checkHandoff, findHandoff, EFFORTS, EXPLAIN_REQUIRED } = require("./handoff");
 const { resolveProgram } = require("./policy");
-const { CHAN_CLAUDE } = require("./ket-noi");
+const { CHAN_CLAUDE } = require("./ket-noi-danh-muc");
+const phong = require("./mcp-phong");
 
 const MIN = 60 * 1000;
 // Giải thích cho CEO duyệt (CEO yêu cầu 03/11/2026): bắt buộc với Hinata, Sol, Astra; Claude đối chiếu với diff thật.
@@ -118,6 +119,21 @@ function fullAccessArgs(argv) {
   if (kind === "claude" && !out.includes("--disallowedTools")) out.push("--disallowedTools", ...CHAN_CLAUDE);
   return out;
 }
+// Kết nối theo phòng (CEO yêu cầu 07/11/2026): lượt của vai nào chỉ bật kết nối CEO giao cho phòng của vai đó (ctl/mcp-phong.js).
+// Gọi SAU fullAccessArgs để danh sách chặn gửi (CHAN_CLAUDE) vẫn còn; Claude gộp vào cùng một --disallowedTools, Codex thêm -c sau "exec".
+function withMcp(argv, role, dir, known = {}) {
+  const prog = argv.findIndex((x) => /^(claude|codex|agy)(\.(exe|cmd|js))?$/.test(base(x)));
+  if (prog < 0) return argv;
+  const kind = base(argv[prog]).replace(/\..*$/, "");
+  const { args } = phong.argsFor(kind, role, dir, known);
+  if (!args.length) return argv;
+  if (kind === "claude") {
+    const i = argv.indexOf("--disallowedTools");
+    return i >= 0 ? [...argv.slice(0, i + 1), ...args.slice(1), ...argv.slice(i + 1)] : [...argv, ...args];
+  }
+  const at = argv.indexOf("exec");
+  return at < 0 ? argv : [...argv.slice(0, at + 1), ...args, ...argv.slice(at + 1)];
+}
 // Luật vẫn giữ khi toàn quyền (quy tắc chung của CEO): nằm trong lời giao việc của mọi vai chạy toàn quyền.
 const FULL_NOTE = "\nBẠN ĐANG CHẠY TOÀN QUYỀN trên máy CEO (không sandbox) để làm và kiểm thử thật: được cài thư viện dự án cần, chạy test/build, bật máy chủ thử trên localhost, chạy trình duyệt tự động. " +
   "Vẫn CẤM: đọc/in/chép/gửi file tài khoản và khóa (~/.claude/.credentials.json, ~/.codex/auth.json, ~/.van-phong-ao/keys.json, config.json, ~/.ssh, ~/.aws, mật khẩu trình duyệt); push/merge/release/publish; xoá hoặc sửa dữ liệu ngoài thư mục dự án; cài gói không liên quan tới việc. " +
@@ -126,7 +142,7 @@ const FULL_NOTE = "\nBẠN ĐANG CHẠY TOÀN QUYỀN trên máy CEO (không san
 const RETRYABLE = /rate.?limit|\b429\b|overloaded|ECONNRESET|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|socket hang up/i;
 const err = (code, msg) => Object.assign(new Error(msg), { code });
 
-function createRunner({ jobs, ws, audit, db, dir, scanner = null }) {
+function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () => ({}) }) {
   // Đọc mỗi lần chạy để CEO bật/tắt không cần khởi động lại.
   const fullOn = () => { try { return JSON.parse(fs.readFileSync(path.join(dir, "quyen.json"), "utf8")).toanQuyen !== false; } catch { return true; } };
   const fullFor = (role) => FULL_ROLES.has(role) && fullOn();
@@ -178,10 +194,10 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null }) {
     if (pending) throw err("HANDOFF_PENDING", `Bàn giao ${pending.job_id} đang chờ CEO duyệt hoặc từ chối: xử lý xong rồi mới chạy lượt kế tiếp`);
     guard(root, role);
     const approvalNote = fullFor(role) ? FULL_NOTE : role.startsWith("SOL_") || role === "CODEX_ASTRA_DEV" ? "\nCodex đang bật automatic review trong sandbox workspace-write. Lệnh git ghi metadata .git (kể cả git pull --ff-only) cần yêu cầu quyền bổ sung ngay từ đầu qua automatic review; không chạy thử nó trong sandbox rồi lách lỗi bằng công cụ khác. Không dùng cờ bỏ qua sandbox hoặc bỏ qua duyệt." : "";
-    const prompt = a.prompt + approvalNote + (String(task).trim() ? "\n\nViệc Giám đốc giao thêm: " + String(task).trim().slice(0, 8000) : "") + END(role) + (role === "CLAUDE_AUDITOR" ? CAPTAIN : "");
+    const prompt = a.prompt + approvalNote + phong.note(role, dir) + (String(task).trim() ? "\n\nViệc Giám đốc giao thêm: " + String(task).trim().slice(0, 8000) : "") + END(role) + (role === "CLAUDE_AUDITOR" ? CAPTAIN : "");
     if (effort !== null && !EFFORTS.includes(effort)) throw err("BAD_REQUEST", "Mức suy luận phải là một trong " + EFFORTS.join(", "));
     const shaped = codexArgs(argvFor(role), role, effort);
-    const argv = (fullFor(role) ? fullAccessArgs(shaped) : shaped).map((x) => (x === "{prompt}" ? prompt : x));
+    const argv = withMcp(fullFor(role) ? fullAccessArgs(shaped) : shaped, role, dir, mcpKnown()).map((x) => (x === "{prompt}" ? prompt : x));
     const model = CODEX_MODEL[role] ? { model: CODEX_MODEL[role], effort: effort || DEFAULT_EFFORT } : {};
     audit.log(actor, "ai.run", root, { role, retried, task: String(task).slice(0, 500), ...model });
     return jobs.start({ kind: "ai", agent: role, workspace: root, argv, timeoutMs: a.timeoutMs, onExit: (job) => done(job, { workspace: root, role, task, retried, allowRetry, effort }) });
@@ -309,9 +325,9 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null }) {
       "\nViệc của bạn:\n1) Đọc ./agent.md và các file repo liên quan, kiểm kết quả: đúng việc CEO giao, đúng quyền của vai (chỉ sửa vùng/file vai đó được sửa), không TODO/placeholder, không bịa file hay API không có trong repo, không chứa secret.\n" +
       "2) Đạt: áp đúng kết quả vào repo (file theo khối `FILE: đường/dẫn`, vùng agent.md của vai), chạy kiểm thử nếu dự án có; được sửa lỗi nhỏ hiển nhiên (cú pháp, import thiếu) và ghi rõ đã sửa gì vào [4.1]. Không commit (bộ điều phối tự commit).\n" +
       "3) Không đạt: KHÔNG sửa file nào, in đúng một dòng `WEB_RESULT_REJECTED: <lý do cụ thể, CEO cần yêu cầu ChatGPT sửa gì>` rồi dừng, không in dòng JSON bàn giao." +
-      END(role) + (role === "CLAUDE_AUDITOR" ? CAPTAIN : "");
+      phong.note(role, dir) + END(role) + (role === "CLAUDE_AUDITOR" ? CAPTAIN : "");
     guard(root, agent);
-    const argv = (fullFor(agent) ? fullAccessArgs(argvFor(agent)) : argvFor(agent)).map((x) => (x === "{prompt}" ? prompt.replace(/\nKhông push, không merge/, (fullFor(agent) ? FULL_NOTE : "") + "\nKhông push, không merge") : x));
+    const argv = withMcp(fullFor(agent) ? fullAccessArgs(argvFor(agent)) : argvFor(agent), role, dir, mcpKnown()).map((x) => (x === "{prompt}" ? prompt.replace(/\nKhông push, không merge/, (fullFor(agent) ? FULL_NOTE : "") + "\nKhông push, không merge") : x));
     audit.log("ceo", "ai.web_apply", root, { role, applier, full: fullFor(agent) });
     return jobs.start({ kind: "ai", agent, workspace: root, argv, timeoutMs: AGENTS[agent].timeoutMs, onExit: (job) => done(job, { workspace: root, role, task, retried: false, allowRetry: false }) });
   }
@@ -334,4 +350,4 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null }) {
   return { run, report, webPrompt, applyWeb, chatArgv, cliOf, fullOn, CODEX_MODEL, DEFAULT_EFFORT, status, approve, answer, reject, conflicts, get: (id) => view(q.get.get(id)), pending: () => q.open.all().map(view), AGENTS };
 }
 
-module.exports = { createRunner, AGENTS, fullAccessArgs, FULL_ROLES };
+module.exports = { createRunner, AGENTS, fullAccessArgs, withMcp, FULL_ROLES };

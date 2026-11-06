@@ -54,7 +54,8 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
   // Thông báo Windows chỉ bật khi chạy thật (main), test thì chỉ ghi nhật ký kiểm toán.
   const notifier = createNotifier({ enabled: notify && process.platform === "win32" && process.env.VP_NO_TOAST !== "1", audit });
   const scanner = createScanner({ dir, audit, notify: notifier });   // rà file .md trước khi cho AI chạy toàn quyền
-  const runner = createRunner({ jobs, ws, audit, db, dir, scanner });
+  // connectors khai báo bên dưới: chỉ gọi khi chạy lượt, lúc đó đã có.
+const runner = createRunner({ jobs, ws, audit, db, dir, scanner, mcpKnown: () => connectors.known() });
   const autopilot = createAutopilot({ runner, jobs, ws, audit, dir, quotaSnapshot: () => quotas.snapshot(), notify: notifier, scanner });
   const ideas = createIdeas({ dir, ws, runner, autopilot, audit });
   const publisher = createPublisher({ jobs, ws, audit, dir, notify: notifier, github: () => github });
@@ -187,6 +188,7 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     ["GET", "/ket-noi", async (p, qs) => ({ ketNoi: await connectors.status({ fresh: qs.get("fresh") === "1" }) })],
     ["POST", "/ket-noi/add", async (p, qs, b) => ({ ketNoi: await connectors.add(String(b.id || ""), String(b.ai || "")) })],
     ["POST", "/ket-noi/login", async (p, qs, b) => ({ ketNoi: await connectors.login(String(b.id || "")) })],
+  ["POST", "/ket-noi/phong", async (p, qs, b) => ({ ketNoi: await connectors.setPhong(String(b.room || ""), b.ids) })],
     ["GET", "/nhat-ky", (p, qs) => ({ nhatKy: journal.list(ws.find(wsOf(qs.get("workspace"))).path, qs.get("limit")) })],
     ["GET", "/publish", (p, qs) => ({ publish: publisher.status(wsOf(qs.get("workspace"))) })],
     ["POST", "/publish/prepare", (p, qs, b) => [202, { run: publisher.prepare(wsOf(b.workspace)) }]],
@@ -322,6 +324,8 @@ if (require.main === module) {
   writeAtomic(tokenFile, ctl.token);
   ctl.server.listen(port, "127.0.0.1", () => {
     ctl.audit.log("ctl", "start", null, { port, pid: process.pid });
+    // Đọc sẵn kết nối của các AI để lượt đầu tiên đã tắt đúng kết nối không thuộc phòng (ctl/mcp-phong.js).
+    setTimeout(() => ctl.connectors.status().catch(() => {}), 3000).unref();
     console.log(`\n  OS Controller (ctl) đang chạy tại http://127.0.0.1:${port}`);
     console.log(`  Token: ${tokenFile} (sinh mới mỗi lần khởi động)\n`);
   });
