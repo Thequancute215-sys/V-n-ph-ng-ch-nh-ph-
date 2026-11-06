@@ -60,7 +60,7 @@ button.act:disabled { opacity: .5; cursor: wait; }
 </header>
 <main>
   <div class="chips" id="chips" role="group" aria-label="Lọc theo phòng"></div>
-  <div class="tools"><input type="search" id="q" placeholder="Tìm kết nối… (vd: figma, notion, blender)" aria-label="Tìm kết nối"><button class="act" id="refresh" type="button">Kiểm tra lại</button></div>
+  <div class="tools"><input type="search" id="q" placeholder="Tìm kết nối… (vd: figma, notion, supabase)" aria-label="Tìm kết nối"><button class="act" id="refresh" type="button">Kiểm tra lại</button></div>
   <p class="note">Claude dùng kết nối của tài khoản claude.ai; Codex (Itachi, Sasuke) và Antigravity (Hinata) thêm ở đây rồi đăng nhập một lần. Chính sách anh chọn: AI chạy toàn quyền được <b>đọc và làm việc</b>; nhóm <b>gửi / triển khai</b> (Gmail, lịch, Zoom, Composio, Vercel, AppDeploy, tạo/sửa/huỷ lịch Notion) <b>bị chặn</b> — cần thì AI hỏi anh.</p>
   <div id="msg" role="status"></div>
   <div class="table" id="table" aria-live="polite"><div class="row"><span></span><span>Đang đọc kết nối của Claude, Codex, Antigravity…</span></div></div>
@@ -72,7 +72,7 @@ button.act:disabled { opacity: .5; cursor: wait; }
   const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const NPC = { pain: ["Pain", "P", "#dc2626"], hinata: ["Hinata", "H", "#9333ea"], itachi: ["Itachi", "I", "#059669"], sasuke: ["Sasuke", "S", "#2563eb"], sakura: ["Sakura", "S", "#db2777"] };
   const ICON = { notion: "📝", figma: "🎨", canva: "🖌️", webflow: "🌐", gitbook: "📘", supabase: "🗄️", cloudflare: "☁️", "google-drive": "📁", "google-docs": "📄", "google-sheets": "📊", "google-slides": "📽️", "blaze-sql": "🧮", "claude-docs": "📚",
-    gmail: "✉️", "google-calendar": "📅", zoom: "🎥", composio: "🧩", vercel: "▲", appdeploy: "🚀", blender: "🧊", comfyui: "🖼️", capcut: "🎬", adobe: "🅰️", higgsfield: "🎞️", magnific: "🔍", topview: "📈" };
+    gmail: "✉️", "google-calendar": "📅", zoom: "🎥", composio: "🧩", vercel: "▲", appdeploy: "🚀", capcut: "🎬" };
   const GROUP = { "tai-lieu": "Tài liệu", "thiet-ke": "Thiết kế", "du-lieu": "Dữ liệu", gui: "Gửi đi", "trien-khai": "Triển khai", "sang-tao": "Sáng tạo" };
   const ST = { "da-ket-noi": ["✓ Đã kết nối", "ok"], "da-cau-hinh": ["✓ Đã thêm", "ok"], "can-dang-nhap": ["⚠ Cần đăng nhập", "warn"], loi: ["⚠ Lỗi", "warn"], tat: ["Đang tắt", "none"], "chua-co": ["— Chưa có", "none"], "khong-ho-tro": ["·", "none"] };
   let data = null, filter = "all", busy = false;

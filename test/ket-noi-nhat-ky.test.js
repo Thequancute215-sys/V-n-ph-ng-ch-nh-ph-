@@ -11,10 +11,10 @@ const CLAUDE_LIST = `Checking MCP server health…
 claude.ai Notion: https://mcp.notion.com/mcp - √ Connected
 claude.ai Gmail: https://gmailmcp.googleapis.com/mcp/v1 - √ Connected
 claude.ai Vercel: https://mcp.vercel.com - ! Needs authentication
-blender: uvx blender-mcp - √ Connected`;
+capcut: uvx capcut-mcp - √ Connected`;
 
 test("đọc danh sách kết nối của Claude, Codex, Antigravity", () => {
-  assert.deepEqual(parseClaude(CLAUDE_LIST), { "claude.ai Notion": "da-ket-noi", "claude.ai Gmail": "da-ket-noi", "claude.ai Vercel": "can-dang-nhap", blender: "da-ket-noi" });
+  assert.deepEqual(parseClaude(CLAUDE_LIST), { "claude.ai Notion": "da-ket-noi", "claude.ai Gmail": "da-ket-noi", "claude.ai Vercel": "can-dang-nhap", capcut: "da-ket-noi" });
   assert.deepEqual(parseCodex('[{"name":"notion","enabled":true,"auth_status":"o_auth"},{"name":"figma","enabled":false}]'), { notion: "da-cau-hinh", figma: "tat" });
   assert.deepEqual(parseCodex("không phải JSON"), {});
   assert.deepEqual(parseAgy("No MCP servers configured."), {});
@@ -47,7 +47,7 @@ test("trang Kết nối: trạng thái từng AI, phòng dùng, nhóm bị chặ
   assert.deepEqual(row("notion").rooms, ["pain", "sakura", "itachi", "sasuke"]);
   assert.equal(row("gmail").chan, true); assert.deepEqual(row("gmail").rooms, [], "bị chặn thì không phòng nào dùng");
   assert.equal(row("google-drive").ai.codex, "khong-ho-tro");
-  assert.deepEqual(row("blender").ai, { claude: "da-ket-noi", codex: "chua-co", agy: "chua-co" }, "MCP chạy trên máy hiện đúng hàng của app");
+  assert.deepEqual(row("capcut").ai, { claude: "da-ket-noi", codex: "chua-co", agy: "chua-co" }, "MCP chạy trên máy hiện đúng hàng của app");
   assert.deepEqual(s.extra, []);
   await c.add("figma", "agy");
   assert.deepEqual(calls.at(-4), ["agy.exe", "mcp", "add", "figma", "https://mcp.figma.com/mcp"]);

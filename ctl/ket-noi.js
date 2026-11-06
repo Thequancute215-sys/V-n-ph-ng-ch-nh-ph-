@@ -31,14 +31,8 @@ const CATALOG = [
   { id: "composio", name: "Composio", nhom: "gui", claude: "claude.ai Composio", chan: ["mcp__claude_ai_Composio"] },
   { id: "vercel", name: "Vercel", nhom: "trien-khai", claude: "claude.ai Vercel", chan: ["mcp__claude_ai_Vercel"] },
   { id: "appdeploy", name: "AppDeploy", nhom: "trien-khai", claude: "claude.ai AppDeploy", chan: ["mcp__claude_ai_AppDeploy"] },
-  // App sáng tạo: cần app trên máy hoặc tài khoản trước; cài/đăng ký xong mới nối MCP.
-  { id: "blender", name: "Blender", nhom: "sang-tao", app: ["D:/Apps/Blender", "C:/Program Files/Blender Foundation"] },
-  { id: "comfyui", name: "ComfyUI", nhom: "sang-tao", app: ["D:/Apps/ComfyUI", "%LOCALAPPDATA%/Programs/@comfyorgcomfyui-electron", "%LOCALAPPDATA%/Programs/ComfyUI"] },
+  // App sáng tạo (CEO 07/11/2026: văn phòng làm app và công cụ là chính, chỉ giữ CapCut): cài app trước, nối MCP sau.
   { id: "capcut", name: "CapCut", nhom: "sang-tao", app: ["D:/Apps/CapCut", "%LOCALAPPDATA%/CapCut"] },
-  { id: "adobe", name: "Adobe (Photoshop, Illustrator, After Effects)", nhom: "sang-tao", app: ["D:/Apps/Adobe", "C:/Program Files/Adobe/Adobe Creative Cloud", "C:/Program Files (x86)/Adobe/Adobe Creative Cloud"], note: "Cài Creative Cloud xong, CEO đăng nhập Adobe và cài từng app" },
-  { id: "higgsfield", name: "Higgsfield", nhom: "sang-tao", web: true, note: "Dịch vụ web: cần tài khoản (trả phí)" },
-  { id: "magnific", name: "Magnific", nhom: "sang-tao", web: true, note: "Dịch vụ web: cần tài khoản (trả phí)" },
-  { id: "topview", name: "TopView", nhom: "sang-tao", web: true, note: "Dịch vụ web: cần tài khoản (trả phí)" },
 ];
 // Notion có công cụ tạo/sửa/huỷ sự kiện lịch (gửi lời mời cho người khác): cũng chặn.
 const CHAN_THEM = ["mcp__claude_ai_Notion__notion-calendar-create-events", "mcp__claude_ai_Notion__notion-calendar-update-events", "mcp__claude_ai_Notion__notion-calendar-cancel-events"];
@@ -85,7 +79,7 @@ function createConnectors({ runner, audit, dir, run = execFile }) {
     const s = cache;
     const rows = CATALOG.map((c) => {
       const ai = {
-        // App sáng tạo: MCP chạy trên máy (vd. blender) nối cho AI nào thì hiện ở cột AI đó.
+        // App sáng tạo: MCP chạy trên máy (vd. capcut) nối cho AI nào thì hiện ở cột AI đó.
         claude: s.claude[c.claude || c.id] || (c.claude || c.nhom === "sang-tao" ? "chua-co" : "khong-ho-tro"),
         codex: s.codex[c.id] || (c.url || c.nhom === "sang-tao" ? "chua-co" : "khong-ho-tro"),
         agy: s.agy[c.id] || (c.url || c.nhom === "sang-tao" ? "chua-co" : "khong-ho-tro"),
