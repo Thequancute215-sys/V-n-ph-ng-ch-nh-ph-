@@ -8,35 +8,8 @@ const path = require("path");
 const { execFile } = require("child_process");
 
 const err = (code, message) => Object.assign(new Error(message), { code });
-const ROOMS = { claude: ["pain", "sakura"], codex: ["itachi", "sasuke"], agy: ["hinata"] };
-// nhom: tai-lieu | thiet-ke | du-lieu | gui | trien-khai | sang-tao. url: có thì thêm được cho Codex/Antigravity (OAuth).
-// claude: tên kết nối trong `claude mcp list` (tài khoản claude.ai). chan: bị chặn khi chạy toàn quyền.
-const CATALOG = [
-  { id: "notion", name: "Notion", nhom: "tai-lieu", claude: "claude.ai Notion", url: "https://mcp.notion.com/mcp" },
-  { id: "figma", name: "Figma", nhom: "thiet-ke", claude: "claude.ai Figma", url: "https://mcp.figma.com/mcp" },
-  { id: "canva", name: "Canva", nhom: "thiet-ke", claude: "claude.ai Canva", url: "https://mcp.canva.com/mcp" },
-  { id: "webflow", name: "Webflow", nhom: "thiet-ke", claude: "claude.ai Webflow", url: "https://mcp.webflow.com/mcp" },
-  { id: "gitbook", name: "GitBook", nhom: "tai-lieu", claude: "claude.ai GitBook MCP", url: "https://mcp.gitbook.com/mcp" },
-  { id: "supabase", name: "Supabase", nhom: "du-lieu", claude: "claude.ai Supabase", url: "https://mcp.supabase.com/mcp" },
-  { id: "cloudflare", name: "Cloudflare", nhom: "du-lieu", claude: "claude.ai Cloudflare Developer Platform", url: "https://bindings.mcp.cloudflare.com/mcp" },
-  { id: "google-drive", name: "Google Drive", nhom: "tai-lieu", claude: "claude.ai Google Drive" },
-  { id: "google-docs", name: "Google Docs", nhom: "tai-lieu", claude: "claude.ai Google Docs" },
-  { id: "google-sheets", name: "Google Sheets", nhom: "du-lieu", claude: "claude.ai Google Sheets" },
-  { id: "google-slides", name: "Google Slides", nhom: "tai-lieu", claude: "claude.ai Google Slides" },
-  { id: "blaze-sql", name: "Blaze SQL", nhom: "du-lieu", claude: "claude.ai Blaze SQL" },
-  { id: "claude-docs", name: "Claude Docs", nhom: "tai-lieu", claude: "claude.ai Claude Docs" },
-  { id: "gmail", name: "Gmail", nhom: "gui", claude: "claude.ai Gmail", chan: ["mcp__claude_ai_Gmail"] },
-  { id: "google-calendar", name: "Google Calendar", nhom: "gui", claude: "claude.ai Google Calendar", chan: ["mcp__claude_ai_Google_Calendar"] },
-  { id: "zoom", name: "Zoom", nhom: "gui", claude: "claude.ai Zoom for Claude", chan: ["mcp__claude_ai_Zoom_for_Claude"] },
-  { id: "composio", name: "Composio", nhom: "gui", claude: "claude.ai Composio", chan: ["mcp__claude_ai_Composio"] },
-  { id: "vercel", name: "Vercel", nhom: "trien-khai", claude: "claude.ai Vercel", chan: ["mcp__claude_ai_Vercel"] },
-  { id: "appdeploy", name: "AppDeploy", nhom: "trien-khai", claude: "claude.ai AppDeploy", chan: ["mcp__claude_ai_AppDeploy"] },
-  // App sáng tạo (CEO 07/11/2026: văn phòng làm app và công cụ là chính, chỉ giữ CapCut): cài app trước, nối MCP sau.
-  { id: "capcut", name: "CapCut", nhom: "sang-tao", app: ["D:/Apps/CapCut", "%LOCALAPPDATA%/CapCut"] },
-];
-// Notion có công cụ tạo/sửa/huỷ sự kiện lịch (gửi lời mời cho người khác): cũng chặn.
-const CHAN_THEM = ["mcp__claude_ai_Notion__notion-calendar-create-events", "mcp__claude_ai_Notion__notion-calendar-update-events", "mcp__claude_ai_Notion__notion-calendar-cancel-events"];
-const CHAN_CLAUDE = [...CATALOG.flatMap((c) => c.chan || []), ...CHAN_THEM];
+const { CATALOG, CHAN_CLAUDE } = require("./ket-noi-danh-muc");
+const phong = require("./mcp-phong");   // mỗi phòng chỉ bật vài kết nối đúng phần việc
 
 // Đọc `claude mcp list` / `agy mcp list` (chữ) và `codex mcp list --json`.
 function parseClaude(text) {
@@ -60,7 +33,7 @@ function parseAgy(text) {
 const expand = (p) => p.replace(/%(\w+)%/g, (_, k) => process.env[k] || "");
 
 function createConnectors({ runner, audit, dir, run = execFile }) {
-  let cache = null, cacheAt = 0, loading = null;
+  let cache = null, cacheAt = 0, loading = null, last = null;   // last: lần đọc gần nhất, giữ cả khi cache bị xoá
   const cli = (kind) => runner.cliOf(kind);   // [chương trình, ...đối số trước lệnh con]
   const exec = (argv, timeout = 60000) => new Promise((resolve) => {
     run(argv[0], argv.slice(1), { timeout, windowsHide: true, maxBuffer: 4 * 1024 * 1024, env: { ...process.env, NO_COLOR: "1" } }, (e, stdout, stderr) => resolve({ ok: !e, out: String(stdout || "") + String(stderr || ""), error: e && e.message }));
@@ -73,10 +46,11 @@ function createConnectors({ runner, audit, dir, run = execFile }) {
 
   async function status({ fresh = false } = {}) {
     if (fresh || !cache || Date.now() - cacheAt > 5 * 60 * 1000) {
-      loading = loading || load().then((r) => { cache = r; cacheAt = Date.now(); return r; }).finally(() => { loading = null; });
+      loading = loading || load().then((r) => { cache = last = r; cacheAt = Date.now(); return r; }).finally(() => { loading = null; });
       await loading;
     }
     const s = cache;
+    const giao = phong.read(dir);
     const rows = CATALOG.map((c) => {
       const ai = {
         // App sáng tạo: MCP chạy trên máy (vd. capcut) nối cho AI nào thì hiện ở cột AI đó.
@@ -86,15 +60,18 @@ function createConnectors({ runner, audit, dir, run = execFile }) {
       };
       // Thư mục có file thật mới tính là đã cài (thư mục rỗng tạo sẵn khi cài hỏng không tính)
       const app = c.app ? c.app.map(expand).some((p) => { try { return fs.readdirSync(p).length > 0; } catch { return false; } }) : null;
-      const rooms = Object.entries(ai).filter(([, v]) => /da-/.test(v)).flatMap(([k]) => ROOMS[k]);
-      return { id: c.id, name: c.name, nhom: c.nhom, url: c.url || null, chan: Boolean(c.chan), note: c.note || null, web: Boolean(c.web), app, ai, rooms: c.chan ? [] : rooms };
+      // rooms: phòng CEO giao kết nối này; ready: AI của phòng đó đã kết nối được chưa; coTheGiao: phòng có thể giao.
+      const rooms = Object.keys(phong.PHONG).filter((k) => giao[k].includes(c.id));
+      const ready = Object.fromEntries(rooms.map((k) => [k, /^da-/.test(ai[phong.PHONG[k]])]));
+      const coTheGiao = Object.keys(phong.PHONG).filter((k) => phong.hopLe(c.id, k));
+      return { id: c.id, name: c.name, nhom: c.nhom, url: c.url || null, chan: Boolean(c.chan), note: c.note || null, web: Boolean(c.web), app, ai, rooms, ready, coTheGiao };
     });
     // Kết nối riêng của máy (vd. đã tự thêm) không có trong danh mục
     const known = new Set(CATALOG.flatMap((c) => [c.claude, c.id]));
     const extra = [...Object.keys(s.claude).filter((k) => !known.has(k)).map((k) => ({ ai: "claude", name: k, state: s.claude[k] })),
       ...Object.keys(s.codex).filter((k) => !known.has(k)).map((k) => ({ ai: "codex", name: k, state: s.codex[k] })),
       ...Object.keys(s.agy).filter((k) => !known.has(k)).map((k) => ({ ai: "agy", name: k, state: s.agy[k] }))];
-    return { rows, extra, errors: s.errors, checkedAt: new Date(cacheAt).toISOString(), chanClaude: CHAN_CLAUDE };
+    return { rows, extra, errors: s.errors, checkedAt: new Date(cacheAt).toISOString(), chanClaude: CHAN_CLAUDE, phong: giao, phongAi: phong.PHONG };
   }
 
   // Thêm kết nối cho Codex hoặc Antigravity. Kết nối nhóm gửi/triển khai không thêm cho các AI chạy toàn quyền.
@@ -124,7 +101,17 @@ function createConnectors({ runner, audit, dir, run = execFile }) {
     return status();
   }
 
-  return { status, add, login, CATALOG };
+  // CEO chọn kết nối cho một phòng trên trang Kết nối.
+  async function setPhong(room, ids) {
+    phong.save(dir, room, ids);
+    audit.log("ceo", "mcp.phong", room, { ids });
+    return status();
+  }
+
+  // Tên kết nối đã đọc được của Claude và Codex: runner dùng để tắt kết nối không thuộc phòng khi chạy lượt.
+  const known = () => (last ? { claude: Object.keys(last.claude), codex: Object.keys(last.codex) } : {});
+
+  return { status, add, login, setPhong, known, CATALOG };
 }
 
 module.exports = { createConnectors, CATALOG, CHAN_CLAUDE, parseClaude, parseCodex, parseAgy };

@@ -28,7 +28,7 @@ button.act { border: 1.5px solid var(--line); background: #fff; color: var(--ink
 button.act:disabled { opacity: .5; cursor: wait; }
 .note { font-size: 12.5px; color: var(--mute); margin: 8px 0 14px; }
 .table { border: 2px solid var(--line); background: #fffdf9; }
-.row { display: grid; grid-template-columns: 34px minmax(160px, 1.3fr) 100px repeat(3, minmax(110px, 1fr)) minmax(90px, auto) minmax(150px, auto); gap: 10px; align-items: center; padding: 10px 12px; border-top: 1px solid rgba(27,42,138,.18); }
+.row { display: grid; grid-template-columns: 34px minmax(160px, 1.3fr) 100px repeat(3, minmax(110px, 1fr)) minmax(130px, auto) minmax(150px, auto); gap: 10px; align-items: center; padding: 10px 12px; border-top: 1px solid rgba(27,42,138,.18); }
 .row.head { border-top: 0; font: 700 11px ui-monospace, Consolas, monospace; letter-spacing: .08em; color: var(--ink2); background: rgba(27,42,138,.04); }
 .ico { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; background: #eef0ff; font-size: 17px; }
 .name { font-weight: 700; }
@@ -39,6 +39,15 @@ button.act:disabled { opacity: .5; cursor: wait; }
 .rooms { display: flex; }
 .av { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; color: #fff; font: 800 12px inherit; border: 2px solid #fff; margin-left: -6px; box-shadow: 0 0 0 1.5px var(--line); }
 .av:first-child { margin-left: 0; }
+.rooms.pick { gap: 5px; flex-wrap: wrap; }
+.rt { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--c); background: #fff; color: var(--c); font: 800 12px inherit; cursor: pointer; padding: 0; opacity: .55; }
+.rt[aria-pressed="true"] { background: var(--c); color: #fff; opacity: 1; }
+.rt.cho { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--warn); }
+.rt:disabled { cursor: wait; }
+.giao { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 8px; margin: 0 0 14px; }
+.giao div { border: 1.5px solid var(--line); background: #fff; padding: 8px 10px; font-size: 13px; }
+.giao b { display: flex; align-items: center; gap: 6px; font-size: 13.5px; }
+.giao .w { color: var(--warn); }
 .acts { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 .msg { margin: 10px 0; padding: 8px 12px; border: 1.5px solid var(--line); background: #fff; }
 .msg.err { border-color: var(--bad); color: var(--bad); }
@@ -61,7 +70,9 @@ button.act:disabled { opacity: .5; cursor: wait; }
 <main>
   <div class="chips" id="chips" role="group" aria-label="Lọc theo phòng"></div>
   <div class="tools"><input type="search" id="q" placeholder="Tìm kết nối… (vd: figma, notion, supabase)" aria-label="Tìm kết nối"><button class="act" id="refresh" type="button">Kiểm tra lại</button></div>
-  <p class="note">Claude dùng kết nối của tài khoản claude.ai; Codex (Itachi, Sasuke) và Antigravity (Hinata) thêm ở đây rồi đăng nhập một lần. Chính sách anh chọn: AI chạy toàn quyền được <b>đọc và làm việc</b>; nhóm <b>gửi / triển khai</b> (Gmail, lịch, Zoom, Composio, Vercel, AppDeploy, tạo/sửa/huỷ lịch Notion) <b>bị chặn</b> — cần thì AI hỏi anh.</p>
+  <p class="note">Kết nối là của chung văn phòng, nhưng <b>mỗi phòng chỉ bật vài kết nối đúng phần việc</b>: bấm chấm tròn của phòng ở cột "Phòng dùng" để bật/tắt. Lượt chạy của phòng nào chỉ thấy kết nối của phòng đó (đỡ tốn token, đỡ rủi ro). Chấm có viền cam: đã giao nhưng AI của phòng chưa đăng nhập kết nối đó.
+  Claude dùng kết nối của tài khoản claude.ai; Codex (Itachi, Sasuke) và Antigravity (Hinata) thêm ở đây rồi đăng nhập một lần. Antigravity chạy nền hiện chưa nạp được kết nối (kiểm 07/11/2026), nên Hinata tạm chỉ được nhắc tên kết nối trong lời giao việc. Chính sách anh chọn: AI chạy toàn quyền được <b>đọc và làm việc</b>; nhóm <b>gửi / triển khai</b> (Gmail, lịch, Zoom, Composio, Vercel, AppDeploy, tạo/sửa/huỷ lịch Notion) <b>bị chặn</b> — cần thì AI hỏi anh.</p>
+  <div class="giao" id="giao" aria-live="polite"></div>
   <div id="msg" role="status"></div>
   <div class="table" id="table" aria-live="polite"><div class="row"><span></span><span>Đang đọc kết nối của Claude, Codex, Antigravity…</span></div></div>
   <div id="extra"></div>
@@ -70,12 +81,14 @@ button.act:disabled { opacity: .5; cursor: wait; }
 (() => {
   const $ = (id) => document.getElementById(id);
   const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-  const NPC = { pain: ["Pain", "P", "#dc2626"], hinata: ["Hinata", "H", "#9333ea"], itachi: ["Itachi", "I", "#059669"], sasuke: ["Sasuke", "S", "#2563eb"], sakura: ["Sakura", "S", "#db2777"] };
+  const AI_NAME = { claude: "Claude", codex: "Codex", agy: "Antigravity" };
+  const NPC = { hinata: ["Hinata", "H", "#9333ea"], itachi: ["Itachi", "I", "#059669"], sasuke: ["Sasuke", "S", "#2563eb"], sakura: ["Sakura", "S", "#db2777"] };
   const ICON = { notion: "📝", figma: "🎨", canva: "🖌️", webflow: "🌐", gitbook: "📘", supabase: "🗄️", cloudflare: "☁️", "google-drive": "📁", "google-docs": "📄", "google-sheets": "📊", "google-slides": "📽️", "blaze-sql": "🧮", "claude-docs": "📚",
     gmail: "✉️", "google-calendar": "📅", zoom: "🎥", composio: "🧩", vercel: "▲", appdeploy: "🚀", capcut: "🎬" };
   const GROUP = { "tai-lieu": "Tài liệu", "thiet-ke": "Thiết kế", "du-lieu": "Dữ liệu", gui: "Gửi đi", "trien-khai": "Triển khai", "sang-tao": "Sáng tạo" };
   const ST = { "da-ket-noi": ["✓ Đã kết nối", "ok"], "da-cau-hinh": ["✓ Đã thêm", "ok"], "can-dang-nhap": ["⚠ Cần đăng nhập", "warn"], loi: ["⚠ Lỗi", "warn"], tat: ["Đang tắt", "none"], "chua-co": ["— Chưa có", "none"], "khong-ho-tro": ["·", "none"] };
   let data = null, filter = "all", busy = false;
+  const ten = (id) => (data && data.rows.find((r) => r.id === id)?.name) || id;
   async function req(path, body) {
     const r = await fetch("/ctl" + path, { cache: "no-store", method: body ? "POST" : "GET", headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(body ? 320000 : 120000) });
     let d; try { d = await r.json(); } catch { throw new Error("Controller chưa trả JSON (Controller có đang chạy không?)"); }
@@ -96,6 +109,9 @@ button.act:disabled { opacity: .5; cursor: wait; }
     $("chips").innerHTML = [["all", "Tất cả"], ...Object.entries(NPC).map(([k, v]) => [k, v[0]]), ["chan", "Bị chặn"], ["none", "Chưa giao"]]
       .map(([k, t]) => `<button class="chip" type="button" data-f="${k}" aria-pressed="${filter === k}">${NPC[k] ? `<span class="av" style="background:${NPC[k][2]};width:18px;height:18px;font-size:10px;box-shadow:none;border:0">${NPC[k][1]}</span>` : ""}${esc(t)} <b>${counts[k]}</b></button>`).join("");
     const rows = data.rows.filter((r) => (filter === "all" || (filter === "chan" ? r.chan : filter === "none" ? !r.rooms.length && !r.chan : r.rooms.includes(filter))) && (!q || (r.name + " " + r.id + " " + (GROUP[r.nhom] || "")).toLowerCase().includes(q)));
+    $("giao").innerHTML = Object.entries(data.phongAi || {}).map(([k, ai]) => { const ids = data.phong[k] || [];
+      const cho = ids.filter((id) => { const r = data.rows.find((x) => x.id === id); return r && r.ready && r.ready[k] === false; });
+      return `<div><b><span class="av" style="background:${NPC[k][2]};width:20px;height:20px;font-size:10px;box-shadow:none;border:0">${NPC[k][1]}</span>${esc(NPC[k][0])} · ${AI_NAME[ai]}</b>${ids.length ? ids.map((id) => cho.includes(id) ? `<span class="w" title="Chưa đăng nhập">${esc(ten(id))}⚠</span>` : esc(ten(id))).join(", ") : '<span class="st none">Chưa giao kết nối nào</span>'}</div>`; }).join("");
     $("table").innerHTML = `<div class="row head"><span></span><span>KẾT NỐI</span><span>NHÓM</span><span>CLAUDE</span><span>CODEX</span><span>ANTIGRAVITY</span><span>PHÒNG DÙNG</span><span></span></div>` + (rows.map((r) => {
       let acts = "";
       if (r.url && !r.chan) {
@@ -107,12 +123,13 @@ button.act:disabled { opacity: .5; cursor: wait; }
       if (r.nhom === "sang-tao" && !r.web) sub = (r.app ? "Đã cài app trên máy — chờ nối MCP" : "Chưa cài app") + (r.note ? " · " + r.note : "");
       return `<div class="row"><span class="ico" aria-hidden="true">${ICON[r.id] || "🔌"}</span><span class="name">${esc(r.name)}${sub ? `<small>${esc(sub)}</small>` : ""}</span>` +
         `<span><span class="tag">${esc(GROUP[r.nhom] || r.nhom)}</span></span><span><span class="cap">Claude</span>${st(r, "claude")}</span><span><span class="cap">Codex</span>${st(r, "codex")}</span><span><span class="cap">Antigravity</span>${st(r, "agy")}</span>` +
-        `<span class="rooms">${r.rooms.map((k) => `<span class="av" title="${NPC[k][0]}" style="background:${NPC[k][2]}">${NPC[k][1]}</span>`).join("") || '<span class="st none">—</span>'}</span><span class="acts">${acts}</span></div>`;
+        `<span class="rooms pick"><span class="cap">Phòng dùng</span>${r.coTheGiao.map((k) => { const on = r.rooms.includes(k), cho = on && r.ready[k] === false;
+          return `<button type="button" class="rt${cho ? " cho" : ""}" style="--c:${NPC[k][2]}" data-room="${k}" data-id="${r.id}" aria-pressed="${on}" title="${esc(NPC[k][0] + (on ? (cho ? ": đã giao, " + AI_NAME[data.phongAi[k]] + " chưa đăng nhập" : ": đang dùng") : ": bấm để giao"))}">${NPC[k][1]}</button>`; }).join("") || '<span class="st none">—</span>'}</span><span class="acts">${acts}</span></div>`;
     }).join("") || `<div class="row"><span></span><span>Không có kết nối khớp.</span></div>`);
     $("extra").innerHTML = data.extra.length ? `<p class="note">Kết nối khác đang có trên máy: ${data.extra.map((e) => esc(e.ai + " · " + e.name)).join(", ")}.</p>` : "";
     const errs = Object.entries(data.errors || {}).filter(([, v]) => v);
     if (errs.length) msg("Chưa đọc được kết nối của " + errs.map(([k]) => k).join(", ") + ": " + errs.map(([, v]) => v).join("; ").slice(0, 300), true);
-    document.querySelectorAll("button.act").forEach((b) => { b.disabled = busy; });
+    document.querySelectorAll("button.act, button.rt").forEach((b) => { b.disabled = busy; });
   }
   async function load(fresh) {
     busy = true; render();
@@ -124,6 +141,16 @@ button.act:disabled { opacity: .5; cursor: wait; }
   $("q").addEventListener("input", render);
   $("refresh").addEventListener("click", () => load(true));
   $("table").addEventListener("click", async (e) => {
+    const t = e.target.closest("button.rt");
+    if (t && !busy) {
+      const room = t.dataset.room, id = t.dataset.id, cur = data.phong[room] || [];
+      const ids = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
+      busy = true; render();
+      try { data = await req("/ket-noi/phong", { room, ids }); msg(`Đã ${cur.includes(id) ? "tắt" : "bật"} ${ten(id)} cho ${NPC[room][0]}. Áp dụng từ lượt chạy kế tiếp.`); }
+      catch (err) { msg(err.message, true); }
+      finally { busy = false; render(); }
+      return;
+    }
     const b = e.target.closest("button.act"); if (!b || busy) return;
     const name = data.rows.find((r) => r.id === (b.dataset.add || b.dataset.login))?.name || "";
     if (b.dataset.add) { if (!confirm(`Thêm ${name} cho ${b.dataset.ai === "codex" ? "Codex (Itachi, Sasuke)" : "Antigravity (Hinata)"}?`)) return; }
