@@ -8,6 +8,7 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const { maskSecrets } = require("../lib/mask");
+const { writeAtomic } = require("../lib/ghi-file");
 
 const SKIP_DIRS = new Set([".git", "node_modules", ".venv", "venv", "env", "__pycache__", "dist", "build", ".next", ".nuxt", "vendor", "target", ".tox", ".mypy_cache", ".pytest_cache", "coverage", "site-packages"]);
 const TEXT_FILE = /(\.(md|mdx|mdc|markdown|prompt)|^\.(cursorrules|windsurfrules|clinerules))$/i;
@@ -168,7 +169,7 @@ function createScanner({ dir, audit, notify = () => {} }) {
   const file = path.join(dir, "ra-soat.json");
   let approvals = {};
   try { approvals = JSON.parse(fs.readFileSync(file, "utf8")); } catch {}
-  const save = () => { fs.writeFileSync(file + ".tmp", JSON.stringify(approvals), { mode: 0o600 }); fs.renameSync(file + ".tmp", file); };
+  const save = () => writeAtomic(file, JSON.stringify(approvals));
   const told = new Set(), cache = new Map();
   const key = (root) => (process.platform === "win32" ? root.toLowerCase() : root);
 

@@ -6,6 +6,7 @@
 const fs = require("fs");
 const path = require("path");
 const { maskSecrets, maskText } = require("../lib/mask");
+const { writeAtomic } = require("../lib/ghi-file");
 const { responseText } = require("./autopilot");
 
 // Khoá = id phòng/nhân vật trong văn phòng 3D (public/vanphong3d.js) để giao diện đi tới đúng phòng.
@@ -72,7 +73,7 @@ function createChat({ jobs, ws, runner, audit, dir }) {
   try { store = JSON.parse(fs.readFileSync(file, "utf8")) || {}; } catch {}
   // Tin đang chờ mà app đã tắt giữa chừng: không còn ai trả lời nữa.
   for (const per of Object.values(store)) for (const list of Object.values(per)) for (const m of list) if (m.status === "cho") { m.status = "loi"; m.text = "App khởi động lại khi đang trả lời, sếp hỏi lại giúp em."; }
-  const save = () => { fs.writeFileSync(file + ".tmp", JSON.stringify(store), { mode: 0o600 }); fs.renameSync(file + ".tmp", file); };
+  const save = () => writeAtomic(file, JSON.stringify(store));
   const listOf = (root, who) => ((store[root] = store[root] || {})[who] = store[root][who] || []);
   const check = (who) => { if (!PEOPLE[who]) throw err("BAD_REQUEST", "Không có người để chat: " + who); };
   const view = (root, who) => { const messages = listOf(root, who); return { who, ...PEOPLE[who], messages, busy: messages.some((m) => m.status === "cho") }; };

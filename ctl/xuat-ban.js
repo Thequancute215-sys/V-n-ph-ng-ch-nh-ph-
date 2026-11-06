@@ -11,6 +11,7 @@ const { execFileSync } = require("child_process");
 const nhanh = require("./nhanh");
 const { remoteName } = require("./github");
 const { maskSecrets } = require("../lib/mask");
+const { writeAtomic } = require("../lib/ghi-file");
 
 const MIN = 60 * 1000;
 const KEEP = 20;
@@ -18,7 +19,8 @@ const SEMVER = /^\d+\.\d+\.\d+$/;
 const err = (code, message) => Object.assign(new Error(message), { code });
 const gitOut = (root, args) => execFileSync("git", args, { cwd: root, encoding: "utf8", env: { ...process.env, GIT_TERMINAL_PROMPT: "0" }, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] }).trim();
 
-// Lệnh test của dự án: npm test (khi package.json có script test thật) hoặc pytest; không có thì bỏ qua và ghi rõ.
+// Lệnh test của dự án: npm test (khi package.json có script test thật), pytest hoặc unittest; không có thì bỏ qua và ghi rõ.
+// Python ưu tiên môi trường riêng của dự án (.venv) để không cần cài thư viện chung vào máy.
 function testCommand(root) {
   try {
     const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
@@ -26,8 +28,14 @@ function testCommand(root) {
     if (t && !/no test specified/.test(t)) return ["npm", "test"];
   } catch {}
   const has = (f) => fs.existsSync(path.join(root, f));
-  if (has("pytest.ini") || has("conftest.py") || has("tests") && fs.readdirSync(path.join(root, "tests")).some((f) => /^test_.*\.py$|_test\.py$/.test(f))) return ["python", "-m", "pytest", "-q"];
-  return null;
+  const read = (f) => { try { return fs.readFileSync(path.join(root, f), "utf8"); } catch { return ""; } };
+  const pyTests = has("tests") && fs.readdirSync(path.join(root, "tests")).some((f) => /^test_.*\.py$|_test\.py$/.test(f));
+  if (!has("pytest.ini") && !has("conftest.py") && !pyTests) return null;
+  const venv = [path.join(root, ".venv", "Scripts", "python.exe"), path.join(root, ".venv", "bin", "python")].find((p) => fs.existsSync(p));
+  const python = venv || "python";
+  // pytest khi dự án dùng pytest (cấu hình hoặc có trong requirements/pyproject), không thì unittest như CI của repo đó.
+  const usesPytest = has("pytest.ini") || has("conftest.py") || /\bpytest\b/i.test(read("pyproject.toml") + read("setup.cfg") + fs.readdirSync(root).filter((f) => /^requirements.*\.txt$/.test(f)).map(read).join("\n"));
+  return usesPytest ? [python, "-m", "pytest", "-q"] : [python, "-m", "unittest", "discover", "-s", "tests"];
 }
 
 // Mọi file đã sửa hoặc mới tạo mà chưa commit (trừ file .gitignore bỏ qua và agent.md ở gốc).
@@ -84,7 +92,7 @@ function createPublisher({ jobs, ws, audit, dir, notify = () => {}, github = () 
   try { store = { runs: [], ...JSON.parse(fs.readFileSync(file, "utf8")) }; } catch {}
   // Lượt đang chạy khi app tắt: tiến trình con đã bị dừng theo app.
   for (const r of store.runs) if (["running", "releasing"].includes(r.status)) { r.status = "failed"; r.problem = "App khởi động lại khi đang chạy, bấm Kiểm tra & build lại."; }
-  const save = () => { fs.writeFileSync(file + ".tmp", JSON.stringify(store, null, 1), { mode: 0o600 }); fs.renameSync(file + ".tmp", file); };
+  const save = () => writeAtomic(file, JSON.stringify(store, null, 1));
   const rootOf = (workspace) => ws.find(workspace).path;
   const busy = (root) => store.runs.some((r) => r.workspace === root && ["running", "releasing"].includes(r.status));
   const fullNameOf = (root) => { if (repoName) return repoName(root); try { return remoteName(gitOut(root, ["remote", "get-url", "origin"])); } catch { return null; } };

@@ -28,6 +28,7 @@ const { createScanner } = require("./ra-soat");
 const { classify } = require("./policy");
 const { readTurn } = require("./handoff");
 const { maskSecrets } = require("../lib/mask");
+const { writeAtomic } = require("../lib/ghi-file");
 
 const VERSION = "1.0.0";
 const LOOPBACK = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i;
@@ -58,7 +59,7 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
   const chat = createChat({ jobs, ws, runner, audit, dir });
   const selectWorkspace = (p) => {
     const w = ws.switchTo(p, "ceo");
-    fs.writeFileSync(activeFile + ".tmp", JSON.stringify({ path: w.path }), { mode: 0o600 }); fs.renameSync(activeFile + ".tmp", activeFile);
+    writeAtomic(activeFile, JSON.stringify({ path: w.path }));
     lastSelect = w;
     protectPublic(w.path);
     return w.path;
@@ -309,12 +310,8 @@ if (require.main === module) {
   const port = Number(process.env.CTL_PORT || 7790);
   const ctl = createCtl({ dir, notify: true });
   const tokenFile = path.join(dir, "ctl-token");
-  fs.writeFileSync(tokenFile + ".tmp", ctl.token, { mode: 0o600 });
-  // server.js đọc lại token ở mỗi yêu cầu; Windows từ chối đổi tên (EPERM/EBUSY) khi đúng lúc đó file đang mở: thử lại thay vì sập.
-  for (let i = 0; ; i++) {
-    try { fs.renameSync(tokenFile + ".tmp", tokenFile); break; }
-    catch (e) { if (!["EPERM", "EBUSY", "EACCES"].includes(e.code) || i >= 40) throw e; Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50); }
-  }
+  // server.js đọc lại token ở mỗi yêu cầu; writeAtomic thử lại khi Windows tạm khoá file (EPERM/EBUSY) thay vì sập.
+  writeAtomic(tokenFile, ctl.token);
   ctl.server.listen(port, "127.0.0.1", () => {
     ctl.audit.log("ctl", "start", null, { port, pid: process.pid });
     console.log(`\n  OS Controller (ctl) đang chạy tại http://127.0.0.1:${port}`);

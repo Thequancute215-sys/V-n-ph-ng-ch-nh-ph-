@@ -11,6 +11,7 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const { maskSecrets, looksLikeKey } = require("../lib/mask");
+const { writeAtomic } = require("../lib/ghi-file");
 const { readTurn } = require("./handoff");
 const nhanh = require("./nhanh");
 const ACTIVE = new Set(["running", "reporting", "awaiting_approval", "awaiting_answer", "attention", "waiting_quota", "awaiting_scan"]);
@@ -74,8 +75,7 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
       run.notified = run.status;
       try { notify("Văn phòng AI · " + path.basename(run.workspace), NOTIFY[run.status] + ": " + run.task.split(/\r?\n/)[0].slice(0, 120)); } catch {}
     } else if (!NOTIFY[run.status]) run.notified = null;
-    const dest = path.join(folder, run.id + ".json"), temp = dest + ".tmp";
-    fs.writeFileSync(temp, JSON.stringify(run), { mode: 0o600 }); fs.renameSync(temp, dest);
+    writeAtomic(path.join(folder, run.id + ".json"), JSON.stringify(run));
   };
   for (const name of fs.readdirSync(folder).filter((f) => /^auto-[\w-]+\.json$/.test(f))) {
     try {

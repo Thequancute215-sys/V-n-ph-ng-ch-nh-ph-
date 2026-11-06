@@ -40,6 +40,14 @@ test("nhận ra cách xuất bản của repo, phiên bản trong code, lệnh t
   assert.equal(testCommand(dir), null, "script test mặc định của npm init không tính là có test");
   fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ scripts: { test: "node --test" } }));
   assert.deepEqual(testCommand(dir), ["npm", "test"]);
+  fs.rmSync(path.join(dir, "package.json"));
+  fs.mkdirSync(path.join(dir, "tests")); fs.writeFileSync(path.join(dir, "tests", "test_api.py"), "");
+  assert.deepEqual(testCommand(dir), ["python", "-m", "unittest", "discover", "-s", "tests"], "không dùng pytest thì chạy unittest như CI");
+  fs.writeFileSync(path.join(dir, "requirements-dev.txt"), "pytest>=8\n");
+  assert.deepEqual(testCommand(dir), ["python", "-m", "pytest", "-q"]);
+  const venvPy = path.join(dir, ".venv", process.platform === "win32" ? "Scripts" : "bin", process.platform === "win32" ? "python.exe" : "python");
+  fs.mkdirSync(path.dirname(venvPy), { recursive: true }); fs.writeFileSync(venvPy, "");
+  assert.deepEqual(testCommand(dir), [venvPy, "-m", "pytest", "-q"], "có .venv của dự án thì dùng Python trong đó");
   fs.rmSync(dir, { recursive: true, force: true });
 
   assert.equal(classify(["docker", "build", "-t", "a", "."]).decision, "allow");
