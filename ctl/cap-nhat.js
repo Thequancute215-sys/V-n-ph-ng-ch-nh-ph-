@@ -19,7 +19,10 @@ const NOT_READY = {
 // root: thư mục app. appManaged(): văn phòng có đang chạy bằng app (npm run app) không — chỉ khi đó mới tắt/bật lại được.
 // spawnUpdater(args): chạy scripts/cap-nhat.js (tiêm vào để test không tắt app thật).
 function createUpdater({ root, audit, jobs, autopilot, appManaged = defaultManaged, spawnUpdater = defaultSpawn, channel = () => (loadConfig(root) || {}).updateChannel }) {
+  // Lần hỏi GitHub gần nhất, lưu ra file để sau khi văn phòng khởi động lại (vd. vừa cập nhật) vẫn biết đã kiểm lúc nào.
+  const fetchedFile = path.join(u.HOME(), "cap-nhat-kiem.json");
   let fetched = null, fetching = null;
+  try { fetched = JSON.parse(fs.readFileSync(fetchedFile, "utf8")); } catch {}
 
   function status() {
     const s = u.check(root, { channel: channel() });
@@ -31,7 +34,10 @@ function createUpdater({ root, audit, jobs, autopilot, appManaged = defaultManag
 
   // Tải bản mới từ GitHub (một lần tại một thời điểm), rồi trả tình trạng.
   async function refresh() {
-    fetching = fetching || u.fetchAsync(root, channel()).then((r) => { fetched = r; }).finally(() => { fetching = null; });
+    fetching = fetching || u.fetchAsync(root, channel()).then((r) => {
+      fetched = r;
+      try { fs.mkdirSync(u.HOME(), { recursive: true }); fs.writeFileSync(fetchedFile, JSON.stringify(r)); } catch {}
+    }).finally(() => { fetching = null; });
     await fetching;
     return status();
   }

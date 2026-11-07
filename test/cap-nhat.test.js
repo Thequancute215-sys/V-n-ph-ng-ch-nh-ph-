@@ -219,3 +219,12 @@ test("scripts/cap-nhat.js từ chối tham số sai", () => {
   const r = spawnSync(process.execPath, [path.join(__dirname, "..", "scripts", "cap-nhat.js"), "--tu", "abc", "--den", "HEAD"], { encoding: "utf8" });
   assert.equal(r.status, 2); assert.match(r.stderr, /40 ký tự/);
 });
+
+test("lần hỏi GitHub gần nhất còn nhớ sau khi ctl khởi động lại", async (t) => {
+  const f = fixture(t);
+  const make = () => createUpdater({ root: f.app, audit: { log() {} }, jobs: { list: () => [] }, autopilot: { list: () => [] }, appManaged: () => true, spawnUpdater: () => {}, channel: () => "phat-hanh" });
+  assert.equal(make().status().fetchedAt, null);
+  const s = await make().refresh();
+  assert.ok(s.fetchedAt); assert.equal(s.fetchError, null);
+  assert.equal(make().status().fetchedAt, s.fetchedAt, "ctl mới đọc lại từ ~/.van-phong-ao/cap-nhat-kiem.json");
+});
