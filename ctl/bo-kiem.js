@@ -21,7 +21,7 @@ const norm = (s) => String(s).replace(/\r\n/g, "\n");
 const wanted = () => Object.fromEntries(Object.entries(FILES).map(([to, from]) => [to, norm(fs.readFileSync(from, "utf8"))]));
 const stamp = (d = new Date()) => d.toISOString().replace(/[-:T]/g, "").slice(0, 14);   // yyyymmddhhmmss (UTC)
 
-function createBoKiem({ dir, audit }) {
+function createBoKiem({ dir, audit, now = () => new Date() }) {   // now: tiêm giờ cho test
   const stateFile = path.join(dir, "bo-kiem.json");   // lần cài gần nhất của từng repo: nhánh + link PR
   const readAll = () => { try { return JSON.parse(fs.readFileSync(stateFile, "utf8")); } catch { return {}; } };
   const busy = new Set();
@@ -53,7 +53,11 @@ function createBoKiem({ dir, audit }) {
       if (!main) throw err("NOT_ON_MAIN", "Không xác định được nhánh chính (main/master) của repo.");
       tryGit(root, ["fetch", "--quiet", "origin", main], { timeout: 60000 });
       const base = tryGit(root, ["rev-parse", "--verify", "--quiet", "refs/remotes/origin/" + main]) ? "origin/" + main : main;
-      const branch = "vp/bo-kiem-chu-trinh-" + stamp();
+      // Tên theo giờ; bấm hai lần trong cùng một giây (máy nhanh) thì thêm -2, -3… để không đụng nhánh có sẵn.
+      const taken = (b) => tryGit(root, ["rev-parse", "--verify", "--quiet", "refs/heads/" + b]) || tryGit(root, ["rev-parse", "--verify", "--quiet", "refs/remotes/origin/" + b]);
+      const first = "vp/bo-kiem-chu-trinh-" + stamp(now());
+      let branch = first;
+      for (let n = 2; taken(branch); n++) branch = first + "-" + n;
       try { nhanh.git(root, ["worktree", "add", "--quiet", "-b", branch, tmp, base], { timeout: 60000 }); }
       catch (e) { throw err("GIT_BRANCH", "Không tạo được nhánh " + branch + ": " + clean(e)); }
       let committed = false;

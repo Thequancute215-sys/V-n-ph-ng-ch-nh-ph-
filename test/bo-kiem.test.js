@@ -40,7 +40,7 @@ test("mẫu agent.md có luật clean code (CI) và cập nhật không cài l�
   assert.match(MAU, /Cập nhật & phát hành \(luật \[1\]\.7\)/);
   assert.match(MAU, /Phase 1: .*CI \(lint \+ test \+ bộ kiểm agent\.md\) và khung phát hành\/cập nhật/);
   assert.deepEqual(k.checkText(MAU), []);
-  const wf = fs.readFileSync(FILES[".github/workflows/kiem-chu-trinh.yml"], "utf8");
+  const wf = fs.readFileSync(FILES[".github/workflows/kiem-chu-trinh.yml"], "utf8").replace(/\r\n/g, "\n");   // checkout Windows có thể là CRLF
   assert.match(wf, /node tools\/kiem-agent\.js --neu-co\n/); assert.match(wf, /--tu "\$BASE"/); assert.match(wf, /contents: read/);
 });
 
@@ -130,4 +130,13 @@ test("ctl HTTP: tổng quan dự án có trạng thái bộ kiểm; POST /bo-kie
     r = await call("/bo-kiem", { workspace: path.join(f.temp, "khong-dang-ky") });
     assert.equal(r.status, 403);
   } finally { await ctl.close(); }
+});
+
+test("bấm cài hai lần trong cùng một giây (máy nhanh): nhánh thứ hai thêm -2, không lỗi trùng tên", (t) => {
+  const f = fixture(t);
+  const at = new Date("2026-11-08T01:02:03Z");
+  const bk = createBoKiem({ dir: f.temp, audit: { log() {} }, now: () => at });
+  const a = bk.install(f.repo), b = bk.install(f.repo), c = bk.install(f.repo);
+  assert.deepEqual([a.last.branch, b.last.branch, c.last.branch], ["vp/bo-kiem-chu-trinh-20261108010203", "vp/bo-kiem-chu-trinh-20261108010203-2", "vp/bo-kiem-chu-trinh-20261108010203-3"]);
+  for (const x of [a, b, c]) assert.ok(f.gitIn(f.origin, "rev-parse", "--verify", x.last.branch), "đã đẩy " + x.last.branch);
 });
