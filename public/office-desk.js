@@ -168,7 +168,7 @@ export function createDesk(getOffice) {
       : messageHtml("journal", "Chưa có hoạt động nào của dự án này. Giao việc cho cả đội để bắt đầu.");
   }
   function renderProgress() {
-    $("deskProgress").innerHTML = errors.workspace || errors.overview || !overview || overview.workspace !== active ? messageHtml("overview", active ? "Đang đọc tiến độ dự án…" : "Chưa chọn dự án.") : globalThis.RepoProgress.html(overview, runs, ownHandoffs(), errors);
+    $("deskProgress").innerHTML = errors.workspace || errors.overview || !overview || overview.workspace !== active ? messageHtml("overview", active ? "Đang đọc tiến độ dự án…" : "Chưa chọn dự án.") : globalThis.RepoProgress.html(overview, runs, ownHandoffs(), errors, { actions: true });
   }
   function render() {
     $("deskWorkspace").textContent = errors.workspace || (active ? "Dự án: " + (workspaces.find((w) => w.path === active)?.name || active) : dataReady ? "Chưa chọn dự án." : "Đang đọc dự án…");
@@ -291,6 +291,17 @@ export function createDesk(getOffice) {
   const followPublish = () => { clearTimeout(publishTimer); publishTimer = setTimeout(async () => { await refreshNow(); if ((publish?.runs || []).some((r) => ["running", "releasing"].includes(r.status))) followPublish(); }, 3000); };
   $("deskPrepare").onclick = () => { const workspace = active; if (workspace) mutate("Kiểm tra & build image Docker của dự án trên máy (chưa đẩy ra ngoài)", async () => { await request("/publish/prepare", { workspace }); followPublish(); }); };
   dialog.addEventListener("click", (e) => {
+    const bk = e.target.closest("[data-bo-kiem]");
+    if (bk && !bk.disabled) {
+      const workspace = active;
+      if (workspace) mutate("Cài bộ kiểm chu trình (kiểm agent.md + lint/test trên mỗi PR) vào repo " + (overview?.name || workspace) + ": văn phòng tạo nhánh mới từ nhánh chính, commit 2 file, ĐẨY NHÁNH lên GitHub rồi mở trang tạo PR để anh merge", async () => {
+        const { boKiem } = await request("/bo-kiem", { workspace }, 120000);
+        const url = safeCompare(boKiem.last?.compareUrl);
+        if (url) window.open(url, "_blank", "noopener");
+        overview = null;
+      });
+      return;
+    }
     const pb = e.target.closest("[data-publish]");
     if (pb && !pb.disabled) {
       const version = (dialog.querySelector(`[data-version="${CSS.escape(pb.dataset.publish)}"]`)?.value || "").trim().replace(/^v/, "");

@@ -1,0 +1,57 @@
+# Văn phòng AI cài vào repo dự án (ctl/bo-kiem.js). Mỗi PR và mỗi lần cập nhật nhánh chính:
+#   1. kiểm chu trình agent.md (tools/kiem-agent.js) và từng commit sửa agent.md trong PR;
+#   2. lint và test theo công nghệ có trong repo (Node: npm run lint / npm test; Python: ruff / pytest).
+# Luật [1] trong agent.md: mỗi PR phải qua bước này. Sol chốt lint/test của dự án ở Vùng [3]; thêm bước riêng thì sửa file này.
+# Chỉ quyền đọc repo, không triển khai gì.
+name: Kiểm chu trình
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kiem-chu-trinh-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kiem:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Kiểm agent.md
+        run: node tools/kiem-agent.js --neu-co
+      - name: Kiểm các commit sửa agent.md trong PR
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: origin/${{ github.base_ref }}
+        run: node tools/kiem-agent.js --neu-co --tu "$BASE"
+      - name: Lint và test (Node)
+        if: hashFiles('package.json') != ''
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install --no-audit --no-fund; fi
+          # Chỉ chạy script có thật; script test mặc định của npm ("no test specified") coi như chưa có test.
+          has() { node -e 'const s=(require("./package.json").scripts||{})[process.argv[1]];process.exit(s&&!/no test specified/.test(s)?0:1)' "$1"; }
+          if has lint; then npm run lint; else echo "::warning::Chưa có script lint trong package.json (luật [1] của agent.md yêu cầu)"; fi
+          if has test; then npm test; else echo "::warning::Chưa có script test trong package.json (luật [1] của agent.md yêu cầu)"; fi
+      - uses: actions/setup-python@v5
+        if: hashFiles('pyproject.toml', 'requirements.txt', 'setup.py') != ''
+        with:
+          python-version: "3.12"
+      - name: Lint và test (Python)
+        if: hashFiles('pyproject.toml', 'requirements.txt', 'setup.py') != ''
+        run: |
+          python -m pip install --upgrade pip ruff pytest
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f pyproject.toml ] || [ -f setup.py ]; then pip install -e . || echo "::warning::Không cài được dự án bằng pip install -e ."; fi
+          ruff check .
+          if ls tests test 2>/dev/null | grep -q .; then pytest -q; else echo "::warning::Chưa có thư mục tests (luật [1] của agent.md yêu cầu)"; fi
