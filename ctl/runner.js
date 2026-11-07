@@ -11,6 +11,7 @@ const { readTurn, setTurn, checkHandoff, findHandoff, EFFORTS, EXPLAIN_REQUIRED 
 const { resolveProgram } = require("./policy");
 const { CHAN_CLAUDE } = require("./ket-noi-danh-muc");
 const phong = require("./mcp-phong");
+const kiemAgent = require("../lib/kiem-agent");
 
 const MIN = 60 * 1000;
 // Giải thích cho CEO duyệt (CEO yêu cầu 03/11/2026): bắt buộc với Hinata, Sol, Astra; Claude đối chiếu với diff thật.
@@ -200,7 +201,25 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     const argv = withMcp(fullFor(role) ? fullAccessArgs(shaped) : shaped, role, dir, mcpKnown()).map((x) => (x === "{prompt}" ? prompt : x));
     const model = CODEX_MODEL[role] ? { model: CODEX_MODEL[role], effort: effort || DEFAULT_EFFORT } : {};
     audit.log(actor, "ai.run", root, { role, retried, task: String(task).slice(0, 500), ...model });
-    return jobs.start({ kind: "ai", agent: role, workspace: root, argv, timeoutMs: a.timeoutMs, onExit: (job) => done(job, { workspace: root, role, task, retried, allowRetry, effort }) });
+    const before = agentBefore(root);
+    return jobs.start({ kind: "ai", agent: role, workspace: root, argv, timeoutMs: a.timeoutMs, onExit: (job) => done(job, { workspace: root, role, task, retried, allowRetry, effort, before }) });
+  }
+
+  // Bản agent.md trước lượt, để bộ kiểm chu trình (lib/kiem-agent.js) so lượt này đã sửa gì. Lấy bản đã commit (HEAD) vì
+  // agent.md chỉ được commit khi duyệt bàn giao: AI bị trả lại rồi chạy lại thì vẫn so với bản trước lượt đầu.
+  // agent.md chưa commit (repo công khai giữ trên máy, hoặc ctl vừa tạo) thì chụp file ngay lúc giao việc.
+  function agentBefore(root) {
+    const prog = resolveProgram("git");
+    try { return execFileSync(prog[0], [...prog.slice(1), "show", "HEAD:agent.md"], { cwd: root, encoding: "utf8", timeout: 15000, windowsHide: true, stdio: ["ignore", "pipe", "ignore"] }); } catch {}
+    try { return fs.readFileSync(path.join(root, "agent.md"), "utf8"); } catch { return null; }
+  }
+
+  // Lỗi chu trình agent.md của lượt (sửa vùng không thuộc vai, tăng Phase khi còn OPEN, log quá dài, lộ khóa…). Bắt đầu bằng
+  // "agent.md:" để luồng tự động nhận ra và trả lại đúng lượt đó sửa một lần.
+  function agentProblems(opts) {
+    let after;
+    try { after = fs.readFileSync(path.join(opts.workspace, "agent.md"), "utf8"); } catch { return ["agent.md: lượt này làm mất file agent.md"]; }
+    return kiemAgent.checkChange(opts.before, after, { role: opts.role, onlyNew: true }).loi.map((x) => "agent.md: " + x);
   }
 
   function done(job, opts) {
@@ -211,7 +230,7 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
       return;
     }
     const h = job.status === "done" ? findHandoff(log) : null;
-    const problems = job.status !== "done" ? ["Lượt AI kết thúc với trạng thái " + job.status] : h ? checkHandoff(h, opts.role) : ["Không tìm thấy dòng JSON bàn giao trong log"];
+    const problems = job.status !== "done" ? ["Lượt AI kết thúc với trạng thái " + job.status] : h ? [...checkHandoff(h, opts.role), ...agentProblems(opts)] : ["Không tìm thấy dòng JSON bàn giao trong log"];
     q.put.run(job.id, opts.workspace, opts.role, h && typeof h.next_owner === "string" ? h.next_owner : null, h ? JSON.stringify(h) : null, JSON.stringify(problems));
     audit.log("ctl", "ai.handoff", job.id, { role: opts.role, next: h && h.next_owner, problems });
   }
@@ -329,7 +348,8 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     guard(root, agent);
     const argv = withMcp(fullFor(agent) ? fullAccessArgs(argvFor(agent)) : argvFor(agent), role, dir, mcpKnown()).map((x) => (x === "{prompt}" ? prompt.replace(/\nKhông push, không merge/, (fullFor(agent) ? FULL_NOTE : "") + "\nKhông push, không merge") : x));
     audit.log("ceo", "ai.web_apply", root, { role, applier, full: fullFor(agent) });
-    return jobs.start({ kind: "ai", agent, workspace: root, argv, timeoutMs: AGENTS[agent].timeoutMs, onExit: (job) => done(job, { workspace: root, role, task, retried: false, allowRetry: false }) });
+    const before = agentBefore(root);
+    return jobs.start({ kind: "ai", agent, workspace: root, argv, timeoutMs: AGENTS[agent].timeoutMs, onExit: (job) => done(job, { workspace: root, role, task, retried: false, allowRetry: false, before }) });
   }
 
   // Lệnh chat chỉ đọc theo AI: Sol và Astra cùng chạy Codex nhưng khác model.
