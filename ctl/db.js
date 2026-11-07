@@ -65,13 +65,36 @@ CREATE TABLE IF NOT EXISTS workspaces (
 );
 `;
 
-function open(dir = home()) {
+// Nâng cấp sổ khi app lên bản mới (nút Cập nhật, không bắt người dùng xoá sổ): đổi schema thì THÊM một bước vào cuối danh sách,
+// không sửa hay xoá bước cũ. Mỗi bước (chuỗi SQL hoặc hàm nhận db) chạy đúng một lần trong một giao dịch; số bước đã chạy
+// ghi ở PRAGMA user_version. Chỉ thêm bảng/cột/index, không xoá hay đổi tên: bản mới lỗi thì app quay về bản cũ, bản cũ
+// vẫn phải mở được sổ đã nâng cấp.
+const MIGRATIONS = [];
+
+function migrate(db, steps = MIGRATIONS) {
+  const done = db.prepare("PRAGMA user_version").get().user_version;
+  for (let i = done; i < steps.length; i++) {
+    db.exec("BEGIN IMMEDIATE");
+    try {
+      if (typeof steps[i] === "function") steps[i](db); else db.exec(steps[i]);
+      db.exec(`PRAGMA user_version = ${i + 1}`);
+      db.exec("COMMIT");
+    } catch (e) {
+      db.exec("ROLLBACK");
+      throw Object.assign(new Error(`Nâng cấp sổ ctl.db bước ${i + 1} lỗi: ${e.message}`), { code: "DB_MIGRATION" });
+    }
+  }
+  return db.prepare("PRAGMA user_version").get().user_version;
+}
+
+function open(dir = home(), { migrations = MIGRATIONS } = {}) {
   fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
   fs.mkdirSync(path.join(dir, "logs"), { recursive: true, mode: 0o700 });
   const db = new DatabaseSync(path.join(dir, "ctl.db"));
   db.exec("PRAGMA journal_mode = WAL; PRAGMA busy_timeout = 3000;");
   db.exec(SCHEMA);
+  try { migrate(db, migrations); } catch (e) { db.close(); throw e; }   // không giữ khoá file sổ khi nâng cấp lỗi
   return db;
 }
 
-module.exports = { open, home };
+module.exports = { open, home, migrate, MIGRATIONS };
