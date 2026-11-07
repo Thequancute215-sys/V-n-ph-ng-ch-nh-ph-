@@ -12,6 +12,7 @@
     "app": "node scripts/mo-app.js",
     "tat-app": "node scripts/tat-app.js",
     "cai-app": "node scripts/cai-app.js",
+    "kiem-agent": "node tools/kiem-agent.js",
     "test": "node --test test/*.test.js"
   },
   "engines": {

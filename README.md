@@ -178,6 +178,21 @@ Luật đội để dán vào dự án nằm ở `data/DOAN-CHEN-VAO-AGENTS.md`,
 - lấy và nhả lượt DEV;
 - ghi "Đang dở" trước khi nghỉ.
 
+## Bộ kiểm chu trình agent.md
+
+Máy tự kiểm những luật đo được của giao thức `agent.md`, không trông vào AI tự nhớ:
+- đủ các vùng và các dòng `CURRENT_PHASE`, `LAST_UPDATED_BY`, `NEXT_OWNER`, `AUDIT_STATUS`; vai hợp lệ;
+- Vùng [4.1] tối đa 25 dòng, [4.2] tối đa 5 dòng;
+- blocker ghi đúng `[ ] OPEN <ID>` / `[x] RESOLVED`; không tăng Phase khi còn `[ ] OPEN`;
+- mỗi vai chỉ sửa vùng của mình ([2] Hinata, [1] và [3] Sol, [5] Claude), đúng lượt `NEXT_OWNER`; Claude không tự sửa Phase;
+- không có chuỗi trông như khóa API.
+
+Kiểm ở hai nơi:
+- **Văn phòng**, sau mỗi lượt AI: lỗi do lượt đó gây ra thì bàn giao bị trả lại đúng vai đó một lần; lần hai vẫn sai thì dừng, báo CEO. Lỗi vốn có sẵn trong agent.md cũ của repo không chặn lượt.
+- **GitHub Actions** (`.github/workflows/kiem-tra.yml`), mỗi PR: kiểm agent.md hiện tại, từng commit sửa agent.md trong PR (phải là commit riêng, message `chore(agent-sync): VAI -> NEXT: VAI_TIẾP`), rồi chạy `npm test`. Làm theo FORCE_OVERRIDE thì ghi chữ `FORCE_OVERRIDE` vào message, lỗi về quyền chỉ còn là cảnh báo.
+
+Chạy tay: `node tools/kiem-agent.js` (agent.md ở thư mục đang đứng), `node tools/kiem-agent.js --tu origin/main` (thêm các commit từ chỗ rẽ khỏi main). Bộ kiểm lấy vai từ message commit hoặc từ lượt văn phòng đang chạy, nên nó bắt sơ suất chứ không phải lớp bảo mật.
+
 ## Xem trên điện thoại
 
 - **Cùng Wi-Fi:** đặt `"host": "0.0.0.0"` và `accessKey` trong `config.json`, rồi mở `http://<IP máy>:7788`.
@@ -223,6 +238,7 @@ lib/                   perf (token, điểm, tiền) · docs (sổ sách) · hop
 ctl/                   OS Controller: main (HTTP) · jobs · policy · workspaces · files · runner (lượt AI) · autopilot (giao việc tự động) · handoff · monitor · audit · db (tự nâng cấp sổ) · cap-nhat (nút Cập nhật)
 test/                  node --test (npm test)
 tools/vp.js            công cụ ghi sổ cho agent
+tools/kiem-agent.js    bộ kiểm chu trình agent.md (lib/kiem-agent.js), CI chạy trên mỗi PR
 setup.js               cài đặt (hỏi–đáp hoặc --yes cho agent)
 mau/                   khung mẫu sổ điều phối + đoạn luật đội cho AGENTS.md / CLAUDE.md
 public/                giao diện: index (3D), board, congviec, noiquy, tongquan, hopthu, hieusuat, tinnhan, 2d, dieukhien

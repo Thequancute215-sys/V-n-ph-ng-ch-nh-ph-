@@ -1,0 +1,36 @@
+# Kiểm tra mỗi PR và mỗi lần cập nhật main: chu trình agent.md (tools/kiem-agent.js) và toàn bộ test.
+# Chỉ đọc repo (permissions: contents: read), không xuất bản, không triển khai.
+name: Kiểm tra
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kiem-tra-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kiem-tra:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # cần lịch sử để kiểm từng commit sửa agent.md
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24   # ctl dùng node:sqlite
+      - name: Kiểm agent.md
+        run: node tools/kiem-agent.js
+      - name: Kiểm các commit sửa agent.md trong PR
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: origin/${{ github.base_ref }}
+        run: node tools/kiem-agent.js --tu "$BASE"
+      - name: Chạy test
+        run: npm test
