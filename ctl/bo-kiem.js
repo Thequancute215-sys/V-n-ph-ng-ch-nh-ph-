@@ -29,6 +29,9 @@ function createBoKiem({ dir, audit, now = () => new Date() }) {   // now: tiêm 
   // da-cai: hai file đúng bản của văn phòng; cu: có nhưng khác (bộ kiểm đã đổi, cần cài lại); chua-cai; khong-phai-git.
   function status(root) {
     if (!nhanh.isRepo(root)) return { state: "khong-phai-git", files: [], last: null };
+    // Repo của chính Văn phòng AI (bản nào, ở đâu cũng vậy) là nguồn của bộ kiểm và có CI riêng (.github/workflows/kiem-tra.yml):
+    // tools/kiem-agent.js ở đây chỉ gọi lib/kiem-agent.js, nên so file sẽ báo nhầm "bản cũ" và mời cài một PR thừa.
+    if (fs.existsSync(path.join(root, "ctl", "bo-kiem.js")) && fs.existsSync(path.join(root, "lib", "kiem-agent.js"))) return { state: "van-phong", files: [], last: null, busy: false };
     const want = wanted();
     const files = Object.keys(want).map((f) => {
       let have = null;
@@ -43,6 +46,7 @@ function createBoKiem({ dir, audit, now = () => new Date() }) {   // now: tiêm 
     if (busy.has(root)) throw err("TOO_MANY", "Đang cài bộ kiểm cho repo này.");
     const s = status(root);
     if (s.state === "khong-phai-git") throw err("NO_GIT", "Dự án không phải repo git.");
+    if (s.state === "van-phong") throw err("NOT_READY", "Đây là repo của chính Văn phòng AI: đã có CI riêng (kiem-tra.yml), không cài bộ kiểm.");
     if (s.state === "da-cai") throw err("NOT_READY", "Repo đã có bộ kiểm bản mới nhất.");
     if (!nhanh.head(root)) throw err("NO_COMMIT", "Repo chưa có commit nào: commit lần đầu rồi mới cài.");
     if (!tryGit(root, ["remote", "get-url", "origin"])) throw err("NO_REMOTE", "Repo không có remote origin trên GitHub: không mở được PR.");

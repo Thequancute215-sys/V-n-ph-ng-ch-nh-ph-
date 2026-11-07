@@ -140,3 +140,13 @@ test("bấm cài hai lần trong cùng một giây (máy nhanh): nhánh thứ ha
   assert.deepEqual([a.last.branch, b.last.branch, c.last.branch], ["vp/bo-kiem-chu-trinh-20261108010203", "vp/bo-kiem-chu-trinh-20261108010203-2", "vp/bo-kiem-chu-trinh-20261108010203-3"]);
   for (const x of [a, b, c]) assert.ok(f.gitIn(f.origin, "rev-parse", "--verify", x.last.branch), "đã đẩy " + x.last.branch);
 });
+
+test("repo của chính Văn phòng AI: không báo bản cũ, không mời cài (đã có CI riêng)", () => {
+  const bk = createBoKiem({ dir: tmp(), audit: { log() {} } });
+  const s = bk.status(ROOT);
+  assert.equal(s.state, "van-phong");
+  assert.throws(() => bk.install(ROOT), (e) => e.code === "NOT_READY" && /CI riêng/.test(e.message));
+  require("../public/progress-view.js");
+  const h = globalThis.RepoProgress.html({ workspace: ROOT, boKiem: s }, [], [], {}, { actions: true });
+  assert.match(h, /Repo của chính Văn phòng AI/); assert.ok(!/data-bo-kiem/.test(h), "không có nút cài");
+});

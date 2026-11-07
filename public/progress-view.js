@@ -5,7 +5,7 @@
   const statuses = { running: "Đội đang làm", reporting: "Claude đang tổng hợp", awaiting_answer: "Claude hỏi anh", awaiting_approval: "Chờ anh duyệt báo cáo", attention: "Cần anh xem lỗi", waiting_quota: "Chờ hạn mức", approved: "Đã duyệt", acknowledged: "Đã xem báo cáo", rejected: "Đã từ chối", stopped: "Đã dừng", awaiting_scan: "Tạm dừng: chờ anh duyệt rà soát" };
   const list = (items, empty) => items.length ? `<ul>${items.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>` : `<p class="muted">${esc(empty)}</p>`;
   // Bộ kiểm chu trình (CI) trong repo dự án (ctl/bo-kiem.js). actions: hiện nút cài (chỉ bàn làm việc 3D có xử lý nút).
-  const BO_KIEM = { "da-cai": "Đã cài: mỗi PR được kiểm agent.md và lint/test.", "cu": "Đã cài nhưng là bản cũ: cài lại để có luật mới.", "chua-cai": "Chưa cài: PR của dự án chưa bị kiểm tự động.", "khong-phai-git": "Dự án không phải repo git." };
+  const BO_KIEM = { "da-cai": "Đã cài: mỗi PR được kiểm agent.md và lint/test.", "cu": "Đã cài nhưng là bản cũ: cài lại để có luật mới.", "chua-cai": "Chưa cài: PR của dự án chưa bị kiểm tự động.", "khong-phai-git": "Dự án không phải repo git.", "van-phong": "Repo của chính Văn phòng AI: dùng CI riêng (.github/workflows/kiem-tra.yml), không cần cài." };
   function boKiemHtml(b, actions) {
     if (!b) return "";
     const last = b.last ? `<br>Lần cài gần nhất: nhánh <span class="mono">${esc(b.last.branch)}</span> · ${esc(new Date(b.last.at).toLocaleString("vi-VN"))}` +
