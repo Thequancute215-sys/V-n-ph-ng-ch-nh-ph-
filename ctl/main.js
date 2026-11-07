@@ -28,6 +28,7 @@ const { createChat } = require("./chat");
 const { createNotifier } = require("./thongbao");
 const { createScanner } = require("./ra-soat");
 const { createUpdater } = require("./cap-nhat");
+const { createBoKiem } = require("./bo-kiem");
 const { classify } = require("./policy");
 const { readTurn } = require("./handoff");
 const { maskSecrets } = require("../lib/mask");
@@ -42,7 +43,7 @@ const HTTP_CODE = {
   GITHUB_AUTH: 401, GITHUB_LIMIT: 429, GITHUB_OFFLINE: 502, GITHUB_CLONE: 502,
   CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_WAITING: 409, NEEDS_SPEC_TURN: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409, HANDOFF_PENDING: 409, NEEDS_ANSWER: 409, NO_QUESTION: 422, BAD_OPTION: 400,
   CHAT_BUSY: 409, PUBLISH_BUSY: 409, NOT_READY: 409, NO_RELEASE_WORKFLOW: 422, NOT_ON_MAIN: 409, TAG_EXISTS: 409, DIRTY_REPO: 409, NEEDS_SCAN_APPROVAL: 409, NO_COMMIT: 409, NO_QUOTA: 409, NO_GIT: 422, NO_REMOTE: 422, GIT_PUSH: 502,
-  UPDATE_BUSY: 409, NOT_APP: 409, UPDATE_FAILED: 500,
+  UPDATE_BUSY: 409, NOT_APP: 409, UPDATE_FAILED: 500, GIT_BRANCH: 409,
 };
 
 function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {}, quotaOptions = {}, updaterOptions = {}, notify = false } = {}) {
@@ -64,6 +65,7 @@ const runner = createRunner({ jobs, ws, audit, db, dir, scanner, mcpKnown: () =>
   const chat = createChat({ jobs, ws, runner, audit, dir });
   const connectors = createConnectors({ runner, audit, dir });   // trang Kết nối (MCP) của đội
   const journal = createJournal({ jobs, autopilot });           // Nhật ký: ai làm gì, lúc nào
+  const boKiem = createBoKiem({ dir, audit });   // cài bộ kiểm chu trình (CI) vào repo dự án
   const updater = createUpdater({ root: path.join(__dirname, ".."), audit, jobs, autopilot, ...updaterOptions });   // nút Cập nhật app
   const selectWorkspace = (p) => {
     const w = ws.switchTo(p, "ceo");
@@ -215,8 +217,9 @@ const runner = createRunner({ jobs, ws, audit, db, dir, scanner, mcpKnown: () =>
         const first = ws.overview(root);
         if (first.repo && !first.repo.agentMdTracked) ws.excludeAgentMd(root);
       }
-      return { overview: { ...ws.overview(root), visibility } };
+      return { overview: { ...ws.overview(root), visibility, boKiem: boKiem.status(root) } };
     }],
+    ["POST", "/bo-kiem", (p, qs, b) => ({ boKiem: boKiem.install(ws.find(wsOf(b.workspace)).path) })],
     ["POST", "/workspaces/remove", (p, qs, b) => { ws.remove(b.path, "ceo"); return { workspaces: ws.list() }; }],
     ["POST", "/workspaces/switch", (p, qs, b) => {
       const active = selectWorkspace(b.path);
@@ -317,7 +320,7 @@ const runner = createRunner({ jobs, ws, audit, db, dir, scanner, mcpKnown: () =>
     db.close();
   }
 
-  return { server, jobs, ws, files, runner, autopilot, scanner, publisher, chat, connectors, journal, github, quotas, updater, audit, token, close };
+  return { server, jobs, ws, files, runner, autopilot, scanner, publisher, chat, connectors, journal, github, quotas, updater, boKiem, audit, token, close };
 }
 
 if (require.main === module) {

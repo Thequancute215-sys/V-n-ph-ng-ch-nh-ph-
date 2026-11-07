@@ -19,6 +19,8 @@
   3. Mọi lệnh gọi LLM/API có Timeout, Retry/Fallback và kiểm tra Schema (Pydantic/Zod).
   4. Không hardcode secret/API key; quản lý qua .env và .env.example.
   5. Không đổi tên trường API/Database khi chưa cập nhật Vùng [3].
+  6. Clean code có máy kiểm: mỗi PR phải qua CI gồm bộ kiểm agent.md (`tools/kiem-agent.js`), lint và test của stack. Sol chốt công cụ lint/test ở Vùng [3]; CI đỏ thì không merge. Cài CI: Văn phòng → Dự án đang ở đâu → "Cài bộ kiểm vào repo".
+  7. Cập nhật không cài lại: người dùng lên bản mới bằng một nút/thao tác trong app, không xoá đi tải lại. Chỉ bản Chủ Dự Án phát hành (tag `vX.Y.Z` trên nhánh chính) mới tới người dùng; merge không phải phát hành. Dữ liệu người dùng giữ nguyên; đổi schema bằng migration chỉ thêm (không xoá/đổi tên cột) để bản cũ vẫn chạy khi phải quay lại; bản mới lỗi thì quay về bản cũ.
 
 ## [2] ĐẶC TẢ SẢN PHẨM, AI AGENT & THIẾT KẾ FULLSTACK FRONTEND (UI/UX) (Chủ: SPEC_ARCHITECT)
 ### [2.1] SẢN PHẨM & PHẠM VI MVP
@@ -59,13 +61,16 @@
 - Độ trễ mục tiêu (p95 UI interaction < 100ms, streaming FTTT < 1.5s)
 - Accessibility & Responsive: Chuẩn WCAG AA tương phản, bàn phím điều hướng, responsive Breakpoints (Mobile 375px, Tablet 768px, Desktop 1280px)
 - Edge cases giao diện: Text tràn dòng, ảnh lỗi, gián đoạn kết nối socket/stream
+- Cập nhật app (luật [1].7): người dùng thấy có bản mới ở đâu, bấm gì để cập nhật, đang cập nhật thì thấy gì, lỗi thì thấy gì. Dữ liệu nào phải giữ qua mọi lần cập nhật.
 
 ## [3] KIẾN TRÚC, HỢP ĐỒNG & LỘ TRÌNH (Chủ: SOL_ARCHITECT_PLANNER)
 - Cây thư mục (Tách rõ Frontend theo Component Tree Vùng [2] và Backend): [Chưa cập nhật]
 - Schema DB & Index: [Chưa cập nhật]
 - API Contract & Giao thức streaming (khớp chuẩn state matrix Vùng [2]): [Chưa cập nhật]
+- CI, lint, test (luật [1].6): [Chưa cập nhật: công cụ lint/test của stack, lệnh chạy, thêm vào .github/workflows/kiem-chu-trinh.yml]
+- Cập nhật & phát hành (luật [1].7): [Chưa cập nhật: theo loại app — web: triển khai + báo "Có bản mới, tải lại"; app chạy bằng Node trên máy: git fast-forward theo tag như Văn phòng AI; Electron/Tauri: bộ tự cập nhật đọc GitHub Releases; điện thoại: cửa hàng hoặc OTA. Nêu cách migration DB, cách quay lại, workflow kiểm tag khớp phiên bản]
 - Lộ trình Phase:
-  - [ ] Phase 1: Cấu hình lõi, Design System Setup & Schema DB
+  - [ ] Phase 1: Cấu hình lõi, Design System Setup, Schema DB, CI (lint + test + bộ kiểm agent.md) và khung phát hành/cập nhật
   - [ ] Phase 2: Backend lõi & AI Agent Engine
   - [ ] Phase 3: Tầng API, Streaming SSE & Frontend Component Shell
   - [ ] Phase 4: Frontend UI/UX Integration & State Handling (5 trạng thái)

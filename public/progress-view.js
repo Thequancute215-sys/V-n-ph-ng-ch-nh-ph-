@@ -4,7 +4,16 @@
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const statuses = { running: "Đội đang làm", reporting: "Claude đang tổng hợp", awaiting_answer: "Claude hỏi anh", awaiting_approval: "Chờ anh duyệt báo cáo", attention: "Cần anh xem lỗi", waiting_quota: "Chờ hạn mức", approved: "Đã duyệt", acknowledged: "Đã xem báo cáo", rejected: "Đã từ chối", stopped: "Đã dừng", awaiting_scan: "Tạm dừng: chờ anh duyệt rà soát" };
   const list = (items, empty) => items.length ? `<ul>${items.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>` : `<p class="muted">${esc(empty)}</p>`;
-  function html(o, runs = [], handoffs = [], errors = {}) {
+  // Bộ kiểm chu trình (CI) trong repo dự án (ctl/bo-kiem.js). actions: hiện nút cài (chỉ bàn làm việc 3D có xử lý nút).
+  const BO_KIEM = { "da-cai": "Đã cài: mỗi PR được kiểm agent.md và lint/test.", "cu": "Đã cài nhưng là bản cũ: cài lại để có luật mới.", "chua-cai": "Chưa cài: PR của dự án chưa bị kiểm tự động.", "khong-phai-git": "Dự án không phải repo git." };
+  function boKiemHtml(b, actions) {
+    if (!b) return "";
+    const last = b.last ? `<br>Lần cài gần nhất: nhánh <span class="mono">${esc(b.last.branch)}</span> · ${esc(new Date(b.last.at).toLocaleString("vi-VN"))}` +
+      (b.last.compareUrl && /^https:\/\/github\.com\//.test(b.last.compareUrl) ? ` · <a href="${esc(b.last.compareUrl)}" target="_blank" rel="noopener">mở trang tạo PR</a>` : "") + (b.state === "da-cai" ? "" : " (PR chưa merge hoặc chưa kéo về máy)") : "";
+    const btn = actions && ["chua-cai", "cu"].includes(b.state) ? `<div class="actions desk-actions"><button type="button" data-bo-kiem data-write${b.busy ? " disabled" : ""}>${b.state === "cu" ? "Cài lại bộ kiểm" : "Cài bộ kiểm vào repo"}</button></div>` : "";
+    return `<h4>Bộ kiểm chu trình (CI)</h4><p>${esc(BO_KIEM[b.state] || b.state)}${last}</p>${btn}`;
+  }
+  function html(o, runs = [], handoffs = [], errors = {}, { actions = false } = {}) {
     const p = o.progress, r = o.repo;
     const own = runs.filter((x) => x.workspace === o.workspace).sort((a, b) => b.createdAt - a.createdAt);
     const latest = own[0], pending = handoffs.filter((h) => h.workspace === o.workspace && !h.decided);
@@ -17,7 +26,7 @@
       `<section><h3>Còn cần gì</h3><p>${esc(p?.nextStep || o.progressReason || "Cần đọc được agent.md để xác định bước tiếp theo.")}</p>` +
       `<h4>Blocker OPEN</h4>${list((p?.openBlockers || []).map((b) => b.text), p ? "Không có blocker OPEN trong Vùng [5]." : "Chưa xác định được blocker.")}` +
       `<h4>Bàn giao chờ duyệt</h4>${errors.handoffs ? `<p>${esc(errors.handoffs)}</p>` : list(pending.map((h) => `${h.role} → ${h.next_owner || "Chờ phương án"}${h.payload?.ask_ceo ? ": " + h.payload.ask_ceo.question : ""}`), "Không có bàn giao chờ duyệt.")}` +
-      `<h4>Mục còn nội dung mẫu</h4>${list(p?.emptySections || [], p ? "Không phát hiện nội dung mẫu ở Vùng [1]–[3]." : "Chưa đọc được các vùng đặc tả.")}</section></div>`;
+      `<h4>Mục còn nội dung mẫu</h4>${list(p?.emptySections || [], p ? "Không phát hiện nội dung mẫu ở Vùng [1]–[3]." : "Chưa đọc được các vùng đặc tả.")}` + boKiemHtml(o.boKiem, actions) + `</section></div>`;
   }
   // Lời giải thích của từng lượt (Hinata, Sol, Astra) để CEO đọc khi duyệt: vấn đề, đã làm, vì sao, cách khác và vì sao bỏ.
   // Lượt bắt buộc giải thích mà không có thì cảnh báo rõ, không im lặng. Kết luận khớp/không khớp diff nằm trong báo cáo của Claude.

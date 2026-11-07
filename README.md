@@ -193,6 +193,23 @@ Kiểm ở hai nơi:
 
 Chạy tay: `node tools/kiem-agent.js` (agent.md ở thư mục đang đứng), `node tools/kiem-agent.js --tu origin/main` (thêm các commit từ chỗ rẽ khỏi main). Bộ kiểm lấy vai từ message commit hoặc từ lượt văn phòng đang chạy, nên nó bắt sơ suất chứ không phải lớp bảo mật.
 
+### Áp cho mọi dự án của đội
+
+- **Mẫu agent.md** (`ctl/agent-template.md`, văn phòng dùng khi nạp repo mới) có thêm hai luật ở Vùng [1]:
+  - **[1].6 Clean code có máy kiểm:** mỗi PR qua CI gồm bộ kiểm agent.md, lint và test.
+  - **[1].7 Cập nhật không cài lại:** chỉ bản Chủ Dự Án phát hành (tag `vX.Y.Z`) mới tới người dùng; dữ liệu giữ nguyên; migration chỉ thêm; lỗi thì quay về bản cũ.
+- Vùng [3] của mẫu có mục để Sol chốt CI và cách cập nhật theo loại app (web, app Node trên máy, Electron/Tauri, điện thoại). Phase 1 phải dựng sẵn CI và khung phát hành.
+- **Cài bộ kiểm vào repo dự án:** Văn phòng → **Dự án đang ở đâu** → **Cài bộ kiểm vào repo**. Văn phòng làm các bước sau:
+  1. tách nhánh `vp/bo-kiem-chu-trinh-…` từ nhánh chính, trong một worktree tạm (thư mục và nhánh đang làm không bị đụng);
+  2. thêm `tools/kiem-agent.js` (bản chép của `lib/kiem-agent.js`, tự chạy được) và `.github/workflows/kiem-chu-trinh.yml`;
+  3. đẩy nhánh lên GitHub và mở trang tạo PR để anh merge.
+
+  Workflow kiểm agent.md (repo công khai giữ agent.md trên máy thì bỏ qua), rồi lint/test:
+  - Node: `npm run lint`, `npm test`;
+  - Python: `ruff`, `pytest`.
+
+  Chưa có script lint/test thì chỉ cảnh báo, có mà hỏng thì đỏ. Bộ kiểm của văn phòng đổi thì mục này báo "bản cũ", bấm **Cài lại bộ kiểm**.
+
 ## Xem trên điện thoại
 
 - **Cùng Wi-Fi:** đặt `"host": "0.0.0.0"` và `accessKey` trong `config.json`, rồi mở `http://<IP máy>:7788`.
