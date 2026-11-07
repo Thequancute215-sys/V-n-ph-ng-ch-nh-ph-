@@ -27,12 +27,13 @@ const { createJournal } = require("./nhat-ky");
 const { createChat } = require("./chat");
 const { createNotifier } = require("./thongbao");
 const { createScanner } = require("./ra-soat");
+const { createUpdater } = require("./cap-nhat");
 const { classify } = require("./policy");
 const { readTurn } = require("./handoff");
 const { maskSecrets } = require("../lib/mask");
 const { writeAtomic } = require("../lib/ghi-file");
 
-const VERSION = "1.0.0";
+const VERSION = require("../package.json").version;   // bộ cập nhật (scripts/cap-nhat.js) kiểm số này sau khi lên bản mới
 const LOOPBACK = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i;
 const HTTP_CODE = {
   BAD_REQUEST: 400, NOT_DIR: 400, NOT_FILE: 400, BAD_CONFIG: 400, NO_AGENT_MD: 422, BAD_AGENT_MD: 422, INVALID_HANDOFF: 422, NO_CLI: 422,
@@ -41,9 +42,10 @@ const HTTP_CODE = {
   GITHUB_AUTH: 401, GITHUB_LIMIT: 429, GITHUB_OFFLINE: 502, GITHUB_CLONE: 502,
   CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_WAITING: 409, NEEDS_SPEC_TURN: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409, HANDOFF_PENDING: 409, NEEDS_ANSWER: 409, NO_QUESTION: 422, BAD_OPTION: 400,
   CHAT_BUSY: 409, PUBLISH_BUSY: 409, NOT_READY: 409, NO_RELEASE_WORKFLOW: 422, NOT_ON_MAIN: 409, TAG_EXISTS: 409, DIRTY_REPO: 409, NEEDS_SCAN_APPROVAL: 409, NO_COMMIT: 409, NO_QUOTA: 409, NO_GIT: 422, NO_REMOTE: 422, GIT_PUSH: 502,
+  UPDATE_BUSY: 409, NOT_APP: 409, UPDATE_FAILED: 500,
 };
 
-function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {}, quotaOptions = {}, notify = false } = {}) {
+function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {}, quotaOptions = {}, updaterOptions = {}, notify = false } = {}) {
   const db = open(dir);
   const audit = createAudit(db);
   const jobs = createJobs(db, audit, path.join(dir, "logs"));
@@ -62,6 +64,7 @@ const runner = createRunner({ jobs, ws, audit, db, dir, scanner, mcpKnown: () =>
   const chat = createChat({ jobs, ws, runner, audit, dir });
   const connectors = createConnectors({ runner, audit, dir });   // trang Kết nối (MCP) của đội
   const journal = createJournal({ jobs, autopilot });           // Nhật ký: ai làm gì, lúc nào
+  const updater = createUpdater({ root: path.join(__dirname, ".."), audit, jobs, autopilot, ...updaterOptions });   // nút Cập nhật app
   const selectWorkspace = (p) => {
     const w = ws.switchTo(p, "ceo");
     writeAtomic(activeFile, JSON.stringify({ path: w.path }));
@@ -189,6 +192,8 @@ const runner = createRunner({ jobs, ws, audit, db, dir, scanner, mcpKnown: () =>
     ["POST", "/ket-noi/add", async (p, qs, b) => ({ ketNoi: await connectors.add(String(b.id || ""), String(b.ai || "")) })],
     ["POST", "/ket-noi/login", async (p, qs, b) => ({ ketNoi: await connectors.login(String(b.id || "")) })],
   ["POST", "/ket-noi/phong", async (p, qs, b) => ({ ketNoi: await connectors.setPhong(String(b.room || ""), b.ids) })],
+    ["GET", "/cap-nhat", async (p, qs) => ({ capNhat: qs.get("fetch") === "1" ? await updater.refresh() : updater.status() })],
+    ["POST", "/cap-nhat", (p, qs, b) => [202, { capNhat: updater.start(String(b.name || "")) }]],
     ["GET", "/nhat-ky", (p, qs) => ({ nhatKy: journal.list(ws.find(wsOf(qs.get("workspace"))).path, qs.get("limit")) })],
     ["GET", "/publish", (p, qs) => ({ publish: publisher.status(wsOf(qs.get("workspace"))) })],
     ["POST", "/publish/prepare", (p, qs, b) => [202, { run: publisher.prepare(wsOf(b.workspace)) }]],
@@ -312,7 +317,7 @@ const runner = createRunner({ jobs, ws, audit, db, dir, scanner, mcpKnown: () =>
     db.close();
   }
 
-  return { server, jobs, ws, files, runner, autopilot, scanner, publisher, chat, connectors, journal, github, quotas, audit, token, close };
+  return { server, jobs, ws, files, runner, autopilot, scanner, publisher, chat, connectors, journal, github, quotas, updater, audit, token, close };
 }
 
 if (require.main === module) {
@@ -326,6 +331,10 @@ if (require.main === module) {
     ctl.audit.log("ctl", "start", null, { port, pid: process.pid });
     // Đọc sẵn kết nối của các AI để lượt đầu tiên đã tắt đúng kết nối không thuộc phòng (ctl/mcp-phong.js).
     setTimeout(() => ctl.connectors.status().catch(() => {}), 3000).unref();
+    // Hỏi GitHub có bản phát hành mới không: 1 phút sau khi bật, rồi mỗi 6 giờ (trang Cập nhật cũng có nút kiểm ngay).
+    const checkUpdate = () => ctl.updater.refresh().catch(() => {});
+    setTimeout(checkUpdate, 60 * 1000).unref();
+    setInterval(checkUpdate, 6 * 3600 * 1000).unref();
     console.log(`\n  OS Controller (ctl) đang chạy tại http://127.0.0.1:${port}`);
     console.log(`  Token: ${tokenFile} (sinh mới mỗi lần khởi động)\n`);
   });

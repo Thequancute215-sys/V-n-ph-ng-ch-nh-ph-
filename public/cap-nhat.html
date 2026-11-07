@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cập nhật · Văn phòng AI</title>
+<link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="app.js" defer></script>
+<style>
+:root { --ink: #1b2a8a; --ink2: #3b4bb5; --paper: #f7f4ee; --line: #1b2a8a; --mute: #6b7280; --ok: #15803d; --warn: #b45309; --bad: #b91c1c; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.5 "Segoe UI", system-ui, sans-serif;
+  background-image: linear-gradient(rgba(27,42,138,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(27,42,138,.05) 1px, transparent 1px); background-size: 24px 24px; }
+header { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; padding: 20px 20px 12px; border-bottom: 2px solid var(--line); flex-wrap: wrap; }
+.kicker { font: 600 12px/1.2 ui-monospace, Consolas, monospace; letter-spacing: .12em; color: var(--ink2); }
+h1 { margin: 4px 0 0; font-size: clamp(24px, 4vw, 34px); font-weight: 800; letter-spacing: -.01em; }
+h2 { font-size: 17px; margin: 0 0 8px; }
+.back { border: 2px solid var(--line); padding: 7px 12px; color: var(--ink); text-decoration: none; font: 700 12px ui-monospace, Consolas, monospace; letter-spacing: .08em; background: #fff; }
+main { padding: 16px 20px 40px; max-width: 880px; margin: 0 auto; }
+.card { border: 2px solid var(--line); background: #fffdf9; padding: 14px 16px; margin: 0 0 14px; }
+.kv { display: grid; grid-template-columns: 150px 1fr; gap: 4px 12px; font-size: 14px; }
+.kv dt { color: var(--mute); }
+.kv dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+code { font: 13px ui-monospace, Consolas, monospace; }
+.big { font-size: 18px; font-weight: 800; margin: 0 0 6px; }
+.ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); } .mute { color: var(--mute); }
+.acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+button { border: 2px solid var(--line); background: #fff; color: var(--ink); padding: 8px 14px; font: 700 14px inherit; cursor: pointer; }
+button.main { background: var(--ink); color: #fff; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+ul { margin: 6px 0 0; padding-left: 20px; }
+li { margin: 2px 0; }
+pre { white-space: pre-wrap; font: 13px/1.5 ui-monospace, Consolas, monospace; background: #fff; border: 1px solid #d1d5db; padding: 8px 10px; margin: 6px 0 0; max-height: 240px; overflow: auto; }
+.msg { margin: 0 0 14px; padding: 8px 12px; border: 1.5px solid var(--line); background: #fff; }
+.msg.err { border-color: var(--bad); color: var(--bad); }
+.steps { list-style: none; padding: 0; margin: 8px 0 0; }
+.steps li { padding: 3px 0; }
+.steps li.now { font-weight: 700; }
+.steps li.now::before { content: "▶ "; }
+.steps li.done::before { content: "✓ "; color: var(--ok); }
+.steps li.todo { color: var(--mute); }
+.steps li.todo::before { content: "· "; }
+.skel { height: 14px; background: linear-gradient(90deg, #eceae4, #f6f4ef, #eceae4); background-size: 200% 100%; animation: sh 1.2s infinite; margin: 6px 0; max-width: 420px; }
+@keyframes sh { to { background-position: -200% 0; } }
+.note { font-size: 12.5px; color: var(--mute); }
+@media (max-width: 600px) { main, header { padding-left: 16px; padding-right: 16px; } .kv { grid-template-columns: 1fr; } .kv dt { margin-top: 6px; } }
+@media (prefers-reduced-motion: reduce) { .skel { animation: none; } }
+</style>
+</head>
+<body>
+<header>
+  <div><div class="kicker">VĂN PHÒNG AI · PHIÊN BẢN</div><h1>Cập nhật app</h1></div>
+  <a class="back" href="index.html">← VỀ VĂN PHÒNG</a>
+</header>
+<main>
+  <div id="msg" role="status" aria-live="polite"></div>
+  <section class="card" id="now" aria-busy="true"><div class="skel"></div><div class="skel"></div><div class="skel" style="max-width:260px"></div></section>
+  <section class="card" id="run" hidden aria-live="polite"></section>
+  <p class="note">Cập nhật chỉ thay mã của app. Sổ của đội (<code>data/</code>), cấu hình (<code>config.json</code>) và sổ của bảng điều khiển (<code>~/.van-phong-ao</code>) giữ nguyên; sổ cũ được tự nâng cấp khi bản mới mở. Văn phòng sẽ tắt và bật lại trong khoảng một phút. Bản mới không chạy được thì app tự quay về bản cũ.</p>
+</main>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const short = (s) => String(s || "").slice(0, 7);
+  const CHANNEL = { "phat-hanh": "Bản phát hành (tag vX.Y.Z do CEO phát hành)", main: "Bản mới nhất của main (máy đội phát triển)" };
+  const STEPS = [["dang-tat", "Tắt văn phòng"], ["dang-cap-nhat", "Lấy bản mới"], ["dang-khoi-dong", "Bật lại và kiểm tra"]];
+  const FINAL = { xong: ["ok", "Cập nhật xong"], "da-quay-lai": ["warn", "Bản mới không chạy được, đã quay về bản cũ"], loi: ["bad", "Cập nhật không thành công"] };
+  let data = null, busy = false, polling = null, sawDown = false;
+
+  async function req(path, body, ms) {
+    const r = await fetch("/ctl" + path, { cache: "no-store", method: body ? "POST" : "GET", headers: body ? { "Content-Type": "application/json" } : {},
+      body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(ms || 15000) });
+    let d; try { d = await r.json(); } catch { throw Object.assign(new Error("Controller chưa trả JSON (Controller có đang chạy không?)"), { offline: true }); }
+    if (!r.ok || d.ok === false) throw Object.assign(new Error(d.error || "Lỗi HTTP " + r.status), { offline: d.code === "CTL_OFFLINE" || r.status === 502 || r.status === 503 });
+    return d.capNhat;
+  }
+  const msg = (t, err) => { $("msg").innerHTML = t ? `<div class="msg${err ? " err" : ""}">${esc(t)}</div>` : ""; };
+  const when = (iso) => iso ? new Date(iso).toLocaleString("vi-VN") : "chưa";
+
+  function headline(d) {
+    if (d.state === "co-ban-moi") return `<p class="big warn">Có bản mới: ${esc(d.target.name)}${d.target.version ? " (phiên bản " + esc(d.target.version) + ")" : ""}</p>`;
+    if (d.state === "moi-nhat") return `<p class="big ok">Văn phòng đang ở bản mới nhất</p>`;
+    if (d.state === "chua-phat-hanh") return `<p class="big mute">Chưa có bản phát hành nào</p><p class="mute">CEO phát hành bằng tag <code>vX.Y.Z</code> trên GitHub; lúc đó nút cập nhật hiện ở đây.</p>`;
+    if (d.state === "lech") return `<p class="big bad">Không cập nhật tự động được</p>`;
+    return `<p class="big bad">Không dùng được nút Cập nhật</p>`;
+  }
+
+  function render() {
+    const d = data;
+    if (!d) return;
+    $("now").setAttribute("aria-busy", "false");
+    const reasons = d.reasons.length ? `<ul>${d.reasons.map((r) => `<li class="bad">${esc(r)}</li>`).join("")}</ul>` : "";
+    const commits = d.commits.length ? `<h2 style="margin-top:12px">Thay đổi trong bản mới (${d.commits.length}${d.commits.length >= 50 ? "+" : ""})</h2><ul>${d.commits.map((c) => `<li><code>${esc(c.hash)}</code> ${esc(c.subject)}</li>`).join("")}</ul>` : "";
+    const notes = d.target && d.target.notes ? `<h2 style="margin-top:12px">Ghi chú phát hành</h2><pre>${esc(d.target.notes)}</pre>` : "";
+    $("now").innerHTML = headline(d) + reasons +
+      `<dl class="kv" style="margin-top:10px"><dt>Bản trên máy</dt><dd>${esc(d.version || "?")} · <code>${esc(short(d.head))}</code>${d.branch ? " · nhánh " + esc(d.branch) : ""}</dd>` +
+      `<dt>Kênh cập nhật</dt><dd>${esc(CHANNEL[d.channel] || d.channel)}</dd>` +
+      (d.target ? `<dt>Bản mới nhất</dt><dd>${esc(d.target.name)} · <code>${esc(short(d.target.sha))}</code></dd>` : "") +
+      `<dt>Kiểm GitHub lúc</dt><dd>${esc(when(d.fetchedAt))}${d.fetchError ? `<br><span class="bad">${esc(d.fetchError)}</span>` : ""}</dd></dl>` + commits + notes +
+      `<div class="acts"><button type="button" id="check">Kiểm tra bản mới</button>` +
+      (d.state === "co-ban-moi" ? `<button type="button" class="main" id="go" ${d.canUpdate && !d.busy ? "" : "disabled"}>Cập nhật lên ${esc(d.target.name)}</button>` : "") + `</div>`;
+    $("check").disabled = busy || d.busy;
+    renderRun(d.last, d.busy);
+  }
+
+  function renderRun(s, running) {
+    if (!s) { $("run").hidden = true; return; }
+    $("run").hidden = false;
+    const at = STEPS.findIndex(([k]) => k === s.status);
+    if (running || s.status === "bat-dau" || s.status === "dang-quay-lai") {
+      const steps = STEPS.map(([k, t], i) => `<li class="${s.status === "dang-quay-lai" ? "done" : i < at ? "done" : i === at ? "now" : "todo"}">${esc(t)}</li>`).join("");
+      $("run").innerHTML = `<h2>Đang cập nhật lên ${esc(s.name)}…</h2><p class="mute">Đừng đóng cửa sổ này. Văn phòng sẽ tắt rồi bật lại; trang tự theo dõi.</p><ol class="steps">${steps}${s.status === "dang-quay-lai" ? `<li class="now">Quay về bản cũ</li>` : ""}</ol>`;
+      return;
+    }
+    const [cls, title] = FINAL[s.status] || ["mute", s.status];
+    $("run").innerHTML = `<h2 class="${cls}">${esc(title)}: ${esc(s.name)}</h2><p>${esc(s.message || "")}</p><p class="note">Lúc ${esc(when(s.at))} · từ <code>${esc(short(s.from))}</code> tới <code>${esc(short(s.to))}</code>${s.log ? " · log: " + esc(s.log) : ""}</p>`;
+  }
+
+  async function load(fetchNew) {
+    busy = true; render();
+    try { data = await req("/cap-nhat" + (fetchNew ? "?fetch=1" : ""), null, fetchNew ? 150000 : 15000); msg(fetchNew ? (data.fetchError ? "" : "Đã kiểm GitHub lúc " + new Date().toLocaleTimeString("vi-VN") + ".") : ""); }
+    catch (e) { if (!data) { $("now").setAttribute("aria-busy", "false"); $("now").innerHTML = `<p class="big bad">Chưa đọc được tình trạng cập nhật</p><p>${esc(e.message)}</p><div class="acts"><button type="button" id="retry">Thử lại</button></div>`; } else msg(e.message, true); }
+    finally { busy = false; render(); if (data && data.busy) follow(); }
+  }
+
+  // Theo dõi lần cập nhật: văn phòng tắt giữa chừng nên lỗi kết nối là bình thường, cứ hỏi lại tới khi có kết quả cuối.
+  function follow() {
+    if (polling) return;
+    const started = Date.now();
+    polling = setInterval(async () => {
+      try {
+        const d = await req("/cap-nhat", null, 5000);
+        data = d; msg(""); render();
+        if (!d.busy && d.last && FINAL[d.last.status]) {
+          clearInterval(polling); polling = null;
+          if (sawDown && d.last.status === "xong") msg("Văn phòng đã chạy bản mới. Tải lại các cửa sổ văn phòng khác đang mở để dùng giao diện mới.");
+        }
+      } catch {
+        sawDown = true;
+        msg("Văn phòng đang khởi động lại… (" + Math.round((Date.now() - started) / 1000) + " giây)");
+        if (Date.now() - started > 5 * 60 * 1000) { clearInterval(polling); polling = null; msg("Văn phòng chưa bật lại sau 5 phút. Mở lại app (lối tắt Văn phòng AI); bản cũ vẫn còn nếu bản mới lỗi. Log: ~/.van-phong-ao/logs/cap-nhat.log", true); }
+      }
+    }, 2000);
+  }
+
+  $("now").addEventListener("click", async (e) => {
+    if (e.target.id === "retry") return load(false);
+    if (e.target.id === "check") return load(true);
+    if (e.target.id !== "go" || busy) return;
+    if (!confirm(`Cập nhật lên ${data.target.name}? Văn phòng sẽ tắt và bật lại trong khoảng một phút. Dữ liệu giữ nguyên.`)) return;
+    busy = true; render(); msg("Đang bắt đầu cập nhật…");
+    try { data = await req("/cap-nhat", { name: data.target.name }); sawDown = false; msg(""); render(); follow(); }
+    catch (err) { msg(err.message, true); }
+    finally { busy = false; render(); }
+  });
+  load(false);
+})();
+</script>
+</body>
+</html>
