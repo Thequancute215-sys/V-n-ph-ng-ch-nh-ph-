@@ -24,8 +24,14 @@ export function createDesk(getOffice) {
   const names = { tasks: "Việc đang làm", approvals: "Việc chờ anh duyệt", assign: "Giao việc cho cả đội", ideas: "Ý tưởng", projects: "Dự án", quotas: "Hạn mức", progress: "Dự án đang ở đâu", publish: "Xuất bản", journal: "Nhật ký" };
   const toolbar = document.createElement("nav"); toolbar.className = "desk-tools"; toolbar.setAttribute("aria-label", "Điều phối dự án");
   toolbar.innerHTML = ["journal", "tasks", "assign", "ideas", "projects", "quotas", "progress", "publish"].map((key) => `<button type="button" class="btn ghost" data-desk="${key}" aria-controls="officeDesk" aria-expanded="false">${names[key]}</button>`).join("") +
-    '<a class="btn ghost" href="ket-noi.html" title="Kết nối (MCP) của đội: Notion, Figma, Google Drive…">Kết nối</a>';
+    '<a class="btn ghost" href="ket-noi.html" title="Kết nối (MCP) của đội: Notion, Figma, Google Drive…">Kết nối</a>' +
+    '<a class="btn ghost" href="cap-nhat.html" id="deskUpdate" title="Phiên bản app và cập nhật">Cập nhật</a>';
   document.querySelector(".bar").append(toolbar);
+  // Có bản mới thì nút Cập nhật ghi rõ (ctl tự hỏi GitHub mỗi 6 giờ; đây chỉ đọc kết quả đã có, không gọi mạng).
+  request("/cap-nhat").then((d) => {
+    const s = d.capNhat;
+    if (s && s.state === "co-ban-moi") { const a = $("deskUpdate"); a.textContent = "Cập nhật: có " + s.target.name; a.title = "Có bản mới " + s.target.name + ": bấm để xem và cập nhật"; }
+  }).catch(() => {});
   const dialog = document.createElement("dialog"); dialog.id = "officeDesk"; dialog.className = "desk-dialog"; dialog.setAttribute("aria-labelledby", "deskTitle");
   dialog.innerHTML = `<div class="desk-head"><h2 id="deskTitle">Dự án đang ở đâu</h2><button type="button" id="deskClose">Thu gọn / Đóng</button></div><div class="desk-body">
     <p id="deskWorkspace" class="muted"></p><p id="deskMessage" class="desk-message" role="status"></p>

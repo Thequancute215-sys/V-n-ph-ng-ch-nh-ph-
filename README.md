@@ -67,6 +67,27 @@ npm run cai-app -- --go         # gỡ mọi lối tắt
 - Mở app khi văn phòng đang tắt: hiện trang hướng dẫn, tự mở lại khi văn phòng bật. App không lưu đệm dữ liệu văn phòng.
 - Không cần cài thêm gì: không Electron, không thư viện ngoài.
 
+### Cập nhật app (không xoá đi tải lại)
+
+Trên thanh chức năng bấm **Cập nhật** (có bản mới thì nút ghi "Cập nhật: có vX.Y.Z"), xem thay đổi rồi bấm **Cập nhật lên vX.Y.Z**. App tự làm:
+1. tắt văn phòng;
+2. lấy bản mới (chỉ kiểu fast-forward bằng git);
+3. bật lại và kiểm bảng điều khiển trả lời đúng phiên bản mới;
+4. bản mới không lên được thì tự quay về bản cũ và bật lại.
+
+Tiến độ ở `~/.van-phong-ao/cap-nhat.json`, log ở `~/.van-phong-ao/logs/cap-nhat.log`. Văn phòng tự hỏi GitHub có bản mới 1 phút sau khi bật rồi mỗi 6 giờ; trang Cập nhật có nút kiểm ngay.
+
+- **Dữ liệu giữ nguyên:** sổ `data/`, `config.json`, `~/.van-phong-ao` nằm ngoài git. Sổ `ctl.db` tự nâng cấp khi bản mới mở (`MIGRATIONS` trong `ctl/db.js`: chỉ thêm bước, chỉ thêm bảng/cột, để bản cũ vẫn mở được khi phải quay lại). Khóa mới trong `config.json` luôn có giá trị mặc định ở `lib/config.js`.
+- **Từ chối, không ghi đè:** máy có file của app đang sửa, có commit riêng, đang có lượt AI hay việc được giao đang chạy, hoặc văn phòng không bật bằng app (`npm run app`).
+- **Chỉ nhận bản đã phát hành:** merge vào main không tự tới máy người dùng. Máy của đội phát triển muốn chạy bản mới nhất của main thì đặt `"updateChannel": "main"` trong `config.json`.
+
+### Phát hành bản mới (chỉ CEO)
+
+1. Đội AI nâng `version` trong `package.json` (ví dụ `1.1.0`) qua PR; CEO merge.
+2. CEO tạo tag `v1.1.0` trên main: GitHub → Releases → Draft a new release → tag `v1.1.0`, ghi chú phát hành ở phần mô tả.
+3. Workflow **Kiểm bản phát hành** kiểm tag đúng mẫu, khớp `package.json`, nằm trên main và test xanh. Báo đỏ thì xoá tag, sửa, tag lại.
+4. Máy người dùng thấy nút "Cập nhật: có v1.1.0" trong vòng 6 giờ (hoặc ngay khi bấm Kiểm tra bản mới).
+
 ## Các màn hình
 
 ### Giao việc tự động, Claude báo cáo
@@ -192,6 +213,7 @@ Chạy tay: `node tools/kiem-agent.js` (agent.md ở thư mục đang đứng), 
 | `aiCapUsd` | 100 | Trần tiền AI mỗi ngày (vượt 80% thì ô chuyển đỏ) |
 | `prices` | Claude 3/0,3/15 · Codex 1,25/0,125/10 | Giá API (USD cho 1 triệu token: vào / đọc đệm / ra) để **ước tính** tiền. Dùng gói thuê bao tháng thì đây chỉ là số để so sánh |
 | `dockerFilter`, `dockerStrip`, `dockerRetired` | `""`, `""`, `[]` | Hiện container Docker trong Phòng DEV, ví dụ `"name=myapp-dev"` |
+| `updateChannel` | `"phat-hanh"` | Nút Cập nhật nhận bản nào: `"phat-hanh"` chỉ bản CEO đã phát hành (tag `vX.Y.Z`); `"main"` bản mới nhất của main (máy đội phát triển) |
 
 ## Gặp lỗi
 
@@ -213,14 +235,14 @@ Chạy tay: `node tools/kiem-agent.js` (agent.md ở thư mục đang đứng), 
 server.js              máy chủ: tìm phiên, đọc nhật ký + sổ, đẩy trạng thái mỗi giây
 lib/                   perf (token, điểm, tiền) · docs (sổ sách) · hopthu · tongquan · chat (PIN) · mailbox · config
                        guard (chặn CSRF/DNS rebinding) · proc (dừng cây tiến trình) · keys · mask · ctlbridge (cầu nối tới ctl) · app (mở app, lối tắt)
-ctl/                   OS Controller: main (HTTP) · jobs · policy · workspaces · files · runner (lượt AI) · autopilot (giao việc tự động) · handoff · monitor · audit · db
+ctl/                   OS Controller: main (HTTP) · jobs · policy · workspaces · files · runner (lượt AI) · autopilot (giao việc tự động) · handoff · monitor · audit · db (tự nâng cấp sổ) · cap-nhat (nút Cập nhật)
 test/                  node --test (npm test)
 tools/vp.js            công cụ ghi sổ cho agent
 tools/kiem-agent.js    bộ kiểm chu trình agent.md (lib/kiem-agent.js), CI chạy trên mỗi PR
 setup.js               cài đặt (hỏi–đáp hoặc --yes cho agent)
 mau/                   khung mẫu sổ điều phối + đoạn luật đội cho AGENTS.md / CLAUDE.md
 public/                giao diện: index (3D), board, congviec, noiquy, tongquan, hopthu, hieusuat, tinnhan, 2d, dieukhien
-scripts/               mở đường hầm xem trên điện thoại · chay-tat-ca.js (npm run all) · mo-app / tat-app / cai-app (app trên máy)
+scripts/               mở đường hầm xem trên điện thoại · chay-tat-ca.js (npm run all) · mo-app / tat-app / cai-app (app trên máy) · cap-nhat.js (bộ cập nhật, lib/cap-nhat.js)
 HUONG-DAN-CHO-AGENT.md hướng dẫn để agent tự cài từ link này
 ```
 
