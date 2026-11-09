@@ -10,3 +10,8 @@ node_modules/
 data/
 
 scratch/
+
+# Understand Anything: chỉ commit đồ thị, không commit phần nháp
+.ua/intermediate/
+.ua/tmp/
+.ua/diff-overlay.json
