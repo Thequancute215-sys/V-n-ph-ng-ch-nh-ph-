@@ -261,6 +261,9 @@ mau/                   khung mẫu sổ điều phối + đoạn luật đội c
 public/                giao diện: index (3D), board, congviec, noiquy, tongquan, hopthu, hieusuat, tinnhan, 2d, dieukhien
 scripts/               mở đường hầm xem trên điện thoại · chay-tat-ca.js (npm run all) · mo-app / tat-app / cai-app (app trên máy) · cap-nhat.js (bộ cập nhật, lib/cap-nhat.js)
 HUONG-DAN-CHO-AGENT.md hướng dẫn để agent tự cài từ link này
+docs/BAN-DO-HE-THONG.md bản đồ workflow → kiến trúc → mã (sinh bằng tools/ve-ban-do.js từ đồ thị Understand Anything trong .ua/)
 ```
+
+Bản đồ toàn hệ thống (7 miền nghiệp vụ, 40 workflow, từng bước trỏ tới file:dòng): [docs/BAN-DO-HE-THONG.md](docs/BAN-DO-HE-THONG.md). Mã đổi nhiều thì vẽ lại đồ thị bằng `/understand` và `/understand-domain` (plugin Understand Anything), rồi chạy `node tools/ve-ban-do.js`.
 
 Giấy phép MIT.

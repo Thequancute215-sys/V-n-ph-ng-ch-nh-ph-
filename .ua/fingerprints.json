@@ -1,0 +1,4949 @@
+{
+  "version": "1.0.0",
+  "gitCommitHash": "72e9ac0eeb0bf2e07bcad13f97dd59c46a5ba10d",
+  "generatedAt": "2026-11-10T02:36:30.749Z",
+  "files": {
+    ".gitattributes": {
+      "filePath": ".gitattributes",
+      "contentHash": "0a38370224c134075aa5a1850ef9af90d4f090e2917661983e5f42d1deb12639",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 3,
+      "hasStructuralAnalysis": false
+    },
+    ".github/workflows/kiem-tra.yml": {
+      "filePath": ".github/workflows/kiem-tra.yml",
+      "contentHash": "e9ef7fccb8fcf65e3f2b9098d9532046e72fa9b47a3c17074955b67e1ad7c97e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 37,
+      "hasStructuralAnalysis": false
+    },
+    ".github/workflows/phat-hanh.yml": {
+      "filePath": ".github/workflows/phat-hanh.yml",
+      "contentHash": "21d8f2d009590459591f841a4da08a4698c76ce0c24c4d3985224d4215e6edc0",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 38,
+      "hasStructuralAnalysis": false
+    },
+    "AGENTS.md": {
+      "filePath": "AGENTS.md",
+      "contentHash": "453aa1a91e21f9df0a621a3b201b95417cb9c6cc32c92ed1aaab8e36df667470",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 5,
+      "hasStructuralAnalysis": false
+    },
+    "CLAUDE.md": {
+      "filePath": "CLAUDE.md",
+      "contentHash": "453aa1a91e21f9df0a621a3b201b95417cb9c6cc32c92ed1aaab8e36df667470",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 5,
+      "hasStructuralAnalysis": false
+    },
+    "HUONG-DAN-CHO-AGENT.md": {
+      "filePath": "HUONG-DAN-CHO-AGENT.md",
+      "contentHash": "433f8e07e9151d7e4834cb1af8ece6e95a6467491a321517bb12b9c508a5084c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 168,
+      "hasStructuralAnalysis": false
+    },
+    "LENH-BAN-GIAO-CLAUDE.md": {
+      "filePath": "LENH-BAN-GIAO-CLAUDE.md",
+      "contentHash": "748bdbd1d653b0c61fc24c7c531b72bc270371ad65736b952bcd93d2533a39b9",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 70,
+      "hasStructuralAnalysis": false
+    },
+    "README.md": {
+      "filePath": "README.md",
+      "contentHash": "81f9e094ab690be83e54f5dd3557ab41cb0af790e767d130f084ea390d4ff5a8",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 267,
+      "hasStructuralAnalysis": false
+    },
+    "YEU-CAU-SUA-LOI-CLAUDE.md": {
+      "filePath": "YEU-CAU-SUA-LOI-CLAUDE.md",
+      "contentHash": "49e166b9289503d32a9ea8e07ef4b883576a8efd639c63d6123792e4d15f1d9a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 236,
+      "hasStructuralAnalysis": false
+    },
+    "agent.md": {
+      "filePath": "agent.md",
+      "contentHash": "7aafde98973076104d510e5d909f04c8099bcfe4e233bdf880b1fd02d714fb81",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 167,
+      "hasStructuralAnalysis": false
+    },
+    "config.example.json": {
+      "filePath": "config.example.json",
+      "contentHash": "6b27abf661fd859dbb953ec634b2b9c3e2533e56067041e95ca0f2b3177cb4e9",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 16,
+      "hasStructuralAnalysis": false
+    },
+    "ctl/agent-template.md": {
+      "filePath": "ctl/agent-template.md",
+      "contentHash": "5de44370dd1612981e60d91e42b0850efacbfcde365e2dbb253f227c1aadad99",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 99,
+      "hasStructuralAnalysis": false
+    },
+    "ctl/audit.js": {
+      "filePath": "ctl/audit.js",
+      "contentHash": "3ac8a191a81a5094f692ec9b7e297b5604e73438ea70733fa59a462d2da364d2",
+      "functions": [
+        {
+          "name": "createAudit",
+          "params": [
+            "db"
+          ],
+          "exported": false,
+          "lineCount": 13
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 20,
+      "hasStructuralAnalysis": true
+    },
+    "ctl/autopilot.js": {
+      "filePath": "ctl/autopilot.js",
+      "contentHash": "845bd3aff9eac900100e9c33371818dddb726d8bf4932a1ba620c55243f20d02",
+      "functions": [
+        {
+          "name": "waitFromMessage",
+          "params": [
+            "text",
+            "now"
+          ],
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "quotaState",
+          "params": [
+            "provider"
+          ],
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "err",
+          "params": [
+            "code",
+            "message"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "responseText",
+          "params": [
+            "log"
+          ],
+          "exported": false,
+          "lineCount": 12
+        },
+        {
+          "name": "createAutopilot",
+          "params": [],
+          "exported": false,
+          "lineCount": 519
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 585,
+      "hasStructuralAnalysis": true
+    },
+    "ctl/bo-kiem.js": {
+      "filePath": "ctl/bo-kiem.js",
+      "contentHash": "b6c1debc70cd4eba17dbb00ee6e0a455264fc98054876dd899e7097d37e21022",
+      "functions": [
+        {
+          "name": "err",
+          "params": [
+            "code",
+            "message"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "norm",
+          "params": [
+            "s"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "wanted",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "stamp",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "createBoKiem",
+          "params": [],
+          "exported": false,
+          "lineCount": 72
+        },
+        {
+          "name": "tryGit",
+          "params": [
+            "root",
+            "args",
+            "opts"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "clean",
+          "params": [
+            "e"
+          ],
+          "exported": false,
+          "lineCount": 1
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 101,
+      "hasStructuralAnalysis": true
+    },
+    "ctl/cap-nhat.js": {
+      "filePath": "ctl/cap-nhat.js",
+      "contentHash": "f81aa2f26a8a2b0f98422dc5833114a867d91d2fa68175009e0e809bce0d65fd",
+      "functions": [
+        {
+          "name": "err",
+          "params": [
+            "code",
+            "message"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "createUpdater",
+          "params": [],
+          "exported": false,
+          "lineCount": 43
+        },
+        {
+          "name": "defaultManaged",
+          "params": [],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "defaultSpawn",
+          "params": [
+            "args"
+          ],
+          "exported": false,
+          "lineCount": 5
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 78,
+      "hasStructuralAnalysis": true
+    },
+    "ctl/chat.js": {
+      "filePath": "ctl/chat.js",
+      "contentHash": "553c8116dffac3a62caa6e1504c5633224d4575196bc3d5fcd73ca7c73861a64",
+      "functions": [
+        {
+          "name": "err",
+          "params": [
+            "code",
+            "message"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "promptFor",
+          "params": [
+            "who",
+            "history",
+            "text"
+          ],
+          "exported": false,
+          "lineCount": 22
+        },
+        {
+          "name": "parseReply",
+          "params": [
+            "raw",
+            "who"
+          ],
+          "exported": false,
+          "lineCount": 15
+        },
+        {
+          "name": "createChat",
+          "params": [],
+          "exported": false,
+          "lineCount": 69
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 141,
+      "hasStructuralAnalysis": true
+    },
+    "ctl/db.js": {
+      "filePath": "ctl/db.js",
+      "contentHash": "4970bc14691b5f7164badfd4f07c6b13a7b5a6a5119bb53f468e745c3776b61b",
+      "functions": [
+        {
+          "name": "home",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "migrate",
+          "params": [
+            "db"
+          ],
+          "exported": false,
+          "lineCount": 15
+        },
+        {
+          "name": "open",
+          "params": [],
+          "exported": false,
+          "lineCount": 9
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 101,
+      "hasStructuralAnalysis": true
+    },
+    "ctl/files.js": {
+      "filePath": "ctl/files.js",
+      "contentHash": "b73b5063b6b833d3b5ca32271ff1e0940a73c9e151af98297115dbf861e750ae",
+      "functions": [
+        {
+          "name": "sha",
+          "params": [
+            "buf"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "err",
+          "params": [
+            "code",
+            "msg"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "createFiles",
+          "params": [
+            "ws",
+            "audit"
+          ],
+          "exported": false,
+          "lineCount": 43
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 57,
+      "hasStructuralAnalysis": true
+    },
+    "ctl/github.js": {
+      "filePath": "ctl/github.js",
+      "contentHash": "d7d653eb59c37d00c31b4dcaf9bdc3421c47becaf0de9e818f6fdcc29a3c15f5",
+      "functions": [
+        {
+          "name": "err",
+          "params": [
+            "code",
+            "message"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "validName",
+          "params": [
+            "name"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "inside",
+          "params": [
+            "root",
+            "target"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "git",
+          "params": [
+            "args",
+            "input"
+          ],
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "credential",
+          "params": [],
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "remoteName",
+          "params": [
+            "url"
+          ],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "createGitHub",
+          "params": [],
+          "exported": false,
+          "lineCount": 117
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 153,
+      "hasStructuralAnalysis": true
+    },
+    "ctl/handoff.js": {
+      "filePath": "ctl/handoff.js",
+      "contentHash": "4d4d67224bf22e09dee8c5f6448e093965fade1038055b7ae2ef8f1393fda02b",
+      "functions": [
+        {
+          "name": "err",
+          "params": [
+            "code",
+            "msg"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "readTurn",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "setTurn",
+          "params": [
+            "root",
+            "role",
+            "nextOwner"
+          ],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "checkHandoff",
+          "params": [
+            "h",
+            "role"
+          ],
+          "exported": false,
+          "lineCount": 23
+        },
+        {
+          "name": "checkList",
+          "params": [
+            "list",
+            "name",
+            "fields"
+          ],
+          "exported": false,
+          "lineCount": 11
+        },
+        {
+          "name": "filler",
+          "params": [
+            "s"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "checkExplain",
+          "params": [
+            "list"
+          ],
+          "exported": false,
+          "lineCount": 21
+        },
+        {
+          "name": "checkAsk",
+          "params": [
+            "a",
+            "role"
+          ],
+          "exported": false,
+          "lineCount": 17
+        },
+        {
+          "name": "findHandoff",
+          "params": [
+            "log"
+          ],
+          "exported": false,
+          "lineCount": 24
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 149,
+      "hasStructuralAnalysis": true
+    },
+    "ctl/ideas.js": {
+      "filePath": "ctl/ideas.js",
+      "contentHash": "3c8126be1ae4d2204d6635ce5c94ce0f5850012edb3d5194a99f8655b12bdcda",
+      "functions": [
+        {
+          "name": "err",
+          "params": [
+            "code",
+            "message"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "same",
+          "params": [
+            "a",
+            "b"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "createIdeas",
+          "params": [],
+          "exported": false,
+          "lineCount": 71
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 90,
+      "hasStructuralAnalysis": true
+    },
+    "ctl/jobs.js": {
+      "filePath": "ctl/jobs.js",
+      "contentHash": "922d6431aae3e2443064819480b7aba52b0ec94fa3709979c83e4eb0932bdfb4",
+      "functions": [
+        {
+          "name": "row",
+          "params": [
+            "r"
+          ],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "err",
+          "params": [
+            "code",
+            "msg"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "createJobs",
+          "params": [
+            "db",
+            "audit",
+            "logDir"
+          ],
+          "exported": false,
+          "lineCount": 181
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 205,
+      "hasStructuralAnalysis": true
+    },
+    "ctl/ket-noi-danh-muc.js": {
+      "filePath": "ctl/ket-noi-danh-muc.js",
+      "contentHash": "9fc447a7a0dc8ed2ea1fd3e73cd241e1ead447da278b47b68d4522846ba8afcb",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 33,
+      "hasStructuralAnalysis": true
+    },
+    "ctl/ket-noi.js": {
+      "filePath": "ctl/ket-noi.js",
+      "contentHash": "dca20388e3c501cf9c2865aed4590542e1533a715ff5ee9a83e41c00a056a226",
+      "functions": [
+        {
+          "name": "err",
+          "params": [
+            "code",
+            "message"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "parseClaude",
+          "params": [
+            "text"
+          ],
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "parseCodex",
+          "params": [
+            "text"
+          ],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "parseAgy",
+          "params": [
+            "text"
+          ],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "expand",
+          "params": [
+            "p"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "createConnectors",
+          "params": [],
+          "exported": false,
+          "lineCount": 81
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 118,
+      "hasStructuralAnalysis": true
+    },
+    "ctl/khung/kiem-chu-trinh.yml": {
+      "filePath": "ctl/khung/kiem-chu-trinh.yml",
+      "contentHash": "1c523b4739b91819818f08afa17b213f5a1fd3740894a8e49658b260c5f72d8d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 58,
+      "hasStructuralAnalysis": false
+    },
+    "ctl/main.js": {
+      "filePath": "ctl/main.js",
+      "contentHash": "3191176a10b1e7cd1efe6441007cf601be33c2a561fd7b367f4bb5d927dd624e",
+      "functions": [
+        {
+          "name": "createCtl",
+          "params": [],
+          "exported": false,
+          "lineCount": 276
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 355,
+      "hasStructuralAnalysis": true
+    },
+    "ctl/mcp-phong.js": {
+      "filePath": "ctl/mcp-phong.js",
+      "contentHash": "bbfc482af1ec85b3cbb95419248101c44228d9e799786247771538fc240418e9",
+      "functions": [
+        {
+          "name": "ROLE_PHONG",
+          "params": [],
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "hopLe",
+          "params": [
+            "id",
+            "room"
+          ],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "read",
+          "params": [
+            "dir"
+          ],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "save",
+          "params": [
+            "dir",
+            "room",
+            "ids"
+          ],
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "claudeTool",
+          "params": [
+            "name"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "argsFor",
+          "params": [
+            "kind",
+            "role",
+            "dir"
+          ],
+          "exported": false,
+          "lineCount": 21
+        },
+        {
+          "name": "note",
+          "params": [
+            "role",
+            "dir"
+          ],
+          "exported": false,
+          "lineCount": 6
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 86,
+      "hasStructuralAnalysis": true
+    },
+    "ctl/monitor.js": {
+      "filePath": "ctl/monitor.js",
+      "contentHash": "eb2e5a83c3efd2073d263f8c139c9e92f9d8a83a01060738cdfaaf6f05801413",
+      "functions": [
+        {
+          "name": "cpuTimes",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "createMonitor",
+          "params": [],
+          "exported": false,
+          "lineCount": 60
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 72,
+      "hasStructuralAnalysis": true
+    },
+    "ctl/nhanh.js": {
+      "filePath": "ctl/nhanh.js",
+      "contentHash": "0f31534b2bb5c1c30a68debc11135cbb731b5200dac04c7c26ffc4d33ba34878",
+      "functions": [
+        {
+          "name": "err",
+          "params": [
+            "code",
+            "message"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "git",
+          "params": [
+            "root",
+            "args"
+          ],
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "tryGit",
+          "params": [
+            "root",
+            "args",
+            "opts"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "isRepo",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "head",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "branchOf",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "untracked",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "agentMdLocal",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "dirty",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "slug",
+          "params": [
+            "text"
+          ],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "defaultBranch",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "preflight",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "prepare",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 15
+        },
+        {
+          "name": "save",
+          "params": [
+            "root",
+            "g",
+            "message"
+          ],
+          "exported": false,
+          "lineCount": 12
+        },
+        {
+          "name": "deleted",
+          "params": [
+            "root",
+            "from"
+          ],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "restore",
+          "params": [
+            "root",
+            "from",
+            "paths"
+          ],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "diff",
+          "params": [
+            "root",
+            "from",
+            "to"
+          ],
+          "exported": false,
+          "lineCount": 13
+        },
+        {
+          "name": "push",
+          "params": [
+            "root",
+            "g"
+          ],
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "compareUrl",
+          "params": [
+            "remote",
+            "main",
+            "branch"
+          ],
+          "exported": false,
+          "lineCount": 5
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 140,
+      "hasStructuralAnalysis": true
+    },
+    "ctl/nhat-ky.js": {
+      "filePath": "ctl/nhat-ky.js",
+      "contentHash": "5be348795d7bdce4d94a5daa7f2bb1b46760ccbe62dae9c099180231fb9a52e1",
+      "functions": [
+        {
+          "name": "WHO",
+          "params": [],
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "short",
+          "params": [
+            "s"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "file",
+          "params": [
+            "p"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "parseLine",
+          "params": [
+            "line"
+          ],
+          "exported": false,
+          "lineCount": 30
+        },
+        {
+          "name": "createJournal",
+          "params": [],
+          "exported": false,
+          "lineCount": 44
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 92,
+      "hasStructuralAnalysis": true
+    },
+    "ctl/policy.js": {
+      "filePath": "ctl/policy.js",
+      "contentHash": "c9e6aa5ea1301df2d815f4ad2dd5478b939659f3ca5de7a92065235eaf3304a9",
+      "functions": [
+        {
+          "name": "inWorkspace",
+          "params": [
+            "p"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "base",
+          "params": [
+            "p"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "classify",
+          "params": [
+            "argv"
+          ],
+          "exported": false,
+          "lineCount": 47
+        },
+        {
+          "name": "resolveProgram",
+          "params": [
+            "name"
+          ],
+          "exported": false,
+          "lineCount": 30
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 119,
+      "hasStructuralAnalysis": true
+    },
+    "ctl/quotas.js": {
+      "filePath": "ctl/quotas.js",
+      "contentHash": "651ca58deccb7411ed628683e22db39ca21474aa6f9d1b6af980acf643a38db6",
+      "functions": [
+        {
+          "name": "number",
+          "params": [
+            "v"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "percent",
+          "params": [
+            "v"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "iso",
+          "params": [
+            "v"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "bucket",
+          "params": [
+            "id",
+            "label",
+            "group",
+            "used",
+            "resetAt"
+          ],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "codexBuckets",
+          "params": [
+            "data"
+          ],
+          "exported": false,
+          "lineCount": 13
+        },
+        {
+          "name": "claudeReset",
+          "params": [
+            "text"
+          ],
+          "exported": false,
+          "lineCount": 21
+        },
+        {
+          "name": "claudeBuckets",
+          "params": [
+            "data",
+            "now"
+          ],
+          "exported": false,
+          "lineCount": 14
+        },
+        {
+          "name": "antigravityBuckets",
+          "params": [
+            "data"
+          ],
+          "exported": false,
+          "lineCount": 13
+        },
+        {
+          "name": "createQueries",
+          "params": [
+            "dir"
+          ],
+          "exported": false,
+          "lineCount": 59
+        },
+        {
+          "name": "createQuotas",
+          "params": [],
+          "exported": false,
+          "lineCount": 35
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 178,
+      "hasStructuralAnalysis": true
+    },
+    "ctl/ra-soat.js": {
+      "filePath": "ctl/ra-soat.js",
+      "contentHash": "5eece4d1f66bac2157d20335b70f76f89f9c14d86179f555967c1ebb29cefdf7",
+      "functions": [
+        {
+          "name": "listFiles",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 17
+        },
+        {
+          "name": "scanText",
+          "params": [
+            "text",
+            "rel"
+          ],
+          "exported": false,
+          "lineCount": 17
+        },
+        {
+          "name": "norm",
+          "params": [
+            "n"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "near",
+          "params": [
+            "a",
+            "b"
+          ],
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "lookalike",
+          "params": [
+            "name",
+            "list"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "depFiles",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 15
+        },
+        {
+          "name": "scanDeps",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 45
+        },
+        {
+          "name": "scan",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 13
+        },
+        {
+          "name": "err",
+          "params": [
+            "code",
+            "message"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "createScanner",
+          "params": [],
+          "exported": false,
+          "lineCount": 38
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 208,
+      "hasStructuralAnalysis": true
+    },
+    "ctl/runner.js": {
+      "filePath": "ctl/runner.js",
+      "contentHash": "73bc18c97625d04d908ce8ad0256fecf88961bd9937e5eb6f9a0415cb8894492",
+      "functions": [
+        {
+          "name": "END",
+          "params": [
+            "role"
+          ],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "codexArgs",
+          "params": [
+            "argv",
+            "role",
+            "effort"
+          ],
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "base",
+          "params": [
+            "x"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "fullAccessArgs",
+          "params": [
+            "argv"
+          ],
+          "exported": false,
+          "lineCount": 23
+        },
+        {
+          "name": "withMcp",
+          "params": [
+            "argv",
+            "role",
+            "dir"
+          ],
+          "exported": false,
+          "lineCount": 13
+        },
+        {
+          "name": "err",
+          "params": [
+            "code",
+            "msg"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "createRunner",
+          "params": [],
+          "exported": false,
+          "lineCount": 226
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 374,
+      "hasStructuralAnalysis": true
+    },
+    "ctl/thongbao.js": {
+      "filePath": "ctl/thongbao.js",
+      "contentHash": "0705b207a396924f8090c10bb3f5a19fc1dee07069ebb14aa4bf4f7345d2cc03",
+      "functions": [
+        {
+          "name": "createNotifier",
+          "params": [],
+          "exported": false,
+          "lineCount": 11
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 33,
+      "hasStructuralAnalysis": true
+    },
+    "ctl/workspaces.js": {
+      "filePath": "ctl/workspaces.js",
+      "contentHash": "a7d0e3772532d2ddc7828694dacb32905f76e9e1cd3b3012e362b5bae208575b",
+      "functions": [
+        {
+          "name": "readProgress",
+          "params": [
+            "text"
+          ],
+          "exported": false,
+          "lineCount": 33
+        },
+        {
+          "name": "maskValues",
+          "params": [
+            "value"
+          ],
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "detectStack",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "same",
+          "params": [
+            "a",
+            "b"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "inside",
+          "params": [
+            "root",
+            "p"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "err",
+          "params": [
+            "code",
+            "msg"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "gitRead",
+          "params": [
+            "root",
+            "args"
+          ],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "createWorkspaces",
+          "params": [
+            "db",
+            "audit"
+          ],
+          "exported": false,
+          "lineCount": 149
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 218,
+      "hasStructuralAnalysis": true
+    },
+    "ctl/xuat-ban.js": {
+      "filePath": "ctl/xuat-ban.js",
+      "contentHash": "2aa3baa0c5ddafc42176a344a229019675a93addbf7828322c840a0adf9be486",
+      "functions": [
+        {
+          "name": "err",
+          "params": [
+            "code",
+            "message"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "gitOut",
+          "params": [
+            "root",
+            "args"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "testCommand",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 16
+        },
+        {
+          "name": "uncommitted",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "codeVersion",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "releaseMethod",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 33
+        },
+        {
+          "name": "createPublisher",
+          "params": [],
+          "exported": false,
+          "lineCount": 123
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 214,
+      "hasStructuralAnalysis": true
+    },
+    "docs/CO-CHE-TU-HOC.md": {
+      "filePath": "docs/CO-CHE-TU-HOC.md",
+      "contentHash": "665c4e2cf5d0025b1c8270b2e5555f7defcccdea4aa635b3ec4fb07a28b7f781",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 79,
+      "hasStructuralAnalysis": false
+    },
+    "docs/SPEC-VUNG-2.md": {
+      "filePath": "docs/SPEC-VUNG-2.md",
+      "contentHash": "f698b3e56b8519c7a94872de035a1e53b1312e3a666553cf68af0df418959c9f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 143,
+      "hasStructuralAnalysis": false
+    },
+    "lib/app.js": {
+      "filePath": "lib/app.js",
+      "contentHash": "52e8e7dc49bc7c225ab8134fe447ada17f8283373750dbb25360fdd7d8fca341",
+      "functions": [
+        {
+          "name": "HOME",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "PID_FILE",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "LOG_FILE",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "officeHost",
+          "params": [
+            "cfg"
+          ],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "hostPort",
+          "params": [
+            "host",
+            "port"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "isUp",
+          "params": [
+            "port"
+          ],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "waitUp",
+          "params": [
+            "port"
+          ],
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "browserCandidates",
+          "params": [],
+          "exported": false,
+          "lineCount": 13
+        },
+        {
+          "name": "findBrowser",
+          "params": [],
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "openCommand",
+          "params": [
+            "url",
+            "browser"
+          ],
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "commandLineOf",
+          "params": [
+            "pid"
+          ],
+          "exported": false,
+          "lineCount": 12
+        },
+        {
+          "name": "isAppProcess",
+          "params": [
+            "pid"
+          ],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "pngToIco",
+          "params": [
+            "png"
+          ],
+          "exported": false,
+          "lineCount": 10
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 100,
+      "hasStructuralAnalysis": true
+    },
+    "lib/cap-nhat.js": {
+      "filePath": "lib/cap-nhat.js",
+      "contentHash": "cb246b9a4bf04f16b6745dff1ad79138f195b37ac05ce2ea66f6b998eab62a46",
+      "functions": [
+        {
+          "name": "HOME",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "STATE_FILE",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "LOG_FILE",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "err",
+          "params": [
+            "code",
+            "message"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "firstLine",
+          "params": [
+            "e"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "gitIn",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "cmpTag",
+          "params": [
+            "a",
+            "b"
+          ],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "readVersion",
+          "params": [
+            "text"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "localVersion",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "check",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 35
+        },
+        {
+          "name": "apply",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "rollback",
+          "params": [
+            "root",
+            "from"
+          ],
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "fetchAsync",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "runUpdate",
+          "params": [],
+          "exported": false,
+          "lineCount": 19
+        },
+        {
+          "name": "readState",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "writeState",
+          "params": [
+            "state"
+          ],
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "busy",
+          "params": [],
+          "exported": false,
+          "lineCount": 3
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 132,
+      "hasStructuralAnalysis": true
+    },
+    "lib/chat.js": {
+      "filePath": "lib/chat.js",
+      "contentHash": "d189970f2648cb4596645ac7ee275d2888ad1011daef982b8b75d3def68f7c3b",
+      "functions": [
+        {
+          "name": "pin",
+          "params": [],
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "isLocal",
+          "params": [
+            "req"
+          ],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "authorized",
+          "params": [
+            "req"
+          ],
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "body",
+          "params": [
+            "req"
+          ],
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "outbox",
+          "params": [
+            "DATA"
+          ],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "handle",
+          "params": [
+            "req",
+            "res",
+            "url",
+            "ctx"
+          ],
+          "exported": false,
+          "lineCount": 23
+        },
+        {
+          "name": "currentPin",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 76,
+      "hasStructuralAnalysis": true
+    },
+    "lib/config.js": {
+      "filePath": "lib/config.js",
+      "contentHash": "27189bddcfea1a304e26d0b78f3cbe90316215e9929d7c6429440627d1c158ec",
+      "functions": [
+        {
+          "name": "loadConfig",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 8
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 32,
+      "hasStructuralAnalysis": true
+    },
+    "lib/ctlbridge.js": {
+      "filePath": "lib/ctlbridge.js",
+      "contentHash": "48a9a69f3ae9a5c5a5df4e679109329d02511fb1b08ae788fc5707526883e9a2",
+      "functions": [
+        {
+          "name": "HOME",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "PORT",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "token",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "isLocal",
+          "params": [
+            "req"
+          ],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "call",
+          "params": [
+            "method",
+            "p",
+            "body"
+          ],
+          "exported": false,
+          "lineCount": 14
+        },
+        {
+          "name": "proxy",
+          "params": [
+            "req",
+            "res"
+          ],
+          "exported": false,
+          "lineCount": 19
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 59,
+      "hasStructuralAnalysis": true
+    },
+    "lib/docs.js": {
+      "filePath": "lib/docs.js",
+      "contentHash": "fd90b2975d5e1a40b714067361639dc113a93e12cc8ef40d776c341a36ab95ed",
+      "functions": [
+        {
+          "name": "read",
+          "params": [
+            "file"
+          ],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "table",
+          "params": [
+            "text",
+            "re"
+          ],
+          "exported": false,
+          "lineCount": 13
+        },
+        {
+          "name": "sections",
+          "params": [
+            "text"
+          ],
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "hash",
+          "params": [
+            "s"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "rulesWithAge",
+          "params": [
+            "secs",
+            "data"
+          ],
+          "exported": false,
+          "lineCount": 12
+        },
+        {
+          "name": "rulesPath",
+          "params": [
+            "cfg",
+            "data"
+          ],
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "build",
+          "params": [
+            "cfg",
+            "D",
+            "mask",
+            "maskDoc",
+            "extra"
+          ],
+          "exported": false,
+          "lineCount": 55
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 119,
+      "hasStructuralAnalysis": true
+    },
+    "lib/ghi-file.js": {
+      "filePath": "lib/ghi-file.js",
+      "contentHash": "b8dfc5fda13dae373c391fb04e8175dc2a651b1f73854cf8cbfb72babbe62f94",
+      "functions": [
+        {
+          "name": "pause",
+          "params": [
+            "ms"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "renameRetry",
+          "params": [
+            "from",
+            "to"
+          ],
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "writeAtomic",
+          "params": [
+            "file",
+            "data"
+          ],
+          "exported": false,
+          "lineCount": 4
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 23,
+      "hasStructuralAnalysis": true
+    },
+    "lib/guard.js": {
+      "filePath": "lib/guard.js",
+      "contentHash": "d92098e1622adb3c7c3b6c1c0847b38e6b50f44b9429c06de3b0d5360abb6719",
+      "functions": [
+        {
+          "name": "checkHost",
+          "params": [
+            "req"
+          ],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "checkWrite",
+          "params": [
+            "req"
+          ],
+          "exported": false,
+          "lineCount": 17
+        },
+        {
+          "name": "readJson",
+          "params": [
+            "req"
+          ],
+          "exported": false,
+          "lineCount": 8
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 50,
+      "hasStructuralAnalysis": true
+    },
+    "lib/hopthu.js": {
+      "filePath": "lib/hopthu.js",
+      "contentHash": "edd2f672dcace12fc0320a5547141cfe683fc231204a9d847d6e0de543dd1a08",
+      "functions": [
+        {
+          "name": "readJsonl",
+          "params": [
+            "file"
+          ],
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "list",
+          "params": [
+            "dir"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "state",
+          "params": [
+            "dir"
+          ],
+          "exported": false,
+          "lineCount": 12
+        },
+        {
+          "name": "build",
+          "params": [
+            "data",
+            "mask"
+          ],
+          "exported": false,
+          "lineCount": 21
+        },
+        {
+          "name": "statusById",
+          "params": [
+            "data"
+          ],
+          "exported": false,
+          "lineCount": 1
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 62,
+      "hasStructuralAnalysis": true
+    },
+    "lib/keys.js": {
+      "filePath": "lib/keys.js",
+      "contentHash": "097788ebfad30d28b835b2e003d82eb05e50cf9dc0fc7270c7530a3a7934bb2c",
+      "functions": [
+        {
+          "name": "file",
+          "params": [
+            "home"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "load",
+          "params": [
+            "home"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "has",
+          "params": [
+            "provider",
+            "home"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "save",
+          "params": [
+            "provider",
+            "key",
+            "home"
+          ],
+          "exported": false,
+          "lineCount": 12
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 30,
+      "hasStructuralAnalysis": true
+    },
+    "lib/kiem-agent.js": {
+      "filePath": "lib/kiem-agent.js",
+      "contentHash": "e615da727ac204e3bf8837d99abb260b90c642a03f28aebb53184b0e555ab681",
+      "functions": [
+        {
+          "name": "looksLikeKey",
+          "params": [
+            "s"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "parse",
+          "params": [
+            "txt"
+          ],
+          "exported": false,
+          "lineCount": 25
+        },
+        {
+          "name": "lines",
+          "params": [
+            "z"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "checkText",
+          "params": [
+            "txt"
+          ],
+          "exported": false,
+          "lineCount": 24
+        },
+        {
+          "name": "checkChange",
+          "params": [
+            "before",
+            "after"
+          ],
+          "exported": false,
+          "lineCount": 23
+        },
+        {
+          "name": "parseSync",
+          "params": [
+            "subject"
+          ],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "checkHistory",
+          "params": [
+            "root",
+            "from"
+          ],
+          "exported": false,
+          "lineCount": 22
+        },
+        {
+          "name": "gitIn",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "main",
+          "params": [
+            "args"
+          ],
+          "exported": false,
+          "lineCount": 30
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 185,
+      "hasStructuralAnalysis": true
+    },
+    "lib/mailbox.js": {
+      "filePath": "lib/mailbox.js",
+      "contentHash": "fee922b62721f17b2e641f45ddfce7d8e8b9cfe93bb9576ade6c95a2403512b9",
+      "functions": [
+        {
+          "name": "slug",
+          "params": [
+            "s"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "newId",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "fileOf",
+          "params": [
+            "data",
+            "vai"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "append",
+          "params": [
+            "data",
+            "vai",
+            "ev"
+          ],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "findVai",
+          "params": [
+            "data",
+            "id"
+          ],
+          "exported": false,
+          "lineCount": 6
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 24,
+      "hasStructuralAnalysis": true
+    },
+    "lib/mask.js": {
+      "filePath": "lib/mask.js",
+      "contentHash": "963ba70a206bc4a26af4a5b45316485880c3000a2977d7568a246714f7c5a805",
+      "functions": [
+        {
+          "name": "maskSecrets",
+          "params": [
+            "s"
+          ],
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "cleanEnv",
+          "params": [],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "looksLikeKey",
+          "params": [
+            "s"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "maskText",
+          "params": [
+            "s"
+          ],
+          "exported": false,
+          "lineCount": 8
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 38,
+      "hasStructuralAnalysis": true
+    },
+    "lib/perf.js": {
+      "filePath": "lib/perf.js",
+      "contentHash": "66fa328ca33393a5cbf841c149a8bdac4a4c1054e313469eadb47c8a764d4cfd",
+      "functions": [
+        {
+          "name": "now",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "hourOf",
+          "params": [
+            "t"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "stateOf",
+          "params": [
+            "key"
+          ],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "readAt",
+          "params": [
+            "fd",
+            "pos",
+            "len"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "seekTime",
+          "params": [
+            "file",
+            "size",
+            "tMin"
+          ],
+          "exported": false,
+          "lineCount": 15
+        },
+        {
+          "name": "add",
+          "params": [
+            "u",
+            "t",
+            "i",
+            "c",
+            "o"
+          ],
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "lineCodex",
+          "params": [
+            "u",
+            "f",
+            "line"
+          ],
+          "exported": false,
+          "lineCount": 15
+        },
+        {
+          "name": "lineClaude",
+          "params": [
+            "u",
+            "f",
+            "line"
+          ],
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "step",
+          "params": [
+            "key",
+            "file",
+            "codex"
+          ],
+          "exported": false,
+          "lineCount": 20
+        },
+        {
+          "name": "filesOf",
+          "params": [
+            "a"
+          ],
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "scanAll",
+          "params": [
+            "agents"
+          ],
+          "exported": false,
+          "lineCount": 12
+        },
+        {
+          "name": "prune",
+          "params": [],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "sum",
+          "params": [
+            "u",
+            "from"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "hoursActive",
+          "params": [
+            "a",
+            "u",
+            "from"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "median",
+          "params": [
+            "xs"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "clamp",
+          "params": [
+            "x",
+            "lo",
+            "hi"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "fmtM",
+          "params": [
+            "n"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "vn1",
+          "params": [
+            "x"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "compute",
+          "params": [
+            "agents",
+            "snapAgents",
+            "events",
+            "devRows"
+          ],
+          "exported": false,
+          "lineCount": 55
+        },
+        {
+          "name": "costDays",
+          "params": [
+            "prices",
+            "n"
+          ],
+          "exported": false,
+          "lineCount": 13
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 203,
+      "hasStructuralAnalysis": true
+    },
+    "lib/proc.js": {
+      "filePath": "lib/proc.js",
+      "contentHash": "4da44ed0423e1633d3152aa19bc1ab9a83216c2549e61defa47b1a78d5f3da14",
+      "functions": [
+        {
+          "name": "alive",
+          "params": [
+            "pid"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "waitGone",
+          "params": [
+            "pid",
+            "ms"
+          ],
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "killTree",
+          "params": [
+            "pid"
+          ],
+          "exported": false,
+          "lineCount": 16
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 34,
+      "hasStructuralAnalysis": true
+    },
+    "lib/tongquan.js": {
+      "filePath": "lib/tongquan.js",
+      "contentHash": "1ff7a7a7ad518fdcf30043b64c14359467f1dcf08441ab674f6c5575c141e2e2",
+      "functions": [
+        {
+          "name": "norm",
+          "params": [
+            "s"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "bare",
+          "params": [
+            "s"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "matchAgent",
+          "params": [
+            "agents",
+            "label"
+          ],
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "owners",
+          "params": [
+            "s"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "tailLines",
+          "params": [
+            "file"
+          ],
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "lastProgress",
+          "params": [
+            "dataDir",
+            "muc",
+            "mask",
+            "clip"
+          ],
+          "exported": false,
+          "lineCount": 13
+        },
+        {
+          "name": "build",
+          "params": [],
+          "exported": false,
+          "lineCount": 41
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 88,
+      "hasStructuralAnalysis": true
+    },
+    "mau/BAI-HOC.md": {
+      "filePath": "mau/BAI-HOC.md",
+      "contentHash": "af75739fc9d0cfe9edfb7526514bc410a69f3793bb215409656cb240914d0c56",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 24,
+      "hasStructuralAnalysis": false
+    },
+    "mau/CAN-ANH.md": {
+      "filePath": "mau/CAN-ANH.md",
+      "contentHash": "0a3ebb88d42e5328a68da58328a44d0a435c8f03b7883ca964c587807774efa8",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 11,
+      "hasStructuralAnalysis": false
+    },
+    "mau/CAP-BAC.md": {
+      "filePath": "mau/CAP-BAC.md",
+      "contentHash": "dc6f5b6a36d5cc74529a16093a183adf8e541377cab0d6e42a19d0afdaff125b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 10,
+      "hasStructuralAnalysis": false
+    },
+    "mau/DOAN-CHEN-VAO-AGENTS.md": {
+      "filePath": "mau/DOAN-CHEN-VAO-AGENTS.md",
+      "contentHash": "964ea0dbe8045e1e3aca089ce574ecd0e14dada379f78f74dc4ea10a2aa36834",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 19,
+      "hasStructuralAnalysis": false
+    },
+    "mau/DOI-NGU.md": {
+      "filePath": "mau/DOI-NGU.md",
+      "contentHash": "be1fdf0eb587c89995dbe67bbcc57ca75699e1723e208850eb2f019a2b9bf50a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 20,
+      "hasStructuralAnalysis": false
+    },
+    "mau/NOI-QUY.md": {
+      "filePath": "mau/NOI-QUY.md",
+      "contentHash": "d5e342b970f2a5ba0e1fd44dc3e0db185fdd0aa7882d654073d4783c7f26c4ac",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 46,
+      "hasStructuralAnalysis": false
+    },
+    "mau/QUYET-DINH.md": {
+      "filePath": "mau/QUYET-DINH.md",
+      "contentHash": "1e47d129259691cd0362a6ebbd9919a10747035c5e30592d5dcc077ac8ab6d41",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 10,
+      "hasStructuralAnalysis": false
+    },
+    "mau/TU-DIEN.md": {
+      "filePath": "mau/TU-DIEN.md",
+      "contentHash": "cabfd15f86913556061deadc1c92c408a7ec71f17c94b69406512d0a61b5b313",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 9,
+      "hasStructuralAnalysis": false
+    },
+    "mau/UU-TIEN.json": {
+      "filePath": "mau/UU-TIEN.json",
+      "contentHash": "619eadbdf0a4afc7ebc6278c8e54ed2ac1ce5379960b406e2ea5d34d03be95dd",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 19,
+      "hasStructuralAnalysis": false
+    },
+    "mau/VIEC-LAM-SAU.md": {
+      "filePath": "mau/VIEC-LAM-SAU.md",
+      "contentHash": "70c51e179f808d25eb228fbd7c24dfabe26bb1ae3a42e985fdcdc37f75c1e46a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 12,
+      "hasStructuralAnalysis": false
+    },
+    "mau/goi/vi-du/tien-do.md": {
+      "filePath": "mau/goi/vi-du/tien-do.md",
+      "contentHash": "20673688a3a3e500ca4930e33af177dc859fb2b21e766cd643879576c59f4533",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 7,
+      "hasStructuralAnalysis": false
+    },
+    "mau/goi/vi-du/viec.json": {
+      "filePath": "mau/goi/vi-du/viec.json",
+      "contentHash": "bf72748b5c7c9212f9bd6f19235d5d2c816e2a3c1234441be41335fed94278fd",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 9,
+      "hasStructuralAnalysis": false
+    },
+    "mau/spec/VI-DU.md": {
+      "filePath": "mau/spec/VI-DU.md",
+      "contentHash": "15a7a6670ea5c35b423306946a17b744e95e8f56f600839e6bd20964caf74dc7",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 9,
+      "hasStructuralAnalysis": false
+    },
+    "package.json": {
+      "filePath": "package.json",
+      "contentHash": "a58b1767b9b3030cba6d0dcb21b9fcd176f061c841bdb53247501afe1c110c2a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 23,
+      "hasStructuralAnalysis": false
+    },
+    "public/2d.html": {
+      "filePath": "public/2d.html",
+      "contentHash": "6c6c8327c64c5ace0b1f09ac195db7bf2e046d8c782c498f57717aa0cc12d669",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 18,
+      "hasStructuralAnalysis": false
+    },
+    "public/anime-studio.html": {
+      "filePath": "public/anime-studio.html",
+      "contentHash": "66774bd58ed48c1439af46539e8cb4fddf057d6a045cb084c3ba2e6ad3cf815e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2655,
+      "hasStructuralAnalysis": false
+    },
+    "public/app.js": {
+      "filePath": "public/app.js",
+      "contentHash": "6b5ec08ee1c465530bca1f301f91923ce96f9945436a5987f32b19ada4f5fba6",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 21,
+      "hasStructuralAnalysis": true
+    },
+    "public/board.html": {
+      "filePath": "public/board.html",
+      "contentHash": "5585a5b0dc6428ec7ab6abe8f1e2fd314678b244f8fea5dfc0573d149309331f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 18,
+      "hasStructuralAnalysis": false
+    },
+    "public/cap-nhat.html": {
+      "filePath": "public/cap-nhat.html",
+      "contentHash": "fe1b749d87ba85096426fe8ffcbe6f90178fea1b73695321dbdd68c2e6970e3e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 164,
+      "hasStructuralAnalysis": false
+    },
+    "public/characters.html": {
+      "filePath": "public/characters.html",
+      "contentHash": "3b7c45171f3ed3610db2a66f296ff924520b55fd6ddb949716aac754e21f6279",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1788,
+      "hasStructuralAnalysis": false
+    },
+    "public/chat-ui.js": {
+      "filePath": "public/chat-ui.js",
+      "contentHash": "ba642e4fbb9e84c45fe4ba3ff90dae6b5cd03a62cbf5f1b67cd57ecbd4049e55",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 88,
+      "hasStructuralAnalysis": true
+    },
+    "public/congviec.html": {
+      "filePath": "public/congviec.html",
+      "contentHash": "4d97975ac1008b65f5135b111dfdba21ae2720f97d305ee7299b32c6ed863a5a",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 18,
+      "hasStructuralAnalysis": false
+    },
+    "public/dieukhien.html": {
+      "filePath": "public/dieukhien.html",
+      "contentHash": "72595b7fcdfe43ebf3cfc78a876be7e4a18d94bca1cca63dc99998fd648d81d2",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 378,
+      "hasStructuralAnalysis": false
+    },
+    "public/hieusuat.html": {
+      "filePath": "public/hieusuat.html",
+      "contentHash": "5ba35ba3c185ff08489f5df8e6aa298f7e5dba2bfde45df25b25fd35a6b1aba8",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 291,
+      "hasStructuralAnalysis": false
+    },
+    "public/hopthu.html": {
+      "filePath": "public/hopthu.html",
+      "contentHash": "74431a9d4f70dff1ef8ffbef789c810f1d062d0357463bd0fe6e5ff12977a156",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 91,
+      "hasStructuralAnalysis": false
+    },
+    "public/index.html": {
+      "filePath": "public/index.html",
+      "contentHash": "e383cfb0d7a2a3b698d346fab0d89db4c6950b31117669740742ac1c872d9ec9",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1247,
+      "hasStructuralAnalysis": false
+    },
+    "public/ket-noi.html": {
+      "filePath": "public/ket-noi.html",
+      "contentHash": "fc1f531542758bc6bdbe8eed47ec4e7e2e3221f723536035399c10ab69fd296b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 168,
+      "hasStructuralAnalysis": false
+    },
+    "public/manifest.webmanifest": {
+      "filePath": "public/manifest.webmanifest",
+      "contentHash": "af750767216fa950820eeee25206d55181ba17865afba809ad710c7564b7aa42",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 24,
+      "hasStructuralAnalysis": false
+    },
+    "public/md.js": {
+      "filePath": "public/md.js",
+      "contentHash": "60e0bbe2decf251d11be454745ea6c38025719f298e55e614981f951e25738a2",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 45,
+      "hasStructuralAnalysis": true
+    },
+    "public/noiquy.html": {
+      "filePath": "public/noiquy.html",
+      "contentHash": "e5eafc023ad3f9135352cbd13a8e4645708b7a32152c51f1d072efa68b894b46",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 163,
+      "hasStructuralAnalysis": false
+    },
+    "public/office-desk.css": {
+      "filePath": "public/office-desk.css",
+      "contentHash": "039e761d6652a7c661a4207ffaf25c4cb3b56fd840e456557306266a97d60e37",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 71,
+      "hasStructuralAnalysis": false
+    },
+    "public/office-desk.js": {
+      "filePath": "public/office-desk.js",
+      "contentHash": "d149cd985262d27dcfc904029ab3c2a6b8cae3e70e5aa471243038319fb27f1e",
+      "functions": [
+        {
+          "name": "$",
+          "params": [
+            "id"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "roomOf",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "time",
+          "params": [
+            "v"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "first",
+          "params": [
+            "text"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "pendingRun",
+          "params": [
+            "r"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "safeCompare",
+          "params": [
+            "value"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "request",
+          "params": [
+            "path",
+            "body"
+          ],
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "createDesk",
+          "params": [
+            "getOffice"
+          ],
+          "exported": true,
+          "lineCount": 313
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "./progress-view.js",
+          "specifiers": []
+        }
+      ],
+      "exports": [
+        "createDesk"
+      ],
+      "totalLines": 336,
+      "hasStructuralAnalysis": true
+    },
+    "public/offline.html": {
+      "filePath": "public/offline.html",
+      "contentHash": "5179409d69d01d16a5f5773059e14bcc4d39ea5bffc834d50d4cc9d53317bd75",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 38,
+      "hasStructuralAnalysis": false
+    },
+    "public/progress-view.js": {
+      "filePath": "public/progress-view.js",
+      "contentHash": "c0e807cf1cb0f6540a306b0fa5f3651c03ec3857d166b66c41b2e8e943b237e6",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 70,
+      "hasStructuralAnalysis": true
+    },
+    "public/prototype.css": {
+      "filePath": "public/prototype.css",
+      "contentHash": "8708dc89a0c3e3426f536b994146c561da62d1c2836dd3df74759baea0d2a0ac",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 24,
+      "hasStructuralAnalysis": false
+    },
+    "public/prototype.html": {
+      "filePath": "public/prototype.html",
+      "contentHash": "1a659c6f063e8de888d4e6e3bf30d3cf114566542bb8491937593a61a29791ee",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 59,
+      "hasStructuralAnalysis": false
+    },
+    "public/prototype.js": {
+      "filePath": "public/prototype.js",
+      "contentHash": "dbf0853c65ee84ed2bca06f0d510d4bdd995747bb3fa66707a5dee2c7112d19d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 614,
+      "hasStructuralAnalysis": true
+    },
+    "public/sw.js": {
+      "filePath": "public/sw.js",
+      "contentHash": "39fad5e77a0ba2f944e2679575d3c52b5a57440f9b4924b6ae752e00814ae786",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 20,
+      "hasStructuralAnalysis": true
+    },
+    "public/thoitiet.js": {
+      "filePath": "public/thoitiet.js",
+      "contentHash": "9b9f15d54713634d625ec5b335e9005002c2f6b2f74122e0e63950cd4449fe39",
+      "functions": [
+        {
+          "name": "vietnamHour",
+          "params": [],
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "vietnamClock",
+          "params": [],
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "clamp01",
+          "params": [
+            "x"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "describeWeather",
+          "params": [
+            "code"
+          ],
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "toScene",
+          "params": [
+            "cur"
+          ],
+          "exported": true,
+          "lineCount": 13
+        },
+        {
+          "name": "fetchWeather",
+          "params": [],
+          "exported": true,
+          "lineCount": 15
+        },
+        {
+          "name": "connectLive",
+          "params": [
+            "office"
+          ],
+          "exported": true,
+          "lineCount": 33
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [
+        "HANOI",
+        "vietnamHour",
+        "vietnamClock",
+        "describeWeather",
+        "toScene",
+        "fetchWeather",
+        "connectLive"
+      ],
+      "totalLines": 100,
+      "hasStructuralAnalysis": true
+    },
+    "public/tinnhan.html": {
+      "filePath": "public/tinnhan.html",
+      "contentHash": "6f2bcbc937fe524f5ec00cf025de4f43b950693db401ca759b34374a8bec2c5f",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 82,
+      "hasStructuralAnalysis": false
+    },
+    "public/tongquan.html": {
+      "filePath": "public/tongquan.html",
+      "contentHash": "3fc999f0b5a973babe5c1743b17e9f9bed1ad593d19375dfa12fc03a895201ca",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 18,
+      "hasStructuralAnalysis": false
+    },
+    "public/vanphong3d.html": {
+      "filePath": "public/vanphong3d.html",
+      "contentHash": "95dd54c0c804563bb0096a410d5db0f666ef8b43a9e815703d769ec4a9769a93",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 141,
+      "hasStructuralAnalysis": false
+    },
+    "public/vanphong3d.js": {
+      "filePath": "public/vanphong3d.js",
+      "contentHash": "59bae527563625223317614913b8271aa9003e4a98ab421d54c47ec2d7808e36",
+      "functions": [
+        {
+          "name": "createOffice",
+          "params": [],
+          "exported": true,
+          "lineCount": 1621
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "three",
+          "specifiers": [
+            "* as THREE"
+          ]
+        },
+        {
+          "source": "three/addons/controls/OrbitControls.js",
+          "specifiers": [
+            "OrbitControls"
+          ]
+        },
+        {
+          "source": "three/addons/renderers/CSS2DRenderer.js",
+          "specifiers": [
+            "CSS2DRenderer",
+            "CSS2DObject"
+          ]
+        },
+        {
+          "source": "three/addons/utils/BufferGeometryUtils.js",
+          "specifiers": [
+            "mergeGeometries"
+          ]
+        }
+      ],
+      "exports": [
+        "createOffice"
+      ],
+      "totalLines": 1662,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/cai-app.js": {
+      "filePath": "scripts/cai-app.js",
+      "contentHash": "359c240eb0c3ff2dbe1b1a4e0e4e41ad270503dd089ca83e4dcabf91d0121ab5",
+      "functions": [
+        {
+          "name": "plan",
+          "params": [
+            "argv"
+          ],
+          "exported": false,
+          "lineCount": 12
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 74,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/cap-nhat.js": {
+      "filePath": "scripts/cap-nhat.js",
+      "contentHash": "ecb2859551d245ba23c579fb1bf7f8cdf1292ca58cceb7c0ebb29bf9d7d99487",
+      "functions": [
+        {
+          "name": "opt",
+          "params": [
+            "k"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "log",
+          "params": [
+            "m"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "node",
+          "params": [
+            "script",
+            "...a"
+          ],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "ctlVersion",
+          "params": [],
+          "exported": false,
+          "lineCount": 11
+        },
+        {
+          "name": "healthy",
+          "params": [],
+          "exported": false,
+          "lineCount": 10
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 66,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/chay-tat-ca.js": {
+      "filePath": "scripts/chay-tat-ca.js",
+      "contentHash": "c326f5880bc17d192de3308b6fbad330dceab9275e1136932efa19c3af140b56",
+      "functions": [
+        {
+          "name": "running",
+          "params": [
+            "k"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "stamp",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "launch",
+          "params": [
+            "name"
+          ],
+          "exported": false,
+          "lineCount": 16
+        },
+        {
+          "name": "stop",
+          "params": [
+            "code"
+          ],
+          "exported": false,
+          "lineCount": 11
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 57,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/mo-app.js": {
+      "filePath": "scripts/mo-app.js",
+      "contentHash": "70be3d232c393aec631707ca079ba9ff1704382b1678056e058440546df70f10",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 50,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/tat-app.js": {
+      "filePath": "scripts/tat-app.js",
+      "contentHash": "5d6ff328bf0bbb3b105caedf683b642b56023abe6d8b8ff8c4f14eee1ccbdf5e",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 35,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/xem-tren-dien-thoai.ps1": {
+      "filePath": "scripts/xem-tren-dien-thoai.ps1",
+      "contentHash": "46bb6adf06f913be0fe8134b3aed1c3d48af3b25c69df494fbffd4ca87975997",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 15,
+      "hasStructuralAnalysis": false
+    },
+    "scripts/xem-tren-dien-thoai.sh": {
+      "filePath": "scripts/xem-tren-dien-thoai.sh",
+      "contentHash": "a9fdc4042113acb806e8a0d372b1242a3f1ed8fb44656885e5d5001aeca5b6e4",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 15,
+      "hasStructuralAnalysis": false
+    },
+    "server.js": {
+      "filePath": "server.js",
+      "contentHash": "0c5c0c768eef2b49db13345687d8399cce9f02d1d79c7c24529f27111fc5f9ec",
+      "functions": [
+        {
+          "name": "now",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "mask",
+          "params": [
+            "s"
+          ],
+          "exported": false,
+          "lineCount": 12
+        },
+        {
+          "name": "maskDoc",
+          "params": [
+            "s"
+          ],
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "clip",
+          "params": [
+            "s"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "safeStat",
+          "params": [
+            "p"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "readRange",
+          "params": [
+            "p",
+            "start",
+            "end"
+          ],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "firstLine",
+          "params": [
+            "f"
+          ],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "boDau",
+          "params": [
+            "s"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "normP",
+          "params": [
+            "p"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "inProject",
+          "params": [
+            "cwd"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "encDir",
+          "params": [
+            "p"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "claudeDirOk",
+          "params": [
+            "d"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "mark",
+          "params": [
+            "a",
+            "t"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "blank",
+          "params": [
+            "a"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "override",
+          "params": [
+            "name",
+            "id"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "roomOf",
+          "params": [
+            "name",
+            "platform",
+            "o"
+          ],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "addAgent",
+          "params": [
+            "platform",
+            "id",
+            "file",
+            "name",
+            "createdAt"
+          ],
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "setName",
+          "params": [
+            "a",
+            "name"
+          ],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "readLive",
+          "params": [],
+          "exported": false,
+          "lineCount": 12
+        },
+        {
+          "name": "toJournal",
+          "params": [
+            "s"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "claudeTitle",
+          "params": [
+            "f"
+          ],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "codexNames",
+          "params": [],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "walk",
+          "params": [
+            "dir",
+            "out"
+          ],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "discover",
+          "params": [],
+          "exported": false,
+          "lineCount": 37
+        },
+        {
+          "name": "agentFromId",
+          "params": [
+            "id"
+          ],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "agentFromLabel",
+          "params": [
+            "label"
+          ],
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "pushEvent",
+          "params": [
+            "e"
+          ],
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "titleOf",
+          "params": [
+            "text"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "textOfContent",
+          "params": [
+            "c"
+          ],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "ownerSays",
+          "params": [
+            "a",
+            "t",
+            "txt"
+          ],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "keep7",
+          "params": [
+            "arr"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "parseClaude",
+          "params": [
+            "a",
+            "line"
+          ],
+          "exported": false,
+          "lineCount": 43
+        },
+        {
+          "name": "parseCodex",
+          "params": [
+            "a",
+            "line"
+          ],
+          "exported": false,
+          "lineCount": 28
+        },
+        {
+          "name": "pollAgent",
+          "params": [
+            "a"
+          ],
+          "exported": false,
+          "lineCount": 22
+        },
+        {
+          "name": "readDev",
+          "params": [],
+          "exported": false,
+          "lineCount": 37
+        },
+        {
+          "name": "readUuTien",
+          "params": [],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "readTasks",
+          "params": [],
+          "exported": false,
+          "lineCount": 35
+        },
+        {
+          "name": "readSys",
+          "params": [],
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "readCanAnh",
+          "params": [],
+          "exported": false,
+          "lineCount": 13
+        },
+        {
+          "name": "askLine",
+          "params": [
+            "text",
+            "re"
+          ],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "ceoAsks",
+          "params": [
+            "out",
+            "t"
+          ],
+          "exported": false,
+          "lineCount": 16
+        },
+        {
+          "name": "moneyOf",
+          "params": [
+            "week",
+            "t"
+          ],
+          "exported": false,
+          "lineCount": 13
+        },
+        {
+          "name": "statusOf",
+          "params": [
+            "a",
+            "t"
+          ],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "snapshot",
+          "params": [],
+          "exported": false,
+          "lineCount": 47
+        },
+        {
+          "name": "tick",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "hopthuNow",
+          "params": [],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "tongquanNow",
+          "params": [],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "docsNow",
+          "params": [],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "perfNow",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "sameKey",
+          "params": [
+            "x"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "authed",
+          "params": [
+            "req",
+            "url"
+          ],
+          "exported": false,
+          "lineCount": 5
+        },
+        {
+          "name": "json",
+          "params": [
+            "res",
+            "body"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "sse",
+          "params": [
+            "req",
+            "res",
+            "set",
+            "first"
+          ],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "getAccountsStatus",
+          "params": [],
+          "exported": false,
+          "lineCount": 95
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 861,
+      "hasStructuralAnalysis": true
+    },
+    "setup.js": {
+      "filePath": "setup.js",
+      "contentHash": "a695002afd63c0582f0dd47e238a7129560a3a6f0d2f3a0f7a6fce9fe7bb2fa3",
+      "functions": [
+        {
+          "name": "flag",
+          "params": [
+            "n"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "flags",
+          "params": [
+            "n"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "headText",
+          "params": [
+            "f"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "walk",
+          "params": [
+            "dir",
+            "out"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "findProjects",
+          "params": [],
+          "exported": false,
+          "lineCount": 20
+        },
+        {
+          "name": "main",
+          "params": [],
+          "exported": false,
+          "lineCount": 66
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 114,
+      "hasStructuralAnalysis": true
+    },
+    "test/app.test.js": {
+      "filePath": "test/app.test.js",
+      "contentHash": "c8d3c71d301e117de15a66e82e27c6e0b7ba0ed360e499adcfa21b90298fd673",
+      "functions": [
+        {
+          "name": "pngSize",
+          "params": [
+            "f"
+          ],
+          "exported": false,
+          "lineCount": 1
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 123,
+      "hasStructuralAnalysis": true
+    },
+    "test/autopilot.test.js": {
+      "filePath": "test/autopilot.test.js",
+      "contentHash": "85cd72240bee4d9178c3718813fb6c6a77c6a8d119fcaccc2df4381e6a8795e2",
+      "functions": [
+        {
+          "name": "sleep",
+          "params": [
+            "ms"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "fixture",
+          "params": [
+            "t"
+          ],
+          "exported": false,
+          "lineCount": 27
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 126,
+      "hasStructuralAnalysis": true
+    },
+    "test/bo-kiem.test.js": {
+      "filePath": "test/bo-kiem.test.js",
+      "contentHash": "6ae915792717e51ca4e89825289d34f13e1e54edd0811698b2f93a1fb1c56679",
+      "functions": [
+        {
+          "name": "tmp",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "fixture",
+          "params": [
+            "t"
+          ],
+          "exported": false,
+          "lineCount": 11
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 153,
+      "hasStructuralAnalysis": true
+    },
+    "test/cap-nhat.test.js": {
+      "filePath": "test/cap-nhat.test.js",
+      "contentHash": "9a9ab017df60f505df9c1bd305eb0766d62e7d5c5047fc8b51cd2981a2f98f87",
+      "functions": [
+        {
+          "name": "tmp",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "fixture",
+          "params": [
+            "t"
+          ],
+          "exported": false,
+          "lineCount": 23
+        },
+        {
+          "name": "httpCase",
+          "params": [
+            "ctl",
+            "f"
+          ],
+          "exported": false,
+          "lineCount": 12
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 231,
+      "hasStructuralAnalysis": true
+    },
+    "test/chat.test.js": {
+      "filePath": "test/chat.test.js",
+      "contentHash": "3e7faec50061d9dd670e1109388fe05f6213401417f5aeaac200d084cd041810",
+      "functions": [
+        {
+          "name": "sleep",
+          "params": [
+            "ms"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "fixture",
+          "params": [
+            "t"
+          ],
+          "exported": false,
+          "lineCount": 27
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 143,
+      "hasStructuralAnalysis": true
+    },
+    "test/cho-han-muc.test.js": {
+      "filePath": "test/cho-han-muc.test.js",
+      "contentHash": "cc0f0bc94ffcb67e002bc9e116995cc754210ad4e33498b161c89bc58dd80c4a",
+      "functions": [
+        {
+          "name": "sleep",
+          "params": [
+            "ms"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "fixture",
+          "params": [
+            "t"
+          ],
+          "exported": false,
+          "lineCount": 32
+        },
+        {
+          "name": "quota",
+          "params": [
+            "claudeLeft",
+            "agyLeft"
+          ],
+          "exported": false,
+          "lineCount": 5
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 137,
+      "hasStructuralAnalysis": true
+    },
+    "test/codex-model.test.js": {
+      "filePath": "test/codex-model.test.js",
+      "contentHash": "b8c1a5204ef3a6683dccf66c198a7fd4a9b0ac1ce2f8b21547e1bbb113f4350d",
+      "functions": [
+        {
+          "name": "sleep",
+          "params": [
+            "ms"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "fixture",
+          "params": [
+            "t",
+            "claudePlan"
+          ],
+          "exported": false,
+          "lineCount": 27
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 76,
+      "hasStructuralAnalysis": true
+    },
+    "test/ctl.test.js": {
+      "filePath": "test/ctl.test.js",
+      "contentHash": "abedbf0518b529bf5a8d973df96375ec4c6515eec69d9c5ac93fcc8bd5c0e785",
+      "functions": [
+        {
+          "name": "sleep",
+          "params": [
+            "ms"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "call",
+          "params": [
+            "method",
+            "p"
+          ],
+          "exported": false,
+          "lineCount": 11
+        },
+        {
+          "name": "childPids",
+          "params": [
+            "jobId"
+          ],
+          "exported": false,
+          "lineCount": 4
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 165,
+      "hasStructuralAnalysis": true
+    },
+    "test/doc-repo.test.js": {
+      "filePath": "test/doc-repo.test.js",
+      "contentHash": "3104ae964c737d63879a1a58c9b520cfc632c5ea05b20645b658011aa98e3295",
+      "functions": [
+        {
+          "name": "git",
+          "params": [
+            "root",
+            "args"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "makeRepo",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "fixture",
+          "params": [
+            "isPrivate"
+          ],
+          "exported": false,
+          "lineCount": 12
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 101,
+      "hasStructuralAnalysis": true
+    },
+    "test/ghi-file.test.js": {
+      "filePath": "test/ghi-file.test.js",
+      "contentHash": "dea32837371c0523d7706a4876fb9d861f659061b038f1beaa6ce28a99180ad2",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 28,
+      "hasStructuralAnalysis": true
+    },
+    "test/giai-thich.test.js": {
+      "filePath": "test/giai-thich.test.js",
+      "contentHash": "3a009605ab07e9f452d7bb4926e148322319216b76a1668729f044fd48b0f1b5",
+      "functions": [
+        {
+          "name": "sleep",
+          "params": [
+            "ms"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "fixture",
+          "params": [
+            "t",
+            "astra"
+          ],
+          "exported": false,
+          "lineCount": 27
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 109,
+      "hasStructuralAnalysis": true
+    },
+    "test/github.test.js": {
+      "filePath": "test/github.test.js",
+      "contentHash": "e8a99bb03f844714c4edb303a2a0dadfe59238fe05b3649b68215e4f6ce3e385",
+      "functions": [
+        {
+          "name": "git",
+          "params": [
+            "root",
+            "args"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "makeRepo",
+          "params": [
+            "root"
+          ],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "fixture",
+          "params": [],
+          "exported": false,
+          "lineCount": 21
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 172,
+      "hasStructuralAnalysis": true
+    },
+    "test/guard.test.js": {
+      "filePath": "test/guard.test.js",
+      "contentHash": "9c27da037d5c8e86b23b254c71fa753ab8f3f9d5d677c71ca685fb8a0aa64701",
+      "functions": [
+        {
+          "name": "req",
+          "params": [
+            "headers"
+          ],
+          "exported": false,
+          "lineCount": 1
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 41,
+      "hasStructuralAnalysis": true
+    },
+    "test/html.test.js": {
+      "filePath": "test/html.test.js",
+      "contentHash": "990a6aef774f772da50b022d490a54f43bfacef63decdfc03547504798e96826",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 32,
+      "hasStructuralAnalysis": true
+    },
+    "test/ket-noi-nhat-ky.test.js": {
+      "filePath": "test/ket-noi-nhat-ky.test.js",
+      "contentHash": "4bdbeeb40fd3e3b38fc7894f9394e044a2ec31c9b38f5efba839d55cd0f47afa",
+      "functions": [
+        {
+          "name": "fakeConnectors",
+          "params": [
+            "outputs"
+          ],
+          "exported": false,
+          "lineCount": 6
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 95,
+      "hasStructuralAnalysis": true
+    },
+    "test/keys.test.js": {
+      "filePath": "test/keys.test.js",
+      "contentHash": "a3415d5127e2e72e2dadac4dc91336ed61ee3d24fe2ceeb2068f4301c876560d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 32,
+      "hasStructuralAnalysis": true
+    },
+    "test/kiem-agent.test.js": {
+      "filePath": "test/kiem-agent.test.js",
+      "contentHash": "bcffb96c356d0b05ab16a23d78570b52b95120e302a725b507fbbaf1d3b2449a",
+      "functions": [
+        {
+          "name": "sleep",
+          "params": [
+            "ms"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "withNext",
+          "params": [
+            "txt",
+            "role"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "withLast",
+          "params": [
+            "txt",
+            "role"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "add",
+          "params": [
+            "txt",
+            "heading",
+            "line"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "tmp",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "repo",
+          "params": [],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "cli",
+          "params": [
+            "cwd",
+            "...a"
+          ],
+          "exported": false,
+          "lineCount": 1
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 187,
+      "hasStructuralAnalysis": true
+    },
+    "test/mcp-phong.test.js": {
+      "filePath": "test/mcp-phong.test.js",
+      "contentHash": "06021a3202f5347fb5563337fe0bb552a7cef37c5c755b83f9e0253021a4b5ac",
+      "functions": [
+        {
+          "name": "tmp",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 89,
+      "hasStructuralAnalysis": true
+    },
+    "test/nhanh-rieng.test.js": {
+      "filePath": "test/nhanh-rieng.test.js",
+      "contentHash": "0ab6748f83a3ade1655247db1740ecf9f8d0e6b3300ffe55999c422e63ddc446",
+      "functions": [
+        {
+          "name": "sleep",
+          "params": [
+            "ms"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "fixture",
+          "params": [
+            "t"
+          ],
+          "exported": false,
+          "lineCount": 32
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 178,
+      "hasStructuralAnalysis": true
+    },
+    "test/phase4.test.js": {
+      "filePath": "test/phase4.test.js",
+      "contentHash": "ed332cd2cf6858e3e1cee26c4fb3da8df2da891dbf3544e161798d7191d6d322",
+      "functions": [
+        {
+          "name": "sleep",
+          "params": [
+            "ms"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "call",
+          "params": [
+            "method",
+            "p",
+            "body"
+          ],
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "waitDone",
+          "params": [
+            "id"
+          ],
+          "exported": false,
+          "lineCount": 1
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 170,
+      "hasStructuralAnalysis": true
+    },
+    "test/phase5.test.js": {
+      "filePath": "test/phase5.test.js",
+      "contentHash": "ac8270d4c46749ee1435fcaff68e67c0926f705414b21bc75ab2e791b80152b1",
+      "functions": [
+        {
+          "name": "sleep",
+          "params": [
+            "ms"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "git",
+          "params": [
+            "...a"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "FAKE",
+          "params": [
+            "out"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "call",
+          "params": [
+            "method",
+            "p",
+            "body"
+          ],
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "handoffOf",
+          "params": [
+            "id"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "setFake",
+          "params": [
+            "out"
+          ],
+          "exported": false,
+          "lineCount": 1
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 144,
+      "hasStructuralAnalysis": true
+    },
+    "test/proc.test.js": {
+      "filePath": "test/proc.test.js",
+      "contentHash": "f7017ecd465a81883e835b0f476cd3ae6467b8b7690af7694cb7d7d620e50a73",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 37,
+      "hasStructuralAnalysis": true
+    },
+    "test/projects.test.js": {
+      "filePath": "test/projects.test.js",
+      "contentHash": "13f65014896575d3de52392f158fa1d754049db99fe9c6de4ebb85cbfd820053",
+      "functions": [
+        {
+          "name": "fixture",
+          "params": [],
+          "exported": false,
+          "lineCount": 25
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 104,
+      "hasStructuralAnalysis": true
+    },
+    "test/quotas.test.js": {
+      "filePath": "test/quotas.test.js",
+      "contentHash": "9acfba1c0599b098437de2d490a0430f0f6dc7bdf709591dbdac8654e2e095dc",
+      "functions": [
+        {
+          "name": "codex",
+          "params": [],
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "claude",
+          "params": [],
+          "exported": false,
+          "lineCount": 2
+        },
+        {
+          "name": "agy",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "readers",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 99,
+      "hasStructuralAnalysis": true
+    },
+    "test/tat-ctl.test.js": {
+      "filePath": "test/tat-ctl.test.js",
+      "contentHash": "ff4693769dedd2cc6354703a315e39a63c89a88ae4836ac6049deec67227d736",
+      "functions": [
+        {
+          "name": "sleep",
+          "params": [
+            "ms"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "hang",
+          "params": [
+            "ms"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "call",
+          "params": [
+            "port",
+            "token",
+            "method",
+            "p",
+            "body"
+          ],
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "startCtlWithTree",
+          "params": [
+            "t"
+          ],
+          "exported": false,
+          "lineCount": 26
+        },
+        {
+          "name": "gone",
+          "params": [
+            "pids",
+            "ms"
+          ],
+          "exported": false,
+          "lineCount": 1
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 76,
+      "hasStructuralAnalysis": true
+    },
+    "test/thoitiet.test.js": {
+      "filePath": "test/thoitiet.test.js",
+      "contentHash": "8e7275ed6dde644a77b5ac14bcaff1d30d51cd72b55e1520e18d657d7e221108",
+      "functions": [
+        {
+          "name": "load",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "reply",
+          "params": [
+            "body"
+          ],
+          "exported": false,
+          "lineCount": 1
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 77,
+      "hasStructuralAnalysis": true
+    },
+    "test/tien-do.test.js": {
+      "filePath": "test/tien-do.test.js",
+      "contentHash": "ad900ed2a79c24b08b2f5129e08b276a503ba4c119a4c3ace32333c5f779f7d3",
+      "functions": [
+        {
+          "name": "protocol",
+          "params": [],
+          "exported": false,
+          "lineCount": 25
+        },
+        {
+          "name": "fixture",
+          "params": [
+            "t",
+            "content"
+          ],
+          "exported": false,
+          "lineCount": 15
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 114,
+      "hasStructuralAnalysis": true
+    },
+    "test/toan-quyen.test.js": {
+      "filePath": "test/toan-quyen.test.js",
+      "contentHash": "bf2c370db1928d6ebd0780e68193842dbb625a4aa57f69d712347b61844c7f13",
+      "functions": [
+        {
+          "name": "sleep",
+          "params": [
+            "ms"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "fixture",
+          "params": [
+            "t",
+            "mode"
+          ],
+          "exported": false,
+          "lineCount": 34
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 175,
+      "hasStructuralAnalysis": true
+    },
+    "test/tu-bat-lai.test.js": {
+      "filePath": "test/tu-bat-lai.test.js",
+      "contentHash": "18c7956776aa95cf56d219a476a2792b149e2a71a0a86c3489db2ac983e9c0de",
+      "functions": [
+        {
+          "name": "sleep",
+          "params": [
+            "ms"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "setup",
+          "params": [
+            "t",
+            "mode"
+          ],
+          "exported": false,
+          "lineCount": 20
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 60,
+      "hasStructuralAnalysis": true
+    },
+    "test/tu-hanh.test.js": {
+      "filePath": "test/tu-hanh.test.js",
+      "contentHash": "f058a1381f93cf136b025af631dad48297cef7506e372b7168df9ead270840b9",
+      "functions": [
+        {
+          "name": "sleep",
+          "params": [
+            "ms"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "fixture",
+          "params": [
+            "t",
+            "mode"
+          ],
+          "exported": false,
+          "lineCount": 22
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 153,
+      "hasStructuralAnalysis": true
+    },
+    "test/xuat-ban.test.js": {
+      "filePath": "test/xuat-ban.test.js",
+      "contentHash": "243a5728ecf7ecc1a1a50d7726d0b6c2a4a430b388cb2669f0d6a412ac3c0e92",
+      "functions": [
+        {
+          "name": "sleep",
+          "params": [
+            "ms"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "fixture",
+          "params": [
+            "t",
+            "workflow"
+          ],
+          "exported": false,
+          "lineCount": 26
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 163,
+      "hasStructuralAnalysis": true
+    },
+    "test/y-tuong.test.js": {
+      "filePath": "test/y-tuong.test.js",
+      "contentHash": "03effb4748d22df7f909441226fd062914e0ff14633c66d063ad9ee28e92e132",
+      "functions": [
+        {
+          "name": "sleep",
+          "params": [
+            "ms"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "fixture",
+          "params": [
+            "t",
+            "owner"
+          ],
+          "exported": false,
+          "lineCount": 25
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 81,
+      "hasStructuralAnalysis": true
+    },
+    "tools/kiem-agent.js": {
+      "filePath": "tools/kiem-agent.js",
+      "contentHash": "6dd1f18e5c9eb03b13a37cfdfb249ab7b833626ae70142d574f463fdcbd12f2b",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 11,
+      "hasStructuralAnalysis": true
+    },
+    "tools/vp.js": {
+      "filePath": "tools/vp.js",
+      "contentHash": "23bd07df0142f5e2f91b895a8b5ad1a972da51b1b22a3ab2cb86b25dc8244ae5",
+      "functions": [
+        {
+          "name": "need",
+          "params": [
+            "k",
+            "label"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "die",
+          "params": [
+            "msg"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "nowIso",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "hm",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "cell",
+          "params": [
+            "s"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "readJson",
+          "params": [
+            "f",
+            "def"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "writeJson",
+          "params": [
+            "f",
+            "v"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "appendLine",
+          "params": [
+            "f",
+            "v"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "cmdGui",
+          "params": [],
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "openFor",
+          "params": [
+            "vai"
+          ],
+          "exported": false,
+          "lineCount": 4
+        },
+        {
+          "name": "cmdTiep",
+          "params": [],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "cmdXong",
+          "params": [],
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "cmdDs",
+          "params": [],
+          "exported": false,
+          "lineCount": 6
+        },
+        {
+          "name": "cmdLuot",
+          "params": [],
+          "exported": false,
+          "lineCount": 29
+        },
+        {
+          "name": "cmdCanAnh",
+          "params": [],
+          "exported": false,
+          "lineCount": 22
+        },
+        {
+          "name": "cmdViec",
+          "params": [],
+          "exported": false,
+          "lineCount": 23
+        },
+        {
+          "name": "cmdGoi",
+          "params": [],
+          "exported": false,
+          "lineCount": 26
+        },
+        {
+          "name": "cmdTienDo",
+          "params": [],
+          "exported": false,
+          "lineCount": 7
+        },
+        {
+          "name": "cmdBaiHoc",
+          "params": [],
+          "exported": false,
+          "lineCount": 7
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 233,
+      "hasStructuralAnalysis": true
+    }
+  }
+}
