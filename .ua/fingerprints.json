@@ -1,11 +1,11 @@
 {
   "version": "1.0.0",
-  "gitCommitHash": "d6050ccb3f8c3b902219b8eeb1f303df32007e19",
-  "generatedAt": "2026-11-09T07:13:46.924Z",
+  "gitCommitHash": "72e9ac0eeb0bf2e07bcad13f97dd59c46a5ba10d",
+  "generatedAt": "2026-11-10T02:36:30.749Z",
   "files": {
     ".gitattributes": {
       "filePath": ".gitattributes",
-      "contentHash": "13cb7f5e12dd469dc5c88afcf0cd035abe6cd1fc2f30afe224991e66b4262222",
+      "contentHash": "0a38370224c134075aa5a1850ef9af90d4f090e2917661983e5f42d1deb12639",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -15,7 +15,7 @@
     },
     ".github/workflows/kiem-tra.yml": {
       "filePath": ".github/workflows/kiem-tra.yml",
-      "contentHash": "05a63c33996a21cd5589702e23b34fabc0c8f86e2b67dce0ae3f7e8af10f01e1",
+      "contentHash": "e9ef7fccb8fcf65e3f2b9098d9532046e72fa9b47a3c17074955b67e1ad7c97e",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -25,7 +25,7 @@
     },
     ".github/workflows/phat-hanh.yml": {
       "filePath": ".github/workflows/phat-hanh.yml",
-      "contentHash": "627ec59bd276a364a75da4a1c52df4bd11d68062a309522854a74a224988b66a",
+      "contentHash": "21d8f2d009590459591f841a4da08a4698c76ce0c24c4d3985224d4215e6edc0",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -35,7 +35,7 @@
     },
     "AGENTS.md": {
       "filePath": "AGENTS.md",
-      "contentHash": "7594bb009b440595e86e6120ddf3f40bdda60958250dca1ea8d3435e66af9d5e",
+      "contentHash": "453aa1a91e21f9df0a621a3b201b95417cb9c6cc32c92ed1aaab8e36df667470",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -45,7 +45,7 @@
     },
     "CLAUDE.md": {
       "filePath": "CLAUDE.md",
-      "contentHash": "7594bb009b440595e86e6120ddf3f40bdda60958250dca1ea8d3435e66af9d5e",
+      "contentHash": "453aa1a91e21f9df0a621a3b201b95417cb9c6cc32c92ed1aaab8e36df667470",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -55,7 +55,7 @@
     },
     "HUONG-DAN-CHO-AGENT.md": {
       "filePath": "HUONG-DAN-CHO-AGENT.md",
-      "contentHash": "aeb77b58f85879638460d36122ce1b1018e86d4828f38df594d64bf94a1ab3be",
+      "contentHash": "433f8e07e9151d7e4834cb1af8ece6e95a6467491a321517bb12b9c508a5084c",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -65,7 +65,7 @@
     },
     "LENH-BAN-GIAO-CLAUDE.md": {
       "filePath": "LENH-BAN-GIAO-CLAUDE.md",
-      "contentHash": "9988ca9a9d8b592317ff74b86cb9cce429a95b3d674cdbec628d1a2a3688fe11",
+      "contentHash": "748bdbd1d653b0c61fc24c7c531b72bc270371ad65736b952bcd93d2533a39b9",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -75,7 +75,7 @@
     },
     "README.md": {
       "filePath": "README.md",
-      "contentHash": "647ce33c7372b5d7a106bec4c1934b61dbe9a9766c927365a3df3121100cff33",
+      "contentHash": "81f9e094ab690be83e54f5dd3557ab41cb0af790e767d130f084ea390d4ff5a8",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -85,7 +85,7 @@
     },
     "YEU-CAU-SUA-LOI-CLAUDE.md": {
       "filePath": "YEU-CAU-SUA-LOI-CLAUDE.md",
-      "contentHash": "2cfff45b2a0354f0e089f6c880307d71eaecd0319c9405f8adf8d355ee4b6798",
+      "contentHash": "49e166b9289503d32a9ea8e07ef4b883576a8efd639c63d6123792e4d15f1d9a",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -95,7 +95,7 @@
     },
     "agent.md": {
       "filePath": "agent.md",
-      "contentHash": "c3e6141f7a3533588888436bf108ca010220fea4be04c9b0c74f20f74dc5358c",
+      "contentHash": "7aafde98973076104d510e5d909f04c8099bcfe4e233bdf880b1fd02d714fb81",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -105,7 +105,7 @@
     },
     "config.example.json": {
       "filePath": "config.example.json",
-      "contentHash": "c85a2510a420e7f12948313c887c4d75bc895bbd7ba76e8fbaa1b4664256e08a",
+      "contentHash": "6b27abf661fd859dbb953ec634b2b9c3e2533e56067041e95ca0f2b3177cb4e9",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -115,7 +115,7 @@
     },
     "ctl/agent-template.md": {
       "filePath": "ctl/agent-template.md",
-      "contentHash": "8a8ed52fda9507be18d9394a50b3c9cce4634e16da9fce45a508ba1b30015fce",
+      "contentHash": "5de44370dd1612981e60d91e42b0850efacbfcde365e2dbb253f227c1aadad99",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -125,7 +125,7 @@
     },
     "ctl/audit.js": {
       "filePath": "ctl/audit.js",
-      "contentHash": "03cfca861a95c324ee7db7dc69f77e40c0de49de60861bb13c15c20c26d88ee3",
+      "contentHash": "3ac8a191a81a5094f692ec9b7e297b5604e73438ea70733fa59a462d2da364d2",
       "functions": [
         {
           "name": "createAudit",
@@ -144,7 +144,7 @@
     },
     "ctl/autopilot.js": {
       "filePath": "ctl/autopilot.js",
-      "contentHash": "499f1780dca673b9caf2989d701416928dbe1d8fa46e9d2739eb7ea505023d51",
+      "contentHash": "845bd3aff9eac900100e9c33371818dddb726d8bf4932a1ba620c55243f20d02",
       "functions": [
         {
           "name": "waitFromMessage",
@@ -195,7 +195,7 @@
     },
     "ctl/bo-kiem.js": {
       "filePath": "ctl/bo-kiem.js",
-      "contentHash": "9103f6623ba101230feb4a4ff0ef26e6fece172ac004422e260a7d15a4bfd96a",
+      "contentHash": "b6c1debc70cd4eba17dbb00ee6e0a455264fc98054876dd899e7097d37e21022",
       "functions": [
         {
           "name": "err",
@@ -259,7 +259,7 @@
     },
     "ctl/cap-nhat.js": {
       "filePath": "ctl/cap-nhat.js",
-      "contentHash": "748cfc96886be27843a5fba673463509433a6b45b70fc38b34d119efa11c845c",
+      "contentHash": "f81aa2f26a8a2b0f98422dc5833114a867d91d2fa68175009e0e809bce0d65fd",
       "functions": [
         {
           "name": "err",
@@ -299,7 +299,7 @@
     },
     "ctl/chat.js": {
       "filePath": "ctl/chat.js",
-      "contentHash": "e586907a1cf5df521bd6e664bb8f455d3ef813333d63b4dad41bfc9f80df9b82",
+      "contentHash": "553c8116dffac3a62caa6e1504c5633224d4575196bc3d5fcd73ca7c73861a64",
       "functions": [
         {
           "name": "err",
@@ -344,7 +344,7 @@
     },
     "ctl/db.js": {
       "filePath": "ctl/db.js",
-      "contentHash": "39a2253b3f1aac8968ac6b55852755bcea571b0940084ba660344926476352f3",
+      "contentHash": "4970bc14691b5f7164badfd4f07c6b13a7b5a6a5119bb53f468e745c3776b61b",
       "functions": [
         {
           "name": "home",
@@ -375,7 +375,7 @@
     },
     "ctl/files.js": {
       "filePath": "ctl/files.js",
-      "contentHash": "824dbb5c4d495f4bdd622b3e0df1980c949acc92eeec3a047c8068d50a661ca8",
+      "contentHash": "b73b5063b6b833d3b5ca32271ff1e0940a73c9e151af98297115dbf861e750ae",
       "functions": [
         {
           "name": "sha",
@@ -412,7 +412,7 @@
     },
     "ctl/github.js": {
       "filePath": "ctl/github.js",
-      "contentHash": "c3e277e926429cde8c3f9a89026c1d51eb463299a93f18de1f329a7225b5269d",
+      "contentHash": "d7d653eb59c37d00c31b4dcaf9bdc3421c47becaf0de9e818f6fdcc29a3c15f5",
       "functions": [
         {
           "name": "err",
@@ -478,7 +478,7 @@
     },
     "ctl/handoff.js": {
       "filePath": "ctl/handoff.js",
-      "contentHash": "3dcdfbb1ee4cf213b82a817673decc5527bc0f0efe91ca9d8810ca530abb5b61",
+      "contentHash": "4d4d67224bf22e09dee8c5f6448e093965fade1038055b7ae2ef8f1393fda02b",
       "functions": [
         {
           "name": "err",
@@ -568,7 +568,7 @@
     },
     "ctl/ideas.js": {
       "filePath": "ctl/ideas.js",
-      "contentHash": "20df546b3c6007fcca052af3d59c4df67b3f857e28f37acafc1422affa5fbebd",
+      "contentHash": "3c8126be1ae4d2204d6635ce5c94ce0f5850012edb3d5194a99f8655b12bdcda",
       "functions": [
         {
           "name": "err",
@@ -603,7 +603,7 @@
     },
     "ctl/jobs.js": {
       "filePath": "ctl/jobs.js",
-      "contentHash": "1afb35be2a7d58f04dca564e558166972b413db965d4007b7aba3b396b4ebfa2",
+      "contentHash": "922d6431aae3e2443064819480b7aba52b0ec94fa3709979c83e4eb0932bdfb4",
       "functions": [
         {
           "name": "row",
@@ -641,7 +641,7 @@
     },
     "ctl/ket-noi-danh-muc.js": {
       "filePath": "ctl/ket-noi-danh-muc.js",
-      "contentHash": "f64ed04907f8a8b83376bbd3013bbc0e17663196292edab6fe395c97e65ea9c7",
+      "contentHash": "9fc447a7a0dc8ed2ea1fd3e73cd241e1ead447da278b47b68d4522846ba8afcb",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -651,7 +651,7 @@
     },
     "ctl/ket-noi.js": {
       "filePath": "ctl/ket-noi.js",
-      "contentHash": "51249c1f5cf6555c37a63f2f0697ef357f1e0188807acf998528088ef05dea80",
+      "contentHash": "dca20388e3c501cf9c2865aed4590542e1533a715ff5ee9a83e41c00a056a226",
       "functions": [
         {
           "name": "err",
@@ -709,7 +709,7 @@
     },
     "ctl/khung/kiem-chu-trinh.yml": {
       "filePath": "ctl/khung/kiem-chu-trinh.yml",
-      "contentHash": "0bdf38584e6be423b16c7809d96c3219b9b800d39abc49a40438737efa5a9d97",
+      "contentHash": "1c523b4739b91819818f08afa17b213f5a1fd3740894a8e49658b260c5f72d8d",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -719,7 +719,7 @@
     },
     "ctl/main.js": {
       "filePath": "ctl/main.js",
-      "contentHash": "9fc56e978784b1e70d76fa032579ea515ba9805783ebf7667dd6e7986eff335a",
+      "contentHash": "3191176a10b1e7cd1efe6441007cf601be33c2a561fd7b367f4bb5d927dd624e",
       "functions": [
         {
           "name": "createCtl",
@@ -736,7 +736,7 @@
     },
     "ctl/mcp-phong.js": {
       "filePath": "ctl/mcp-phong.js",
-      "contentHash": "5f7dad1cf2ba3c9860e7fb3d2ec4b6d9a66cc7a10715ada5c6cd63e7a66a1e29",
+      "contentHash": "bbfc482af1ec85b3cbb95419248101c44228d9e799786247771538fc240418e9",
       "functions": [
         {
           "name": "ROLE_PHONG",
@@ -807,7 +807,7 @@
     },
     "ctl/monitor.js": {
       "filePath": "ctl/monitor.js",
-      "contentHash": "bede78ae0a03872df57e8e4817e9d33e791662b5ba8eae4c46e779cef3941cfc",
+      "contentHash": "eb2e5a83c3efd2073d263f8c139c9e92f9d8a83a01060738cdfaaf6f05801413",
       "functions": [
         {
           "name": "cpuTimes",
@@ -830,7 +830,7 @@
     },
     "ctl/nhanh.js": {
       "filePath": "ctl/nhanh.js",
-      "contentHash": "379c3036f1347d5bbde840322f68a573ed6d06d835a00d1f5eb2a2aa186034d6",
+      "contentHash": "0f31534b2bb5c1c30a68debc11135cbb731b5200dac04c7c26ffc4d33ba34878",
       "functions": [
         {
           "name": "err",
@@ -1007,7 +1007,7 @@
     },
     "ctl/nhat-ky.js": {
       "filePath": "ctl/nhat-ky.js",
-      "contentHash": "87422c51b38b074236639042fd73240e1a42f1a398c86f7b16768e4c3b0e2adc",
+      "contentHash": "5be348795d7bdce4d94a5daa7f2bb1b46760ccbe62dae9c099180231fb9a52e1",
       "functions": [
         {
           "name": "WHO",
@@ -1054,7 +1054,7 @@
     },
     "ctl/policy.js": {
       "filePath": "ctl/policy.js",
-      "contentHash": "5a17f2bd1f6704c74ada73a79d3cf87fd383499ed9f1145400868515022b36e4",
+      "contentHash": "c9e6aa5ea1301df2d815f4ad2dd5478b939659f3ca5de7a92065235eaf3304a9",
       "functions": [
         {
           "name": "inWorkspace",
@@ -1097,7 +1097,7 @@
     },
     "ctl/quotas.js": {
       "filePath": "ctl/quotas.js",
-      "contentHash": "8608a0011a077b4d319968d15d10e2d8cba4e6eeb1f9560ac73ff72a4b58976c",
+      "contentHash": "651ca58deccb7411ed628683e22db39ca21474aa6f9d1b6af980acf643a38db6",
       "functions": [
         {
           "name": "number",
@@ -1191,7 +1191,7 @@
     },
     "ctl/ra-soat.js": {
       "filePath": "ctl/ra-soat.js",
-      "contentHash": "0161fb82f38b41fd48549c374bee317abb9db38570fa7fa35c16e824d09dad26",
+      "contentHash": "5eece4d1f66bac2157d20335b70f76f89f9c14d86179f555967c1ebb29cefdf7",
       "functions": [
         {
           "name": "listFiles",
@@ -1284,7 +1284,7 @@
     },
     "ctl/runner.js": {
       "filePath": "ctl/runner.js",
-      "contentHash": "e675c56daf6561538e45e2defec221d5b717ca16aae7c6fef2ec558e5e3a5ea6",
+      "contentHash": "73bc18c97625d04d908ce8ad0256fecf88961bd9937e5eb6f9a0415cb8894492",
       "functions": [
         {
           "name": "END",
@@ -1354,7 +1354,7 @@
     },
     "ctl/thongbao.js": {
       "filePath": "ctl/thongbao.js",
-      "contentHash": "873c918cc212c5abf0e47cec706ef0b8939e2e202cf03aec6873eb749ddfb003",
+      "contentHash": "0705b207a396924f8090c10bb3f5a19fc1dee07069ebb14aa4bf4f7345d2cc03",
       "functions": [
         {
           "name": "createNotifier",
@@ -1371,7 +1371,7 @@
     },
     "ctl/workspaces.js": {
       "filePath": "ctl/workspaces.js",
-      "contentHash": "de513089a73547240563273b495e9822e279b02f403a5fa0e4d5c6a31fba99f3",
+      "contentHash": "a7d0e3772532d2ddc7828694dacb32905f76e9e1cd3b3012e362b5bae208575b",
       "functions": [
         {
           "name": "readProgress",
@@ -1451,7 +1451,7 @@
     },
     "ctl/xuat-ban.js": {
       "filePath": "ctl/xuat-ban.js",
-      "contentHash": "3615f4cfa735b791d1a080f8befe579ec16d7b509ef57c73185dbfc3e833b774",
+      "contentHash": "2aa3baa0c5ddafc42176a344a229019675a93addbf7828322c840a0adf9be486",
       "functions": [
         {
           "name": "err",
@@ -1518,7 +1518,7 @@
     },
     "docs/CO-CHE-TU-HOC.md": {
       "filePath": "docs/CO-CHE-TU-HOC.md",
-      "contentHash": "809058096622227aba58e2caab2005e1487f3aafa6c31717992fa3f53aa103d7",
+      "contentHash": "665c4e2cf5d0025b1c8270b2e5555f7defcccdea4aa635b3ec4fb07a28b7f781",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -1528,7 +1528,7 @@
     },
     "docs/SPEC-VUNG-2.md": {
       "filePath": "docs/SPEC-VUNG-2.md",
-      "contentHash": "d2c6bbed9ef5851c616dba11aec24a128256b2686a575699916038ffa6713f8b",
+      "contentHash": "f698b3e56b8519c7a94872de035a1e53b1312e3a666553cf68af0df418959c9f",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -1538,7 +1538,7 @@
     },
     "lib/app.js": {
       "filePath": "lib/app.js",
-      "contentHash": "95e81f7c1199a8b5372fda00dab2dbf51032162ad7bdfbd8e322759a23317427",
+      "contentHash": "52e8e7dc49bc7c225ab8134fe447ada17f8283373750dbb25360fdd7d8fca341",
       "functions": [
         {
           "name": "HOME",
@@ -1645,7 +1645,7 @@
     },
     "lib/cap-nhat.js": {
       "filePath": "lib/cap-nhat.js",
-      "contentHash": "43e8a825e467ab3883efbd79f5445a6a8043bd7c39c2b0cd47e878e60f88273a",
+      "contentHash": "cb246b9a4bf04f16b6745dff1ad79138f195b37ac05ce2ea66f6b998eab62a46",
       "functions": [
         {
           "name": "HOME",
@@ -1783,7 +1783,7 @@
     },
     "lib/chat.js": {
       "filePath": "lib/chat.js",
-      "contentHash": "854bf6dce9742ca4674794c19e20e2f4026edc716f26c219f512c888d996d6ee",
+      "contentHash": "d189970f2648cb4596645ac7ee275d2888ad1011daef982b8b75d3def68f7c3b",
       "functions": [
         {
           "name": "pin",
@@ -1849,7 +1849,7 @@
     },
     "lib/config.js": {
       "filePath": "lib/config.js",
-      "contentHash": "833c4f6deccade33353e27567c18a0af1c3a393577ef7dc2010acbbeeccb8353",
+      "contentHash": "27189bddcfea1a304e26d0b78f3cbe90316215e9929d7c6429440627d1c158ec",
       "functions": [
         {
           "name": "loadConfig",
@@ -1868,7 +1868,7 @@
     },
     "lib/ctlbridge.js": {
       "filePath": "lib/ctlbridge.js",
-      "contentHash": "1570beb0065f30b1cd8ad5d6ec6a108b9c36496fbf23b63c2edfd8cb9f35a78e",
+      "contentHash": "48a9a69f3ae9a5c5a5df4e679109329d02511fb1b08ae788fc5707526883e9a2",
       "functions": [
         {
           "name": "HOME",
@@ -1924,7 +1924,7 @@
     },
     "lib/docs.js": {
       "filePath": "lib/docs.js",
-      "contentHash": "2b85f86bebbc4de6d111699973eac0c9aad53486096b59d542b02cfbe09cadf8",
+      "contentHash": "fd90b2975d5e1a40b714067361639dc113a93e12cc8ef40d776c341a36ab95ed",
       "functions": [
         {
           "name": "read",
@@ -1998,7 +1998,7 @@
     },
     "lib/ghi-file.js": {
       "filePath": "lib/ghi-file.js",
-      "contentHash": "5fc250b4d61baca374dce313c4b7a6f4bcef72219fbd9e2baf9f6fc82397e529",
+      "contentHash": "b8dfc5fda13dae373c391fb04e8175dc2a651b1f73854cf8cbfb72babbe62f94",
       "functions": [
         {
           "name": "pause",
@@ -2035,7 +2035,7 @@
     },
     "lib/guard.js": {
       "filePath": "lib/guard.js",
-      "contentHash": "6b3d02f34ba24ff5d77573b8e847a11cc0aa98b5874a2bb8d968bb522f3d1845",
+      "contentHash": "d92098e1622adb3c7c3b6c1c0847b38e6b50f44b9429c06de3b0d5360abb6719",
       "functions": [
         {
           "name": "checkHost",
@@ -2070,7 +2070,7 @@
     },
     "lib/hopthu.js": {
       "filePath": "lib/hopthu.js",
-      "contentHash": "d0882f49507c3f2ac29e1effc4beea40fd9ddd1699e987656f7a252161bd282d",
+      "contentHash": "edd2f672dcace12fc0320a5547141cfe683fc231204a9d847d6e0de543dd1a08",
       "functions": [
         {
           "name": "readJsonl",
@@ -2122,7 +2122,7 @@
     },
     "lib/keys.js": {
       "filePath": "lib/keys.js",
-      "contentHash": "08f5cb471ad7d22e254ff52f2a6030b54c73ac12a06ea7842e2d117662fe6322",
+      "contentHash": "097788ebfad30d28b835b2e003d82eb05e50cf9dc0fc7270c7530a3a7934bb2c",
       "functions": [
         {
           "name": "file",
@@ -2168,7 +2168,7 @@
     },
     "lib/kiem-agent.js": {
       "filePath": "lib/kiem-agent.js",
-      "contentHash": "c535062ab6c6e6751b586bf05c5a6fc6c3a37c3b501d5413c994b9909c608855",
+      "contentHash": "e615da727ac204e3bf8837d99abb260b90c642a03f28aebb53184b0e555ab681",
       "functions": [
         {
           "name": "looksLikeKey",
@@ -2253,7 +2253,7 @@
     },
     "lib/mailbox.js": {
       "filePath": "lib/mailbox.js",
-      "contentHash": "33134c9c3f8e4399f59500a05e96b80dee565d3b58cfcc4524420184b88e9ca4",
+      "contentHash": "fee922b62721f17b2e641f45ddfce7d8e8b9cfe93bb9576ade6c95a2403512b9",
       "functions": [
         {
           "name": "slug",
@@ -2306,7 +2306,7 @@
     },
     "lib/mask.js": {
       "filePath": "lib/mask.js",
-      "contentHash": "2c86b5539cf74e3aeae6f90ba6afbea0973c39df45dbabcd0e92abc6fab2ddfc",
+      "contentHash": "963ba70a206bc4a26af4a5b45316485880c3000a2977d7568a246714f7c5a805",
       "functions": [
         {
           "name": "maskSecrets",
@@ -2347,7 +2347,7 @@
     },
     "lib/perf.js": {
       "filePath": "lib/perf.js",
-      "contentHash": "369ae5da9c72a8645fccafe9ba37f62d38a2ec1fb37beeff57f0fbb430db9731",
+      "contentHash": "66fa328ca33393a5cbf841c149a8bdac4a4c1054e313469eadb47c8a764d4cfd",
       "functions": [
         {
           "name": "now",
@@ -2537,7 +2537,7 @@
     },
     "lib/proc.js": {
       "filePath": "lib/proc.js",
-      "contentHash": "aaa25ad30f1cb239a49ab8f815545afd1d4c26a6a52512610ea9f617bfde6ab7",
+      "contentHash": "4da44ed0423e1633d3152aa19bc1ab9a83216c2549e61defa47b1a78d5f3da14",
       "functions": [
         {
           "name": "alive",
@@ -2573,7 +2573,7 @@
     },
     "lib/tongquan.js": {
       "filePath": "lib/tongquan.js",
-      "contentHash": "c3c5b9a96d8afaa82adae4dac61b023490046c36df5bca929033aa24252c3f4d",
+      "contentHash": "1ff7a7a7ad518fdcf30043b64c14359467f1dcf08441ab674f6c5575c141e2e2",
       "functions": [
         {
           "name": "norm",
@@ -2642,7 +2642,7 @@
     },
     "mau/BAI-HOC.md": {
       "filePath": "mau/BAI-HOC.md",
-      "contentHash": "cda9ad909445244a5f61c9511a3135d0179b4f20cbb69b5d25c6e84ff2505a71",
+      "contentHash": "af75739fc9d0cfe9edfb7526514bc410a69f3793bb215409656cb240914d0c56",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2652,7 +2652,7 @@
     },
     "mau/CAN-ANH.md": {
       "filePath": "mau/CAN-ANH.md",
-      "contentHash": "3449166d302180ccea7b36ae4594836ac5b720415b9c04cb1f9f447702a217f7",
+      "contentHash": "0a3ebb88d42e5328a68da58328a44d0a435c8f03b7883ca964c587807774efa8",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2662,7 +2662,7 @@
     },
     "mau/CAP-BAC.md": {
       "filePath": "mau/CAP-BAC.md",
-      "contentHash": "71315e50cffd8acffa148c665b4785c282791c7611c9e9c42a4e7f55ef12ca09",
+      "contentHash": "dc6f5b6a36d5cc74529a16093a183adf8e541377cab0d6e42a19d0afdaff125b",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2672,7 +2672,7 @@
     },
     "mau/DOAN-CHEN-VAO-AGENTS.md": {
       "filePath": "mau/DOAN-CHEN-VAO-AGENTS.md",
-      "contentHash": "50bcea85d254a1d35cc11813611d136550b199be56fbe37f29dd4035c64372dd",
+      "contentHash": "964ea0dbe8045e1e3aca089ce574ecd0e14dada379f78f74dc4ea10a2aa36834",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2682,7 +2682,7 @@
     },
     "mau/DOI-NGU.md": {
       "filePath": "mau/DOI-NGU.md",
-      "contentHash": "2ea91fbcfdb6a35552414382b34755913172af4c2df92249af351a7d35862839",
+      "contentHash": "be1fdf0eb587c89995dbe67bbcc57ca75699e1723e208850eb2f019a2b9bf50a",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2692,7 +2692,7 @@
     },
     "mau/NOI-QUY.md": {
       "filePath": "mau/NOI-QUY.md",
-      "contentHash": "a89a4aab838385970fd39388c96906e67af2b0fd05362dc4b8fcca22eba5750c",
+      "contentHash": "d5e342b970f2a5ba0e1fd44dc3e0db185fdd0aa7882d654073d4783c7f26c4ac",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2702,7 +2702,7 @@
     },
     "mau/QUYET-DINH.md": {
       "filePath": "mau/QUYET-DINH.md",
-      "contentHash": "73766683212a30def9983909aabc28d6c1844ea6fe2e49790e5b2f96f95acb9b",
+      "contentHash": "1e47d129259691cd0362a6ebbd9919a10747035c5e30592d5dcc077ac8ab6d41",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2712,7 +2712,7 @@
     },
     "mau/TU-DIEN.md": {
       "filePath": "mau/TU-DIEN.md",
-      "contentHash": "8644b4abe3c017e00dabf074512f295717766fc1ec0d1a15c80533cf364970ef",
+      "contentHash": "cabfd15f86913556061deadc1c92c408a7ec71f17c94b69406512d0a61b5b313",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2722,7 +2722,7 @@
     },
     "mau/UU-TIEN.json": {
       "filePath": "mau/UU-TIEN.json",
-      "contentHash": "3762d72e16b49b0267e61cac64412d48d7dd9aad367f3b7adae3c7cbcfcc91f5",
+      "contentHash": "619eadbdf0a4afc7ebc6278c8e54ed2ac1ce5379960b406e2ea5d34d03be95dd",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2732,7 +2732,7 @@
     },
     "mau/VIEC-LAM-SAU.md": {
       "filePath": "mau/VIEC-LAM-SAU.md",
-      "contentHash": "a421a27ec07c768671c10522895114d8b46aa7ecb21d6f8d8977db66900449f8",
+      "contentHash": "70c51e179f808d25eb228fbd7c24dfabe26bb1ae3a42e985fdcdc37f75c1e46a",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2742,7 +2742,7 @@
     },
     "mau/goi/vi-du/tien-do.md": {
       "filePath": "mau/goi/vi-du/tien-do.md",
-      "contentHash": "1bfc30f168135ba066916e13f3d1b59bbf840d84ee828e67869461ccf955fabc",
+      "contentHash": "20673688a3a3e500ca4930e33af177dc859fb2b21e766cd643879576c59f4533",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2752,7 +2752,7 @@
     },
     "mau/goi/vi-du/viec.json": {
       "filePath": "mau/goi/vi-du/viec.json",
-      "contentHash": "d1d9d12c14e2e46dcba66466f91955794a25a6355d52d6349e346e79f0cf344b",
+      "contentHash": "bf72748b5c7c9212f9bd6f19235d5d2c816e2a3c1234441be41335fed94278fd",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2762,7 +2762,7 @@
     },
     "mau/spec/VI-DU.md": {
       "filePath": "mau/spec/VI-DU.md",
-      "contentHash": "616ed38ba022a79a0a57600689d94f2c558a4815a65527ef54af319391c50b31",
+      "contentHash": "15a7a6670ea5c35b423306946a17b744e95e8f56f600839e6bd20964caf74dc7",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2772,7 +2772,7 @@
     },
     "package.json": {
       "filePath": "package.json",
-      "contentHash": "efcc96f1a82a1845c5d98102a20a542b1273671029fac2198641e252e0fdf8e8",
+      "contentHash": "a58b1767b9b3030cba6d0dcb21b9fcd176f061c841bdb53247501afe1c110c2a",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2782,7 +2782,7 @@
     },
     "public/2d.html": {
       "filePath": "public/2d.html",
-      "contentHash": "c2ce99bb129b09ed78fe43f33212ff098580447312e9df52b10a003e792de02e",
+      "contentHash": "6c6c8327c64c5ace0b1f09ac195db7bf2e046d8c782c498f57717aa0cc12d669",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2792,7 +2792,7 @@
     },
     "public/anime-studio.html": {
       "filePath": "public/anime-studio.html",
-      "contentHash": "847850d7d4017a93b4d68dd4b554829e249cbbe49d1b2ca85bea12875ab5a558",
+      "contentHash": "66774bd58ed48c1439af46539e8cb4fddf057d6a045cb084c3ba2e6ad3cf815e",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2802,7 +2802,7 @@
     },
     "public/app.js": {
       "filePath": "public/app.js",
-      "contentHash": "88d2a0f1d177fcb6a6543c8477d2ab9868a152dafb593314ba4b48ea9c2faeb5",
+      "contentHash": "6b5ec08ee1c465530bca1f301f91923ce96f9945436a5987f32b19ada4f5fba6",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2812,7 +2812,7 @@
     },
     "public/board.html": {
       "filePath": "public/board.html",
-      "contentHash": "e9913c1776dfa3b7d270ee7b4db8a4dfbc1e017aca9505e1cd8886ae0ffc98af",
+      "contentHash": "5585a5b0dc6428ec7ab6abe8f1e2fd314678b244f8fea5dfc0573d149309331f",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2822,7 +2822,7 @@
     },
     "public/cap-nhat.html": {
       "filePath": "public/cap-nhat.html",
-      "contentHash": "2b9aa015859335c78844280d5e168dd3f34fd1fb7699ee6a6d42be4d0cfbcb43",
+      "contentHash": "fe1b749d87ba85096426fe8ffcbe6f90178fea1b73695321dbdd68c2e6970e3e",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2832,7 +2832,7 @@
     },
     "public/characters.html": {
       "filePath": "public/characters.html",
-      "contentHash": "26afbf5f24cf960203e9c8f83416f5cd66ca6d48cd9f4e3a6d361fe786fdfcf7",
+      "contentHash": "3b7c45171f3ed3610db2a66f296ff924520b55fd6ddb949716aac754e21f6279",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2842,7 +2842,7 @@
     },
     "public/chat-ui.js": {
       "filePath": "public/chat-ui.js",
-      "contentHash": "6fe2c189d96e42c6abfd4f742f2135e0604817bd46f70ebbeae4783af386034a",
+      "contentHash": "ba642e4fbb9e84c45fe4ba3ff90dae6b5cd03a62cbf5f1b67cd57ecbd4049e55",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2852,7 +2852,7 @@
     },
     "public/congviec.html": {
       "filePath": "public/congviec.html",
-      "contentHash": "d09af50f36a20d2399cb4911820117482cb996ea7eb083ffb69f63a401d2fdc8",
+      "contentHash": "4d97975ac1008b65f5135b111dfdba21ae2720f97d305ee7299b32c6ed863a5a",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2862,7 +2862,7 @@
     },
     "public/dieukhien.html": {
       "filePath": "public/dieukhien.html",
-      "contentHash": "035b5212ecb78f44417ec201d3eba76336fafacfc36dffe3594b5e128c3bffc5",
+      "contentHash": "72595b7fcdfe43ebf3cfc78a876be7e4a18d94bca1cca63dc99998fd648d81d2",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2872,7 +2872,7 @@
     },
     "public/hieusuat.html": {
       "filePath": "public/hieusuat.html",
-      "contentHash": "d3ae969f144003450c2c4f84704bb2db7e7334928e0bd3771cc87d843019e22b",
+      "contentHash": "5ba35ba3c185ff08489f5df8e6aa298f7e5dba2bfde45df25b25fd35a6b1aba8",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2882,7 +2882,7 @@
     },
     "public/hopthu.html": {
       "filePath": "public/hopthu.html",
-      "contentHash": "470e4e5f28a9f888972eddffe00341301515329f5ada15ac2cf8fac2d1e1589f",
+      "contentHash": "74431a9d4f70dff1ef8ffbef789c810f1d062d0357463bd0fe6e5ff12977a156",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2892,7 +2892,7 @@
     },
     "public/index.html": {
       "filePath": "public/index.html",
-      "contentHash": "4eb56fc8f0c8a636d52afa22430b10829a0c552c1a27dceeb432180cf5ea86d2",
+      "contentHash": "e383cfb0d7a2a3b698d346fab0d89db4c6950b31117669740742ac1c872d9ec9",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2902,7 +2902,7 @@
     },
     "public/ket-noi.html": {
       "filePath": "public/ket-noi.html",
-      "contentHash": "259600e8fd294f8dfc8ff24d7bedb0420a7bd7a02ea1c0ac7a4dd9dcb306b0ec",
+      "contentHash": "fc1f531542758bc6bdbe8eed47ec4e7e2e3221f723536035399c10ab69fd296b",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2912,7 +2912,7 @@
     },
     "public/manifest.webmanifest": {
       "filePath": "public/manifest.webmanifest",
-      "contentHash": "497bff8f2d3264a821ed145b4c4100569055dde6f205b6869d364a290816eb34",
+      "contentHash": "af750767216fa950820eeee25206d55181ba17865afba809ad710c7564b7aa42",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2922,7 +2922,7 @@
     },
     "public/md.js": {
       "filePath": "public/md.js",
-      "contentHash": "d801e268bb692ae7e88318a3e0cce7bfbf4ce7fc41a8208fae5460665d1cc221",
+      "contentHash": "60e0bbe2decf251d11be454745ea6c38025719f298e55e614981f951e25738a2",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2932,7 +2932,7 @@
     },
     "public/noiquy.html": {
       "filePath": "public/noiquy.html",
-      "contentHash": "9e60508151dcafad2296f49acd19e4df3b9e6dcc6477af014fd74b09d7ccdd8f",
+      "contentHash": "e5eafc023ad3f9135352cbd13a8e4645708b7a32152c51f1d072efa68b894b46",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2942,7 +2942,7 @@
     },
     "public/office-desk.css": {
       "filePath": "public/office-desk.css",
-      "contentHash": "ff8d1f3e6c2282f38e1ba309c9bb49c7ece49cab6c478dae61793b40ce37696d",
+      "contentHash": "039e761d6652a7c661a4207ffaf25c4cb3b56fd840e456557306266a97d60e37",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -2952,7 +2952,7 @@
     },
     "public/office-desk.js": {
       "filePath": "public/office-desk.js",
-      "contentHash": "1f0724da3b9577f27d9072e3ba18842bc7b62a98bfc9b9a3d61797f1dacc3af0",
+      "contentHash": "d149cd985262d27dcfc904029ab3c2a6b8cae3e70e5aa471243038319fb27f1e",
       "functions": [
         {
           "name": "$",
@@ -3033,7 +3033,7 @@
     },
     "public/offline.html": {
       "filePath": "public/offline.html",
-      "contentHash": "d408d360c22c680eb7c0c48bd105cc9ec85ed5663540a1584bfee20910934606",
+      "contentHash": "5179409d69d01d16a5f5773059e14bcc4d39ea5bffc834d50d4cc9d53317bd75",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -3043,7 +3043,7 @@
     },
     "public/progress-view.js": {
       "filePath": "public/progress-view.js",
-      "contentHash": "33c02c804758f5000c705dc9300594696c0e7e8923191293cf1365a191d64ea9",
+      "contentHash": "c0e807cf1cb0f6540a306b0fa5f3651c03ec3857d166b66c41b2e8e943b237e6",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -3053,7 +3053,7 @@
     },
     "public/prototype.css": {
       "filePath": "public/prototype.css",
-      "contentHash": "92f491d0c4403b1f1ee44f03f0d51655e0e60db1a3a957730185af7499a74f3e",
+      "contentHash": "8708dc89a0c3e3426f536b994146c561da62d1c2836dd3df74759baea0d2a0ac",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -3063,7 +3063,7 @@
     },
     "public/prototype.html": {
       "filePath": "public/prototype.html",
-      "contentHash": "8d4c2f9457dec78cf4d3ecb31a595c26db235d2c2e8e9a5a548b7b7b93691ee6",
+      "contentHash": "1a659c6f063e8de888d4e6e3bf30d3cf114566542bb8491937593a61a29791ee",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -3073,7 +3073,7 @@
     },
     "public/prototype.js": {
       "filePath": "public/prototype.js",
-      "contentHash": "0b56594dd16beee5fb6efd3dbb05a0d7440903cedd8f26e7f66438742d11f4b1",
+      "contentHash": "dbf0853c65ee84ed2bca06f0d510d4bdd995747bb3fa66707a5dee2c7112d19d",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -3083,7 +3083,7 @@
     },
     "public/sw.js": {
       "filePath": "public/sw.js",
-      "contentHash": "d263456545de94a1ae12c5ac859b4da149d7f67e37bc8ecc7edd804da2b0a26f",
+      "contentHash": "39fad5e77a0ba2f944e2679575d3c52b5a57440f9b4924b6ae752e00814ae786",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -3093,7 +3093,7 @@
     },
     "public/thoitiet.js": {
       "filePath": "public/thoitiet.js",
-      "contentHash": "26db81f6840f4518d2fcf87d249dd23c6e901ea68247b7c30f849add09488ef2",
+      "contentHash": "9b9f15d54713634d625ec5b335e9005002c2f6b2f74122e0e63950cd4449fe39",
       "functions": [
         {
           "name": "vietnamHour",
@@ -3162,7 +3162,7 @@
     },
     "public/tinnhan.html": {
       "filePath": "public/tinnhan.html",
-      "contentHash": "fa0c1e2d73a77c4cc9512193840e566c9300f772dcd3657ec70fcd62381d56d2",
+      "contentHash": "6f2bcbc937fe524f5ec00cf025de4f43b950693db401ca759b34374a8bec2c5f",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -3172,7 +3172,7 @@
     },
     "public/tongquan.html": {
       "filePath": "public/tongquan.html",
-      "contentHash": "3c90dbd5bd574e5bb8e300653e244aa40a979d018c2f9325404cd66189e3767c",
+      "contentHash": "3fc999f0b5a973babe5c1743b17e9f9bed1ad593d19375dfa12fc03a895201ca",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -3182,7 +3182,7 @@
     },
     "public/vanphong3d.html": {
       "filePath": "public/vanphong3d.html",
-      "contentHash": "f8c14532a2ee649bdaf9235a462791d8a1861decb26e9a1b8a15a80c5ad1de78",
+      "contentHash": "95dd54c0c804563bb0096a410d5db0f666ef8b43a9e815703d769ec4a9769a93",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -3192,7 +3192,7 @@
     },
     "public/vanphong3d.js": {
       "filePath": "public/vanphong3d.js",
-      "contentHash": "4129b8c124092b232d4ead7702a27b9cd870e08bd71fe05db593ac92a5e29f80",
+      "contentHash": "59bae527563625223317614913b8271aa9003e4a98ab421d54c47ec2d7808e36",
       "functions": [
         {
           "name": "createOffice",
@@ -3237,7 +3237,7 @@
     },
     "scripts/cai-app.js": {
       "filePath": "scripts/cai-app.js",
-      "contentHash": "28407d3ac9a0dcb774eef33f02712bd538915ecdbdffdfdc925d69b04931735d",
+      "contentHash": "359c240eb0c3ff2dbe1b1a4e0e4e41ad270503dd089ca83e4dcabf91d0121ab5",
       "functions": [
         {
           "name": "plan",
@@ -3256,7 +3256,7 @@
     },
     "scripts/cap-nhat.js": {
       "filePath": "scripts/cap-nhat.js",
-      "contentHash": "de558bab568e229f2caaae6a63f30bebe2bb2a296887e81c185424800998c066",
+      "contentHash": "ecb2859551d245ba23c579fb1bf7f8cdf1292ca58cceb7c0ebb29bf9d7d99487",
       "functions": [
         {
           "name": "opt",
@@ -3304,7 +3304,7 @@
     },
     "scripts/chay-tat-ca.js": {
       "filePath": "scripts/chay-tat-ca.js",
-      "contentHash": "6c0f7ccd457e92f864f5aa4fd3f536ff8f30cefefc2da3acd501df796ae97d15",
+      "contentHash": "c326f5880bc17d192de3308b6fbad330dceab9275e1136932efa19c3af140b56",
       "functions": [
         {
           "name": "running",
@@ -3345,7 +3345,7 @@
     },
     "scripts/mo-app.js": {
       "filePath": "scripts/mo-app.js",
-      "contentHash": "8e8a5a5367221b7d6cda803b6dfd50594946e56357fdef709a5b203a7efcf822",
+      "contentHash": "70be3d232c393aec631707ca079ba9ff1704382b1678056e058440546df70f10",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -3355,7 +3355,7 @@
     },
     "scripts/tat-app.js": {
       "filePath": "scripts/tat-app.js",
-      "contentHash": "ec5d8b0d81b2e8b0635e4b54c479909461fbfabeac7534bc35a64cdf9f2758dd",
+      "contentHash": "5d6ff328bf0bbb3b105caedf683b642b56023abe6d8b8ff8c4f14eee1ccbdf5e",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -3365,7 +3365,7 @@
     },
     "scripts/xem-tren-dien-thoai.ps1": {
       "filePath": "scripts/xem-tren-dien-thoai.ps1",
-      "contentHash": "67a45dadcb2caee63db17fe273463377c711afd194fbc56eb0e57f68a74a12aa",
+      "contentHash": "46bb6adf06f913be0fe8134b3aed1c3d48af3b25c69df494fbffd4ca87975997",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -3385,7 +3385,7 @@
     },
     "server.js": {
       "filePath": "server.js",
-      "contentHash": "06c6adae68cf4d80c9bdb399ba1541cb377630131b9c9fdee2c5f9f1aa316a37",
+      "contentHash": "0c5c0c768eef2b49db13345687d8399cce9f02d1d79c7c24529f27111fc5f9ec",
       "functions": [
         {
           "name": "now",
@@ -3821,7 +3821,7 @@
     },
     "setup.js": {
       "filePath": "setup.js",
-      "contentHash": "e9d0c1b7e84a388f41a2adea4f0bb7b0b04a881d99c3f64570d03d5387d3404c",
+      "contentHash": "a695002afd63c0582f0dd47e238a7129560a3a6f0d2f3a0f7a6fce9fe7bb2fa3",
       "functions": [
         {
           "name": "flag",
@@ -3877,7 +3877,7 @@
     },
     "test/app.test.js": {
       "filePath": "test/app.test.js",
-      "contentHash": "3c241765ce44c24cb4371a11962f54fdccef849bf12e2f7d5c91c667f9cc5ac4",
+      "contentHash": "c8d3c71d301e117de15a66e82e27c6e0b7ba0ed360e499adcfa21b90298fd673",
       "functions": [
         {
           "name": "pngSize",
@@ -3896,7 +3896,7 @@
     },
     "test/autopilot.test.js": {
       "filePath": "test/autopilot.test.js",
-      "contentHash": "fae2368dfdc3c57edbf5724c6512fc81c24d1ec178910a73cd593f7df089c2bd",
+      "contentHash": "85cd72240bee4d9178c3718813fb6c6a77c6a8d119fcaccc2df4381e6a8795e2",
       "functions": [
         {
           "name": "sleep",
@@ -3923,7 +3923,7 @@
     },
     "test/bo-kiem.test.js": {
       "filePath": "test/bo-kiem.test.js",
-      "contentHash": "4798444b331b7668e952cfe4c98224d1b36f3d66f3b1f69bc67c4a85c6f6b5c3",
+      "contentHash": "6ae915792717e51ca4e89825289d34f13e1e54edd0811698b2f93a1fb1c56679",
       "functions": [
         {
           "name": "tmp",
@@ -3948,7 +3948,7 @@
     },
     "test/cap-nhat.test.js": {
       "filePath": "test/cap-nhat.test.js",
-      "contentHash": "be3b79eb8429b7224f9d2573719b67e004cfc4152549a96c6562758ea35849ba",
+      "contentHash": "9a9ab017df60f505df9c1bd305eb0766d62e7d5c5047fc8b51cd2981a2f98f87",
       "functions": [
         {
           "name": "tmp",
@@ -3982,7 +3982,7 @@
     },
     "test/chat.test.js": {
       "filePath": "test/chat.test.js",
-      "contentHash": "d561de7711ae6dfbe7d649279cbd09d6adaeb070040b30f2fed741aeb548ddfe",
+      "contentHash": "3e7faec50061d9dd670e1109388fe05f6213401417f5aeaac200d084cd041810",
       "functions": [
         {
           "name": "sleep",
@@ -4009,7 +4009,7 @@
     },
     "test/cho-han-muc.test.js": {
       "filePath": "test/cho-han-muc.test.js",
-      "contentHash": "019dd4712d08c89da6c94c47243ae54706984bea6a5266bce447ab8dc3163f77",
+      "contentHash": "cc0f0bc94ffcb67e002bc9e116995cc754210ad4e33498b161c89bc58dd80c4a",
       "functions": [
         {
           "name": "sleep",
@@ -4045,7 +4045,7 @@
     },
     "test/codex-model.test.js": {
       "filePath": "test/codex-model.test.js",
-      "contentHash": "51005ecc9225380580dce474605824925a469ed24f31089e3586e4dc2015416f",
+      "contentHash": "b8c1a5204ef3a6683dccf66c198a7fd4a9b0ac1ce2f8b21547e1bbb113f4350d",
       "functions": [
         {
           "name": "sleep",
@@ -4073,7 +4073,7 @@
     },
     "test/ctl.test.js": {
       "filePath": "test/ctl.test.js",
-      "contentHash": "bec82051b971d79cce8e2233ad3bdf3be760c83aa588ddd1d50b31cdafeaab66",
+      "contentHash": "abedbf0518b529bf5a8d973df96375ec4c6515eec69d9c5ac93fcc8bd5c0e785",
       "functions": [
         {
           "name": "sleep",
@@ -4109,7 +4109,7 @@
     },
     "test/doc-repo.test.js": {
       "filePath": "test/doc-repo.test.js",
-      "contentHash": "4ce022c0a8c2d72eff35f3b39632832bfc1b434fd43d5b2255093d1bc4c6b9d6",
+      "contentHash": "3104ae964c737d63879a1a58c9b520cfc632c5ea05b20645b658011aa98e3295",
       "functions": [
         {
           "name": "git",
@@ -4145,7 +4145,7 @@
     },
     "test/ghi-file.test.js": {
       "filePath": "test/ghi-file.test.js",
-      "contentHash": "f7301acbc9559b5148e71f7c9619e26d996a53e9eada18711a97817136ce7a7e",
+      "contentHash": "dea32837371c0523d7706a4876fb9d861f659061b038f1beaa6ce28a99180ad2",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -4155,7 +4155,7 @@
     },
     "test/giai-thich.test.js": {
       "filePath": "test/giai-thich.test.js",
-      "contentHash": "e400cd5a9d56db509c44ed339c7e90403c0fc1a4873e1fce38e82952a642cca8",
+      "contentHash": "3a009605ab07e9f452d7bb4926e148322319216b76a1668729f044fd48b0f1b5",
       "functions": [
         {
           "name": "sleep",
@@ -4183,7 +4183,7 @@
     },
     "test/github.test.js": {
       "filePath": "test/github.test.js",
-      "contentHash": "2b12504b1c521df0f5e226c3f97097dfa1b4bb572913afdacc1c823a13d6c92d",
+      "contentHash": "e8a99bb03f844714c4edb303a2a0dadfe59238fe05b3649b68215e4f6ce3e385",
       "functions": [
         {
           "name": "git",
@@ -4217,7 +4217,7 @@
     },
     "test/guard.test.js": {
       "filePath": "test/guard.test.js",
-      "contentHash": "be68a4cbe2154e8e2761a32fd273ac4b674cb8c632a2d1b4ef0cf4104c1d3697",
+      "contentHash": "9c27da037d5c8e86b23b254c71fa753ab8f3f9d5d677c71ca685fb8a0aa64701",
       "functions": [
         {
           "name": "req",
@@ -4236,7 +4236,7 @@
     },
     "test/html.test.js": {
       "filePath": "test/html.test.js",
-      "contentHash": "e1dafb32254a04673d793b5268c3f52882c8fb6104154f81bc078e11362cebbf",
+      "contentHash": "990a6aef774f772da50b022d490a54f43bfacef63decdfc03547504798e96826",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -4246,7 +4246,7 @@
     },
     "test/ket-noi-nhat-ky.test.js": {
       "filePath": "test/ket-noi-nhat-ky.test.js",
-      "contentHash": "fe57b227310b44cda4a218bea739618236cba1cc2d06d94a832d979e254de429",
+      "contentHash": "4bdbeeb40fd3e3b38fc7894f9394e044a2ec31c9b38f5efba839d55cd0f47afa",
       "functions": [
         {
           "name": "fakeConnectors",
@@ -4265,7 +4265,7 @@
     },
     "test/keys.test.js": {
       "filePath": "test/keys.test.js",
-      "contentHash": "d2f0a06a146f24db1880b29d4601959666e72ff10c5bd72a40ef2915475b9dd0",
+      "contentHash": "a3415d5127e2e72e2dadac4dc91336ed61ee3d24fe2ceeb2068f4301c876560d",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -4275,7 +4275,7 @@
     },
     "test/kiem-agent.test.js": {
       "filePath": "test/kiem-agent.test.js",
-      "contentHash": "23a5f2ed0380c04861beff337acf3b8d45b75160a77cbe6276cae24392e8fdbd",
+      "contentHash": "bcffb96c356d0b05ab16a23d78570b52b95120e302a725b507fbbaf1d3b2449a",
       "functions": [
         {
           "name": "sleep",
@@ -4343,7 +4343,7 @@
     },
     "test/mcp-phong.test.js": {
       "filePath": "test/mcp-phong.test.js",
-      "contentHash": "ad9403e2212aec29f8c24d643e56077a8504532b52880ea8bf46322755ce8d57",
+      "contentHash": "06021a3202f5347fb5563337fe0bb552a7cef37c5c755b83f9e0253021a4b5ac",
       "functions": [
         {
           "name": "tmp",
@@ -4360,7 +4360,7 @@
     },
     "test/nhanh-rieng.test.js": {
       "filePath": "test/nhanh-rieng.test.js",
-      "contentHash": "64866f95ca9cd6589dd8071db545f9c340c65694e0420bdfd5b3783cf6fd536a",
+      "contentHash": "0ab6748f83a3ade1655247db1740ecf9f8d0e6b3300ffe55999c422e63ddc446",
       "functions": [
         {
           "name": "sleep",
@@ -4387,7 +4387,7 @@
     },
     "test/phase4.test.js": {
       "filePath": "test/phase4.test.js",
-      "contentHash": "30807ef19f8ad6d708005ce1ed335ceacb537579ffe3cc1ff20c8e0798a13dd3",
+      "contentHash": "ed332cd2cf6858e3e1cee26c4fb3da8df2da891dbf3544e161798d7191d6d322",
       "functions": [
         {
           "name": "sleep",
@@ -4424,7 +4424,7 @@
     },
     "test/phase5.test.js": {
       "filePath": "test/phase5.test.js",
-      "contentHash": "9efe621a11c957b044e838106c79d534f85c9d490674ecc6f51a05d398dc165f",
+      "contentHash": "ac8270d4c46749ee1435fcaff68e67c0926f705414b21bc75ab2e791b80152b1",
       "functions": [
         {
           "name": "sleep",
@@ -4485,7 +4485,7 @@
     },
     "test/proc.test.js": {
       "filePath": "test/proc.test.js",
-      "contentHash": "3edefdc18618654f50cae4dab92cf41f2b7bb4095069ec5b5ab6fdd88e2c4fb0",
+      "contentHash": "f7017ecd465a81883e835b0f476cd3ae6467b8b7690af7694cb7d7d620e50a73",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -4495,7 +4495,7 @@
     },
     "test/projects.test.js": {
       "filePath": "test/projects.test.js",
-      "contentHash": "11fbd45e8b6af8832b1f5c9e8bb3a5330b09b3016a043bbf93a51037dbda5adc",
+      "contentHash": "13f65014896575d3de52392f158fa1d754049db99fe9c6de4ebb85cbfd820053",
       "functions": [
         {
           "name": "fixture",
@@ -4512,7 +4512,7 @@
     },
     "test/quotas.test.js": {
       "filePath": "test/quotas.test.js",
-      "contentHash": "0b643cf8adfa7fb1c126f247638e0d6db2cb0ec94231071d035cf967df743e8d",
+      "contentHash": "9acfba1c0599b098437de2d490a0430f0f6dc7bdf709591dbdac8654e2e095dc",
       "functions": [
         {
           "name": "codex",
@@ -4547,7 +4547,7 @@
     },
     "test/tat-ctl.test.js": {
       "filePath": "test/tat-ctl.test.js",
-      "contentHash": "ded8f7b3b65b5856ed5502dec3c7991fbdb0fcc06cf9dd0cdcc15e9726104333",
+      "contentHash": "ff4693769dedd2cc6354703a315e39a63c89a88ae4836ac6049deec67227d736",
       "functions": [
         {
           "name": "sleep",
@@ -4603,7 +4603,7 @@
     },
     "test/thoitiet.test.js": {
       "filePath": "test/thoitiet.test.js",
-      "contentHash": "5c262eee1e7e338f79926e0b2d44b74462f7a2837ed1340fd28d3b1917c14ee0",
+      "contentHash": "8e7275ed6dde644a77b5ac14bcaff1d30d51cd72b55e1520e18d657d7e221108",
       "functions": [
         {
           "name": "load",
@@ -4628,7 +4628,7 @@
     },
     "test/tien-do.test.js": {
       "filePath": "test/tien-do.test.js",
-      "contentHash": "480945ccbef0b7e753cc00b16d291418b25a43503d15539e6e6d5cc6b05d8e2d",
+      "contentHash": "ad900ed2a79c24b08b2f5129e08b276a503ba4c119a4c3ace32333c5f779f7d3",
       "functions": [
         {
           "name": "protocol",
@@ -4654,7 +4654,7 @@
     },
     "test/toan-quyen.test.js": {
       "filePath": "test/toan-quyen.test.js",
-      "contentHash": "fb0e333823c660ecdfe0f4351c79f9eb8e3293a62732059dad687a88b5e108d6",
+      "contentHash": "bf2c370db1928d6ebd0780e68193842dbb625a4aa57f69d712347b61844c7f13",
       "functions": [
         {
           "name": "sleep",
@@ -4682,7 +4682,7 @@
     },
     "test/tu-bat-lai.test.js": {
       "filePath": "test/tu-bat-lai.test.js",
-      "contentHash": "7848222fb89f49111457012abe106fae6973ff8921a06f4f4a0157cad1aae840",
+      "contentHash": "18c7956776aa95cf56d219a476a2792b149e2a71a0a86c3489db2ac983e9c0de",
       "functions": [
         {
           "name": "sleep",
@@ -4710,7 +4710,7 @@
     },
     "test/tu-hanh.test.js": {
       "filePath": "test/tu-hanh.test.js",
-      "contentHash": "7a31003d2ca21ead9b83248df0895c4b8b19837a19b9802825c5edd60248da2a",
+      "contentHash": "f058a1381f93cf136b025af631dad48297cef7506e372b7168df9ead270840b9",
       "functions": [
         {
           "name": "sleep",
@@ -4738,7 +4738,7 @@
     },
     "test/xuat-ban.test.js": {
       "filePath": "test/xuat-ban.test.js",
-      "contentHash": "aed9bb12f9840bec967a2b327594dfabcc881141f425bfc33bca22dae84894fa",
+      "contentHash": "243a5728ecf7ecc1a1a50d7726d0b6c2a4a430b388cb2669f0d6a412ac3c0e92",
       "functions": [
         {
           "name": "sleep",
@@ -4766,7 +4766,7 @@
     },
     "test/y-tuong.test.js": {
       "filePath": "test/y-tuong.test.js",
-      "contentHash": "3196c4eb34295605d489bbe60c5eebad7b5c7794edfa042e276f56d08eb97300",
+      "contentHash": "03effb4748d22df7f909441226fd062914e0ff14633c66d063ad9ee28e92e132",
       "functions": [
         {
           "name": "sleep",
@@ -4794,7 +4794,7 @@
     },
     "tools/kiem-agent.js": {
       "filePath": "tools/kiem-agent.js",
-      "contentHash": "589219e52d4dbdc4b68af112f7cfe2542e40c4acfc518595d4393411d5aadeb9",
+      "contentHash": "6dd1f18e5c9eb03b13a37cfdfb249ab7b833626ae70142d574f463fdcbd12f2b",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -4804,7 +4804,7 @@
     },
     "tools/vp.js": {
       "filePath": "tools/vp.js",
-      "contentHash": "b886883027885a138c90a07813b3abe1c903c15c07cf5169b95fe8733cff6c16",
+      "contentHash": "23bd07df0142f5e2f91b895a8b5ad1a972da51b1b22a3ab2cb86b25dc8244ae5",
       "functions": [
         {
           "name": "need",
