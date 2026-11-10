@@ -49,6 +49,7 @@ export function createDesk(getOffice) {
     <div class="desk-actions"><button type="button" id="deskRefresh">Làm mới</button><button type="button" data-desk="approvals">Việc chờ anh duyệt</button></div></div>`;
   document.body.append(dialog);
   let active = null, workspaces = [], view = "progress", inFlight = null, mutating = false, firstLoad = true;
+  let dieuPhoi = null;
   let runs = [], jobs = [], handoffs = [], ideas = [], quotas = null, overview = null, turn = null, scan = null, publish = null, journal = null;
   let errors = {}, dataReady = false, liveNpc = new Set(), github = [], githubPage = 0, githubMore = false, githubLoading = false, githubLoaded = false, githubError = "", compareUrl = null;
   const own = (items) => items.filter((x) => active && x.workspace === active);
@@ -126,11 +127,33 @@ export function createDesk(getOffice) {
   function renderIdeas() {
     $("deskIdeas").innerHTML = errors.workspace || errors.ideas || !active || !dataReady ? messageHtml("ideas", "") : ideas.length ? ideas.map((i) => `<article class="desk-entry"><strong>${esc(i.title)}</strong><p>${esc(i.detail)}</p><p>${esc(i.run ? statuses[i.run.status] || i.run.status : "Chưa giao")}</p>${action("ideas", i.id, "start", "Giao Hinata đặc tả", undefined, !!i.run && live.has(i.run.status))}</article>`).join("") : messageHtml("ideas", "Dự án chưa có ý tưởng nào.");
   }
+  // Điều phối model + mức suy nghĩ (ctl/dieu-phoi.js): mặc định tự động theo độ khó và hạn mức; CEO cố định được cho từng phòng.
+  const DP_ROOMS = [["hinata", "Hinata · Antigravity", "agy"], ["itachi", "Itachi · Codex Sol", "codex"], ["sasuke", "Sasuke · Codex Astra", "codex"], ["sakura", "Sakura · Claude duyệt", "claude"], ["pain", "Pain · Claude báo cáo", "claude"]];
+  const DP_OPTS = {
+    claude: [["sonnet|low", "Sonnet · low"], ["sonnet|high", "Sonnet · high"], ["opus|high", "Opus · high"], ["opus|max", "Opus · max"]],
+    codex: [["|low", "Mức low"], ["|medium", "Mức medium"], ["|high", "Mức high"], ["|xhigh", "Mức xhigh"], ["|max", "Mức max"]],
+    agy: [["gemini-3.8-flash-low|", "Gemini Flash low"], ["gemini-3.8-flash-medium|", "Gemini Flash medium"], ["gemini-3.8-flash-high|", "Gemini Flash high"]],
+  };
+  function dieuPhoiHtml() {
+    if (!dieuPhoi) return errors.dieuPhoi ? `<p class="error">${esc(errors.dieuPhoi)}</p>` : "";
+    const b = dieuPhoi.bang || {}, row = (k) => ["nhe", "vua", "nang"].map((t) => `${{ nhe: "nhẹ", vua: "vừa", nang: "nặng" }[t]}: ${esc([b[k]?.[t]?.model, b[k]?.[t]?.effort].filter(Boolean).join(" ") || "mặc định")}`).join(" · ");
+    return `<article class="desk-entry"><strong>Điều phối model &amp; mức suy nghĩ</strong>` +
+      `<p><label><input type="checkbox" data-dp-auto ${dieuPhoi.tuDong ? "checked" : ""}> Tự động theo độ khó của lượt và hạn mức còn lại</label></p>` +
+      `<p class="muted">Lượt nhẹ (báo cáo, sửa chữ), vừa (việc thường), nặng (kiến trúc, bảo mật, blocker CRITICAL, lượt bị trả lại). AI còn ≤15% hạn mức thì hạ một bậc.<br>Claude — ${row("claude")}<br>Codex — ${row("codex")}<br>Antigravity — ${row("agy")}</p>` +
+      DP_ROOMS.map(([room, label, kind]) => { const f = dieuPhoi.coDinh?.[room], cur = f ? `${f.model || ""}|${f.effort || ""}` : "auto";
+        return `<p><label>${esc(label)} <select data-dp-room="${room}" data-write><option value="auto"${cur === "auto" ? " selected" : ""}>Tự động</option>${DP_OPTS[kind].map(([v, t]) => `<option value="${esc(v)}"${v === cur ? " selected" : ""}>${esc(t)}</option>`).join("")}</select></label></p>`; }).join("") + "</article>";
+  }
+  async function saveDieuPhoi(body, label) {
+    try { const d = await request("/dieu-phoi", body); dieuPhoi = d.dieuPhoi; notice(label); }
+    catch (e) { notice(e.message, true); }
+    renderQuotas();
+  }
+
   function renderQuotas() {
     $("deskQuotas").innerHTML = errors.quotas ? `<p class="error">${esc(errors.quotas)}</p>` : !quotas ? '<p>Đang tải hạn mức…</p>' : !quotas.providers?.length ? '<p>Chưa có dữ liệu hạn mức từ các AI.</p>' : quotas.providers.map((p) => {
       const stale = p.status !== "ready" || (p.lastSuccessAt && Date.now() - new Date(p.lastSuccessAt).getTime() > 3 * (quotas.intervalMs || 120000));
       return `<article class="desk-entry"><strong>${esc(p.name)}</strong>${p.refreshing ? "<p>Đang cập nhật hạn mức…</p>" : ""}${p.error ? `<p class="error">${esc(p.error)}</p>` : ""}${stale ? "<p>Bản đọc chưa được xác nhận; chưa thể kết luận AI còn lượt.</p>" : ""}${(p.buckets || []).map((b) => `<p>${esc([b.group, b.label].filter(Boolean).join(" · "))}: ${Number.isFinite(b.remainingPercent) ? "còn " + esc(b.remainingPercent) + "%" : "Chưa có số liệu"}<br>Mở lại: ${esc(b.resetAt ? time(b.resetAt) : b.resetLabel || "Chưa rõ")}${b.resetAt && new Date(b.resetAt).getTime() <= Date.now() ? " · Đã qua mốc, chờ số liệu mới" : ""}</p>`).join("") || "<p>Chưa có số liệu hạn mức.</p>"}</article>`;
-    }).join("");
+    }).join("") + dieuPhoiHtml();
     const p = quotas?.providers?.find((x) => x.id === "claude"), buckets = !errors.quotas && p?.status === "ready" && (!p.lastSuccessAt || Date.now() - new Date(p.lastSuccessAt).getTime() <= 3 * (quotas.intervalMs || 120000)) ? (p.buckets || []).filter((b) => Number.isFinite(b.remainingPercent) && (!b.resetAt || new Date(b.resetAt).getTime() > Date.now())) : [];
     const left = buckets.length ? Math.min(...buckets.map((b) => b.remainingPercent)) : null;
     $("claudeLowPill").hidden = left === null || left > 8;
@@ -220,6 +243,7 @@ export function createDesk(getOffice) {
           ["jobs", "/jobs?status=running", (d) => { jobs = d.jobs || []; }],
           ["handoffs", "/handoffs", (d) => { handoffs = d.handoffs || []; }],
           ["quotas", "/quotas", (d) => { quotas = d; }],
+          ["dieuPhoi", "/dieu-phoi", (d) => { dieuPhoi = d.dieuPhoi || null; }],
           ...(active ? [["scan", "/scan?workspace=" + encodeURIComponent(active), (d) => { scan = d.scan || null; }]] : []),
           ...(active ? [["publish", "/publish?workspace=" + encodeURIComponent(active), (d) => { publish = d.publish || null; }]] : []),
           ...(active ? [["journal", "/nhat-ky?workspace=" + encodeURIComponent(active) + "&limit=120", (d) => { journal = d.nhatKy || null; }]] : []),
@@ -290,6 +314,15 @@ export function createDesk(getOffice) {
   let publishTimer = null;
   const followPublish = () => { clearTimeout(publishTimer); publishTimer = setTimeout(async () => { await refreshNow(); if ((publish?.runs || []).some((r) => ["running", "releasing"].includes(r.status))) followPublish(); }, 3000); };
   $("deskPrepare").onclick = () => { const workspace = active; if (workspace) mutate("Kiểm tra & build image Docker của dự án trên máy (chưa đẩy ra ngoài)", async () => { await request("/publish/prepare", { workspace }); followPublish(); }); };
+  // Điều phối model: bật/tắt tự động, cố định model/mức cho từng phòng.
+  dialog.addEventListener("change", (e) => {
+    const auto = e.target.closest("[data-dp-auto]");
+    if (auto) { saveDieuPhoi({ tuDong: auto.checked }, auto.checked ? "Đã bật điều phối tự động." : "Đã tắt điều phối tự động: các AI dùng mặc định của CLI."); return; }
+    const sel = e.target.closest("[data-dp-room]");
+    if (!sel) return;
+    const [model, effort] = sel.value === "auto" ? [] : sel.value.split("|");
+    saveDieuPhoi({ coDinh: { [sel.dataset.dpRoom]: sel.value === "auto" ? null : { model: model || null, effort: effort || null } } }, "Đã lưu cho phòng " + sel.dataset.dpRoom + ". Áp dụng từ lượt kế tiếp.");
+  });
   dialog.addEventListener("click", (e) => {
     const bk = e.target.closest("[data-bo-kiem]");
     if (bk && !bk.disabled) {

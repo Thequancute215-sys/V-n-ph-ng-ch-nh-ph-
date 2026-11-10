@@ -58,7 +58,7 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
   const notifier = createNotifier({ enabled: notify && process.platform === "win32" && process.env.VP_NO_TOAST !== "1", audit });
   const scanner = createScanner({ dir, audit, notify: notifier });   // rà file .md trước khi cho AI chạy toàn quyền
   // connectors khai báo bên dưới: chỉ gọi khi chạy lượt, lúc đó đã có.
-const runner = createRunner({ jobs, ws, audit, db, dir, scanner, mcpKnown: () => connectors.known() });
+const runner = createRunner({ jobs, ws, audit, db, dir, scanner, mcpKnown: () => connectors.known(), quotaSnapshot: () => quotas.snapshot() });
   const autopilot = createAutopilot({ runner, jobs, ws, audit, dir, quotaSnapshot: () => quotas.snapshot(), notify: notifier, scanner });
   const ideas = createIdeas({ dir, ws, runner, autopilot, audit });
   const publisher = createPublisher({ jobs, ws, audit, dir, notify: notifier, github: () => github });
@@ -194,6 +194,8 @@ const runner = createRunner({ jobs, ws, audit, db, dir, scanner, mcpKnown: () =>
     ["POST", "/ket-noi/add", async (p, qs, b) => ({ ketNoi: await connectors.add(String(b.id || ""), String(b.ai || "")) })],
     ["POST", "/ket-noi/login", async (p, qs, b) => ({ ketNoi: await connectors.login(String(b.id || "")) })],
   ["POST", "/ket-noi/phong", async (p, qs, b) => ({ ketNoi: await connectors.setPhong(String(b.room || ""), b.ids) })],
+    ["GET", "/dieu-phoi", () => ({ dieuPhoi: runner.dieuPhoi.status() })],
+    ["POST", "/dieu-phoi", (p, qs, b) => ({ dieuPhoi: runner.dieuPhoi.save(b) })],
     ["GET", "/cap-nhat", async (p, qs) => ({ capNhat: qs.get("fetch") === "1" ? await updater.refresh() : updater.status() })],
     ["POST", "/cap-nhat", (p, qs, b) => [202, { capNhat: updater.start(String(b.name || "")) }]],
     ["GET", "/nhat-ky", (p, qs) => ({ nhatKy: journal.list(ws.find(wsOf(qs.get("workspace"))).path, qs.get("limit")) })],

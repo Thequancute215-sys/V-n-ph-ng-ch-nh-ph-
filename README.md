@@ -150,6 +150,30 @@ Khi app đang mở, số liệu tự cập nhật tối đa mỗi 2 phút; nút 
 
 Tham khảo: [Codex app-server](https://learn.chatgpt.com/docs/app-server), [Claude Code /usage](https://code.claude.com/docs/en/interactive-mode), [Antigravity /usage](https://antigravity.google/docs/cli/commands/usage/).
 
+## Tiết kiệm token: điều phối model và mục lục từ bản đồ
+
+**Điều phối model & mức suy nghĩ** (`ctl/dieu-phoi.js`, xem và chỉnh ở mục **Hạn mức** của bàn làm việc). Mỗi lượt AI được chấm độ khó:
+- **nhẹ:** báo cáo, sửa chữ, màu, tên;
+- **vừa:** việc thường;
+- **nặng:** lập kiến trúc, bảo mật, hiệu năng, còn blocker CRITICAL, hoặc lượt trước bị trả lại.
+
+Rồi chọn cờ thật của CLI:
+
+| | nhẹ | vừa | nặng |
+|---|---|---|---|
+| Claude (`--model`, `--effort`) | sonnet · low | sonnet · high | opus · high |
+| Codex (`model_reasoning_effort`, model giữ theo vai) | low | medium | xhigh |
+| Antigravity (`--model`) | gemini-3.8-flash-low | gemini-3.8-flash-medium | gemini-3.8-flash-high |
+
+- **Hạn mức:** AI còn ≤15% thì hạ một bậc, ≤5% thì về mức nhẹ nhất.
+- **Ưu tiên:** mức do đội trưởng Claude đặt cho lượt Codex kế tiếp (`"effort"` trong bàn giao) thắng điều phối tự động.
+- **CEO cố định:** cố định được model/mức cho từng phòng, hoặc tắt hẳn chế độ tự động (lưu ở `~/.van-phong-ao/dieu-phoi.json`). Lệnh tự cấu hình trong `ctl-agents.json` đã có `--model`/`-m`/`--effort` thì được giữ nguyên.
+- **Ghi lại:** mỗi lượt ghi model, mức và lý do vào nhật ký kiểm toán (`ai.run`) và vào bước của luồng, để sau này đo hiệu suất từng kết hợp.
+
+**Mục lục từ bản đồ** (`ctl/muc-luc.js`). Repo nào có đồ thị Understand Anything (`.ua/knowledge-graph.json`, `.ua/domain-graph.json`) thì trước mỗi lượt, văn phòng tra đồ thị theo việc CEO giao và các blocker OPEN. Nó lấy workflow liên quan (từng bước kèm file:dòng) và tối đa 14 hàm/file, đưa vào prompt (khoảng 1.000 token). Nhờ vậy AI đọc đúng chỗ thay vì dò cả repo. Tóm tắt chỉ là gợi ý: AI phải mở mã kiểm trước khi kết luận. Mã đã đổi sau commit vẽ đồ thị thì prompt ghi rõ số file đã đổi. Repo chưa có đồ thị thì bỏ qua.
+
+Đo thực tế 11/11/2026: một lượt Codex chỉ trả lời "ok" đã tốn khoảng 23.000 token, gần như toàn bộ là phần khởi động (lời dặn hệ thống + mô tả công cụ MCP). Vì vậy kết nối MCP theo phòng, mục lục và mức suy nghĩ đúng việc là ba chỗ tiết kiệm chính.
+
 ## Chọn repo GitHub trong app
 
 Ở trang Tổng quan (`prototype.html`), bấm **Chọn repo GitHub**, tìm repo rồi bấm **Mở repo**. Danh sách lấy trực tiếp từ tài khoản GitHub đã đăng nhập trong Git Credential Manager trên máy, gồm cả repo riêng tư và repo được cộng tác; có tải thêm khi danh sách dài. Không cần nhập token vào văn phòng.
@@ -252,7 +276,7 @@ Chạy tay: `node tools/kiem-agent.js` (agent.md ở thư mục đang đứng), 
 server.js              máy chủ: tìm phiên, đọc nhật ký + sổ, đẩy trạng thái mỗi giây
 lib/                   perf (token, điểm, tiền) · docs (sổ sách) · hopthu · tongquan · chat (PIN) · mailbox · config
                        guard (chặn CSRF/DNS rebinding) · proc (dừng cây tiến trình) · keys · mask · ctlbridge (cầu nối tới ctl) · app (mở app, lối tắt)
-ctl/                   OS Controller: main (HTTP) · jobs · policy · workspaces · files · runner (lượt AI) · autopilot (giao việc tự động) · handoff · monitor · audit · db (tự nâng cấp sổ) · cap-nhat (nút Cập nhật)
+ctl/                   OS Controller: main (HTTP) · jobs · policy · workspaces · files · runner (lượt AI) · autopilot (giao việc tự động) · handoff · monitor · audit · db (tự nâng cấp sổ) · cap-nhat (nút Cập nhật) · dieu-phoi (chọn model/mức) · muc-luc (mục lục từ bản đồ)
 test/                  node --test (npm test)
 tools/vp.js            công cụ ghi sổ cho agent
 tools/kiem-agent.js    bộ kiểm chu trình agent.md (lib/kiem-agent.js), CI chạy trên mỗi PR
