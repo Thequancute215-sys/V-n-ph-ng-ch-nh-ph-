@@ -195,6 +195,8 @@ const runner = createRunner({ jobs, ws, audit, db, dir, scanner, mcpKnown: () =>
     ["POST", "/ket-noi/login", async (p, qs, b) => ({ ketNoi: await connectors.login(String(b.id || "")) })],
   ["POST", "/ket-noi/phong", async (p, qs, b) => ({ ketNoi: await connectors.setPhong(String(b.room || ""), b.ids) })],
     ["GET", "/dieu-phoi", () => ({ dieuPhoi: runner.dieuPhoi.status() })],
+    // Bộ skill mặc định: thiếu/cũ theo từng AI (chỉ đọc máy, không tải mạng). Cài bằng tools/cai-skill.js.
+    ["GET", "/skill", () => ({ skill: require("./skill").createSkill({ home: () => dir }).kiem() })],
     ["POST", "/dieu-phoi", (p, qs, b) => ({ dieuPhoi: runner.dieuPhoi.save(b) })],
     ["GET", "/cap-nhat", async (p, qs) => ({ capNhat: qs.get("fetch") === "1" ? await updater.refresh() : updater.status() })],
     ["POST", "/cap-nhat", (p, qs, b) => [202, { capNhat: updater.start(String(b.name || "")) }]],

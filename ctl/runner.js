@@ -12,6 +12,7 @@ const { resolveProgram } = require("./policy");
 const { CHAN_CLAUDE } = require("./ket-noi-danh-muc");
 const phong = require("./mcp-phong");
 const kiemAgent = require("../lib/kiem-agent");
+const { createSkill } = require("./skill");
 const mucLuc = require("./muc-luc");                 // mục lục từ bản đồ hệ thống (.ua) đưa vào prompt
 const { createDieuPhoi } = require("./dieu-phoi");   // chọn model + mức suy nghĩ theo độ khó của lượt
 
@@ -151,6 +152,7 @@ const err = (code, msg) => Object.assign(new Error(msg), { code });
 
 function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () => ({}), quotaSnapshot = () => null }) {
   const dieuPhoi = createDieuPhoi({ dir, audit });
+  const skills = createSkill({ home: () => dir });   // bộ skill mặc định: ghi chú vào prompt + bắt buộc khai skill_da_dung
   // Dòng [ ] OPEN của agent.md (để chấm độ khó và tra mục lục). Đọc lỗi thì coi như không có.
   const openBlockers = (root) => { try { return kiemAgent.parse(fs.readFileSync(path.join(root, "agent.md"), "utf8")).open.map((l) => l.trim()); } catch { return []; } };
   const quota = () => { try { return quotaSnapshot(); } catch { return null; } };
@@ -209,7 +211,7 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     const approvalNote = fullFor(role) ? FULL_NOTE : role.startsWith("SOL_") || role === "CODEX_ASTRA_DEV" ? "\nCodex đang bật automatic review trong sandbox workspace-write. Lệnh git ghi metadata .git (kể cả git pull --ff-only) cần yêu cầu quyền bổ sung ngay từ đầu qua automatic review; không chạy thử nó trong sandbox rồi lách lỗi bằng công cụ khác. Không dùng cờ bỏ qua sandbox hoặc bỏ qua duyệt." : "";
     if (effort !== null && !EFFORTS.includes(effort)) throw err("BAD_REQUEST", "Mức suy luận phải là một trong " + EFFORTS.join(", "));
     const focus = String(hint.focus || task), blockers = openBlockers(root);
-    const prompt = a.prompt + approvalNote + phong.note(role, dir) + mucLuc.note(root, focus + "\n" + blockers.join("\n")) +
+    const prompt = a.prompt + approvalNote + phong.note(role, dir) + mucLuc.note(root, focus + "\n" + blockers.join("\n")) + skills.note() +
       (String(task).trim() ? "\n\nViệc Giám đốc giao thêm: " + String(task).trim().slice(0, 8000) : "") + END(role) + (role === "CLAUDE_AUDITOR" ? CAPTAIN : "");
     const base = argvFor(role);
     // Vai Codex nhận theo cùng dấu hiệu codexArgs dùng (vai có model Codex + lệnh "exec"), kể cả khi chạy qua node/wrapper.
@@ -252,7 +254,7 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
       return;
     }
     const h = job.status === "done" ? findHandoff(log) : null;
-    const problems = job.status !== "done" ? ["Lượt AI kết thúc với trạng thái " + job.status] : h ? [...checkHandoff(h, opts.role), ...agentProblems(opts)] : ["Không tìm thấy dòng JSON bàn giao trong log"];
+    const problems = job.status !== "done" ? ["Lượt AI kết thúc với trạng thái " + job.status] : h ? [...checkHandoff(h, opts.role, { skills: skills.daCai() }), ...agentProblems(opts)] : ["Không tìm thấy dòng JSON bàn giao trong log"];
     q.put.run(job.id, opts.workspace, opts.role, h && typeof h.next_owner === "string" ? h.next_owner : null, h ? JSON.stringify(h) : null, JSON.stringify(problems));
     audit.log("ctl", "ai.handoff", job.id, { role: opts.role, next: h && h.next_owner, problems });
   }
