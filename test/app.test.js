@@ -26,7 +26,7 @@ test("manifest đủ điều kiện cài (tên, start_url, display, biểu tư�
 test("mọi trang gắn manifest (kèm cookie khóa xem), biểu tượng và app.js", () => {
   for (const f of fs.readdirSync(PUB).filter((x) => x.endsWith(".html") && x !== "offline.html")) {
     const s = fs.readFileSync(path.join(PUB, f), "utf8");
-    assert.match(s, /<link rel="manifest" href="manifest\.webmanifest" crossorigin="use-credentials">/, f);
+    assert.match(s, f === "dieu-khien.html" ? /<link rel="manifest" href="dieu-khien\.webmanifest" crossorigin="use-credentials">/ : /<link rel="manifest" href="manifest\.webmanifest" crossorigin="use-credentials">/, f);
     assert.match(s, /<script src="app\.js" defer><\/script>/, f);
     assert.match(s, /<link rel="icon" href="icon\.svg"/, f);
   }

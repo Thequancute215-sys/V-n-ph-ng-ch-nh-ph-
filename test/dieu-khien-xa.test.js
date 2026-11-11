@@ -117,3 +117,22 @@ test("HTTP: điện thoại tự huỷ ghép", async (t) => {
   assert.equal((await go("/api/autopilot", { cookie })).json.code, "NOT_PAIRED");
   assert.equal((await go("/thiet-bi", { local: true })).json.thietBi.length, 0);
 });
+
+test("nhận diện chính máy: đường hầm Tailscale/Cloudflare nối từ 127.0.0.1 vẫn là từ xa", () => {
+  const req = (addr, host, headers = {}) => ({ socket: { remoteAddress: addr }, headers: { host, ...headers } });
+  assert.equal(guard.isLocal(req("127.0.0.1", "127.0.0.1:7789")), true);
+  assert.equal(guard.isLocal(req("::1", "localhost:7789")), true);
+  assert.equal(guard.isLocal(req("127.0.0.1", "may-quan.tail1234.ts.net")), false, "tailscale serve: Host là *.ts.net");
+  assert.equal(guard.isLocal(req("127.0.0.1", "localhost:7789", { "tailscale-user-login": "quan@example.com" })), false);
+  assert.equal(guard.isLocal(req("127.0.0.1", "localhost:7789", { "x-forwarded-for": "100.64.0.2" })), false);
+  assert.equal(guard.isLocal(req("127.0.0.1", "abc.trycloudflare.com", { "cf-ray": "x" })), false);
+  assert.equal(guard.isLocal(req("192.168.1.5", "192.168.1.10:7789")), false);
+  assert.equal(require("../lib/ctlbridge").isLocal, guard.isLocal, "cầu nối ctl dùng chung một hàm");
+});
+
+test("iPhone: biểu tượng màn hình chính mở thẳng trang điều khiển", () => {
+  const m = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "public", "dieu-khien.webmanifest"), "utf8"));
+  assert.equal(m.start_url, "/dieu-khien.html");
+  assert.notEqual(m.id, "/", "khác app văn phòng 3D để cài được cả hai");
+  assert.match(fs.readFileSync(path.join(__dirname, "..", "public", "dieu-khien.html"), "utf8"), /apple-mobile-web-app-capable/);
+});

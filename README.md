@@ -272,7 +272,9 @@ Giao việc, duyệt báo cáo, trả lời câu hỏi của Claude, duyệt ho�
 2. **Ghép máy:** trên máy tính bấm **Điện thoại** ở thanh công cụ → **Tạo mã ghép** (6 số, sống 5 phút, dùng một lần; sai 5 lần khóa 15 phút). Điện thoại nhập mã thì nhận khóa thiết bị riêng (cookie `HttpOnly`, `SameSite=Strict`); máy chủ chỉ lưu bản băm. Tối đa 5 máy; mất máy thì **Thu hồi** trên máy tính hoặc **Huỷ ghép** trên chính điện thoại.
 3. **Danh sách lệnh** (`lib/dieu-khien-xa.js`): chỉ mở xem tình hình, giao việc, duyệt/trả lại, trả lời, chạy lại khi chờ hạn mức, phanh khẩn cấp. Không mở chạy lệnh tùy ý, đọc/ghi file, duyệt rà soát, xuất bản, đẩy nhánh, sửa kết nối hay cấu hình: các việc đó chỉ làm trên máy tính.
 
-Mọi lệnh từ điện thoại (và lệnh bị chặn) ghi vào `~/.van-phong-ao/dieu-khien-xa.log` kèm tên máy và IP; xem ở trang **Điện thoại** trên máy tính. Muốn thêm một lớp đăng nhập bằng email trước cả khóa xem: dùng Cloudflare Tunnel có tên miền riêng kèm Cloudflare Access thay cho link `trycloudflare.com`.
+Mọi lệnh từ điện thoại (và lệnh bị chặn) ghi vào `~/.van-phong-ao/dieu-khien-xa.log` kèm tên máy và IP; xem ở trang **Điện thoại** trên máy tính. **iPhone/Android với địa chỉ cố định (Tailscale):** cài Tailscale trên máy tính (`winget install --id Tailscale.Tailscale -e`) và trên điện thoại, đăng nhập cùng tài khoản, rồi chạy `powershell -ExecutionPolicy Bypass -File scripts\dien-thoai-tailscale.ps1`. Script mở `https://<tên-máy>.<mạng>.ts.net` chỉ trong mạng riêng của anh (không ra Internet), địa chỉ không đổi giữa các lần bật. Trên iPhone mở link đó bằng Safari → Chia sẻ → **Thêm vào MH chính**, rồi mở app từ biểu tượng và nhập khóa xem + mã ghép **trong app** (iOS tách dữ liệu đăng nhập của app màn hình chính với Safari). Yêu cầu qua Tailscale luôn bị coi là từ xa, dù nối vào từ 127.0.0.1.
+
+Muốn thêm một lớp đăng nhập bằng email trước cả khóa xem: dùng Cloudflare Tunnel có tên miền riêng kèm Cloudflare Access thay cho link `trycloudflare.com`.
 
 ## Cấu hình `config.json`
 
