@@ -33,7 +33,8 @@ function readProgress(text) {
     SPEC_ARCHITECT: "viết đặc tả sản phẩm và thiết kế giao diện ở Vùng [2]",
     SOL_ARCHITECT_PLANNER: "chốt công nghệ Vùng [1] và lập kiến trúc, kế hoạch ở Vùng [3]",
     CLAUDE_AUDITOR: "kiểm duyệt và ghi kết quả, chốt chặn ở Vùng [5]",
-    CODEX_ASTRA_DEV: "viết code, kiểm thử và ghi CLAIM_FIXED ở Vùng [4.1] để Claude kiểm lại",
+    CODEX_ASTRA_DEV: "viết code backend, API, kiểm thử và ghi CLAIM_FIXED ở Vùng [4.1] để Claude kiểm lại",
+    FRONTEND_UIUX_DEV: "dựng giao diện theo Design System Vùng [2.4], đủ 5 trạng thái, ghi CLAIM_FIXED ở Vùng [4.1]",
     SOL_ARCHITECT_ADVISOR: "đối chiếu code với đặc tả, kiến trúc và ghi nhận xét ở Vùng [4.1]",
   };
   const nextStep = (duties[nextOwner] ? `${nextOwner} cần ${duties[nextOwner]}.` : "Chưa xác định được vai giữ lượt hợp lệ trong Vùng [4]; cần kiểm tra sổ agent.md.") +

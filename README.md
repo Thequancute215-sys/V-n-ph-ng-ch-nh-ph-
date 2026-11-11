@@ -92,7 +92,17 @@ Tiến độ ở `~/.van-phong-ao/cap-nhat.json`, log ở `~/.van-phong-ao/logs/
 
 ### Giao việc tự động, Claude báo cáo
 
-Mở `prototype.html#board` → chọn dự án đã đăng ký → nhập việc → **Giao cho cả đội**. Bộ điều phối gọi Antigravity CLI (`agy`) cho SPEC, Codex cho Sol/Astra và Claude Code để kiểm duyệt. Các CLI dùng tài khoản đã đăng nhập và gọi dịch vụ AI tương ứng.
+Mở `prototype.html#board` → chọn dự án đã đăng ký → nhập việc → **Giao cho cả đội**. Bộ điều phối gọi Antigravity CLI (`agy`) cho Hinata (đặc tả) và Kakashi (frontend), Codex cho Sol/Astra và Claude Code để kiểm duyệt. Các CLI dùng tài khoản đã đăng nhập và gọi dịch vụ AI tương ứng.
+
+| Phòng | Vai trong `agent.md` | AI | Việc |
+|---|---|---|---|
+| Hinata · Đặc tả & Design System | `SPEC_ARCHITECT` | Antigravity | Vùng [2]: đặc tả, luồng người dùng, Design Tokens, Component Tree, 5 trạng thái |
+| Itachi · Kiến trúc | `SOL_ARCHITECT_PLANNER` / `_ADVISOR` | Codex (Sol) | Vùng [1], [3]: công nghệ, CSDL, API, chia Phase tách phần Backend và Frontend |
+| Sasuke · Lập trình | `CODEX_ASTRA_DEV` | Codex (Astra) | Backend, API, CSDL, AI Agent, hạ tầng |
+| Kakashi · Frontend & UI/UX | `FRONTEND_UIUX_DEV` | Antigravity | Code giao diện theo Vùng [2.4]: component, 5 trạng thái, responsive, bàn phím, tương phản |
+| Sakura · Kiểm duyệt | `CLAUDE_AUDITOR` | Claude | Vùng [5]: duyệt, blocker; lỗi giao diện trả Kakashi, lỗi backend trả Astra |
+
+Thứ tự thường gặp của một Phase: Hinata → Sol → Claude duyệt kiến trúc → Astra (backend) → Kakashi (giao diện) → Sol đối chiếu → Claude nghiệm thu. Phase chỉ có giao diện thì Claude giao thẳng Kakashi. Kakashi mượn đường dẫn `agy` đã khai cho Hinata trong `ctl-agents.json`, nên không cần cấu hình thêm.
 
 Các bàn giao nội bộ được xử lý tự động trong phạm vi việc bạn vừa giao. Báo cáo cuối của Claude dừng chờ bạn duyệt; duyệt báo cáo không tự push, merge hay phát hành. Mặc định giới hạn 10 lượt và 90 phút. Có nút dừng từng luồng và phanh khẩn cấp. Khi Controller khởi động lại, việc dang dở cần được kiểm tra trước khi giao lại.
 
@@ -208,7 +218,7 @@ Máy tự kiểm những luật đo được của giao thức `agent.md`, khôn
 - đủ các vùng và các dòng `CURRENT_PHASE`, `LAST_UPDATED_BY`, `NEXT_OWNER`, `AUDIT_STATUS`; vai hợp lệ;
 - Vùng [4.1] tối đa 25 dòng, [4.2] tối đa 5 dòng;
 - blocker ghi đúng `[ ] OPEN <ID>` / `[x] RESOLVED`; không tăng Phase khi còn `[ ] OPEN`;
-- mỗi vai chỉ sửa vùng của mình ([2] Hinata, [1] và [3] Sol, [5] Claude), đúng lượt `NEXT_OWNER`; Claude không tự sửa Phase;
+- mỗi vai chỉ sửa vùng của mình ([2] Hinata, [1] và [3] Sol, [5] Claude; Astra và Kakashi chỉ ghi [4.1]/[4.2]), đúng lượt `NEXT_OWNER`; Claude không tự sửa Phase;
 - không có chuỗi trông như khóa API.
 
 Kiểm ở hai nơi:

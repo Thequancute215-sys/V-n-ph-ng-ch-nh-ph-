@@ -35,7 +35,7 @@ const kindOf = (argv) => {
 };
 const step = (t, d) => TIERS[Math.max(0, Math.min(2, TIERS.indexOf(t) + d))];
 
-// Phần trăm còn lại thấp nhất của AI (bỏ nhóm Claude/GPT bên Antigravity: Hinata chỉ dùng Gemini). null = chưa đọc được.
+// Phần trăm còn lại thấp nhất của AI (bỏ nhóm Claude/GPT bên Antigravity: Hinata và Kakashi chỉ dùng Gemini). null = chưa đọc được.
 function remaining(snapshot, kind) {
   const p = ((snapshot && snapshot.providers) || []).find((x) => x.id === PROVIDER[kind]);
   const b = ((p && p.buckets) || []).filter((x) => typeof x.remainingPercent === "number" && !(kind === "agy" && /Claude|GPT/i.test(String(x.group || x.label))));
@@ -49,8 +49,8 @@ function classify({ role, focus = "", blockers = [], returned = false, rework = 
   why.push(`vai ${role}: ${TEN[t]}`);
   if (KHO.test(focus)) { t = step(t, 1); why.push("việc có dấu hiệu khó (kiến trúc/bảo mật/hiệu năng…)"); }
   else if (DE.test(focus) && String(focus).length < 300) { t = step(t, -1); why.push("việc nhỏ (chữ, màu, tên…)"); }
-  if (["CODEX_ASTRA_DEV", "CLAUDE_AUDITOR"].includes(role) && blockers.some((b) => /CRITICAL|-C\d/.test(b))) { t = "nang"; why.push("còn blocker CRITICAL"); }
-  if (returned || rework > 0) { t = step(t, 1); why.push(returned ? "lượt trước bị trả lại" : `Codex đã phải sửa ${rework} lần`); }
+  if (["CODEX_ASTRA_DEV", "FRONTEND_UIUX_DEV", "CLAUDE_AUDITOR"].includes(role) && blockers.some((b) => /CRITICAL|-C\d/.test(b))) { t = "nang"; why.push("còn blocker CRITICAL"); }
+  if (returned || rework > 0) { t = step(t, 1); why.push(returned ? "lượt trước bị trả lại" : `đội code đã phải sửa ${rework} lần`); }
   const left = kind ? remaining(quota, kind) : null;
   if (left !== null && left <= 5) { t = "nhe"; why.push(`hạn mức còn ${Math.round(left)}%: dùng mức nhẹ nhất`); }
   else if (left !== null && left <= 15) { t = step(t, -1); why.push(`hạn mức còn ${Math.round(left)}%: hạ một bậc`); }

@@ -17,7 +17,9 @@ const CODEX = ["codex", "exec", "--json", "{prompt}"];
 test("mặc định theo phần việc; lưu được; chặn kết nối phòng không dùng được hoặc nhóm gửi", () => {
   const dir = tmp();
   const g = phong.read(dir);
-  assert.deepEqual(Object.keys(g), ["hinata", "itachi", "sasuke", "sakura"], "Pain chỉ báo cáo, không có kết nối");
+  assert.deepEqual(Object.keys(g), ["hinata", "itachi", "sasuke", "kakashi", "sakura"], "Pain chỉ báo cáo, không có kết nối");
+  assert.ok(g.kakashi.includes("figma") && !g.kakashi.includes("supabase"), "Kakashi dựng giao diện theo bản thiết kế, không động vào CSDL");
+  assert.equal(phong.ROLE_PHONG("FRONTEND_UIUX_DEV"), "kakashi");
   assert.ok(g.hinata.includes("figma") && !g.hinata.includes("supabase"));
   assert.ok(g.sakura.includes("google-docs") && !g.sasuke.includes("google-docs"), "Google chỉ Claude dùng được");
   assert.throws(() => phong.save(dir, "sasuke", ["google-docs"]), /không dùng được: google-docs/);

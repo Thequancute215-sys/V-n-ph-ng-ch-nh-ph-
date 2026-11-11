@@ -736,7 +736,9 @@ http.createServer((req, res) => {
       const taskText = String(data.text || data.title || "").trim().slice(0, 500);
       if (!taskText) return json(res, { ok: false, error: "Chưa có nội dung task" }, 400);
       let bestKey = "codex", bestName = "Codex Astra (Sasuke Uchiha)", reason = "Từ khóa thuộc lập trình fullstack", beast = "Thất Vĩ Chomei (7-Tails)";
-      if (/giao diện|ui|ux|mẫu|css|html|mặt bằng|chibi|naruto|vĩ thú|màu|ấn tượng/i.test(taskText)) {
+      if (/frontend|component|css|html|responsive|giao diện|màn hình|trang web/i.test(taskText)) {
+        bestKey = "kakashi"; bestName = "Antigravity (Kakashi Hatake)"; reason = "Từ khóa thuộc dựng giao diện Frontend & UI/UX"; beast = "Tam Vĩ Isobu (3-Tails)";
+      } else if (/đặc tả|ui|ux|mẫu|mặt bằng|chibi|naruto|vĩ thú|màu|ấn tượng/i.test(taskText)) {
         bestKey = "antigravity"; bestName = "Antigravity (Hinata Hyuga)"; reason = "Từ khóa thuộc Thiết kế UI/UX & Đặc tả Vùng [2]"; beast = "Nhị Vĩ Matatabi (2-Tails)";
       } else if (/database|sqlite|db|api|hợp đồng|kiến trúc|schema|bản vẽ|backend/i.test(taskText)) {
         bestKey = "sol"; bestName = "GPT 6.1 Sol (Itachi Uchiha)"; reason = "Từ khóa thuộc Kiến trúc, Schema & Hợp đồng Vùng [3]"; beast = "Tứ Vĩ Son Goku (4-Tails)";

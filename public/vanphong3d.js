@@ -617,7 +617,7 @@ function boardTex(kind, accent) {
     g.fillStyle = "#f8fafc"; g.fillRect(0, 0, w, h);
     g.fillStyle = css(accent); g.fillRect(0, 0, w, 14);
     g.fillStyle = "#0f172a"; g.textBaseline = "top"; g.font = "bold 38px Segoe UI, sans-serif";
-    const title = { kanban: "Luồng việc của chu trình", design: "Design System · Vùng [2]", arch: "Kiến trúc hệ thống · Vùng [3]", audit: "Vùng [5] · Chốt chặn" }[kind];
+    const title = { kanban: "Luồng việc của chu trình", design: "Design System · Vùng [2]", arch: "Kiến trúc hệ thống · Vùng [3]", audit: "Vùng [5] · Chốt chặn", frontend: "Giao diện · 375 / 768 / 1280" }[kind];
     g.fillText(title, 28, 34);
     if (kind === "kanban") {
       ["Chờ", "Đang làm", "Chờ duyệt", "Xong"].forEach((c, i) => {
@@ -633,6 +633,17 @@ function boardTex(kind, accent) {
       for (let i = 0; i < 3; i++) { g.strokeRect(250 + i * 170, 210, 150, 120); g.fillStyle = "#e9d5ff"; g.fillRect(262 + i * 170, 222, 126, 40); }
       g.fillStyle = "#334155"; g.font = "600 24px Segoe UI, sans-serif";
       ["Rỗng", "Đang tải", "Lỗi", "Có dữ liệu", "Thành công"].forEach((s, i) => g.fillText("● " + s, 250 + (i % 3) * 170, 360 + Math.floor(i / 3) * 44));
+    } else if (kind === "frontend") {
+      // Ba khung màn hình (điện thoại, máy tính bảng, máy tính) cùng một bố cục: đầu trang, thẻ nội dung, nút.
+      [[40, 110, 120, 220], [200, 110, 210, 280], [450, 110, 300, 230]].forEach(([x, y, w, h]) => {
+        g.strokeStyle = "#334155"; g.lineWidth = 4; g.strokeRect(x, y, w, h);
+        g.fillStyle = css(accent); g.fillRect(x + 8, y + 8, w - 16, 22);
+        const cols = w > 250 ? 3 : w > 150 ? 2 : 1, cw = (w - 16 - (cols - 1) * 8) / cols;
+        for (let c = 0; c < cols; c++) { g.fillStyle = "#e2e8f0"; g.fillRect(x + 8 + c * (cw + 8), y + 40, cw, h * 0.45); }
+        g.fillStyle = "#0f172a"; g.fillRect(x + 8, y + h - 36, Math.min(110, w - 16), 26);
+      });
+      g.fillStyle = "#334155"; g.font = "600 24px Segoe UI, sans-serif";
+      ["✓ Tab / Enter", "✓ Tương phản AA", "✓ 5 trạng thái"].forEach((t, i) => g.fillText(t, 40 + i * 240, 440));
     } else if (kind === "arch") {
       const node = (x, y, t, c) => { g.fillStyle = c; g.fillRect(x, y, 190, 80); g.fillStyle = "#fff"; g.font = "bold 26px Segoe UI, sans-serif"; g.fillText(t, x + 16, y + 26); };
       const arrow = (x1, y1, x2, y2) => { g.strokeStyle = "#334155"; g.lineWidth = 5; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); };
@@ -651,22 +662,23 @@ function boardTex(kind, accent) {
 const ROOMS = [
   { id: "ceo", x0: -30, x1: -17, z0: 6, z1: 18, door: -23.5, color: 0xf59e0b, title: "PHÒNG GIÁM ĐỐC", who: "Thế Quân CEO (bạn) · Naruto", fn: "Chủ Dự Án: duyệt hướng đi, ra quyết định cuối cùng, cấp đặc cách cho cả đội." },
   { id: "pain", x0: -17, x1: -6, z0: 6, z1: 18, door: -11.5, color: 0xef4444, title: "PHÒNG ĐIỀU HÀNH", who: "Pain · Tổng quản lý", fn: "Điều phối chu trình tự động: giao lượt NEXT_OWNER, theo dõi tiến độ, báo cáo CEO." },
-  { id: "hinata", x0: -30, x1: -18, z0: -18, z1: -6, door: -24, color: 0xa855f7, title: "PHÒNG ĐẶC TẢ & UI/UX", who: "Hinata · Antigravity (Gemini)", fn: "Viết đặc tả sản phẩm, luồng AI Agent và Design System giao diện — Vùng [2]." },
+  { id: "hinata", x0: -30, x1: -18, z0: -18, z1: -6, door: -24, color: 0xa855f7, title: "PHÒNG ĐẶC TẢ & DESIGN SYSTEM", who: "Hinata · Antigravity (Gemini)", fn: "Viết đặc tả sản phẩm, luồng AI Agent và Design System giao diện — Vùng [2]." },
   { id: "itachi", x0: -18, x1: -6, z0: -18, z1: -6, door: -12, color: 0x10b981, title: "PHÒNG KIẾN TRÚC", who: "Itachi · GPT Sol", fn: "Chọn công nghệ, thiết kế CSDL, API, chia Phase và điều kiện nghiệm thu — Vùng [1] & [3]." },
-  { id: "sasuke", x0: 6, x1: 18, z0: -18, z1: -6, door: 12, color: 0x3b82f6, title: "PHÒNG LẬP TRÌNH", who: "Sasuke · Codex Astra", fn: "Viết code Backend & Frontend đúng kế hoạch, sửa lỗi rồi ghi CLAIM_FIXED." },
+  { id: "sasuke", x0: 6, x1: 18, z0: -18, z1: -6, door: 12, color: 0x3b82f6, title: "PHÒNG LẬP TRÌNH", who: "Sasuke · Codex Astra", fn: "Viết code Backend, API, CSDL và AI Agent đúng kế hoạch, sửa lỗi rồi ghi CLAIM_FIXED." },
   { id: "sakura", x0: 18, x1: 30, z0: -18, z1: -6, door: 24, color: 0xec4899, title: "PHÒNG KIỂM DUYỆT", who: "Sakura · Claude", fn: "Phản biện kiến trúc, săn lỗi bảo mật & hiệu năng, chốt chặn blocker — Vùng [5]." },
   { id: "meet", x0: 6, x1: 18, z0: 6, z1: 18, door: 12, color: 0x64748b, title: "PHÒNG HỌP HỘI CHẨN", who: "Cả đội", fn: "Họp duyệt Phase, chốt blocker và hướng đi cùng CEO." },
   { id: "wcnam", x0: -42, x1: -30, z0: -18, z1: -6, door: -36, frosted: true, color: 0x0ea5e9, title: "NHÀ VỆ SINH NAM", who: "Khu tiện ích · cánh Tây", fn: "3 buồng vệ sinh, 2 bồn tiểu, bồn rửa tay có gương và máy sấy tay." },
   { id: "wcnu", x0: -42, x1: -30, z0: 6, z1: 18, door: -36, frosted: true, color: 0xf472b6, title: "NHÀ VỆ SINH NỮ", who: "Khu tiện ích · cánh Tây", fn: "4 buồng vệ sinh, bồn rửa tay, gương trang điểm và máy sấy tay." },
   { id: "gym", x0: 30, x1: 42, z0: -18, z1: -6, door: 36, color: 0xf97316, title: "PHÒNG GYM · CARDIO", who: "Cả đội · cánh Đông", fn: "3 máy chạy bộ, giá tạ tay, gương tập. Vận động giữa các lượt làm việc." },
-  { id: "gymxa", x0: 30, x1: 42, z0: 6, z1: 18, door: 36, color: 0x84cc16, title: "PHÒNG GYM · XÀ ĐƠN & XÀ KÉP", who: "Cả đội · cánh Đông", fn: "Xà đơn, xà kép, thảm tập, bóng tập và tạ ấm." },
+  // CEO đổi phòng gym xà đơn thành phòng Kakashi (11/11/2026).
+  { id: "kakashi", x0: 30, x1: 42, z0: 6, z1: 18, door: 36, color: 0xa1a1aa, title: "PHÒNG FRONTEND & UI/UX", who: "Kakashi · Antigravity (Gemini)", fn: "Dựng giao diện theo Design System: component, 5 trạng thái, responsive, bàn phím — ghi CLAIM_FIXED." },
   { id: "lounge", x0: 18, x1: 30, z0: 6, z1: 18, door: null, open: true, color: 0x22c55e, title: "GÓC THƯ GIÃN & PANTRY", who: "Cả đội", fn: "Nghỉ giải lao, pha cà phê, trò chuyện giữa các lượt làm việc." },
 ];
 const ZONES = [
   ...ROOMS,
   { id: "lobby", x0: -6, x1: 6, z0: 6, z1: 18, color: 0xf59e0b, title: "SẢNH LỄ TÂN", who: "Cửa chính", fn: "Đón khách. Đi thẳng lên phía bắc là Sảnh danh dự." },
   { id: "atrium", x0: -6, x1: 6, z0: -18, z1: -6, color: 0xfbbf24, title: "SẢNH DANH DỰ", who: "Tường chữ", fn: "THẾ QUÂN ĐẸP TRAI." },
-  { id: "hall", x0: -42, x1: 42, z0: -6, z1: 6, color: 0x94a3b8, title: "HÀNH LANG CHÍNH", who: "Nối các phòng", fn: "Bắc: Đặc tả, Kiến trúc, Lập trình, Kiểm duyệt. Nam: Giám đốc, Điều hành, Họp, Thư giãn. Cuối hành lang phía Tây: nhà vệ sinh; phía Đông: phòng gym." },
+  { id: "hall", x0: -42, x1: 42, z0: -6, z1: 6, color: 0x94a3b8, title: "HÀNH LANG CHÍNH", who: "Nối các phòng", fn: "Bắc: Đặc tả, Kiến trúc, Lập trình, Kiểm duyệt. Nam: Giám đốc, Điều hành, Họp, Thư giãn. Cuối hành lang phía Tây: nhà vệ sinh; phía Đông: phòng gym và phòng Frontend & UI/UX." },
 ];
 
 function plaqueTex(r) {
@@ -751,6 +763,11 @@ desk(24, -12.5, Math.PI, 0xec4899, { chairToo: false, screens: 2 });
 board(29.4, -12, -Math.PI / 2, boardTex("audit", 0xec4899));
 plant(18.9, -17.2, 1.1);
 
+// ---- Phòng Frontend & UI/UX (Kakashi), cánh Đông dãy nam ----
+desk(36, 12.5, 0, 0xa1a1aa, { chairToo: false, screens: 3 });
+board(41.4, 12, -Math.PI / 2, boardTex("frontend", 0x71717a));
+plant(30.9, 17.2, 1.1);
+
 // ---- Phòng họp ----
 const MT = { x: 12, z: 12.5 };
 cyl(white, 2.0, 2.0, 0.08, MT.x, 0.76, MT.z, inn, 48);
@@ -816,7 +833,7 @@ for (const r of ZONES) {
   box(ledMat, 5, 0.05, 0.22, (r.x0 + r.x1) / 2, H - 0.05, (r.z0 + r.z1) / 2, inn).castShadow = false;
 }
 const roomLights = [];
-for (const [x, z] of [[-24, -12], [-12, -12], [12, -12], [24, -12], [-23.5, 12], [-11.5, 12], [-15, 0], [15, 0], [-36, 0], [36, 0]]) {
+for (const [x, z] of [[-24, -12], [-12, -12], [12, -12], [24, -12], [-23.5, 12], [-11.5, 12], [36, 12], [-15, 0], [15, 0], [-36, 0], [36, 0]]) {
   const p = new THREE.PointLight(0xffe7c4, 6, 18, 1.6);
   p.position.set(x, H - 0.6, z); inn.add(p); roomLights.push(p);
 }
@@ -906,6 +923,7 @@ const NPCS = [
   { room: "hinata", name: "Hinata · Antigravity", color: 0xa855f7, x: -24, z: -13.35, rot: 0, look: { hair: 0x1e1b4b, hairStyle: "long", top: 0xe9e3f5, pants: 0x4c1d95, eye: 0xe0e7ff }, line: "Tôi viết đặc tả sản phẩm và thiết kế giao diện (Vùng [2])." },
   { room: "itachi", name: "Itachi · GPT Sol", color: 0x10b981, x: -12, z: -13.35, rot: 0, look: { hair: 0x0f172a, hairStyle: "pony", top: 0x111827, cloak: 0x0b0b0f, trim: 0xb91c1c, eye: 0xdc2626 }, line: "Tôi lập kiến trúc: công nghệ, CSDL, API và chia Phase (Vùng [1], [3])." },
   { room: "sasuke", name: "Sasuke · Codex Astra", color: 0x3b82f6, x: 12, z: -13.35, rot: 0, look: { hair: 0x0f172a, hairStyle: "back", top: 0xe2e8f0, pants: 0x1e3a8a }, line: "Tôi viết code theo kế hoạch đã duyệt và ghi CLAIM_FIXED." },
+  { room: "kakashi", name: "Kakashi · Antigravity", color: 0xa1a1aa, x: 36, z: 13.35, rot: Math.PI, look: { hair: 0xe5e7eb, hairStyle: "spiky", top: 0x3f6212, pants: 0x1e293b, eye: 0x111827 }, line: "Tôi dựng giao diện theo Design System, đủ 5 trạng thái và chạy tốt trên mọi màn hình." },
   { room: "sakura", name: "Sakura · Claude", color: 0xec4899, x: 24, z: -13.35, rot: 0, look: { hair: 0xf9a8d4, hairStyle: "bob", top: 0xdc2626, pants: 0x1f2937, eye: 0x15803d }, line: "Tôi kiểm duyệt kiến trúc, bảo mật và giữ chốt chặn Vùng [5]." },
 ];
 for (const n of NPCS) {
@@ -940,6 +958,7 @@ function duck(x, y, z, ry) {
 }
 for (const x of [-24, -12, 12, 24]) duck(x + 0.85, 0.78, -12.05, 0);
 duck(-12.35, 0.78, 12.05, Math.PI);
+duck(35.15, 0.78, 12.05, Math.PI);
 duck(-24.8, 0.92, 11.85, Math.PI);
 
 // Biển vui dựng trong hành lang
@@ -1255,19 +1274,8 @@ for (let i = 0; i < 6; i++) for (const lv of [0.55, 0.95]) {
 const gymMirror = new THREE.Mesh(new THREE.PlaneGeometry(4.5, 2.2), mirrorMat); gymMirror.position.set(30.25, 1.6, -11.5); gymMirror.rotation.y = Math.PI / 2; inn.add(gymMirror);
 box(rubber, 0.04, 2.3, 4.6, 30.2, 1.6, -11.5, inn);
 
-// Xà đơn
-for (const x of [32.6, 34.2]) cyl(steel, 0.05, 0.05, 2.5, x, 1.25, 15.8, inn, 10);
-{ const bar = cyl(steel, 0.025, 0.025, 1.7, 33.4, 2.4, 15.8, inn, 10); bar.rotation.z = Math.PI / 2; }
-solidBox(32.4, 15.6, 34.4, 16.0);
-// Xà kép: 4 cột thấp, 2 thanh song song
-for (const [x, z] of [[37.3, 13.6], [37.3, 16.4], [38.0, 13.6], [38.0, 16.4]]) cyl(steel, 0.04, 0.05, 1.1, x, 0.55, z, inn, 10);
-for (const x of [37.3, 38.0]) { const pb = cyl(std(0xd6a46a, { roughness: 0.5 }), 0.03, 0.03, 3.0, x, 1.12, 15, inn, 10); pb.rotation.x = Math.PI / 2; }
-solidBox(37.1, 13.4, 38.2, 16.6);
-// Thảm tập, bóng tập, tạ ấm
-[0x22c55e, 0xa855f7, 0x0ea5e9].forEach((c, i) => box(std(c, { roughness: 1 }), 0.8, 0.02, 1.9, 33 + i * 1.1, 0.01, 10.5, inn).castShadow = false);
-{ const ball = new THREE.Mesh(new THREE.SphereGeometry(0.33, 24, 16), std(0xf43f5e, { roughness: 0.35 })); ball.position.set(40.4, 0.33, 9.2); ball.castShadow = true; inn.add(ball); solidCircle(40.4, 9.2, 0.35); }
-for (let i = 0; i < 3; i++) { cyl(std(0x111827, { roughness: 0.4 }), 0.13, 0.13, 0.22, 40.8, 0.11, 12 + i * 0.5, inn, 14); }
-poster(41.5, 15.5, -Math.PI / 2, "TẬP XONG", "mới được code\ntiếp 💪", 0xf97316);
+// Biển cổ vũ (trước ở phòng xà đơn, nay là phòng Kakashi) dời sang tường Đông phòng cardio.
+poster(41.5, -7.6, -Math.PI / 2, "TẬP XONG", "mới được code\ntiếp 💪", 0xf97316);
 
 // ================= Điều khiển nhân vật =================
 const SPAWN = { x: 0, z: D / 2 + 14, yaw: Math.PI };

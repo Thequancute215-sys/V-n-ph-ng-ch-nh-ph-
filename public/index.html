@@ -329,9 +329,10 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
   <button class="rbtn active" data-room="all" title="Về cổng, nhìn toàn cảnh">🏢 Toàn Cảnh</button>
   <button class="rbtn" data-room="ceo" title="Đi tới Phòng Giám đốc">👑 Giám đốc</button>
   <button class="rbtn" data-room="pain" title="Đi tới Phòng Điều hành">⚡ Pain (Điều hành)</button>
-  <button class="rbtn" data-room="antigravity" title="Đi tới Phòng Đặc tả & UI/UX">🌸 Hinata (Đặc tả)</button>
+  <button class="rbtn" data-room="antigravity" title="Đi tới Phòng Đặc tả & Design System">🌸 Hinata (Đặc tả)</button>
   <button class="rbtn" data-room="sol" title="Đi tới Phòng Kiến trúc">👁️ Itachi (Kiến trúc)</button>
   <button class="rbtn" data-room="codex" title="Đi tới Phòng Lập trình">⚡ Sasuke (Lập trình)</button>
+  <button class="rbtn" data-room="kakashi" title="Đi tới Phòng Frontend & UI/UX (cánh Đông)">🎨 Kakashi (Frontend)</button>
   <button class="rbtn" data-room="claude" title="Đi tới Phòng Kiểm duyệt">🛡️ Sakura (Kiểm duyệt)</button>
   <button class="rbtn" data-room="lounge" title="Đi tới Phòng họp hội chẩn">🌀 Phòng Họp</button>
   <button class="rbtn" data-room="gym" title="Đi tới phòng gym (máy chạy bộ)">🏋️ Gym</button>
@@ -715,13 +716,14 @@ const $ = (id) => document.getElementById(id);
 const defaultAgents = [
   { key: "ceo", name: "Thế Quân CEO", role: "Chủ Tịch Tối Cao (Naruto Uzumaki)", platform: "human", ninja: "naruto", lastText: "", status: "active" },
   { key: "pain", name: "Pain (Thiên Đạo)", role: "Tổng Quản Lý Điều Hành (Yahiko Akatsuki)", platform: "claude", ninja: "pain", lastText: "", status: "active" },
-  { key: "antigravity", name: "Hinata Hyuga", role: "Thư Ký Trợ Lý Giám Đốc & UI/UX (Antigravity)", platform: "gemini", ninja: "hinata", lastText: "", status: "active" },
+  { key: "antigravity", name: "Hinata Hyuga", role: "Thư Ký Trợ Lý Giám Đốc & Đặc tả (Antigravity)", platform: "gemini", ninja: "hinata", lastText: "", status: "active" },
   { key: "sol", name: "Itachi Uchiha", role: "Quân Sư Chiến Lược & Backend (GPT 6.1 Sol)", platform: "gpt", ninja: "itachi", lastText: "", status: "idle" },
-  { key: "codex", name: "Sasuke Uchiha", role: "Kỹ Sư Trưởng Code Fullstack (Codex Astra)", platform: "codex", ninja: "sasuke", lastText: "", status: "active" },
+  { key: "codex", name: "Sasuke Uchiha", role: "Kỹ Sư Trưởng Backend & API (Codex Astra)", platform: "codex", ninja: "sasuke", lastText: "", status: "active" },
+  { key: "kakashi", name: "Kakashi Hatake", role: "Chuyên Gia Frontend & UI/UX (Antigravity)", platform: "gemini", ninja: "kakashi", lastText: "", status: "idle" },
   { key: "claude", name: "Sakura Haruno", role: "Chốt Chặn Kiểm Duyệt & Y Thuật (Claude Captain)", platform: "claude", ninja: "sakura", lastText: "", status: "idle" }
 ];
 // key của đội → nhân vật/phòng trong văn phòng 3D (vanphong3d.js)
-const NPC_OF = { ceo: "ceo", pain: "pain", antigravity: "hinata", sol: "itachi", codex: "sasuke", claude: "sakura", lounge: "meet", all: "all" };
+const NPC_OF = { ceo: "ceo", pain: "pain", antigravity: "hinata", sol: "itachi", codex: "sasuke", kakashi: "kakashi", claude: "sakura", lounge: "meet", all: "all" };
 const KEY_OF = Object.fromEntries(Object.entries(NPC_OF).map(([k, v]) => [v, k]));
 let selected = "ceo";
 
@@ -852,7 +854,7 @@ $("sendBroadcastBtn").addEventListener("click", async () => {
       $("bPropBeast").textContent = `Linh vật: ${c.proposedAssignee.beast}`;
       $("bPropReason").textContent = `${c.proposedAssignee.reason} · Đang giữ ${c.proposedAssignee.activeTaskCount} task`;
       
-      const iconMap = { codex: "💻", antigravity: "🤖", sol: "📐", claude: "🛡️" };
+      const iconMap = { codex: "💻", kakashi: "🎨", antigravity: "🤖", sol: "📐", claude: "🛡️" };
       $("bPropIcon").textContent = iconMap[c.proposedAssignee.key] || "🍥";
 
       // Render Peer Reviews
@@ -1078,7 +1080,7 @@ async function loadChat() {
 }
 function chatWith(agentKey) {
   const npc = NPC_OF[agentKey];
-  chatState.who = ["pain", "hinata", "itachi", "sasuke", "sakura"].includes(npc) ? npc : null;
+  chatState.who = ["pain", "hinata", "itachi", "sasuke", "kakashi", "sakura"].includes(npc) ? npc : null;
   chatState.data = null;
   loadChat();
 }

@@ -4,7 +4,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const ROLES = ["SPEC_ARCHITECT", "SOL_ARCHITECT_PLANNER", "SOL_ARCHITECT_ADVISOR", "CODEX_ASTRA_DEV", "CLAUDE_AUDITOR"];
+const { ROLES } = require("../lib/kiem-agent");   // một danh sách vai cho cả bộ kiểm và bàn giao
 // Mức suy luận của lượt Codex (Sol/Astra) kế tiếp mà đội trưởng được tự đặt, không cần hỏi CEO (CEO cho phép 02/11/2026).
 // Mặc định medium; "ultra" (tốn hạn mức nhất) vẫn để CEO quyết.
 const EFFORTS = ["medium", "high", "xhigh", "max"];
@@ -72,7 +72,7 @@ function checkList(list, name, fields) {
 // CEO yêu cầu (03/11/2026): mỗi lượt của Hinata, Sol, Astra phải giải thích cho CEO duyệt: vấn đề/lỗi gì, đã làm gì,
 // vì sao làm vậy, cách khác đã cân nhắc và vì sao bỏ. Claude (đội trưởng) có báo cáo riêng nên không bắt buộc.
 // Mọi lỗi ở đây bắt đầu bằng "giai_thich" để bộ điều phối nhận ra và trả lại đúng lượt đó bổ sung (không dừng cả luồng).
-const EXPLAIN_REQUIRED = ["SPEC_ARCHITECT", "SOL_ARCHITECT_PLANNER", "SOL_ARCHITECT_ADVISOR", "CODEX_ASTRA_DEV"];
+const EXPLAIN_REQUIRED = ["SPEC_ARCHITECT", "SOL_ARCHITECT_PLANNER", "SOL_ARCHITECT_ADVISOR", "CODEX_ASTRA_DEV", "FRONTEND_UIUX_DEV"];
 const EXPLAIN_FIELDS = { van_de: "vấn đề hoặc lỗi", da_lam: "đã làm gì", vi_sao: "vì sao làm vậy" };
 // Chép nguyên mẫu (<...>) hoặc viết cho có ("ok", "như trên") thì không tính là giải thích.
 const filler = (s) => /^\s*<[^>]*>\s*$/.test(s) || /^\s*(ok|xong|như trên|n\/a|không có|đã sửa|đã làm|done|fixed)\.?\s*$/i.test(s);

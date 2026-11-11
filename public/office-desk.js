@@ -3,7 +3,7 @@ import "./progress-view.js";
 const { esc, statuses } = globalThis.RepoProgress;
 const $ = (id) => document.getElementById(id);
 const live = new Set(["running", "reporting", "awaiting_answer", "awaiting_approval", "attention", "waiting_quota", "awaiting_scan"]);
-const roomOf = (role = "") => role === "SPEC_ARCHITECT" || role.startsWith("AGY_") ? "hinata" : role.startsWith("SOL_") ? "itachi" : role.startsWith("CODEX_") ? "sasuke" : role.startsWith("CLAUDE_") ? "sakura" : null;
+const roomOf = (role = "") => role.startsWith("FRONTEND_") ? "kakashi" : role === "SPEC_ARCHITECT" || role.startsWith("AGY_") ? "hinata" : role.startsWith("SOL_") ? "itachi" : role.startsWith("CODEX_") ? "sasuke" : role.startsWith("CLAUDE_") ? "sakura" : null;
 const time = (v) => v && Number.isFinite(new Date(v).getTime()) ? new Date(v).toLocaleString("vi-VN") : "Chưa có giờ xác nhận";
 const first = (text) => String(text || "").split(/\r?\n/)[0];
 const pendingRun = (r) => ["awaiting_answer", "awaiting_approval", "attention", "waiting_quota", "awaiting_scan"].includes(r.status) || (["approved", "acknowledged"].includes(r.status) && r.git && !r.git.pushed);
@@ -128,7 +128,7 @@ export function createDesk(getOffice) {
     $("deskIdeas").innerHTML = errors.workspace || errors.ideas || !active || !dataReady ? messageHtml("ideas", "") : ideas.length ? ideas.map((i) => `<article class="desk-entry"><strong>${esc(i.title)}</strong><p>${esc(i.detail)}</p><p>${esc(i.run ? statuses[i.run.status] || i.run.status : "Chưa giao")}</p>${action("ideas", i.id, "start", "Giao Hinata đặc tả", undefined, !!i.run && live.has(i.run.status))}</article>`).join("") : messageHtml("ideas", "Dự án chưa có ý tưởng nào.");
   }
   // Điều phối model + mức suy nghĩ (ctl/dieu-phoi.js): mặc định tự động theo độ khó và hạn mức; CEO cố định được cho từng phòng.
-  const DP_ROOMS = [["hinata", "Hinata · Antigravity", "agy"], ["itachi", "Itachi · Codex Sol", "codex"], ["sasuke", "Sasuke · Codex Astra", "codex"], ["sakura", "Sakura · Claude duyệt", "claude"], ["pain", "Pain · Claude báo cáo", "claude"]];
+  const DP_ROOMS = [["hinata", "Hinata · Antigravity", "agy"], ["itachi", "Itachi · Codex Sol", "codex"], ["sasuke", "Sasuke · Codex Astra", "codex"], ["kakashi", "Kakashi · Antigravity", "agy"], ["sakura", "Sakura · Claude duyệt", "claude"], ["pain", "Pain · Claude báo cáo", "claude"]];
   const DP_OPTS = {
     claude: [["sonnet|low", "Sonnet · low"], ["sonnet|high", "Sonnet · high"], ["opus|high", "Opus · high"], ["opus|max", "Opus · max"]],
     codex: [["|low", "Mức low"], ["|medium", "Mức medium"], ["|high", "Mức high"], ["|xhigh", "Mức xhigh"], ["|max", "Mức max"]],
@@ -181,7 +181,7 @@ export function createDesk(getOffice) {
     box.innerHTML = html;
   }
   // Nhật ký: dòng thời gian "ai làm gì, lúc nào" (ctl /nhat-ky), mới nhất trên cùng.
-  const NPC = { pain: ["Pain", "#dc2626"], hinata: ["Hinata", "#9333ea"], itachi: ["Itachi", "#059669"], sasuke: ["Sasuke", "#2563eb"], sakura: ["Sakura", "#db2777"] };
+  const NPC = { pain: ["Pain", "#dc2626"], hinata: ["Hinata", "#9333ea"], itachi: ["Itachi", "#059669"], sasuke: ["Sasuke", "#2563eb"], kakashi: ["Kakashi", "#71717a"], sakura: ["Sakura", "#db2777"] };
   const hhmm = (t) => new Date(t).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
   function renderJournal() {
     const box = $("deskJournal");
