@@ -5,6 +5,7 @@ const fs = require("fs");
 const path = require("path");
 
 const { ROLES } = require("../lib/kiem-agent");   // một danh sách vai cho cả bộ kiểm và bàn giao
+const { checkSkill } = require("./skill");
 // Mức suy luận của lượt Codex (Sol/Astra) kế tiếp mà đội trưởng được tự đặt, không cần hỏi CEO (CEO cho phép 02/11/2026).
 // Mặc định medium; "ultra" (tốn hạn mức nhất) vẫn để CEO quyết.
 const EFFORTS = ["medium", "high", "xhigh", "max"];
@@ -32,7 +33,8 @@ function setTurn(root, role, nextOwner) {
 }
 
 // Kiểm schema dòng bàn giao (không dùng thư viện ngoài).
-function checkHandoff(h, role) {
+// opts.skills: máy đã cài bộ skill mặc định thì mọi lượt phải khai skill_da_dung (CEO duyệt 11/11/2026).
+function checkHandoff(h, role, opts = {}) {
   const bad = [];
   if (!h || typeof h !== "object" || Array.isArray(h)) return ["không phải object JSON"];
   if (h.role !== role) bad.push(`role phải là ${role}`);
@@ -41,6 +43,7 @@ function checkHandoff(h, role) {
   if (!Array.isArray(h.files) || !h.files.every((x) => typeof x === "string")) bad.push("files phải là mảng chuỗi");
   if (!Array.isArray(h.claim_fixed) || !h.claim_fixed.every((x) => typeof x === "string" && /^P\d+-[CHM]\d+/.test(x))) bad.push("claim_fixed phải là mảng ID dạng P2-C01");
   if (h.done !== undefined && typeof h.done !== "boolean") bad.push("done (nếu có) phải là true/false");
+  if (opts.skills) bad.push(...checkSkill(h));
   if (h.ask_ceo !== undefined) bad.push(...checkAsk(h.ask_ceo, role));
   if (h.effort !== undefined) {
     if (role !== "CLAUDE_AUDITOR") bad.push("chỉ CLAUDE_AUDITOR được đặt effort cho lượt kế tiếp");

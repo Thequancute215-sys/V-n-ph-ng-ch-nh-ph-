@@ -1,0 +1,33 @@
+{
+  "ghi_chu": "Bộ skill mặc định của văn phòng (CEO duyệt 11/11/2026). Mỗi nguồn ghim một commit đã được đội trưởng đọc và kiểm an toàn. Nhóm A: bắt buộc xem và dùng khi khớp việc của lượt. Nhóm B: cài sẵn, chỉ dùng khi CEO giao đích danh. Không cài: ruvnet/ruflo, nextlevelbuilder/goclaw (nền tảng riêng, trùng văn phòng). Chỉ tham khảo, không cài: github/spec-kit, cobusgreyling/loop-engineering, LaurieWired/GhidraMCP (MCP, cần Ghidra). Understand-Anything đã có sẵn dạng plugin. Nâng commit: đội trưởng đọc diff giữa hai commit rồi mới sửa file này.",
+  "nguon": [
+    { "repo": "pbakaus/impeccable", "commit": "fead7938331bb92129e3c5ce14f600611067bd06", "nhom": "A", "giay_phep": "Apache-2.0",
+      "duong_dan": { "claude": ".claude/skills/impeccable", "codex": ".agents/skills/impeccable", "agy": ".gemini/skills/impeccable" },
+      "dung_cho": "thiết kế, chấm, đánh bóng giao diện (polish, critique, audit, bolder, quieter…)" },
+    { "repo": "Nutlope/hallmark", "commit": "7e213cb6feb4ef82733bd66a0600b2e54ca0994c", "nhom": "A", "giay_phep": "MIT",
+      "duong_dan": "skills/hallmark", "dung_cho": "trang/giao diện không mang dáng AI làm; cổng kiểm tương phản, bàn phím, giảm chuyển động (KHÔNG tự cài hook sloplint)" },
+    { "repo": "nextlevelbuilder/ui-ux-pro-max-skill", "commit": "6ae86f61f520d6ca229d2f40e070410638c908c5", "nhom": "A", "giay_phep": "MIT",
+      "duong_dan": ".claude/skills", "nhieu": true, "dung_cho": "dữ liệu Design System: bảng màu, font, phong cách, thương hiệu (skill vẽ logo cần khóa Gemini riêng: chỉ dùng khi CEO cấp)" },
+    { "repo": "addyosmani/agent-skills", "commit": "301b02b12bff98e4688e6984af6556802322bbde", "nhom": "A", "giay_phep": "MIT",
+      "duong_dan": "skills", "nhieu": true, "dung_cho": "quy trình kỹ thuật: thiết kế API, bảo mật, hiệu năng, test, review, CI, phát hành (kế hoạch ghi vào agent.md, không tạo file riêng)" },
+    { "repo": "mattpocock/skills", "commit": "4ae2317ddb22b046e26455e4f9c9b3aaaf62212d", "nhom": "A", "giay_phep": "MIT",
+      "duong_dan": ["skills/engineering", "skills/productivity"], "nhieu": true, "bo_qua": ["setup-matt-pocock-skills", "ask-matt"],
+      "dung_cho": "chẩn lỗi, TDD, mô hình hoá miền, cải tổ kiến trúc, hỏi vặn yêu cầu (grill)" },
+    { "repo": "ChromeDevTools/chrome-devtools-mcp", "commit": "1d692d31ae370105afcf4d826dc36f1c4c22e21a", "nhom": "A", "giay_phep": "Apache-2.0",
+      "duong_dan": "skills", "nhieu": true, "dung_cho": "mở Chrome thật để kiểm giao diện, a11y, tốc độ tải (LCP), cookie, rò bộ nhớ" },
+    { "repo": "cloudflare/security-audit-skill", "commit": "c1c8a8c1471069fb0e188eeaff69b8e8db6564a8", "nhom": "A", "giay_phep": "MIT",
+      "duong_dan": "skills/security-audit", "dung_cho": "kiểm bảo mật theo pha: trinh sát, săn lỗi, xác thực, báo cáo" },
+    { "repo": "tt-a1i/archify", "commit": "7e45f36c66de1254d5ad6ba1d878f6499ea269fd", "nhom": "A", "giay_phep": "Apache-2.0 / MIT",
+      "duong_dan": "archify", "dung_cho": "vẽ sơ đồ kiến trúc, luồng, ERD, sequence thành trang HTML" },
+    { "repo": "nidhinjs/prompt-master", "commit": "49b3a72469b1e7287d66387004ccfcca90e5968a", "nhom": "A", "giay_phep": "MIT",
+      "duong_dan": ".", "ten": "prompt-master", "dung_cho": "soạn prompt chính xác cho AI khác (master prompt cho ChatGPT web, lệnh giao việc)" },
+    { "repo": "multica-ai/andrej-karpathy-skills", "commit": "2c606141936f1eeef17fa3043a72095b4765b9c2", "nhom": "A", "giay_phep": "MIT",
+      "duong_dan": "skills/karpathy-guidelines", "dung_cho": "nếp làm việc: hỏi khi mơ hồ, chọn cách đơn giản, sửa ít mà đúng" },
+    { "repo": "JCodesMore/ai-website-cloner-template", "commit": "5426e0e2ec35dbc173a7a18f47a3dfe2a765313e", "nhom": "B", "giay_phep": "MIT",
+      "duong_dan": ".agents/skills/clone-website", "dung_cho": "dựng lại trang web có sẵn: chỉ web của mình hoặc được phép, cấm nhái thương hiệu" },
+    { "repo": "usestrix/strix", "commit": "685bbc8138d35fc9fe378ac37ec0d9198b9c46a3", "nhom": "B", "giay_phep": "Apache-2.0",
+      "duong_dan": "skills", "nhieu": true, "dung_cho": "kiểm thử xâm nhập app CỦA MÌNH (cần Docker + khóa riêng; không cài bằng curl | bash)" },
+    { "repo": "morluto/rea", "commit": "0e88049d59124abfab0bf1bc57b5ee32d0430afb", "nhom": "B", "giay_phep": "MIT",
+      "duong_dan": ".agents/skills/reverse-engineer-anything", "dung_cho": "dịch ngược phần mềm khi có lý do hợp pháp (app của mình, tương thích)" }
+  ]
+}

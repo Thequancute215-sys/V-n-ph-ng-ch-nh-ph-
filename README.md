@@ -184,6 +184,21 @@ Rồi chọn cờ thật của CLI:
 
 Đo thực tế 11/11/2026: một lượt Codex chỉ trả lời "ok" đã tốn khoảng 23.000 token, gần như toàn bộ là phần khởi động (lời dặn hệ thống + mô tả công cụ MCP). Vì vậy kết nối MCP theo phòng, mục lục và mức suy nghĩ đúng việc là ba chỗ tiết kiệm chính.
 
+## Bộ skill mặc định của đội
+
+Cả đội (Claude, Codex, Antigravity) dùng chung một bộ skill, ghim đúng commit đã được đội trưởng đọc và kiểm an toàn: `ctl/skill-mac-dinh.json`.
+
+```bash
+node tools/cai-skill.js        # kiểm: skill nào thiếu, cũ
+node tools/cai-skill.js cai    # tải đúng commit đã ghim, chép vào ~/.claude/skills, ~/.codex/skills, ~/.gemini/config/skills
+```
+
+- **Nhóm A (bắt buộc):** impeccable, hallmark, ui-ux-pro-max (7 skill), agent-skills của Addy Osmani (25), skills của Matt Pocock (27), chrome-devtools (7), security-audit của Cloudflare, archify, prompt-master, karpathy-guidelines. Mỗi lượt AI tự dùng skill khớp việc của mình.
+- **Nhóm B (chỉ khi CEO giao đích danh):** clone-website, bộ strix (kiểm thử xâm nhập app của mình), reverse-engineer-anything.
+- **Không cài:** ruflo, goclaw (nền tảng riêng, trùng văn phòng). Chỉ tham khảo: spec-kit, loop-engineering, GhidraMCP.
+- Khi máy đã cài, lời giao việc có danh sách skill và dòng bàn giao bắt buộc có `"skill_da_dung"` (rỗng thì kèm `"skill_ly_do"`); thiếu thì lượt đó bị trả lại.
+- Cài chỉ chép thư mục skill, không chạy file nào, không cài hook; skill anh tự cài (không có `.vp-skill.json`) không bị ghi đè. Muốn nâng bản: đội trưởng đọc diff giữa hai commit rồi mới sửa danh mục.
+
 ## Chọn repo GitHub trong app
 
 Ở trang Tổng quan (`prototype.html`), bấm **Chọn repo GitHub**, tìm repo rồi bấm **Mở repo**. Danh sách lấy trực tiếp từ tài khoản GitHub đã đăng nhập trong Git Credential Manager trên máy, gồm cả repo riêng tư và repo được cộng tác; có tải thêm khi danh sách dài. Không cần nhập token vào văn phòng.

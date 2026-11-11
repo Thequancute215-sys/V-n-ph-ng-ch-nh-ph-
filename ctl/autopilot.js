@@ -285,7 +285,7 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     const task = "ĐẶC CÁCH CEO cho luồng " + run.id + ": tự chạy và duyệt bàn giao NỘI BỘ cho việc này, CEO chỉ nhận báo cáo cuối của Claude để duyệt. Giữ đúng quyền theo vai, không push/merge/release, không xóa dữ liệu người dùng." + where + " " + book + ": bạn không tự commit hoặc đổi NEXT_OWNER. Không làm việc ngoài yêu cầu. Nếu là Claude: còn lỗi cần sửa thì next_owner CODEX_ASTRA_DEV (backend, API) hoặc FRONTEND_UIUX_DEV (giao diện); kiến trúc đã duyệt nhưng chưa code thì chuyển CODEX_ASTRA_DEV (Phase chỉ có giao diện thì FRONTEND_UIUX_DEV); khi nghiệm thu xong thì next_owner SPEC_ARCHITECT để kết thúc; thấy AI khác đi sai hướng thì hỏi CEO bằng ask_ceo, không tự ra lệnh sửa." +
       (decisions ? "\nQUYẾT ĐỊNH CỦA CEO TRONG LUỒNG NÀY (làm theo):\n" + decisions : "") + "\nVIỆC CEO GIAO:\n" + run.task +
       (role === "CLAUDE_AUDITOR" ? explainForClaude(run) + deletesForClaude(run) : "") +
-      (run.retryNote && run.retryNote.role === role ? "\n\nLƯỢT TRƯỚC CỦA BẠN BỊ TRẢ LẠI vì bàn giao chưa đạt (phần giải thích cho CEO hoặc luật agent.md): " + run.retryNote.problems + "\nKhông làm lại việc đã xong; kiểm lại thay đổi đã có (git diff), sửa đúng các lỗi trên (lỗi agent.md: trả các vùng không thuộc vai bạn về như cũ, nén log), rồi bàn giao lại với giai_thich đầy đủ và đúng sự thật." : "");
+      (run.retryNote && run.retryNote.role === role ? "\n\nLƯỢT TRƯỚC CỦA BẠN BỊ TRẢ LẠI vì bàn giao chưa đạt (phần giải thích cho CEO, khai skill đã dùng hoặc luật agent.md): " + run.retryNote.problems + "\nKhông làm lại việc đã xong; kiểm lại thay đổi đã có (git diff), sửa đúng các lỗi trên (lỗi agent.md: trả các vùng không thuộc vai bạn về như cũ, nén log), rồi bàn giao lại với giai_thich đầy đủ và đúng sự thật." : "");
     const returned = !!(run.retryNote && run.retryNote.role === role);
     run.retryNote = null;
     // Mức suy luận đội trưởng đặt cho vai này (nếu có) thắng điều phối tự động; còn lại ctl/dieu-phoi.js chọn theo độ khó.
@@ -403,7 +403,7 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
           if (handoff.payload && Array.isArray(handoff.payload.giai_thich)) stepNow.explain = maskExplain(handoff.payload.giai_thich);
           // Chỉ thiếu/sai phần giải thích hoặc sai luật agent.md (lib/kiem-agent.js): trả lại đúng vai đó một lần để sửa
           // (không dừng cả luồng); lần hai vẫn sai thì báo CEO.
-          if (handoff.problems.length && handoff.problems.every((x) => x.startsWith("giai_thich") || x.startsWith("agent.md:")) &&!stepNow.explainRetried && readTurn(run.workspace).nextOwner === handoff.role) {
+          if (handoff.problems.length && handoff.problems.every((x) => x.startsWith("giai_thich") || x.startsWith("agent.md:") || x.startsWith("skill_da_dung")) &&!stepNow.explainRetried && readTurn(run.workspace).nextOwner === handoff.role) {
             if (!handoff.decided) runner.reject(job.id, "ceo-autopilot");
             stepNow.explainRejected = handoff.problems.join("; ").slice(0, 1500);
             run.retryNote = { role: handoff.role, problems: stepNow.explainRejected };
