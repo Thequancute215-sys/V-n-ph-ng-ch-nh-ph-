@@ -18,7 +18,9 @@ const ACTIVE = new Set(["running", "reporting", "awaiting_approval", "awaiting_a
 // Trạng thái cần CEO: báo ra máy (thông báo Windows) một lần mỗi khi luồng chuyển vào.
 const NOTIFY = { awaiting_answer: "Claude hỏi anh, cần chọn phương án", awaiting_approval: "Claude đã gửi báo cáo, chờ anh duyệt", attention: "Luồng gặp lỗi, cần anh xem", waiting_quota: "AI hết hạn mức, luồng đang chờ", awaiting_scan: "File .md có điểm bất thường mới, luồng tạm dừng chờ anh duyệt" };
 const WEB_MAX = 400000;
-const PROVIDER = { CODEX_ASTRA_DEV: "codex", SOL_ARCHITECT_PLANNER: "codex", SOL_ARCHITECT_ADVISOR: "codex", CLAUDE_AUDITOR: "claude", SPEC_ARCHITECT: "antigravity" };
+const PROVIDER = { CODEX_ASTRA_DEV: "codex", SOL_ARCHITECT_PLANNER: "codex", SOL_ARCHITECT_ADVISOR: "codex", CLAUDE_AUDITOR: "claude", SPEC_ARCHITECT: "antigravity", FRONTEND_UIUX_DEV: "antigravity" };
+// Hai vai viết code: Claude trả việc về một trong hai là còn sửa tiếp, không phải báo cáo cuối.
+const DEVS = ["CODEX_ASTRA_DEV", "FRONTEND_UIUX_DEV"];
 const PROVIDER_NAME = { codex: "Codex", claude: "Claude", antigravity: "Antigravity" };
 const WRITER_NAME = { claude: "Claude (đội trưởng)", codex: "Codex (Sol/Astra)", antigravity: "Antigravity (Hinata)" };
 const WRITER_ORDER = ["claude", "codex", "antigravity"];
@@ -192,6 +194,7 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     const decisions = (run.decisions || []).map((d) => "- " + d.text).join("\n");
     const out = {
       CODEX_ASTRA_DEV: "Mỗi file thay đổi: một dòng `FILE: đường/dẫn` rồi TOÀN BỘ nội dung mới của file trong một khối ```. Sau đó: lệnh kiểm tra cần chạy (ví dụ npm test), các dòng ghi vào Vùng [4.1] (danh sách file đã sửa, CLAIM_FIXED: <ID> -> <file> nếu có), và dòng JSON bàn giao.",
+      FRONTEND_UIUX_DEV: "Mỗi file thay đổi: một dòng `FILE: đường/dẫn` rồi TOÀN BỘ nội dung mới của file trong một khối ```. Sau đó: lệnh kiểm tra cần chạy (ví dụ npm run build, npm test), các dòng ghi vào Vùng [4.1] (danh sách file đã sửa, CLAIM_FIXED: <ID> -> <file> nếu có), và dòng JSON bàn giao.",
       SOL_ARCHITECT_PLANNER: "Nguyên văn Vùng [1] và [3] mới của agent.md (cây thư mục, schema DB kèm lý do index, API contract đủ method/path/request/response/mã lỗi, lộ trình Phase có điều kiện nghiệm thu đo được), rồi dòng JSON bàn giao.",
       SOL_ARCHITECT_ADVISOR: "Các dòng nhận xét ghi vào Vùng [4.1] (đối chiếu code với Vùng [3], đề xuất ngắn), rồi dòng JSON bàn giao.",
       SPEC_ARCHITECT: "Nguyên văn Vùng [2] mới (phạm vi MVP, luồng người dùng, luồng AI Agent, Design Tokens, Component Tree, 5 trạng thái, trường hợp biên), dòng ghi [4.1], rồi dòng JSON bàn giao.",
@@ -279,7 +282,7 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
       ? "agent.md của repo này bị git bỏ qua (repo công khai, .git/info/exclude): sổ CHỈ nằm trên máy, bộ điều phối KHÔNG commit và không bao giờ push nó; bạn vẫn ghi sổ bình thường, bộ điều phối chuyển lượt sau khi kiểm bàn giao"
       : "Bộ điều phối sẽ commit agent.md (cục bộ, trên nhánh của luồng) và chuyển lượt sau khi kiểm bàn giao";
     const where = run.git ? ` Luồng chạy trên nhánh riêng ${run.git.branch}; file bạn đổi được bộ điều phối commit lên nhánh này sau lượt, CEO duyệt xong mới đẩy lên GitHub.` : "";
-    const task = "ĐẶC CÁCH CEO cho luồng " + run.id + ": tự chạy và duyệt bàn giao NỘI BỘ cho việc này, CEO chỉ nhận báo cáo cuối của Claude để duyệt. Giữ đúng quyền theo vai, không push/merge/release, không xóa dữ liệu người dùng." + where + " " + book + ": bạn không tự commit hoặc đổi NEXT_OWNER. Không làm việc ngoài yêu cầu. Nếu là Claude: còn lỗi cần sửa thì next_owner CODEX_ASTRA_DEV; kiến trúc đã duyệt nhưng chưa code thì chuyển CODEX_ASTRA_DEV; khi nghiệm thu xong thì next_owner SPEC_ARCHITECT để kết thúc; thấy AI khác đi sai hướng thì hỏi CEO bằng ask_ceo, không tự ra lệnh sửa." +
+    const task = "ĐẶC CÁCH CEO cho luồng " + run.id + ": tự chạy và duyệt bàn giao NỘI BỘ cho việc này, CEO chỉ nhận báo cáo cuối của Claude để duyệt. Giữ đúng quyền theo vai, không push/merge/release, không xóa dữ liệu người dùng." + where + " " + book + ": bạn không tự commit hoặc đổi NEXT_OWNER. Không làm việc ngoài yêu cầu. Nếu là Claude: còn lỗi cần sửa thì next_owner CODEX_ASTRA_DEV (backend, API) hoặc FRONTEND_UIUX_DEV (giao diện); kiến trúc đã duyệt nhưng chưa code thì chuyển CODEX_ASTRA_DEV (Phase chỉ có giao diện thì FRONTEND_UIUX_DEV); khi nghiệm thu xong thì next_owner SPEC_ARCHITECT để kết thúc; thấy AI khác đi sai hướng thì hỏi CEO bằng ask_ceo, không tự ra lệnh sửa." +
       (decisions ? "\nQUYẾT ĐỊNH CỦA CEO TRONG LUỒNG NÀY (làm theo):\n" + decisions : "") + "\nVIỆC CEO GIAO:\n" + run.task +
       (role === "CLAUDE_AUDITOR" ? explainForClaude(run) + deletesForClaude(run) : "") +
       (run.retryNote && run.retryNote.role === role ? "\n\nLƯỢT TRƯỚC CỦA BẠN BỊ TRẢ LẠI vì bàn giao chưa đạt (phần giải thích cho CEO hoặc luật agent.md): " + run.retryNote.problems + "\nKhông làm lại việc đã xong; kiểm lại thay đổi đã có (git diff), sửa đúng các lỗi trên (lỗi agent.md: trả các vùng không thuộc vai bạn về như cũ, nén log), rồi bàn giao lại với giai_thich đầy đủ và đúng sự thật." : "");
@@ -422,16 +425,17 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
             run.status = "awaiting_answer"; run.question = { jobId: job.id, question: p.ask_ceo.question, options: p.ask_ceo.options }; run.report = responseText(logOf(job.id)); save(run);
             audit.log("autopilot", "ask_ceo", run.id, { job: job.id }); continue;
           }
-          if (handoff.role === "CLAUDE_AUDITOR" && (p.done === true || handoff.next_owner !== "CODEX_ASTRA_DEV")) {
+          if (handoff.role === "CLAUDE_AUDITOR" && (p.done === true || !DEVS.includes(handoff.next_owner))) {
             run.finalHandoffId = job.id; run.reportJobId = job.id; run.report = responseText(logOf(job.id)); run.status = "awaiting_approval"; save(run);
             audit.log("autopilot", "report.ready", run.id, { job: job.id }); continue;
           }
-          // Claude trả việc về Codex sau khi Codex đã làm trong luồng = một lần sửa lại.
-          if (handoff.role === "CLAUDE_AUDITOR" && run.steps.slice(run.stepBase || 0, -1).some((s) => s.role === "CODEX_ASTRA_DEV" && !s.quota) && ++run.rework > MAX_REWORK) {
-            report(run, `Codex đã sửa ${MAX_REWORK} lần mà Claude vẫn trả về: CEO quyết hướng xử lý.`); continue;
+          // Claude trả việc về đội code (Astra hoặc Kakashi) sau khi đội code đã làm trong luồng = một lần sửa lại.
+          if (handoff.role === "CLAUDE_AUDITOR" && run.steps.slice(run.stepBase || 0, -1).some((s) => DEVS.includes(s.role) && !s.quota) && ++run.rework > MAX_REWORK) {
+            report(run, `Đội code đã sửa ${MAX_REWORK} lần mà Claude vẫn trả về: CEO quyết hướng xử lý.`); continue;
           }
           if (Date.now() > run.deadline || stepsSinceCeo(run) >= run.maxSteps) { report(run, "Đã chạm giới hạn thời gian hoặc số lượt. Bàn giao còn chờ xử lý."); continue; }
-          if (handoff.role === "CLAUDE_AUDITOR" && p.effort) setEffort(run, handoff.next_owner, p.effort, job.id);
+          // Mức effort đội trưởng đặt là mức của Codex (medium…max); lượt Antigravity (Hinata, Kakashi) để bộ điều phối tự chọn model.
+          if (handoff.role === "CLAUDE_AUDITOR" && p.effort && PROVIDER[handoff.next_owner] === "codex") setEffort(run, handoff.next_owner, p.effort, job.id);
           if (!handoff.decided) runner.approve(job.id, "ceo-autopilot");
           if (!closing && run.status === "running") launch(run);
         } catch (e) { report(run, e.message); }

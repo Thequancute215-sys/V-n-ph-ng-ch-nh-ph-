@@ -6,7 +6,7 @@
 const { maskText } = require("../lib/mask");
 
 // Vai → nhân vật trong văn phòng 3D
-const WHO = (role = "") => role === "SPEC_ARCHITECT" || role.startsWith("AGY_") ? "hinata" : role.startsWith("SOL_") ? "itachi"
+const WHO = (role = "") => role.startsWith("FRONTEND_") ? "kakashi" : role === "SPEC_ARCHITECT" || role.startsWith("AGY_") ? "hinata" : role.startsWith("SOL_") ? "itachi"
   : role.startsWith("CODEX_") ? "sasuke" : role.startsWith("CLAUDE_") ? "sakura" : "pain";
 const short = (s, n = 400) => { const t = maskText(String(s || "")).replace(/\s+/g, " ").trim(); return t.length > n ? t.slice(0, n - 1) + "…" : t; };
 const file = (p) => String(p || "").replace(/\\/g, "/").split("/").slice(-2).join("/");

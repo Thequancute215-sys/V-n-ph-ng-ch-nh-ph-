@@ -69,7 +69,7 @@
 - API Contract & Giao thức streaming (khớp chuẩn state matrix Vùng [2]): [Chưa cập nhật]
 - CI, lint, test (luật [1].6): [Chưa cập nhật: công cụ lint/test của stack, lệnh chạy, thêm vào .github/workflows/kiem-chu-trinh.yml]
 - Cập nhật & phát hành (luật [1].7): [Chưa cập nhật: theo loại app — web: triển khai + báo "Có bản mới, tải lại"; app chạy bằng Node trên máy: git fast-forward theo tag như Văn phòng AI; Electron/Tauri: bộ tự cập nhật đọc GitHub Releases; điện thoại: cửa hàng hoặc OTA. Nêu cách migration DB, cách quay lại, workflow kiểm tag khớp phiên bản]
-- Lộ trình Phase:
+- Lộ trình Phase (mỗi Phase ghi rõ phần Backend & API cho CODEX_ASTRA_DEV và phần giao diện cho FRONTEND_UIUX_DEV):
   - [ ] Phase 1: Cấu hình lõi, Design System Setup, Schema DB, CI (lint + test + bộ kiểm agent.md) và khung phát hành/cập nhật
   - [ ] Phase 2: Backend lõi & AI Agent Engine
   - [ ] Phase 3: Tầng API, Streaming SSE & Frontend Component Shell

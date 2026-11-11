@@ -82,7 +82,7 @@ button.act:disabled { opacity: .5; cursor: wait; }
   const $ = (id) => document.getElementById(id);
   const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const AI_NAME = { claude: "Claude", codex: "Codex", agy: "Antigravity" };
-  const NPC = { hinata: ["Hinata", "H", "#9333ea"], itachi: ["Itachi", "I", "#059669"], sasuke: ["Sasuke", "S", "#2563eb"], sakura: ["Sakura", "S", "#db2777"] };
+  const NPC = { hinata: ["Hinata", "H", "#9333ea"], itachi: ["Itachi", "I", "#059669"], sasuke: ["Sasuke", "S", "#2563eb"], kakashi: ["Kakashi", "K", "#71717a"], sakura: ["Sakura", "S", "#db2777"] };
   const ICON = { notion: "📝", figma: "🎨", canva: "🖌️", webflow: "🌐", gitbook: "📘", supabase: "🗄️", cloudflare: "☁️", "google-drive": "📁", "google-docs": "📄", "google-sheets": "📊", "google-slides": "📽️", "blaze-sql": "🧮", "claude-docs": "📚",
     gmail: "✉️", "google-calendar": "📅", zoom: "🎥", composio: "🧩", vercel: "▲", appdeploy: "🚀", capcut: "🎬" };
   const GROUP = { "tai-lieu": "Tài liệu", "thiet-ke": "Thiết kế", "du-lieu": "Dữ liệu", gui: "Gửi đi", "trien-khai": "Triển khai", "sang-tao": "Sáng tạo" };

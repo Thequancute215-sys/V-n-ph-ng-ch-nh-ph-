@@ -88,7 +88,7 @@ test("ngắt mạch: Claude trả việc về Codex quá 2 lần → dừng, CEO
   const { repo, call, wait } = await fixture(t, "rework", DEV);
   const r = await call("/autopilot", { workspace: repo, task: "Sửa mãi không xong", maxSteps: 12 });
   const run = await wait(r.run.id, "awaiting_approval");
-  assert.match(run.problem, /Codex đã sửa 2 lần/);
+  assert.match(run.problem, /Đội code đã sửa 2 lần/);
   assert.deepEqual(run.steps.map((s) => s.role), [DEV, CLAUDE, DEV, CLAUDE, DEV, CLAUDE]);
 });
 

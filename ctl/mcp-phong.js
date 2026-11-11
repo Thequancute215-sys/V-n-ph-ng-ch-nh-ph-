@@ -8,14 +8,15 @@ const { writeAtomic } = require("../lib/ghi-file");
 const { CATALOG } = require("./ket-noi-danh-muc");
 
 // Phòng chạy lượt làm việc và AI của phòng. Pain (điều hành) chỉ báo cáo, chỉ đọc file: không cần kết nối.
-const PHONG = { hinata: "agy", itachi: "codex", sasuke: "codex", sakura: "claude" };
-const ROLE_PHONG = (role = "") => role === "SPEC_ARCHITECT" || role.startsWith("AGY_") ? "hinata" : role.startsWith("SOL_") ? "itachi"
+const PHONG = { hinata: "agy", itachi: "codex", sasuke: "codex", kakashi: "agy", sakura: "claude" };
+const ROLE_PHONG = (role = "") => role.startsWith("FRONTEND_") ? "kakashi" : role === "SPEC_ARCHITECT" || role.startsWith("AGY_") ? "hinata" : role.startsWith("SOL_") ? "itachi"
   : role.startsWith("CODEX_") ? "sasuke" : role.startsWith("CLAUDE_") ? "sakura" : null;
 // Mặc định theo phần việc trong agent.md:
 const MAC_DINH = {
   hinata: ["figma", "canva", "webflow", "notion"],          // đặc tả & UI/UX: bản thiết kế, tài liệu sản phẩm
   itachi: ["notion", "gitbook", "supabase", "cloudflare"],   // kiến trúc: tài liệu, schema DB, hạ tầng
-  sasuke: ["figma", "supabase", "cloudflare", "gitbook"],    // lập trình: dựng theo thiết kế, DB, hạ tầng, tài liệu API
+  sasuke: ["supabase", "cloudflare", "gitbook"],              // lập trình backend: DB, hạ tầng, tài liệu API
+  kakashi: ["figma", "canva", "webflow"],                     // frontend & UI/UX: dựng giao diện theo bản thiết kế
   sakura: ["notion", "gitbook", "supabase", "google-docs", "google-drive"], // kiểm duyệt: đối chiếu tài liệu, cấu hình DB
 };
 
