@@ -19,6 +19,8 @@ const guard = require("./lib/guard");
 const proc = require("./lib/proc");
 const keys = require("./lib/keys");
 const ctlbridge = require("./lib/ctlbridge");
+const dieuKhienXa = require("./lib/dieu-khien-xa");
+const dkx = dieuKhienXa.createDieuKhienXa();
 
 const ROOT = __dirname;
 const CFG = loadConfig(ROOT);
@@ -707,6 +709,8 @@ http.createServer((req, res) => {
   const deny = guard.checkHost(req, { hasKey: !!KEY }) || guard.checkWrite(req, { hasKey: !!KEY });
   if (deny) { res.writeHead(403, { "Content-Type": "application/json; charset=utf-8" }); return res.end(JSON.stringify({ ok: false, error: deny })); }
 
+  // Điều khiển từ điện thoại: khóa xem + khóa thiết bị đã ghép + danh sách lệnh được phép (lib/dieu-khien-xa.js)
+  if (url.pathname === "/dkx" || url.pathname.startsWith("/dkx/")) return dieuKhienXa.handle(dkx, req, res, url, { local: ctlbridge.isLocal(req), hasKey: !!KEY, call: ctlbridge.call, readJson: guard.readJson });
   // Bảng điều khiển máy (OS Controller): chỉ trên chính máy này, xem lib/ctlbridge.js
   if (url.pathname === "/ctl" || url.pathname.startsWith("/ctl/")) return ctlbridge.proxy(req, res);
 

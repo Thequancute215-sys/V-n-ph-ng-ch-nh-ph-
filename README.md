@@ -249,6 +249,16 @@ Chạy tay: `node tools/kiem-agent.js` (agent.md ở thư mục đang đứng), 
 - **Cùng Wi-Fi:** đặt `"host": "0.0.0.0"` và `accessKey` trong `config.json`, rồi mở `http://<IP máy>:7788`.
 - **Qua Internet:** cài cloudflared (Windows: `winget install --id Cloudflare.cloudflared`; macOS: `brew install cloudflared`). Chạy `powershell -ExecutionPolicy Bypass -File scripts\xem-tren-dien-thoai.ps1` hoặc `sh scripts/xem-tren-dien-thoai.sh`, mở link `trycloudflare.com` rồi nhập khóa xem một lần. Script sẽ không chạy nếu chưa có khóa xem.
 
+### Điều khiển từ điện thoại
+
+Giao việc, duyệt báo cáo, trả lời câu hỏi của Claude, duyệt hoặc từ chối bàn giao và phanh khẩn cấp ngay trên điện thoại (trang `/dieu-khien.html`). Văn phòng chạy AI toàn quyền trên máy, nên điện thoại phải qua đủ ba lớp:
+
+1. **Khóa xem** (`accessKey`) như khi xem: chưa đặt khóa thì không nhận lệnh từ xa nào, kể cả ghép.
+2. **Ghép máy:** trên máy tính bấm **Điện thoại** ở thanh công cụ → **Tạo mã ghép** (6 số, sống 5 phút, dùng một lần; sai 5 lần khóa 15 phút). Điện thoại nhập mã thì nhận khóa thiết bị riêng (cookie `HttpOnly`, `SameSite=Strict`); máy chủ chỉ lưu bản băm. Tối đa 5 máy; mất máy thì **Thu hồi** trên máy tính hoặc **Huỷ ghép** trên chính điện thoại.
+3. **Danh sách lệnh** (`lib/dieu-khien-xa.js`): chỉ mở xem tình hình, giao việc, duyệt/trả lại, trả lời, chạy lại khi chờ hạn mức, phanh khẩn cấp. Không mở chạy lệnh tùy ý, đọc/ghi file, duyệt rà soát, xuất bản, đẩy nhánh, sửa kết nối hay cấu hình: các việc đó chỉ làm trên máy tính.
+
+Mọi lệnh từ điện thoại (và lệnh bị chặn) ghi vào `~/.van-phong-ao/dieu-khien-xa.log` kèm tên máy và IP; xem ở trang **Điện thoại** trên máy tính. Muốn thêm một lớp đăng nhập bằng email trước cả khóa xem: dùng Cloudflare Tunnel có tên miền riêng kèm Cloudflare Access thay cho link `trycloudflare.com`.
+
 ## Cấu hình `config.json`
 
 | Khóa | Mặc định | Ý nghĩa |
