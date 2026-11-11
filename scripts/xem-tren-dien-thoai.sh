@@ -11,4 +11,5 @@ fi
 command -v cloudflared >/dev/null || { echo "Chưa có cloudflared (macOS: brew install cloudflared)"; exit 1; }
 PORT=$(sed -n 's/.*"port": *\([0-9]*\).*/\1/p' config.json); PORT=${PORT:-7788}
 echo "Đang mở đường hầm... mở link trycloudflare.com hiện ra trên điện thoại, nhập khóa xem một lần."
+echo "Điều khiển từ điện thoại: mở <link>/dieu-khien.html và nhập mã ghép tạo ở trang Điện thoại trên máy tính."
 exec cloudflared tunnel --no-autoupdate --url "http://localhost:$PORT"

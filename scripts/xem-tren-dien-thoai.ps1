@@ -11,4 +11,5 @@ if (-not $cfg.accessKey) {
 if (-not (Get-Command cloudflared -ErrorAction SilentlyContinue)) { Write-Host "Chưa có cloudflared. Cài bằng: winget install --id Cloudflare.cloudflared"; exit 1 }
 $port = if ($cfg.port) { $cfg.port } else { 7788 }
 Write-Host "Đang mở đường hầm... chờ dòng có chữ trycloudflare.com rồi mở link đó trên điện thoại, nhập khóa xem một lần."
+Write-Host "Điều khiển từ điện thoại: mở <link>/dieu-khien.html và nhập mã ghép tạo ở trang Điện thoại trên máy tính."
 cloudflared tunnel --no-autoupdate --url "http://localhost:$port"

@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#05070a">
+<title>Điều khiển văn phòng</title>
+<link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="app.js" defer></script>
+<style>
+  :root { --bg: #05070a; --card: #11151c; --line: #232a35; --text: #e8ecf1; --muted: #9aa4b2; --accent: #ecc970; --ok: #34d399; --bad: #f87171; --warn: #fbbf24; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; padding: 0 16px calc(84px + env(safe-area-inset-bottom)); }
+  header { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 14px 0 10px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 18px; margin: 0; flex: 1; }
+  .muted { color: var(--muted); font-size: 14px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin: 12px 0; overflow-wrap: anywhere; }
+  .card h3 { margin: 0 0 6px; font-size: 16px; }
+  button, select, textarea, input { font: inherit; color: inherit; }
+  button { min-height: 44px; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); background: #1a202a; cursor: pointer; }
+  button:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  button.primary { background: var(--accent); color: #111; border-color: var(--accent); font-weight: 700; }
+  button.danger { background: #3a1214; border-color: #7f1d1d; color: #fecaca; font-weight: 700; }
+  button[disabled] { opacity: .5; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .row > button { flex: 1 1 140px; }
+  label { display: block; font-size: 14px; color: var(--muted); margin: 10px 0 6px; }
+  select, textarea, input { width: 100%; background: #0b0f14; border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+  textarea { min-height: 120px; resize: vertical; }
+  .pill { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+  .pill.run { color: var(--ok); border-color: #065f46; } .pill.wait { color: var(--warn); border-color: #78350f; } .pill.bad { color: var(--bad); border-color: #7f1d1d; }
+  pre { white-space: pre-wrap; background: #0b0f14; border-radius: 10px; padding: 10px; font-size: 13px; max-height: 320px; overflow: auto; }
+  nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr); background: #0b0f14; border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
+  nav.tabs[hidden] { display: none; }
+  nav.tabs button { border: 0; border-radius: 0; background: transparent; min-height: 60px; font-size: 13px; color: var(--muted); white-space: nowrap; padding: 6px 2px; }
+  nav.tabs button[aria-selected="true"] { color: var(--accent); font-weight: 700; }
+  .badge { background: var(--bad); color: #fff; border-radius: 999px; padding: 0 6px; font-size: 11px; margin-left: 4px; }
+  #msg { position: fixed; left: 16px; right: 16px; bottom: calc(70px + env(safe-area-inset-bottom)); z-index: 3; }
+  #msg:empty { display: none; }
+  #msg div { background: #1f2937; border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+  #msg div.err { border-color: #7f1d1d; color: #fecaca; }
+  .empty { text-align: center; padding: 22px 10px; color: var(--muted); }
+  .skeleton { height: 64px; border-radius: 14px; margin: 12px 0; background: linear-gradient(90deg, #11151c, #1a202a, #11151c); background-size: 200% 100%; animation: sk 1.2s infinite; }
+  @keyframes sk { to { background-position: -200% 0; } }
+  @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+</style>
+</head>
+<body>
+<header><h1>Điều khiển văn phòng</h1><span id="who" class="muted"></span></header>
+<main id="app"><div class="skeleton"></div><div class="skeleton"></div></main>
+<div id="msg" role="status" aria-live="polite"></div>
+<nav class="tabs" id="tabs" hidden aria-label="Mục điều khiển">
+  <button type="button" data-tab="tinh-hinh" aria-selected="true">Tình hình</button>
+  <button type="button" data-tab="giao-viec" aria-selected="false">Giao việc</button>
+  <button type="button" data-tab="cho-duyet" aria-selected="false">Chờ duyệt<span id="badge"></span></button>
+  <button type="button" data-tab="han-muc" aria-selected="false">Hạn mức</button>
+</nav>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const nameOf = (ws) => String(ws || "").split(/[\\/]/).filter(Boolean).pop() || ws;
+const ROLE = { SPEC_ARCHITECT: "Hinata · đặc tả", SOL_ARCHITECT_PLANNER: "Itachi · kiến trúc", SOL_ARCHITECT_ADVISOR: "Itachi · đối chiếu", CODEX_ASTRA_DEV: "Sasuke · backend", FRONTEND_UIUX_DEV: "Kakashi · giao diện", CLAUDE_AUDITOR: "Sakura · kiểm duyệt" };
+const STATUS = { running: ["Đang chạy", "run"], reporting: ["Claude đang báo cáo", "run"], awaiting_approval: ["Chờ anh duyệt", "wait"], awaiting_answer: ["Claude hỏi anh", "wait"], attention: ["Cần anh xem", "bad"], waiting_quota: ["Chờ hạn mức", "wait"], awaiting_scan: ["Chờ duyệt rà soát (trên máy tính)", "wait"], approved: ["Đã duyệt", ""], acknowledged: ["Đã xem", ""], rejected: ["Đã trả lại", ""], stopped: ["Đã dừng", ""] };
+const LIVE = new Set(["running", "reporting", "awaiting_approval", "awaiting_answer", "attention", "waiting_quota", "awaiting_scan"]);
+let tab = "tinh-hinh", data = null, loading = false, busy = false, timer = null;
+
+function note(text, bad) { $("msg").innerHTML = `<div class="${bad ? "err" : ""}">${esc(text)}</div>`; clearTimeout(note.t); note.t = setTimeout(() => ($("msg").innerHTML = ""), bad ? 7000 : 3500); }
+async function api(path, body) {
+  const r = await fetch("/dkx" + path, { cache: "no-store", credentials: "same-origin", method: body === undefined ? "GET" : "POST", ...(body === undefined ? {} : { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }) });
+  let d = null; try { d = await r.json(); } catch {}
+  if (!r.ok || !d || d.ok === false) throw Object.assign(new Error((d && d.error) || "Lỗi " + r.status), { code: d && d.code, status: r.status });
+  return d;
+}
+
+async function start() {
+  try {
+    const s = await api("/trang-thai");
+    if (!s.ghep) return showPair(s.local);
+    $("who").textContent = s.thietBi ? s.thietBi.ten : "";
+    $("tabs").hidden = false;
+    await load();
+    timer = setInterval(() => { if (document.visibilityState === "visible" && !busy) load(true); }, 10000);
+  } catch (e) { $("app").innerHTML = `<div class="card"><h3>Không vào được</h3><p>${esc(e.message)}</p><div class="row"><button type="button" onclick="location.reload()">Thử lại</button></div></div>`; }
+}
+
+function showPair(local) {
+  $("tabs").hidden = true;
+  $("app").innerHTML = `<div class="card"><h3>Ghép điện thoại này</h3>
+    <p class="muted">Trên máy tính chạy văn phòng: mở trang <b>Điện thoại</b> → bấm <b>Tạo mã ghép</b>. Mã có 6 số, dùng một lần, hết hạn sau 5 phút.</p>
+    <form id="pair"><label for="ma">Mã ghép</label><input id="ma" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required>
+    <label for="ten">Tên máy (để nhận ra khi thu hồi)</label><input id="ten" maxlength="40" placeholder="Ví dụ: iPhone của Quân">
+    <div class="row"><button class="primary" type="submit">Ghép</button></div></form>
+    ${local ? '<p class="muted">Anh đang mở trên chính máy tính: ghép ở đây chỉ để thử.</p>' : ""}</div>`;
+  $("pair").onsubmit = async (e) => {
+    e.preventDefault(); const b = e.submitter; b.disabled = true;
+    try { await api("/ghep", { ma: $("ma").value.trim(), ten: $("ten").value.trim() }); location.reload(); }
+    catch (err) { note(err.message, true); b.disabled = false; }
+  };
+}
+
+async function load(quiet) {
+  if (loading) return; loading = true;
+  if (!quiet && !data) $("app").innerHTML = '<div class="skeleton"></div><div class="skeleton"></div>';
+  try {
+    const [ws, ap, ho, q, jobs] = await Promise.all([api("/api/workspaces"), api("/api/autopilot"), api("/api/handoffs"), api("/api/quotas").catch(() => null), api("/api/jobs?status=running").catch(() => ({ jobs: [] }))]);
+    const turns = await Promise.all(ws.workspaces.map((w) => api("/api/ai/status?workspace=" + encodeURIComponent(w.path)).catch(() => null)));
+    data = { workspaces: ws.workspaces, active: ws.active, turns, runs: ap.runs || [], handoffs: ho.handoffs || [], quotas: q, jobs: (jobs && jobs.jobs) || [], at: Date.now() };
+    render();
+  } catch (e) {
+    if (e.code === "NOT_PAIRED") { clearInterval(timer); return showPair(false); }
+    if (!data) $("app").innerHTML = `<div class="card"><h3>Không tải được tình hình</h3><p>${esc(e.message)}</p><div class="row"><button type="button" id="retry">Thử lại</button></div></div>`, $("retry").onclick = () => load();
+    else note(e.message, true);
+  } finally { loading = false; }
+}
+
+const pending = () => {
+  const auto = new Set(data.runs.filter((r) => LIVE.has(r.status)).flatMap((r) => [r.jobId, r.finalHandoffId, ...(r.steps || []).map((s) => s.jobId)]));
+  return { runs: data.runs.filter((r) => ["awaiting_approval", "awaiting_answer", "attention", "waiting_quota"].includes(r.status)), handoffs: data.handoffs.filter((h) => !auto.has(h.job_id)) };
+};
+
+function render() {
+  const p = pending(), n = p.runs.length + p.handoffs.length;
+  $("badge").innerHTML = n ? `<span class="badge">${n}</span>` : "";
+  for (const b of document.querySelectorAll("[data-tab]")) b.setAttribute("aria-selected", String(b.dataset.tab === tab));
+  const view = { "tinh-hinh": viewStatus, "giao-viec": viewAssign, "cho-duyet": viewPending, "han-muc": viewQuota }[tab];
+  $("app").innerHTML = view() + `<p class="muted">Cập nhật lúc ${new Date(data.at).toLocaleTimeString("vi-VN")} · tự làm mới mỗi 10 giây.</p>`;
+  if (tab === "giao-viec") bindAssign();
+}
+
+function stepRole(r) { const s = (r.steps || [])[(r.steps || []).length - 1]; return s ? ROLE[s.role] || s.role : ""; }
+function viewStatus() {
+  const live = data.runs.filter((r) => LIVE.has(r.status));
+  const projects = data.workspaces.map((w, i) => { const t = data.turns[i], turn = t && t.turn;
+    return `<div class="card"><h3>${esc(w.name || nameOf(w.path))}${w.active ? ' <span class="pill">đang chọn</span>' : ""}</h3>
+      <p class="muted">${turn ? `Tới lượt: <b>${esc(ROLE[turn.nextOwner] || turn.nextOwner)}</b> · ${esc(turn.phase || "")}` : esc((t && t.problem) || "Chưa có sổ agent.md")}${t && t.aiBusy ? ' · <span class="pill run">AI đang chạy</span>' : ""}${t && t.handoffPending ? ' · <span class="pill wait">bàn giao chờ duyệt</span>' : ""}</p></div>`; }).join("");
+  const runs = live.map((r) => { const [label, cls] = STATUS[r.status] || [r.status, ""];
+    return `<div class="card"><h3>${esc(nameOf(r.workspace))} <span class="pill ${cls}">${esc(label)}</span></h3><p>${esc(String(r.task || "").slice(0, 300))}</p>
+      <p class="muted">${(r.steps || []).length} lượt${stepRole(r) ? " · lượt gần nhất: " + esc(stepRole(r)) : ""}</p>
+      ${["running", "waiting_quota", "reporting"].includes(r.status) ? `<div class="row"><button type="button" data-act="stop" data-id="${esc(r.id)}">Dừng luồng này</button></div>` : ""}</div>`; }).join("");
+  return `<h2>Luồng đang chạy (${live.length})</h2>${runs || '<div class="card empty">Không có luồng nào đang chạy. Giao việc ở mục <b>Giao việc</b>.</div>'}
+    <p class="muted">${data.jobs.length} lượt AI đang chạy trên máy.</p>
+    <h2>Dự án</h2>${projects || '<div class="card empty">Chưa có dự án nào.</div>'}
+    <div class="card"><h3>Phanh khẩn cấp</h3><p class="muted">Dừng ngay mọi luồng tự động và mọi lượt AI đang chạy trên máy.</p><div class="row"><button type="button" class="danger" data-act="kill-all">Dừng tất cả</button></div></div>
+    <div class="card"><h3>Máy này</h3><p class="muted">Mất máy hoặc cho người khác mượn thì huỷ ghép (máy tính cũng thu hồi được ở trang Điện thoại).</p><div class="row"><button type="button" data-act="thoat">Huỷ ghép máy này</button></div></div>`;
+}
+
+function viewAssign() {
+  const opts = data.workspaces.map((w) => `<option value="${esc(w.path)}"${w.active ? " selected" : ""}>${esc(w.name || nameOf(w.path))}</option>`).join("");
+  return `<div class="card"><h3>Giao việc cho cả đội</h3><form id="assign"><label for="ws">Dự án</label><select id="ws" required>${opts}</select>
+    <label for="task">Việc anh muốn cả đội làm</label><textarea id="task" required maxlength="3000" placeholder="Ví dụ: thêm trạng thái lỗi có nút thử lại cho trang bài giảng"></textarea>
+    <p class="muted">Đội tự chạy tới khi Claude báo cáo; báo cáo hiện ở mục <b>Chờ duyệt</b>. Không tự push, merge hay phát hành.</p>
+    <div class="row"><button class="primary" type="submit">Giao cho cả đội</button></div></form></div>`;
+}
+function bindAssign() {
+  $("assign").onsubmit = async (e) => {
+    e.preventDefault(); const b = e.submitter; b.disabled = true; busy = true;
+    try { await api("/api/autopilot", { workspace: $("ws").value, task: $("task").value.trim() }); note("Đã giao việc. Theo dõi ở mục Tình hình."); tab = "tinh-hinh"; await load(true); }
+    catch (err) { note(err.message, true); b.disabled = false; } finally { busy = false; }
+  };
+}
+
+function viewPending() {
+  const p = pending();
+  const runs = p.runs.map((r) => { const [label, cls] = STATUS[r.status] || [r.status, ""];
+    let acts = "";
+    if (r.status === "awaiting_answer" && r.question) acts = `<p><b>${esc(r.question.question)}</b></p><div class="row">${(r.question.options || []).map((o) => `<button type="button" data-act="answer" data-id="${esc(r.id)}" data-opt="${esc(o.id)}">${esc(o.id)}. ${esc(o.label)}</button>`).join("")}</div>`;
+    else if (r.status === "waiting_quota") acts = `<div class="row"><button type="button" data-act="resume" data-id="${esc(r.id)}">Chạy lại ngay</button><button type="button" data-act="stop" data-id="${esc(r.id)}">Dừng</button></div>`;
+    else acts = `<div class="row"><button type="button" class="primary" data-act="approve" data-id="${esc(r.id)}">${r.status === "attention" ? "Đã xem" : "Duyệt báo cáo"}</button>${r.status === "awaiting_approval" ? `<button type="button" data-act="reject" data-id="${esc(r.id)}">Trả lại</button>` : ""}</div>`;
+    return `<div class="card"><h3>${esc(nameOf(r.workspace))} <span class="pill ${cls}">${esc(label)}</span></h3><p class="muted">${esc(String(r.task || "").slice(0, 200))}</p>
+      ${r.problem ? `<p style="color:var(--bad)">${esc(r.problem)}</p>` : ""}${r.report ? `<pre>${esc(String(r.report).slice(0, 6000))}</pre>` : ""}${acts}</div>`; }).join("");
+  const hos = p.handoffs.map((h) => { const pl = h.payload || {}, why = (pl.giai_thich || []).map((g) => `• ${esc(g.da_lam || "")}`).join("<br>");
+    return `<div class="card"><h3>${esc(ROLE[h.role] || h.role)} → ${esc(ROLE[h.next_owner] || h.next_owner)}</h3><p class="muted">${esc(nameOf(h.workspace))} · ${(pl.files || []).length} file: ${esc((pl.files || []).slice(0, 6).join(", "))}</p>
+      ${why ? `<p>${why}</p>` : ""}${(h.problems || []).length ? `<p style="color:var(--bad)">${esc(h.problems.join("; "))}</p>` : ""}
+      <div class="row"><button type="button" class="primary" data-act="ho-approve" data-id="${esc(h.job_id)}">Duyệt bàn giao</button><button type="button" data-act="ho-reject" data-id="${esc(h.job_id)}">Từ chối</button></div></div>`; }).join("");
+  return `<h2>Chờ anh duyệt</h2>${runs + hos || '<div class="card empty">Không có việc nào chờ anh. Việc cần duyệt rà soát file, xuất bản hay xoá file thì làm trên máy tính.</div>'}`;
+}
+
+function viewQuota() {
+  const ps = (data.quotas && data.quotas.providers) || [];
+  return `<h2>Hạn mức AI</h2>` + (ps.map((p) => `<div class="card"><h3>${esc(p.name)}</h3>${(p.buckets || []).map((b) => `<p>${esc([b.group, b.label].filter(Boolean).join(" · "))}: <b>${Number.isFinite(b.remainingPercent) ? "còn " + Math.round(b.remainingPercent) + "%" : "chưa có số liệu"}</b></p>`).join("") || '<p class="muted">Chưa có số liệu.</p>'}${p.error ? `<p style="color:var(--bad)">${esc(p.error)}</p>` : ""}</div>`).join("") || '<div class="card empty">Chưa đọc được hạn mức.</div>');
+}
+
+document.addEventListener("click", async (e) => {
+  const t = e.target.closest("[data-tab]");
+  if (t) { tab = t.dataset.tab; if (data) render(); return; }
+  const b = e.target.closest("[data-act]");
+  if (!b || busy) return;
+  const id = encodeURIComponent(b.dataset.id || ""), act = b.dataset.act;
+  if (act === "thoat") { if (!confirm("Huỷ ghép máy này? Muốn dùng lại phải nhập mã ghép mới.")) return; try { await api("/thoat", {}); } catch {} clearInterval(timer); return showPair(false); }
+  const ask = { "kill-all": "Dừng TẤT CẢ luồng và lượt AI đang chạy?", stop: "Dừng luồng này?", reject: "Trả lại báo cáo này?", "ho-reject": "Từ chối bàn giao này?" }[act];
+  if (ask && !confirm(ask)) return;
+  const call = { "kill-all": ["/api/kill-all", {}], stop: [`/api/autopilot/${id}/stop`, {}], approve: [`/api/autopilot/${id}/approve`, {}], reject: [`/api/autopilot/${id}/reject`, {}],
+    resume: [`/api/autopilot/${id}/resume`, {}], answer: [`/api/autopilot/${id}/answer`, { option: b.dataset.opt }],
+    "ho-approve": [`/api/handoffs/${id}/approve`, {}], "ho-reject": [`/api/handoffs/${id}/reject`, {}] }[act];
+  busy = true; b.disabled = true;
+  try { await api(call[0], call[1]); note("Đã gửi lệnh."); await load(true); }
+  catch (err) { note(err.message, true); b.disabled = false; } finally { busy = false; }
+});
+start();
+</script>
+</body>
+</html>
