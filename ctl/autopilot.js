@@ -283,13 +283,14 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
       (decisions ? "\nQUYẾT ĐỊNH CỦA CEO TRONG LUỒNG NÀY (làm theo):\n" + decisions : "") + "\nVIỆC CEO GIAO:\n" + run.task +
       (role === "CLAUDE_AUDITOR" ? explainForClaude(run) + deletesForClaude(run) : "") +
       (run.retryNote && run.retryNote.role === role ? "\n\nLƯỢT TRƯỚC CỦA BẠN BỊ TRẢ LẠI vì bàn giao chưa đạt (phần giải thích cho CEO hoặc luật agent.md): " + run.retryNote.problems + "\nKhông làm lại việc đã xong; kiểm lại thay đổi đã có (git diff), sửa đúng các lỗi trên (lỗi agent.md: trả các vùng không thuộc vai bạn về như cũ, nén log), rồi bàn giao lại với giai_thich đầy đủ và đúng sự thật." : "");
+    const returned = !!(run.retryNote && run.retryNote.role === role);
     run.retryNote = null;
-    // Sol/Astra chạy đúng model của vai; mức suy luận theo lần đội trưởng đặt gần nhất cho vai đó trong luồng (mặc định medium).
+    // Mức suy luận đội trưởng đặt cho vai này (nếu có) thắng điều phối tự động; còn lại ctl/dieu-phoi.js chọn theo độ khó.
     const effort = (run.effort || {})[role] || null;
     const base = run.git ? nhanh.head(run.workspace) : null;
     const loose = run.git ? new Set(nhanh.untracked(run.workspace)) : null;   // chụp trước khi AI chạy
     let job;
-    try { job = runner.run({ workspace: run.workspace, role, task, allowRetry: false, effort }, "ceo-autopilot"); }
+    try { job = runner.run({ workspace: run.workspace, role, task, allowRetry: false, effort, hint: { focus: run.task, returned, rework: run.rework || 0 } }, "ceo-autopilot"); }
     catch (e) {
       if (e.code !== "NEEDS_SCAN_APPROVAL") throw e;
       // Giữa luồng có file .md mới/đổi chứa điểm bất thường (AI vừa tạo, hoặc kéo về): tạm dừng, CEO duyệt thì chạy tiếp đúng lượt này.
@@ -297,7 +298,9 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
       audit.log("autopilot", "scan.pause", run.id, { role, total: e.scan.total });
       return;
     }
-    const model = runner.CODEX_MODEL[role] ? { model: runner.CODEX_MODEL[role], effort: effort || runner.DEFAULT_EFFORT } : {};
+    // Model + mức suy nghĩ đã chọn cho lượt này (và vì sao), để báo cáo và đo hiệu suất từng kết hợp.
+    const dp = job.dieuPhoi || {};
+    const model = { ...(dp.model ? { model: dp.model } : {}), ...(dp.effort ? { effort: dp.effort } : {}), ...(dp.tier ? { tier: dp.tier } : {}), ...(dp.why ? { tierWhy: dp.why.slice(0, 6) } : {}) };
     if (loose) untrackedAt.set(job.id, loose);
     run.jobId = job.id; run.steps.push({ jobId: job.id, role, startedAt: Date.now(), base, ...model }); save(run);
     audit.log("ceo-autopilot", "step.start", run.id, { role, job: job.id });

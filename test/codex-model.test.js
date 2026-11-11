@@ -38,17 +38,21 @@ async function fixture(t, claudePlan) {
   return { ctl, repo, argvOf, wait };
 }
 
-test("Codex: Sol chạy gpt-6.1-sol, Astra chạy gpt-6-astra, mặc định mức medium; đội trưởng nâng Astra lên high không cần hỏi CEO", async (t) => {
+// Mức suy nghĩ do ctl/dieu-phoi.js chọn theo độ khó (CEO duyệt 11/11/2026): Sol lập kiến trúc là việc nặng (xhigh),
+// Astra viết code việc thường (medium); đội trưởng đặt rõ mức thì thắng điều phối tự động.
+test("Codex: Sol chạy gpt-6.1-sol mức xhigh (kiến trúc), Astra gpt-6-astra mức medium; đội trưởng nâng Astra lên high không cần hỏi CEO", async (t) => {
   const { ctl, repo, argvOf, wait } = await fixture(t, [{ next_owner: "CODEX_ASTRA_DEV", effort: "high" }]);
   const run = await wait(ctl.autopilot.start({ workspace: repo, task: "Viết API đăng nhập" }).id, "awaiting_approval");
   assert.deepEqual(run.steps.map((s) => [s.role, s.model, s.effort]), [
-    ["SOL_ARCHITECT_PLANNER", "gpt-6.1-sol", "medium"],
+    ["SOL_ARCHITECT_PLANNER", "gpt-6.1-sol", "xhigh"],
     ["CODEX_ASTRA_DEV", "gpt-6-astra", "medium"],
     ["CLAUDE_AUDITOR", undefined, undefined],
     ["CODEX_ASTRA_DEV", "gpt-6-astra", "high"],
     ["CLAUDE_AUDITOR", undefined, undefined],
   ]);
-  assert.deepEqual(argvOf(run.steps[0].jobId), ["exec", "-m", "gpt-6.1-sol", "-c", "model_reasoning_effort=medium", "--json"]);
+  assert.deepEqual(argvOf(run.steps[0].jobId), ["exec", "-m", "gpt-6.1-sol", "-c", "model_reasoning_effort=xhigh", "--json"]);
+  assert.equal(run.steps[0].tier, "nang"); assert.equal(run.steps[1].tier, "vua");
+  assert.match(run.steps[3].tierWhy.join(" | "), /đội trưởng đặt mức high/);
   assert.deepEqual(argvOf(run.steps[3].jobId), ["exec", "-m", "gpt-6-astra", "-c", "model_reasoning_effort=high", "--json"]);
   assert.deepEqual(argvOf(run.steps[2].jobId), ["-p"], "Claude không bị gắn cờ của Codex");
   assert.equal(run.question, null, "nâng effort không tạo câu hỏi cho CEO");
