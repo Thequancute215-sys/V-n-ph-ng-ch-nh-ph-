@@ -15,6 +15,8 @@ const kiemAgent = require("../lib/kiem-agent");
 const { createSkill } = require("./skill");
 const mucLuc = require("./muc-luc");                 // mục lục từ bản đồ hệ thống (.ua) đưa vào prompt
 const { createDieuPhoi } = require("./dieu-phoi");   // chọn model + mức suy nghĩ theo độ khó của lượt
+const { traCuuBat } = require("./tra-cuu");          // tra cứu Gemini miễn phí cho việc đơn giản
+const { writeAtomic } = require("../lib/ghi-file");
 
 const MIN = 60 * 1000;
 // Giải thích cho CEO duyệt (CEO yêu cầu 03/11/2026): bắt buộc với Hinata, Sol, Astra; Claude đối chiếu với diff thật.
@@ -130,10 +132,33 @@ function fullAccessArgs(argv) {
 }
 // Kết nối theo phòng (CEO yêu cầu 07/11/2026): lượt của vai nào chỉ bật kết nối CEO giao cho phòng của vai đó (ctl/mcp-phong.js).
 // Gọi SAU fullAccessArgs để danh sách chặn gửi (CHAN_CLAUDE) vẫn còn; Claude gộp vào cùng một --disallowedTools, Codex thêm -c sau "exec".
+// Công cụ tra cứu Gemini miễn phí (ctl/tra-cuu-mcp.js, CEO duyệt 16/11/2026): thêm MCP "tra-cuu" cho lượt Claude/Codex khi
+// CEO đã lưu khóa Gemini. Antigravity chạy nền chưa nạp MCP và vốn là Gemini có tìm kiếm Google nên không cần.
+const TRA_CUU_JS = path.join(__dirname, "tra-cuu-mcp.js").replace(/\\/g, "/");
+const TRA_CUU_TOOLS = ["mcp__tra-cuu__tim_kiem", "mcp__tra-cuu__doc_tai_lieu"];
+function withTraCuu(argv, kind, dir) {
+  if (!traCuuBat(dir) || (kind !== "claude" && kind !== "codex")) return argv;
+  const node = process.execPath.replace(/\\/g, "/"), home = dir.replace(/\\/g, "/");
+  if (kind === "codex") {
+    const at = argv.indexOf("exec");
+    if (at < 0) return argv;
+    const add = ["-c", "mcp_servers.tra_cuu.command=" + JSON.stringify(node), "-c", "mcp_servers.tra_cuu.args=" + JSON.stringify([TRA_CUU_JS, home])];
+    return [...argv.slice(0, at + 1), ...add, ...argv.slice(at + 1)];
+  }
+  const f = path.join(dir, "tra-cuu-mcp.json");
+  try { writeAtomic(f, JSON.stringify({ mcpServers: { "tra-cuu": { command: node, args: [TRA_CUU_JS, home] } } }, null, 2)); } catch { return argv; }
+  const out = [...argv, "--mcp-config", f];
+  const i = out.indexOf("--allowedTools");
+  return i >= 0 ? [...out.slice(0, i + 1), ...TRA_CUU_TOOLS, ...out.slice(i + 1)] : out;
+}
+const TRA_CUU_NOTE = "\nCông cụ tra cứu miễn phí (MCP tra-cuu, Gemini): việc đơn giản cần tìm trên web hoặc đọc tài liệu công khai (docs thư viện, changelog, lỗi thường gặp) thì gọi tim_kiem / doc_tai_lieu thay vì tự đọc dài, để đỡ token. " +
+  "Chỉ gửi câu hỏi ngắn và link công khai; KHÔNG gửi mã nguồn, nội dung file dự án, khóa, token, dữ liệu cá nhân. Kết quả là gợi ý: đối chiếu nguồn trước khi dựa vào. Giới hạn 200 lần/ngày cho cả văn phòng.";
+
 function withMcp(argv, role, dir, known = {}) {
   const prog = argv.findIndex((x) => /^(claude|codex|agy)(\.(exe|cmd|js))?$/.test(base(x)));
   if (prog < 0) return argv;
   const kind = base(argv[prog]).replace(/\..*$/, "");
+  argv = withTraCuu(argv, kind, dir);
   const { args } = phong.argsFor(kind, role, dir, known);
   if (!args.length) return argv;
   if (kind === "claude") {
@@ -223,7 +248,8 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     const codexEffort = effort || (d.kind === "codex" && !customEffort ? d.effort : null);
     const codexModel = d.kind === "codex" && d.fixed && d.model ? d.model : null;
     const shaped = dieuPhoi.apply(codexArgs(base, role, codexEffort, codexModel), d);
-    const argv = withMcp(fullFor(role) ? fullAccessArgs(shaped) : shaped, role, dir, mcpKnown()).map((x) => (x === "{prompt}" ? prompt : x));
+    const loiGiao = prompt + (["claude", "codex"].includes(d.kind) && traCuuBat(dir) ? TRA_CUU_NOTE : "");
+    const argv = withMcp(fullFor(role) ? fullAccessArgs(shaped) : shaped, role, dir, mcpKnown()).map((x) => (x === "{prompt}" ? loiGiao : x));
     // Antigravity: tài khoản đang dùng sắp cạn thì đổi sang tài khoản còn nhiều hạn mức hơn trước khi chạy (ctl/agy-tai-khoan.js).
     const doiTk = d.kind === "agy" && agyTk ? agyTk.truocLuot() : null;
     const chosen = { tier: d.tier, model: d.kind === "codex" ? codexModel || CODEX_MODEL[role] || null : d.model, effort: d.kind === "codex" ? codexEffort || (customEffort ? null : DEFAULT_EFFORT) : d.effort,
