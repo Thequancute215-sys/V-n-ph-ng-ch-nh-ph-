@@ -70,7 +70,7 @@ test("CEO cố định model cho phòng, hoặc tắt điều phối tự độn
   d = dp.decide({ role: "CLAUDE_AUDITOR", argv: CL });
   assert.deepEqual([d.model, d.effort], [null, null]); assert.deepEqual(dp.apply(CL, d), CL);
   assert.equal(dp.status().tuDong, false); assert.deepEqual(dp.status().coDinh, {});
-  assert.throws(() => dp.save({ coDinh: { sakura: { effort: "ultra" } } }), /Mức suy nghĩ/);
+  assert.throws(() => dp.save({ coDinh: { sakura: { effort: "turbo" } } }), /Mức suy nghĩ/);
   assert.throws(() => dp.save({ coDinh: { sakura: { model: "opus; rm -rf /" } } }), /Tên model/);
   assert.throws(() => dp.save({ coDinh: { ai_do: { model: "opus" } } }), /Phòng không chạy/);
   assert.ok(logs.some((l) => l[1] === "dieu_phoi.save"));
@@ -153,7 +153,18 @@ test("API /dieu-phoi: đọc bảng và lưu cố định cho phòng", async (t)
     assert.equal(r.dieuPhoi.tuDong, true); assert.equal(r.dieuPhoi.bang.claude.nang.model, "opus");
     r = await call("/dieu-phoi", { coDinh: { hinata: { model: "gemini-3.8-flash-high", effort: null } } });
     assert.equal(r.status, 200); assert.equal(r.dieuPhoi.coDinh.hinata.model, "gemini-3.8-flash-high");
-    r = await call("/dieu-phoi", { coDinh: { hinata: { effort: "ultra" } } });
+    r = await call("/dieu-phoi", { coDinh: { hinata: { effort: "turbo" } } });
     assert.equal(r.status, 400);
   } finally { await ctl.close(); }
+});
+
+test("chọn model ngoài tự động: model Codex cố định thay model của vai; danh sách model đọc từ CLI", () => {
+  const { codexModelList, agyModelList } = require("../ctl/quotas");
+  const runner = require("../ctl/runner");
+  assert.ok(runner.AGENTS.CODEX_ASTRA_DEV);
+  const codex = codexModelList({ data: [{ id: "gpt-6-astra", displayName: "GPT-6-Astra", supportedReasoningEfforts: [{ reasoningEffort: "ultra" }], isDefault: true }, { id: "an", hidden: true }, { id: "x y" }] });
+  assert.deepEqual(codex.map((m) => m.id), ["gpt-6-astra"]);
+  assert.deepEqual(codex[0].efforts, ["ultra"]);
+  assert.deepEqual(agyModelList("Fetching available models...\r\ngemini-3.8-flash-high\tGemini 3.8 Flash (High)\r\nclaude-sonnet-4-6\tClaude Sonnet 4.6 (Thinking)\r\n").map((m) => m.id), ["gemini-3.8-flash-high", "claude-sonnet-4-6"]);
+  assert.throws(() => agyModelList("lỗi"), /Antigravity/);
 });

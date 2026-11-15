@@ -195,6 +195,7 @@ const runner = createRunner({ jobs, ws, audit, db, dir, scanner, mcpKnown: () =>
     ["POST", "/ket-noi/login", async (p, qs, b) => ({ ketNoi: await connectors.login(String(b.id || "")) })],
   ["POST", "/ket-noi/phong", async (p, qs, b) => ({ ketNoi: await connectors.setPhong(String(b.room || ""), b.ids) })],
     ["GET", "/dieu-phoi", () => ({ dieuPhoi: runner.dieuPhoi.status() })],
+    ["GET", "/dieu-phoi/models", async (p, qs) => ({ models: await quotas.models(qs.get("lai") === "1") })],
     // Bộ skill mặc định: thiếu/cũ theo từng AI (chỉ đọc máy, không tải mạng). Cài bằng tools/cai-skill.js.
     ["GET", "/skill", () => ({ skill: require("./skill").createSkill({ home: () => dir }).kiem() })],
     ["POST", "/dieu-phoi", (p, qs, b) => ({ dieuPhoi: runner.dieuPhoi.save(b) })],

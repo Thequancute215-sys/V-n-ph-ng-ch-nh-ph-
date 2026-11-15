@@ -52,8 +52,9 @@ const CODEX_MODEL = { SOL_ARCHITECT_PLANNER: "gpt-6.1-sol", SOL_ARCHITECT_ADVISO
 const DEFAULT_EFFORT = "medium";
 // Chèn -m <model> và -c model_reasoning_effort=<mức> ngay sau "exec". Lệnh tự cấu hình đã có -m thì giữ model đó;
 // mức do đội trưởng đặt luôn được ghi sau cùng nên thắng cấu hình sẵn.
-function codexArgs(argv, role, effort) {
-  const model = CODEX_MODEL[role], at = argv.indexOf("exec");
+// chosen: CEO cố định model khác cho phòng (dieu-phoi.json) thì dùng model đó thay model mặc định của vai.
+function codexArgs(argv, role, effort, chosen = null) {
+  const model = chosen || CODEX_MODEL[role], at = argv.indexOf("exec");
   if (!model || at < 0) return argv;
   const hasModel = argv.some((x) => x === "-m" || x === "--model" || x.startsWith("--model="));
   const hasEffort = argv.some((x, i) => (x === "-c" || x === "--config") && /^model_reasoning_effort=/.test(argv[i + 1] || ""));
@@ -220,9 +221,10 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     // Codex: mức suy nghĩ đi qua codexArgs. Lệnh tự cấu hình đã có mức thì giữ, trừ khi đội trưởng đặt rõ.
     const customEffort = base.some((x, i) => (x === "-c" || x === "--config") && /^model_reasoning_effort=/.test(base[i + 1] || ""));
     const codexEffort = effort || (d.kind === "codex" && !customEffort ? d.effort : null);
-    const shaped = dieuPhoi.apply(codexArgs(base, role, codexEffort), d);
+    const codexModel = d.kind === "codex" && d.fixed && d.model ? d.model : null;
+    const shaped = dieuPhoi.apply(codexArgs(base, role, codexEffort, codexModel), d);
     const argv = withMcp(fullFor(role) ? fullAccessArgs(shaped) : shaped, role, dir, mcpKnown()).map((x) => (x === "{prompt}" ? prompt : x));
-    const chosen = { tier: d.tier, model: d.kind === "codex" ? CODEX_MODEL[role] || null : d.model, effort: d.kind === "codex" ? codexEffort || (customEffort ? null : DEFAULT_EFFORT) : d.effort, why: d.why };
+    const chosen = { tier: d.tier, model: d.kind === "codex" ? codexModel || CODEX_MODEL[role] || null : d.model, effort: d.kind === "codex" ? codexEffort || (customEffort ? null : DEFAULT_EFFORT) : d.effort, why: d.why };
     audit.log(actor, "ai.run", root, { role, retried, task: String(task).slice(0, 500), dieuPhoi: chosen, ...(d.quotaLeft != null ? { quotaLeft: d.quotaLeft } : {}) });
     const before = agentBefore(root);
     const job = jobs.start({ kind: "ai", agent: role, workspace: root, argv, timeoutMs: a.timeoutMs, onExit: (job) => done(job, { workspace: root, role, task, retried, allowRetry, effort, before, hint }) });

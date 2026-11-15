@@ -19,7 +19,7 @@ const BANG = {
   codex: { nhe: { effort: "low" }, vua: { effort: "medium" }, nang: { effort: "xhigh" } },
   agy: { nhe: { model: "gemini-3.8-flash-low" }, vua: { model: "gemini-3.8-flash-medium" }, nang: { model: "gemini-3.8-flash-high" } },
 };
-const EFFORT = ["low", "medium", "high", "xhigh", "max"];
+const EFFORT = ["low", "medium", "high", "xhigh", "max", "ultra"];   // ultra: chỉ một số model Codex có
 // Mức gốc theo vai: báo cáo/tóm tắt nhẹ; lập kiến trúc nặng; còn lại vừa.
 const GOC = { CLAUDE_REPORTER: "nhe", SOL_ARCHITECT_PLANNER: "nang" };
 const KHO = /kiến trúc|kien truc|bảo mật|bao mat|lỗ hổng|lo hong|security|migration|nâng cấp sổ|đồng thời|race|hiệu năng|hieu nang|performance|refactor|thiết kế lại|viết lại|toàn bộ|toan bo|critical|thanh toán|payment|xác thực|auth/i;
