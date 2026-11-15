@@ -21,7 +21,7 @@ const BI_MAT = /(sk-ant-[\w-]{10,}|sk-[A-Za-z0-9_-]{20,}|AIza[0-9A-Za-z_-]{30,}|
 // Chuỗi mã hóa dài: một đoạn liền chữ+số ≥ 100 ký tự trộn hoa/thường/số (base64), hoặc ≥ 64 ký tự hex.
 const coMaDai = (s) => (String(s).match(/[A-Za-z0-9]+/g) || []).some((x) => (x.length >= 100 && /[A-Z]/.test(x) && /[a-z]/.test(x) && /\d/.test(x)) || (x.length >= 64 && /^[0-9a-f]+$/i.test(x)));
 // Câu hỏi không mang link: link (kể cả link thứ hai cho doc_tai_lieu) phải qua kiemLink.
-const CO_LINK = /https?:\/\/|\bwww\.|\b[a-z0-9-]+(\.[a-z0-9-]+)+\/\S/i;
+const CO_LINK = /https?:\/\/|\bwww\./i;
 // Giải % một lớp; chuỗi có % không hợp lệ (50% off, mã Latin-1) thì chỉ giải các nhóm %XX, không báo lỗi.
 const giaiMot = (s) => { try { return decodeURIComponent(s); } catch { return s.replace(/%([0-9a-f]{2})/gi, (m, h) => String.fromCharCode(parseInt(h, 16))); } };
 const err = (code, message) => Object.assign(new Error(message), { code });

@@ -246,7 +246,7 @@ function createAgyTaiKhoan({ dir, cred = process.platform === "win32" ? credWin 
     }
     if (!best) return traLai;
     try { chuyen(best.id, "ctl", "tự chuyển: " + lyDo); }
-    catch (e) { if (e.code === "AGY_BUSY") throw e; return { loi: e.message }; }
+    catch (e) { return { loi: e.message }; }   // bận lúc tự chuyển vì cạn: lượt vẫn chạy trên tài khoản hiện tại (như trước)
     return { tu: traLai ? traLai.tu : tu ? tu.id : null, toi: best.id, lyDo: (traLai ? traLai.lyDo + "; " : "") + lyDo, buckets: (best.hanMuc && best.hanMuc.buckets) || null };
   }
 

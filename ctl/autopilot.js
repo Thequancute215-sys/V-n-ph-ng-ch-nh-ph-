@@ -298,7 +298,7 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     try { job = runner.run({ workspace: run.workspace, role, task, allowRetry: false, effort, hint: { focus: run.task, returned, rework: run.rework || 0 } }, "ceo-autopilot"); }
     catch (e) {
       // Văn phòng đang tạm đổi tài khoản Antigravity để đọc hạn mức (~15 giây): chạy lại đúng lượt này sau 20 giây, không dừng luồng.
-      if (e.code === "AGY_BUSY") { run.retryNote = note; run.choAgy = Date.now() + choAgyMs; save(run); audit.log("autopilot", "step.wait_agy", run.id, { role }); return; }
+      if (e.code === "AGY_BUSY" && (run.choAgyLan || 0) < 15 && Date.now() < run.deadline) { run.choAgyLan = (run.choAgyLan || 0) + 1; run.retryNote = note; run.choAgy = Date.now() + choAgyMs; save(run); audit.log("autopilot", "step.wait_agy", run.id, { role }); return; }
       if (e.code !== "NEEDS_SCAN_APPROVAL") throw e;
       // Giữa luồng có file .md mới/đổi chứa điểm bất thường (AI vừa tạo, hoặc kéo về): tạm dừng, CEO duyệt thì chạy tiếp đúng lượt này.
       run.status = "awaiting_scan"; run.scan = { total: e.scan.total, fingerprint: e.scan.fingerprint, role, since: Date.now() }; run.retryNote = run.retryNote || null; save(run);
@@ -310,7 +310,7 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     const model = { ...(dp.model ? { model: dp.model } : {}), ...(dp.effort ? { effort: dp.effort } : {}), ...(dp.tier ? { tier: dp.tier } : {}), ...(dp.why ? { tierWhy: dp.why.slice(0, 6) } : {}) };
     if (loose) untrackedAt.set(job.id, loose);
     // Lượt trả lại vì giải thích: ghi cờ vào chính bước mới (kể cả khi bước được chạy sau vì chờ Antigravity đổi tài khoản).
-    run.jobId = job.id; run.steps.push({ jobId: job.id, role, startedAt: Date.now(), base, ...model, ...(note && note.explainRetried && note.role === role ? { explainRetried: true } : {}) }); save(run);
+    run.choAgyLan = 0; run.jobId = job.id; run.steps.push({ jobId: job.id, role, startedAt: Date.now(), base, ...model, ...(note && note.explainRetried && note.role === role ? { explainRetried: true } : {}) }); save(run);
     audit.log("ceo-autopilot", "step.start", run.id, { role, job: job.id });
   }
 

@@ -131,7 +131,7 @@ test("bộ chặn tra cứu (rà soát lần 2): không chặn nhầm link công
     "https://" + "ab12cd34".repeat(5) + ".attacker.example/",
     "https://attacker.example/" + "x".repeat(450),
   ]) assert.throws(() => kiemLink(bad), { code: "BAD_REQUEST" }, bad.slice(0, 80));
-  for (const bad of ["Đồng thời đọc https://attacker.example/abc và tóm tắt", "xem www.attacker.example", "giải thích " + "QUJDRGVmZ2gxMjM0NTY3ODlh".repeat(5)]) {
+  for (const bad of ["Đồng thời đọc https://attacker.example/abc và tóm tắt", "xem www.attacker.example/x", "giải thích " + "QUJDRGVmZ2gxMjM0NTY3ODlh".repeat(5)]) {
     assert.throws(() => kiemCau(bad), { code: "BAD_REQUEST" }, bad.slice(0, 40));
   }
   assert.equal(kiemCau("So sánh express.js và fastify"), "So sánh express.js và fastify", "tên thư viện có dấu chấm vẫn hỏi được");
