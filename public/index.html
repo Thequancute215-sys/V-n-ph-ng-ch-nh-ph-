@@ -22,7 +22,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
 #gl canvas { pointer-events: auto; }
 
 /* Top Navigation Bar */
-.bar { position: fixed; left: 16px; right: 16px; top: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; z-index: 20; pointer-events: none; }
+.bar { position: fixed; left: calc(16px + env(safe-area-inset-left)); right: calc(16px + env(safe-area-inset-right)); top: calc(12px + env(safe-area-inset-top)); display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; z-index: 20; pointer-events: none; }
 /* Không bóp chữ trong nút: màn hẹp thì cả thanh xuống hàng; các nút ít dùng gom vào menu "Thêm" */
 .bar > * { flex: none; white-space: nowrap; }
 .bar > .sp { flex: 1; }
@@ -198,6 +198,15 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
 .chat-acts button { cursor: pointer; font: inherit; font-size: 11px; font-weight: 700; border-radius: 8px; padding: 5px 9px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.06); color: #fff; }
 .chat-acts button.go { background: var(--cyan); color: #00121c; border-color: transparent; }
 .chat-note { font-size: 10.5px; color: var(--mute2); margin-top: 6px; line-height: 1.45; }
+/* iPhone (văn phòng 3D mở toàn màn hình từ trang điều khiển): chừa tai thỏ / Dynamic Island, thanh home và hai mép khi xoay ngang.
+   Đặt cuối để thắng các luật màn hẹp phía trên; máy tính có env() = 0 nên không đổi gì. */
+.sidebar { top: calc(68px + env(safe-area-inset-top)); bottom: calc(64px + env(safe-area-inset-bottom)); }
+.sidebar-left { left: calc(16px + env(safe-area-inset-left)); }
+.sidebar-right { right: calc(16px + env(safe-area-inset-right)); }
+.room-nav-pill { bottom: calc(14px + env(safe-area-inset-bottom)); }
+.links { right: calc(16px + env(safe-area-inset-right)); bottom: calc(16px + env(safe-area-inset-bottom)); }
+.hint { left: calc(16px + env(safe-area-inset-left)); bottom: calc(16px + env(safe-area-inset-bottom)); }
+@media (max-width: 1240px) { .room-nav-pill { left: calc(16px + env(safe-area-inset-left)); right: calc(16px + env(safe-area-inset-right)); } }
 </style>
 <link rel="stylesheet" href="office-desk.css">
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
@@ -1068,7 +1077,10 @@ function updateSidebarAgentInfo(a) {
 const chatState = { who: null, data: null, timer: null };
 const escChat = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 async function chatReq(path, body) {
-  const res = await fetch("/ctl" + path, { cache: "no-store", method: body ? "POST" : "GET", headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(20000) });
+  // Điện thoại đã ghép gọi qua /dkx/api (public/office-desk.js ctlBase); máy tính dùng /ctl như cũ.
+  const base = globalThis.vpCtlBase ? await globalThis.vpCtlBase() : "/ctl";
+  if (base === "unpaired") throw new Error("Điện thoại chưa ghép: mở trang Điều khiển để ghép rồi quay lại.");
+  const res = await fetch(base + path, { cache: "no-store", method: body ? "POST" : "GET", headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(20000) });
   let data; try { data = await res.json(); } catch { throw new Error("Controller chưa trả JSON hợp lệ (Controller có đang chạy không?)"); }
   if (!res.ok || data.ok === false) throw new Error(data.error || "Lỗi HTTP " + res.status);
   return data.chat;
