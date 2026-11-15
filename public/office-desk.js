@@ -9,9 +9,27 @@ const first = (text) => String(text || "").split(/\r?\n/)[0];
 const pendingRun = (r) => ["awaiting_answer", "awaiting_approval", "attention", "waiting_quota", "awaiting_scan"].includes(r.status) || (["approved", "acknowledged"].includes(r.status) && r.git && !r.git.pushed);
 const safeCompare = (value) => { try { const u = new URL(value); return u.protocol === "https:" && u.hostname === "github.com" && !u.username && !u.password ? u.href : null; } catch { return null; } };
 
+// Văn phòng 3D mở trên điện thoại (qua Tailscale/đường hầm): /ctl chỉ dùng được trên chính máy tính, nên điện thoại đã ghép
+// gọi qua kênh /dkx/api (lib/dieu-khien-xa.js: chỉ các lệnh trong danh sách điện thoại được phép). Chưa ghép thì báo đi ghép.
+// CEO chọn 16/11/2026: "Mở 3D, nút đi qua máy đã ghép".
+let ctlPrefix = null;
+export async function ctlBase() {
+  if (ctlPrefix) return ctlPrefix;
+  try {
+    const r = await fetch("/dkx/trang-thai", { cache: "no-store", signal: AbortSignal.timeout(8000) });
+    const d = await r.json();
+    ctlPrefix = d.local ? "/ctl" : d.ghep ? "/dkx/api" : "unpaired";
+  } catch { ctlPrefix = "/ctl"; }   // máy chủ cũ chưa có /dkx: giữ đường cũ
+  return ctlPrefix;
+}
+globalThis.vpCtlBase = ctlBase;   // index.html (chat với từng AI) dùng chung cách chọn đường
+const CHUA_GHEP = "Điện thoại chưa ghép với văn phòng: mở trang Điều khiển (dieu-khien.html), nhập mã ghép tạo trên máy tính rồi quay lại.";
+
 async function request(path, body, timeout = 15000) {
+  const base = await ctlBase();
+  if (base === "unpaired") throw Object.assign(new Error(CHUA_GHEP), { code: "NEED_PAIRING" });
   let response;
-  try { response = await fetch("/ctl" + path, { cache: "no-store", method: body === undefined ? "GET" : "POST", signal: AbortSignal.timeout(timeout),
+  try { response = await fetch(base + path, { cache: "no-store", method: body === undefined ? "GET" : "POST", signal: AbortSignal.timeout(timeout),
     ...(body === undefined ? {} : { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }) }); }
   catch (e) { throw new Error("Không kết nối được Controller hoặc yêu cầu quá thời gian. Kiểm tra Controller đang chạy. " + e.message); }
   let data;
@@ -40,7 +58,7 @@ export function createDesk(getOffice) {
     <section data-view="approvals" hidden><div id="deskApprovals">Đang tải việc chờ duyệt…</div></section>
     <section data-view="assign" hidden><form id="deskAssign"><label for="deskTask">Việc anh muốn cả đội thực hiện</label><textarea id="deskTask" required maxlength="3000" rows="5"></textarea><p>Đội sẽ sửa file, kiểm thử và commit cục bộ trong dự án đang chọn.</p><button type="submit" data-write>Giao cho cả đội</button></form><p id="deskAssignState"></p></section>
     <section data-view="ideas" hidden><form id="deskIdea"><label for="deskIdeaTitle">Tên ý tưởng</label><input id="deskIdeaTitle" required maxlength="200"><label for="deskIdeaDetail">Mô tả ý tưởng</label><textarea id="deskIdeaDetail" maxlength="2400" rows="3"></textarea><div class="desk-actions"><button type="submit" data-write>Lưu ý tưởng</button></div></form><div id="deskIdeas">Đang tải ý tưởng…</div></section>
-    <section data-view="projects" hidden><label for="deskProject">Dự án đã đăng ký</label><select id="deskProject"><option value="">Đang tải…</option></select><div class="desk-actions"><button id="deskSwitch" data-write>Chọn dự án</button><button id="deskGithubLoad">Tải repo GitHub</button></div><p id="deskGithubState" role="status">Bấm tải repo GitHub để đọc danh sách.</p><div id="deskGithub"></div><button id="deskGithubMore" hidden>Tải thêm repo</button></section>
+    <section data-view="projects" hidden><div class="desk-entry"><strong>Tạo dự án mới</strong><label for="damYTuong">Ý tưởng (vài câu: sản phẩm làm gì, cho ai)</label><textarea id="damYTuong" maxlength="2000" rows="3" placeholder="Ví dụ: app luyện nghe tiếng Anh cho học sinh cấp 2, có bài nghe theo chủ đề và chấm điểm phát âm"></textarea><div class="desk-actions"><button type="button" id="damGoiY" data-dam>Gợi ý tên repo</button></div><div id="damKetQua"></div></div><label for="deskProject">Dự án đã đăng ký</label><select id="deskProject"><option value="">Đang tải…</option></select><div class="desk-actions"><button id="deskSwitch" data-write>Chọn dự án</button><button id="deskGithubLoad">Tải repo GitHub</button></div><p id="deskGithubState" role="status">Bấm tải repo GitHub để đọc danh sách.</p><div id="deskGithub"></div><button id="deskGithubMore" hidden>Tải thêm repo</button></section>
     <section data-view="quotas" hidden><div id="deskQuotas">Đang tải hạn mức…</div></section>
     <section data-view="progress" hidden><div id="deskProgress">Đang đọc tiến độ dự án…</div></section>
     <section data-view="journal" hidden><div id="deskJournal" class="journal" aria-live="polite">Đang tải nhật ký…</div></section>
@@ -73,6 +91,8 @@ export function createDesk(getOffice) {
   }
   function lock() {
     dialog.querySelectorAll("[data-write], [data-action]").forEach((b) => { b.disabled = mutating || !active || !!errors.workspace || b.dataset.invalid === "true"; });
+    // Tạo dự án mới không cần dự án đang chọn (máy mới cài chưa có dự án nào).
+    dialog.querySelectorAll("[data-dam]").forEach((b) => { b.disabled = mutating; });
     $("deskProject").disabled = mutating || !workspaces.length || !!errors.workspace;
     $("deskGithubLoad").disabled = githubLoading || mutating;
     $("deskGithubMore").disabled = githubLoading || mutating;
@@ -320,6 +340,38 @@ export function createDesk(getOffice) {
     $("deskGithubState").textContent = githubError || (githubLoading ? "Đang tải repo GitHub…" : githubLoaded ? `${github.length} repo đã tải` + (!github.length ? ". Không có repo trong danh sách." : "") : "Bấm tải repo GitHub để đọc danh sách.");
     $("deskGithubMore").hidden = !githubMore; lock();
   }
+  // Tạo dự án mới (ctl/du-an-moi.js): gợi ý tên repo → anh chọn/sửa → Duyệt & tạo → theo dõi từng bước. Dùng được trên điện thoại đã ghép.
+  const DAM_TT = { cho: "chờ", dang: "đang làm…", xong: "xong", loi: "lỗi", "bo-qua": "bỏ qua" };
+  let damGoiYData = null, damOp = null, damTimer = null;
+  const damTen = (v) => String(v || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[đĐ]/g, "d").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+  function renderDam() {
+    const box = $("damKetQua");
+    if (!box) return;
+    if (damOp) {
+      box.innerHTML = `<p><strong>${esc(damOp.ten)}</strong> · ${esc({ dang: "đang khởi động dự án…", xong: "đã xong", "xong-mot-phan": "xong, có bước lỗi", loi: "dừng vì lỗi" }[damOp.trangThai] || damOp.trangThai)}</p><ol>` +
+        damOp.buoc.map((s) => `<li>${esc(s.ten)}: <b>${esc(DAM_TT[s.trangThai] || s.trangThai)}</b>${s.ghiChu ? `<br><small>${esc(s.ghiChu)}</small>` : ""}</li>`).join("") + "</ol>" +
+        (damOp.trangThai !== "dang" ? `<div class="desk-actions"><button type="button" id="damMoi">Tạo dự án khác</button></div>` : "");
+      return;
+    }
+    if (!damGoiYData) { box.innerHTML = ""; return; }
+    const d = damGoiYData, first = d.goiY.find((g) => g.conTrong !== false) || d.goiY[0] || { ten: "", moTa: "" };
+    box.innerHTML = `<p class="muted">${d.nguon === "ai" ? "Claude gợi ý" : "Gợi ý theo chữ trong ý tưởng"}${d.login ? " · tạo trong tài khoản GitHub <b>" + esc(d.login) + "</b>" : ""}${d.ghiChu ? " · " + esc(d.ghiChu) : ""}</p>` +
+      d.goiY.map((g, i) => `<p><label style="display:flex;gap:8px;align-items:flex-start"><input type="radio" name="damChon" value="${i}" style="width:auto" ${g === first ? "checked" : ""}><span><b>${esc(g.ten)}</b> ${g.conTrong === false ? '<span class="error">· đã có repo trùng tên</span>' : g.conTrong ? "· còn trống" : ""}<br><small>${esc(g.moTa)}</small></span></label></p>`).join("") +
+      `<label for="damTenRepo">Tên repo (sửa được)</label><input id="damTenRepo" maxlength="40" value="${esc(first.ten)}">` +
+      `<label for="damMoTa">Mô tả repo</label><input id="damMoTa" maxlength="350" value="${esc(first.moTa)}">` +
+      `<p><label><input type="checkbox" id="damBoKiem" style="width:auto" checked> Cài bộ kiểm chu trình CI (mở nhánh, anh merge sau)</label></p>` +
+      `<p><label><input type="checkbox" id="damHinata" style="width:auto" checked> Giao Hinata viết đặc tả ngay sau khi tạo</label></p>` +
+      `<p class="muted">Repo tạo ở chế độ riêng tư, tải về thư mục dự án trên máy. Văn phòng chỉ tạo khi anh bấm Duyệt.</p>` +
+      `<div class="desk-actions"><button type="button" id="damDuyet" data-dam>Duyệt &amp; tạo dự án</button><button type="button" id="damHuy">Huỷ</button></div>`;
+  }
+  async function damTheoDoi() {
+    clearTimeout(damTimer);
+    if (!damOp || damOp.trangThai !== "dang") return;
+    try { damOp = (await request("/du-an-moi/" + encodeURIComponent(damOp.id))).duAnMoi; } catch (e) { notice(e.message, true); }
+    renderDam();
+    if (damOp && damOp.trangThai === "dang") damTimer = setTimeout(damTheoDoi, 2000);
+    else if (damOp) { notice(damOp.trangThai === "xong" ? "Đã khởi động dự án " + damOp.ten + "." : "Dự án " + damOp.ten + " dừng ở một bước lỗi: xem chi tiết trong mục Dự án.", damOp.trangThai !== "xong"); refreshNow(); }
+  }
   async function loadGithub(more = false) {
     if (githubLoading || mutating) return;
     githubLoading = true; githubError = ""; renderGithub();
@@ -348,6 +400,31 @@ export function createDesk(getOffice) {
   dialog.addEventListener("close", () => toolbar.querySelectorAll("[data-desk]").forEach((b) => b.setAttribute("aria-expanded", "false")));
   $("deskRefresh").onclick = () => refreshNow();
   $("deskGithubLoad").onclick = () => loadGithub(); $("deskGithubMore").onclick = () => loadGithub(true);
+  $("damGoiY").onclick = async () => {
+    const yTuong = $("damYTuong").value.trim();
+    if (yTuong.length < 10) { notice("Viết ý tưởng ít nhất 10 ký tự để văn phòng gợi ý tên.", true); return; }
+    $("damGoiY").disabled = true; damOp = null; $("damKetQua").innerHTML = "<p>Đang nghĩ tên repo (tối đa 1 phút)…</p>";
+    try { damGoiYData = (await request("/du-an-moi/goi-y", { yTuong }, 90000)).duAnMoi; } catch (e) { damGoiYData = null; notice(e.message, true); }
+    $("damGoiY").disabled = false; renderDam();
+  };
+  $("damKetQua").addEventListener("change", (e) => {
+    if (e.target.name !== "damChon" || !damGoiYData) return;
+    const g = damGoiYData.goiY[Number(e.target.value)];
+    if (g) { $("damTenRepo").value = g.ten; $("damMoTa").value = g.moTa; }
+  });
+  $("damKetQua").addEventListener("click", async (e) => {
+    if (e.target.id === "damHuy") { damGoiYData = null; renderDam(); return; }
+    if (e.target.id === "damMoi") { damOp = null; damGoiYData = null; $("damYTuong").value = ""; renderDam(); return; }
+    if (e.target.id !== "damDuyet") return;
+    const ten = damTen($("damTenRepo").value);
+    if (!/^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/.test(ten)) { notice("Tên repo 3–40 ký tự: chữ thường không dấu, số, gạch ngang.", true); return; }
+    if (!confirm("Tạo repo riêng tư \"" + ten + "\" trên GitHub và khởi động dự án?")) return;
+    e.target.disabled = true;
+    try {
+      damOp = (await request("/du-an-moi", { ten, moTa: $("damMoTa").value, yTuong: $("damYTuong").value.trim(), caiBoKiem: $("damBoKiem").checked, giaoHinata: $("damHinata").checked }, 30000)).duAnMoi;
+      damGoiYData = null; renderDam(); damTheoDoi();
+    } catch (err) { e.target.disabled = false; notice(err.message, true); }
+  });
   $("deskSwitch").onclick = () => { const path = $("deskProject").value; if (path) mutate("Chuyển sang dự án " + path, async () => { await request("/workspaces/switch", { path }); overview = null; show("progress"); }); };
   $("deskAssign").onsubmit = (e) => {
     e.preventDefault(); const workspace = active, task = $("deskTask").value.trim();

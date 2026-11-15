@@ -16,8 +16,11 @@
 <style>
   :root { --bg: #05070a; --card: #11151c; --line: #232a35; --text: #e8ecf1; --muted: #9aa4b2; --accent: #ecc970; --ok: #34d399; --bad: #f87171; --warn: #fbbf24; }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; padding: 0 16px calc(84px + env(safe-area-inset-bottom)); }
-  header { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 14px 0 10px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); }
+  /* iPhone mở từ màn hình chính (status bar trong suốt): chừa chỗ cho tai thỏ / Dynamic Island và hai mép khi xoay ngang. */
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 0 calc(16px + env(safe-area-inset-right)) calc(84px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left)); }
+  header { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: calc(14px + env(safe-area-inset-top)) 0 10px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); }
+  header a.btn3d { color: #111; background: var(--accent); border-radius: 10px; padding: 8px 12px; font-weight: 700; font-size: 14px; text-decoration: none; white-space: nowrap; }
   header h1 { font-size: 18px; margin: 0; flex: 1; }
   .muted { color: var(--muted); font-size: 14px; }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin: 12px 0; overflow-wrap: anywhere; }
@@ -52,7 +55,7 @@
 </style>
 </head>
 <body>
-<header><h1>Điều khiển văn phòng</h1><span id="who" class="muted"></span></header>
+<header><h1>Điều khiển văn phòng</h1><span id="who" class="muted"></span><a class="btn3d" id="mo3d" href="/" hidden>Văn phòng 3D</a></header>
 <main id="app"><div class="skeleton"></div><div class="skeleton"></div></main>
 <div id="msg" role="status" aria-live="polite"></div>
 <nav class="tabs" id="tabs" hidden aria-label="Mục điều khiển">
@@ -85,6 +88,7 @@ async function start() {
     if (!s.ghep) return showPair(s.local);
     $("who").textContent = s.thietBi ? s.thietBi.ten : "";
     $("tabs").hidden = false;
+    $("mo3d").hidden = false;   // đã ghép: văn phòng 3D dùng được các nút (gọi qua /dkx/api)
     await load();
     timer = setInterval(() => { if (document.visibilityState === "visible" && !busy) load(true); }, 10000);
   } catch (e) { $("app").innerHTML = `<div class="card"><h3>Không vào được</h3><p>${esc(e.message)}</p><div class="row"><button type="button" onclick="location.reload()">Thử lại</button></div></div>`; }
