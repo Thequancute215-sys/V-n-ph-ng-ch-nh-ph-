@@ -251,9 +251,11 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     const loiGiao = prompt + (["claude", "codex"].includes(d.kind) && traCuuBat(dir) ? TRA_CUU_NOTE : "");
     const argv = withMcp(fullFor(role) ? fullAccessArgs(shaped) : shaped, role, dir, mcpKnown()).map((x) => (x === "{prompt}" ? loiGiao : x));
     // Antigravity: tài khoản đang dùng sắp cạn thì đổi sang tài khoản còn nhiều hạn mức hơn trước khi chạy (ctl/agy-tai-khoan.js).
-    const doiTk = d.kind === "agy" && agyTk ? agyTk.truocLuot() : null;
+    // Model của lượt quyết định nhóm hạn mức và tài khoản nào dùng được (tài khoản Pro có model mà family không có).
+    const doiTk = d.kind === "agy" && agyTk ? agyTk.truocLuot({ model: d.model }) : null;
+    const tkWhy = doiTk && doiTk.toi ? ["đổi tài khoản Antigravity: " + doiTk.lyDo] : doiTk && doiTk.loi ? ["tài khoản Antigravity: " + doiTk.loi] : [];
     const chosen = { tier: d.tier, model: d.kind === "codex" ? codexModel || CODEX_MODEL[role] || null : d.model, effort: d.kind === "codex" ? codexEffort || (customEffort ? null : DEFAULT_EFFORT) : d.effort,
-      why: doiTk && doiTk.toi ? [...d.why, "đổi tài khoản Antigravity: " + doiTk.lyDo] : d.why, ...(doiTk ? { taiKhoan: doiTk } : {}) };
+      why: [...d.why, ...tkWhy], ...(doiTk ? { taiKhoan: doiTk } : {}) };
     audit.log(actor, "ai.run", root, { role, retried, task: String(task).slice(0, 500), dieuPhoi: chosen, ...(d.quotaLeft != null ? { quotaLeft: d.quotaLeft } : {}) });
     const before = agentBefore(root);
     const job = jobs.start({ kind: "ai", agent: role, workspace: root, argv, timeoutMs: a.timeoutMs, onExit: (job) => done(job, { workspace: root, role, task, retried, allowRetry, effort, before, hint }) });

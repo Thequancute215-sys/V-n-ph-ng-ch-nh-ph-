@@ -136,3 +136,78 @@ test("API ctl: /agy-tai-khoan đọc, cất, đổi, xoá; bảng hạn mức k�
   [code, r] = await call(`/agy-tai-khoan/${fam}/xoa`, {});
   assert.equal(r.taiKhoan.ds.length, 1);
 });
+
+// 16/11/2026 (thử thật trên máy CEO): trình cập nhật nền agy chạy suốt làm văn phòng tưởng bận; tài khoản Pro thấy model
+// (Gemini 4 Argon, Claude Opus 5.5) mà family không có, và có nhóm hạn mức riêng "Gemini 4 Argon".
+const { agyDangChayTu, nhomCua } = require("../ctl/agy-tai-khoan");
+const hm3 = (gemini, argon, claude) => [{ id: "g", label: "7 ngày", group: "Gemini", remainingPercent: gemini, resetAt: "2026-11-21T07:53:29Z" },
+  { id: "a", label: "7 ngày", group: "Gemini 4 Argon", remainingPercent: argon, resetAt: "2026-11-21T07:53:29Z" },
+  { id: "c", label: "5 giờ", group: "Claude / GPT trong Antigravity", remainingPercent: claude, resetAt: "2026-11-21T07:53:29Z" }];
+
+test("trình cập nhật nền của agy không tính là bận; lượt AI, đọc hạn mức, phiên mở tay thì tính", () => {
+  assert.equal(agyDangChayTu(["agy.exe C:/x/agy.exe --bg-updater --app_data_dir=antigravity-cli"]), false);
+  assert.equal(agyDangChayTu(["agy.exe C:/x/agy.exe -p /usage --output-format json"]), true);
+  assert.equal(agyDangChayTu(["agy.exe \"C:/x/agy.exe\""]), true, "phiên anh tự mở");
+  assert.equal(agyDangChayTu([]), false);
+});
+
+test("hạn mức tính theo nhóm của model: Flash → Gemini, Argon → Gemini 4 Argon, Claude/GPT → nhóm Claude/GPT", () => {
+  const hanMuc = { buckets: hm3(50, 5, 1) };
+  assert.equal(conLai(hanMuc, Date.parse("2026-11-16T03:00:00Z")), 50);
+  assert.equal(conLai(hanMuc, Date.parse("2026-11-16T03:00:00Z"), "gemini-3.8-flash-high"), 50);
+  assert.equal(conLai(hanMuc, Date.parse("2026-11-16T03:00:00Z"), "gemini-4-argon-high"), 5);
+  assert.equal(conLai(hanMuc, Date.parse("2026-11-16T03:00:00Z"), "claude-opus-5-5-high"), 1);
+  assert.equal(conLai({ buckets: hm3(50, 5, 1).filter((b) => b.group !== "Gemini 4 Argon") }, Date.parse("2026-11-16T03:00:00Z"), "gemini-4-argon-high"), 50, "tài khoản không có nhóm Argon thì xét nhóm Gemini");
+  assert.ok(nhomCua("gemini-pro-orchestrator-g1-pro")("Gemini 4 Argon"));
+});
+
+test("model chỉ tài khoản Pro có: đang ở Family thì đổi sang Pro; Pro sắp cạn nhóm Argon thì không đổi sang Family (không có model)", (t) => {
+  const { tk, k } = fixture(t);
+  const fam = tk.cat("Family").ds[0].id;
+  tk.ghiModels(["gemini-3.8-flash-high"]);
+  k.dangNhap("pro@gmail.com"); const pro = tk.cat("Pro").ds[1].id;
+  tk.ghiModels(["gemini-3.8-flash-high", "gemini-4-argon-high"]);
+  tk.chuyen(fam);
+  const r = tk.truocLuot({ model: "gemini-4-argon-high" });
+  assert.equal(r.toi, pro); assert.match(r.lyDo, /Family không có model gemini-4-argon-high, Pro có/);
+  tk.ghiHanMuc(hm3(80, 5, 100));
+  assert.equal(tk.truocLuot({ model: "gemini-4-argon-high" }), null, "Family không có Argon nên giữ Pro dù Argon còn 5%");
+  assert.equal(tk.truocLuot({ model: "gemini-3.8-flash-high" }), null, "Flash của Pro còn 80%: không đổi vì nhóm Argon cạn");
+  tk.ghiHanMuc(hm3(8, 90, 100));
+  assert.equal(tk.truocLuot().toi, fam, "Flash của Pro còn 8% thì sang Family (chưa biết hạn mức = coi như đầy)");
+  tk.sua({ tuChuyen: false });
+  assert.match(tk.truocLuot({ model: "gemini-4-argon-high" }).loi, /Family không có model gemini-4-argon-high và tự chuyển đang tắt/);
+  assert.equal(tk.trangThai().ds.find((a) => a.id === pro).soModel, 2);
+});
+
+test("đọc tài khoản nghỉ: đọc thêm danh sách model; đổi về bị chặn vì máy bận thì thử lại, không kẹt ở tài khoản nghỉ", async (t) => {
+  let busyLan = 0;
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vp-agy-tk-"));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const k = khoGia("family@gmail.com"), cho = [];
+  let ganDoi = false;
+  const tk = createAgyTaiKhoan({ dir, cred: k.cred, agyDangChay: () => ganDoi && busyLan-- > 0, now: () => Date.parse("2026-11-16T03:00:00Z"), cho: async (ms) => { cho.push(ms); } });
+  const fam = tk.cat("Family").ds[0].id;
+  k.dangNhap("pro@gmail.com"); tk.cat("Pro");
+  tk.chuyen(fam);
+  const doc = async () => { ganDoi = true; busyLan = 2; return hm(60); };
+  assert.equal(await tk.docNghi(doc, { docModels: async () => ["gemini-4-argon-high", "gemini-3.8-flash-high"] }), true);
+  assert.equal(k.kho.get("goc").email, "family@gmail.com", "đổi về được sau 2 lần máy bận");
+  assert.deepEqual(cho, [5000, 5000]);
+  assert.deepEqual(tk.modelTheoTk().map((x) => [x.nhan, x.models.length]), [["Pro", 2]]);
+});
+
+test("bảng chọn model Antigravity: hợp các tài khoản, model chỉ một tài khoản có thì ghi 'chỉ <tên>'", async (t) => {
+  const { createQuotas } = require("../ctl/quotas");
+  const { tk, k } = fixture(t);
+  tk.cat("Family"); tk.ghiModels(["gemini-3.8-flash-high"]);
+  k.dangNhap("pro@gmail.com"); tk.cat("Pro");
+  const q = createQuotas({ dir: fs.mkdtempSync(path.join(os.tmpdir(), "vp-q-")), agyTk: tk, queries: {
+    codex: async () => ({}), claude: async () => ({}), antigravity: async () => ({}),
+    codexModels: async () => ({ data: [{ id: "gpt-6-astra", displayName: "Astra" }] }),
+    agyModels: async () => "gemini-3.8-flash-high\tGemini 3.8 Flash (High)\ngemini-4-argon-high\tGemini 4 Argon (High)\n" } });
+  t.after(() => q.close());
+  const m = await q.models(true);
+  assert.deepEqual(m.agy.models.map((x) => x.name), ["Gemini 3.8 Flash (High)", "Gemini 4 Argon (High) · chỉ Pro"]);
+  assert.deepEqual(tk.modelTheoTk().find((x) => x.nhan === "Pro").models, ["gemini-3.8-flash-high", "gemini-4-argon-high"], "danh sách vừa đọc ghi cho tài khoản đang dùng (Pro)");
+});

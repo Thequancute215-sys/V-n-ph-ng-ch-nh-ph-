@@ -201,7 +201,8 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
   ["POST", "/ket-noi/phong", async (p, qs, b) => ({ ketNoi: await connectors.setPhong(String(b.room || ""), b.ids) })],
     ["GET", "/dieu-phoi", () => ({ dieuPhoi: runner.dieuPhoi.status() })],
     ["GET", "/agy-tai-khoan", () => ({ taiKhoan: agyTk.trangThai() })],
-    ["POST", "/agy-tai-khoan/cat", (p, qs, b) => ({ taiKhoan: agyTk.cat(b.nhan) })],
+    // Cất xong thì đọc luôn danh sách model của tài khoản vừa cất (mỗi tài khoản thấy model khác nhau).
+    ["POST", "/agy-tai-khoan/cat", (p, qs, b) => { const taiKhoan = agyTk.cat(b.nhan); quotas.models(true).catch(() => {}); return { taiKhoan }; }],
     ["POST", "/agy-tai-khoan/sua", (p, qs, b) => ({ taiKhoan: agyTk.sua(b || {}) })],
     ["POST", "/agy-tai-khoan/doc-nghi", () => { quotas.docNghi(true); return [202, { taiKhoan: agyTk.trangThai() }]; }],
     ["POST", "/agy-tai-khoan/:id/chuyen", (p) => { agyTk.chuyen(p.id); quotas.refresh(true); return { taiKhoan: agyTk.trangThai() }; }],

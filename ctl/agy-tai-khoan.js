@@ -15,6 +15,7 @@ const { writeAtomic } = require("../lib/ghi-file");
 
 const SCRIPT = path.join(__dirname, "agy-dang-nhap.ps1");
 const DOC_NGHI_MOI = 30 * 60 * 1000;
+const TRA_LAI_LAN = 6, TRA_LAI_CHO = 5000;   // trả lại tài khoản gốc sau khi đọc hạn mức: tối đa 6 lần, cách 5 giây
 const err = (code, message) => Object.assign(new Error(message), { code });
 const anEmail = (e) => { const m = /^([^@]{0,2})[^@]*(@.*)$/.exec(String(e || "")); return m ? m[1] + "***" + m[2] : ""; };
 
@@ -28,20 +29,38 @@ function credWin(args) {
     throw err("AGY_CRED", "Đổi đăng nhập Antigravity lỗi: " + line.replace(/^(LOI|SAI) /, ""));
   }
 }
-// Có tiến trình agy.exe nào đang chạy (lượt AI, đọc hạn mức, phiên anh tự mở)?
+// Có tiến trình agy.exe nào đang LÀM VIỆC (lượt AI, đọc hạn mức, phiên anh tự mở)? Trình cập nhật nền của agy
+// (`agy.exe --bg-updater`, chạy suốt, không dùng đăng nhập) không tính: nếu tính thì văn phòng không bao giờ đổi được tài khoản.
+const agyDangChayTu = (cmdLines) => cmdLines.some((l) => /agy(\.exe)?/i.test(l) && !/--bg-updater\b/.test(l));
+const PS_AGY = "Get-CimInstance Win32_Process -Filter \"Name='agy.exe'\" | ForEach-Object { 'agy.exe ' + $_.CommandLine }";
 function agyDangChayWin() {
-  try { return /agy\.exe/i.test(execFileSync("tasklist", ["/FI", "IMAGENAME eq agy.exe", "/FO", "CSV", "/NH"], { encoding: "utf8", timeout: 10000, windowsHide: true })); }
-  catch { return true; }   // không kiểm được thì coi như đang bận: không đổi
+  try {
+    const out = execFileSync("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", PS_AGY],
+      { encoding: "utf8", timeout: 20000, windowsHide: true, stdio: ["ignore", "pipe", "ignore"] });
+    return agyDangChayTu(out.split(/\r?\n/).filter((l) => l.trim()));
+  } catch { return true; }   // không kiểm được thì coi như đang bận: không đổi
 }
 
-// Phần trăm Gemini còn lại thấp nhất của một bản hạn mức; cửa sổ đã qua mốc mở lại thì coi như 100%. null = chưa biết.
-function conLai(hanMuc, now = Date.now()) {
-  const b = ((hanMuc && hanMuc.buckets) || []).filter((x) => typeof x.remainingPercent === "number" && !/Claude|GPT/i.test(String(x.group || x.label)));
+// Nhóm hạn mức mà một model của Antigravity tiêu (đọc từ /usage 16/11/2026: "Gemini Models", "Claude and GPT models",
+// và tài khoản Pro có thêm "Gemini 4 Argon"). Gemini 4 Hydrogen chưa thấy nhóm riêng nên tính vào nhóm Gemini (cần kiểm chứng).
+function nhomCua(model) {
+  const m = String(model || "").toLowerCase();
+  if (/^(claude|gpt)/.test(m)) return (g) => /Claude|GPT/i.test(g);
+  if (/argon|orchestrator/.test(m)) return (g) => /Argon|Gemini 4/i.test(g);
+  return (g) => g === "Gemini";
+}
+// Phần trăm còn lại thấp nhất của nhóm hạn mức mà model sẽ dùng (mặc định: nhóm Gemini của các model Flash);
+// cửa sổ đã qua mốc mở lại thì coi như 100%. Không có nhóm khớp thì xét mọi nhóm không phải Claude/GPT. null = chưa biết.
+function conLai(hanMuc, now = Date.now(), model = null) {
+  const all = ((hanMuc && hanMuc.buckets) || []).filter((x) => typeof x.remainingPercent === "number");
+  const khop = nhomCua(model);
+  let b = all.filter((x) => khop(String(x.group || x.label)));
+  if (!b.length) b = all.filter((x) => !/Claude|GPT/i.test(String(x.group || x.label)));
   if (!b.length) return null;
   return Math.min(...b.map((x) => (x.resetAt && Date.parse(x.resetAt) <= now ? 100 : x.remainingPercent)));
 }
 
-function createAgyTaiKhoan({ dir, cred = process.platform === "win32" ? credWin : null, agyDangChay = agyDangChayWin, now = Date.now, audit = { log() {} }, agyJobs = () => 0 } = {}) {
+function createAgyTaiKhoan({ dir, cred = process.platform === "win32" ? credWin : null, agyDangChay = agyDangChayWin, now = Date.now, audit = { log() {} }, agyJobs = () => 0, cho = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
   const file = path.join(dir, "agy-tai-khoan.json");
   const doc = () => { try { const c = JSON.parse(fs.readFileSync(file, "utf8")); return { tuChuyen: c.tuChuyen !== false, nguong: Number.isFinite(c.nguong) ? c.nguong : 10, ds: Array.isArray(c.ds) ? c.ds : [] }; } catch { return { tuChuyen: true, nguong: 10, ds: [] }; } };
   const ghi = (c) => writeAtomic(file, JSON.stringify(c, null, 2));
@@ -65,7 +84,8 @@ function createAgyTaiKhoan({ dir, cred = process.platform === "win32" ? credWin 
     if (nhanh) cur = emailCache && emailCache.email;
     else if (cred && c.ds.length) { try { cur = emailDangDung(); } catch (e) { loi = e.message; } }
     return { hoTro: !!cred, tuChuyen: c.tuChuyen, nguong: c.nguong, dangTrao, loi,
-      ds: c.ds.map((a) => ({ id: a.id, nhan: a.nhan, email: anEmail(a.email), dangDung: !!cur && cur === a.email, themLuc: a.themLuc, hanMuc: a.hanMuc || null, conLai: conLai(a.hanMuc, now()) })) };
+      ds: c.ds.map((a) => ({ id: a.id, nhan: a.nhan, email: anEmail(a.email), dangDung: !!cur && cur === a.email, themLuc: a.themLuc, hanMuc: a.hanMuc || null, conLai: conLai(a.hanMuc, now()),
+        soModel: Array.isArray(a.models) ? a.models.length : null })) };
   }
 
   // Cất tài khoản đang đăng nhập trong Antigravity (anh đăng nhập tài khoản đó bằng `agy` rồi bấm Cất).
@@ -126,25 +146,53 @@ function createAgyTaiKhoan({ dir, cred = process.platform === "win32" ? credWin 
     ghi(c);
   }
 
-  // Trước lượt Hinata/Kakashi: tài khoản đang dùng còn ≤ ngưỡng thì đổi sang tài khoản còn nhiều nhất (chưa biết = coi như đầy).
-  // Tài khoản kia cũng ≤ ngưỡng thì giữ nguyên: tránh đổi qua đổi lại mỗi lượt khi cả hai cùng sắp cạn.
-  function truocLuot() {
+  // Danh sách model của tài khoản đang dùng (bộ hạn mức gọi sau mỗi lần đọc `agy models`): mỗi tài khoản thấy model khác nhau
+  // (16/11/2026: Pro có Gemini 4 Argon/Hydrogen, Claude Opus 5.5; family chỉ có Gemini 3.8 Flash).
+  function ghiModels(ids, email = null) {
     const c = doc();
-    if (!cred || !c.tuChuyen || c.ds.length < 2 || dangTrao) return null;
+    if (!c.ds.length || !Array.isArray(ids) || !ids.length) return;
+    let e = email;
+    if (!e) { try { e = emailDangDung(); } catch { return; } }
+    const a = c.ds.find((x) => x.email === e);
+    if (!a) return;
+    a.models = [...new Set(ids.map(String))].sort(); a.modelsLuc = new Date(now()).toISOString();
+    ghi(c);
+  }
+  // Model nào có ở tài khoản nào (để bảng chọn model ghi "chỉ Pro"). Tài khoản chưa đọc danh sách thì không tính.
+  const modelTheoTk = () => doc().ds.filter((a) => Array.isArray(a.models)).map((a) => ({ id: a.id, nhan: a.nhan, models: a.models }));
+
+  // Trước lượt Hinata/Kakashi (model: model sẽ dùng, null = mặc định Flash của CLI):
+  // - tài khoản đang dùng không có model đó (đã biết danh sách) mà tài khoản khác có thì đổi sang;
+  // - tài khoản đang dùng còn ≤ ngưỡng (tính theo nhóm hạn mức của model) thì đổi sang tài khoản có model đó, còn nhiều nhất
+  //   (chưa biết hạn mức = coi như đầy). Tài khoản kia cũng ≤ ngưỡng thì giữ nguyên: tránh đổi qua đổi lại mỗi lượt.
+  function truocLuot({ model = null } = {}) {
+    const c = doc();
+    if (!cred || c.ds.length < 2 || dangTrao) return null;
     let cur;
     try { cur = emailDangDung(true); } catch (e) { return { loi: e.message }; }
     const tu = c.ds.find((a) => a.email === cur);
-    const left = (a) => { const v = conLai(a.hanMuc, now()); return v === null ? 100 : v; };
-    if (tu && left(tu) > c.nguong) return null;
-    const best = c.ds.filter((a) => !tu || a.id !== tu.id).sort((a, b) => left(b) - left(a))[0];
-    if (!best || (tu && left(best) <= c.nguong)) return null;
-    const lyDo = tu ? `${tu.nhan} còn ${Math.round(left(tu))}% (≤ ${c.nguong}%), ${best.nhan} còn ${Math.round(left(best))}%` : "đăng nhập hiện tại không thuộc tài khoản đã cất";
+    const coModel = (a) => !model || !Array.isArray(a.models) || a.models.includes(model);
+    // Tắt tự chuyển: không đổi, nhưng báo trước nếu tài khoản đang dùng không có model của lượt (lượt sẽ lỗi).
+    if (!c.tuChuyen) return tu && !coModel(tu) ? { loi: `${tu.nhan} không có model ${model} và tự chuyển đang tắt: đổi tài khoản tay hoặc chọn model khác` } : null;
+    const left = (a) => { const v = conLai(a.hanMuc, now(), model); return v === null ? 100 : v; };
+    const khac = c.ds.filter((a) => (!tu || a.id !== tu.id) && coModel(a)).sort((a, b) => left(b) - left(a));
+    let best = null, lyDo = "";
+    if (tu && !coModel(tu)) {
+      best = khac[0] || null;
+      if (best) lyDo = tu.nhan + " không có model " + model + ", " + best.nhan + " có";
+    } else if (!tu || left(tu) <= c.nguong) {
+      best = khac[0] || null;
+      if (best && tu && left(best) <= c.nguong) best = null;
+      if (best) lyDo = tu ? `${tu.nhan} còn ${Math.round(left(tu))}% (≤ ${c.nguong}%), ${best.nhan} còn ${Math.round(left(best))}%` : "đăng nhập hiện tại không thuộc tài khoản đã cất";
+    }
+    if (!best) return null;
     try { chuyen(best.id, "ctl", "tự chuyển: " + lyDo); return { tu: tu ? tu.id : null, toi: best.id, lyDo }; }
     catch (e) { return { loi: e.message }; }
   }
 
-  // Đọc hạn mức tài khoản đang nghỉ: đổi sang, đọc /usage, đổi về. docUsage() trả buckets của đăng nhập đang dùng.
-  async function docNghi(docUsage, { force = false } = {}) {
+  // Đọc hạn mức tài khoản đang nghỉ: đổi sang, đọc /usage, đổi về. docUsage() trả buckets của đăng nhập đang dùng;
+  // docModels() (nếu có) trả danh sách model — đọc thêm khi tài khoản đó chưa có danh sách hoặc danh sách cũ quá 1 ngày.
+  async function docNghi(docUsage, { force = false, docModels = null } = {}) {
     const c = doc();
     if (!cred || c.ds.length < 2 || dangTrao) return false;
     if (!force && now() - docNghiLuc < DOC_NGHI_MOI) return false;
@@ -159,18 +207,28 @@ function createAgyTaiKhoan({ dir, cred = process.platform === "win32" ? credWin 
     dangTrao = true;
     try {
       for (const a of can) {
-        try { chuyen(a.id, "ctl", "đọc hạn mức tài khoản đang nghỉ"); ghiHanMuc(await docUsage(), a.email); }
+        try {
+          chuyen(a.id, "ctl", "đọc hạn mức tài khoản đang nghỉ");
+          ghiHanMuc(await docUsage(), a.email);
+          if (docModels && (!Array.isArray(a.models) || !a.modelsLuc || now() - Date.parse(a.modelsLuc) >= 24 * 3600000)) ghiModels(await docModels(), a.email);
+        }
         catch (e) { audit.log("ctl", "agy.tai_khoan.doc_nghi_loi", null, { id: a.id, loi: String(e.message).slice(0, 200) }); }
       }
     } finally {
-      try { if (emailDangDung(true) !== goc.email) chuyen(goc.id, "ctl", "trả lại tài khoản đang dùng sau khi đọc hạn mức"); }
-      catch (e) { audit.log("ctl", "agy.tai_khoan.tra_lai_loi", null, { id: goc.id, loi: String(e.message).slice(0, 200) }); }
+      // Trả lại tài khoản đang dùng; máy đang bận (vd. vừa có tiến trình agy) thì thử lại vài lần thay vì để kẹt ở tài khoản nghỉ.
+      for (let lan = 0; lan < TRA_LAI_LAN; lan++) {
+        try { if (emailDangDung(true) !== goc.email) chuyen(goc.id, "ctl", "trả lại tài khoản đang dùng sau khi đọc hạn mức"); break; }
+        catch (e) {
+          if (e.code === "AGY_BUSY" && lan < TRA_LAI_LAN - 1) { await cho(TRA_LAI_CHO); continue; }
+          audit.log("ctl", "agy.tai_khoan.tra_lai_loi", null, { id: goc.id, loi: String(e.message).slice(0, 200) });
+        }
+      }
       dangTrao = false;
     }
     return true;
   }
 
-  return { trangThai, cat, sua, xoa, chuyen, ghiHanMuc, truocLuot, docNghi, dangTrao: () => dangTrao };
+  return { trangThai, cat, sua, xoa, chuyen, ghiHanMuc, ghiModels, modelTheoTk, truocLuot, docNghi, dangTrao: () => dangTrao };
 }
 
-module.exports = { createAgyTaiKhoan, conLai, anEmail, credWin, SCRIPT };
+module.exports = { createAgyTaiKhoan, conLai, nhomCua, anEmail, credWin, agyDangChayTu, SCRIPT };
