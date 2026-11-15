@@ -79,6 +79,26 @@ function antigravityBuckets(data) {
   return { buckets };
 }
 
+// Danh sách model để CEO chọn ngoài chế độ tự động. Đọc từ CLI thật (agy models, codex app-server model/list);
+// Claude Code nhận bí danh (haiku/sonnet/opus = bản mới nhất) hoặc mã model đầy đủ.
+const EFFORTS = ["low", "medium", "high", "xhigh", "max"];
+const CLAUDE_MODELS = [["opus", "Opus (bản mới nhất)"], ["sonnet", "Sonnet (bản mới nhất)"], ["haiku", "Haiku (bản mới nhất)"], ["claude-fable-5-2", "Fable 5.2"],
+  ["claude-opus-5-5", "Opus 5.5"], ["claude-sonnet-5-5", "Sonnet 5.5"], ["claude-haiku-5-5", "Haiku 5.5"]].map(([id, name]) => ({ id, name, efforts: EFFORTS }));
+const ID = /^[\w.:-]{2,60}$/;
+function agyModelList(text) {
+  const out = [];
+  for (const line of String(text).split(/\r?\n/)) { const [id, name] = line.split("\t"); if (ID.test((id || "").trim()) && name) out.push({ id: id.trim(), name: name.trim(), efforts: EFFORTS }); }
+  if (!out.length) throw new Error("Antigravity chưa trả danh sách model.");
+  return out;
+}
+function codexModelList(result) {
+  const list = Array.isArray(result?.data) ? result.data : Array.isArray(result?.models) ? result.models : [];
+  const out = list.filter((m) => !m.hidden && ID.test(String(m.id || m.model || ""))).map((m) => ({ id: String(m.id || m.model), name: String(m.displayName || m.id || m.model),
+    efforts: (m.supportedReasoningEfforts || []).map((e) => String(e.reasoningEffort || e)).filter((e) => /^[a-z]{2,10}$/.test(e)), macDinh: !!m.isDefault }));
+  if (!out.length) throw new Error("Codex chưa trả danh sách model.");
+  return out;
+}
+
 function createQueries(dir) {
   const children = new Set();
   let closed = false;
@@ -91,12 +111,13 @@ function createQueries(dir) {
     } catch {}
     return resolveProgram(name);
   }
-  function query(name, args, rpc = false) {
+  // rpc: phương thức JSON-RPC gửi sau initialize (Codex app-server); text: trả nguyên văn bản thay vì JSON.
+  function query(name, args, rpc = null, text = false, env = null) {
     return new Promise((resolve, reject) => {
       if (closed) return reject(new Error("Bộ theo dõi đã dừng."));
       let prog;
       try { prog = program(name); } catch { return reject(new Error("Không tìm thấy CLI " + name + " trên máy.")); }
-      const child = spawn(prog[0], [...prog.slice(1), ...args], { cwd: os.tmpdir(), env: cleanEnv(), windowsHide: true, shell: false, detached: process.platform !== "win32", stdio: ["pipe", "pipe", "ignore"] });
+      const child = spawn(prog[0], [...prog.slice(1), ...args], { cwd: os.tmpdir(), env: env || cleanEnv(), windowsHide: true, shell: false, detached: process.platform !== "win32", stdio: ["pipe", "pipe", "ignore"] });
       children.add(child);
       let output = "", pending = "", result, problem = null, done = false;
       const send = (m) => child.stdin.write(JSON.stringify(m) + "\n");
@@ -113,16 +134,16 @@ function createQueries(dir) {
           let m; try { m = JSON.parse(line); } catch { continue; }
           if (m.id === 1) {
             if (m.error) return stop("Codex không khởi tạo được kênh đọc hạn mức.");
-            send({ method: "initialized", params: {} }); send({ id: 2, method: "account/rateLimits/read" });
+            send({ method: "initialized", params: {} }); send(rpc === "model/list" ? { id: 2, method: rpc, params: {} } : { id: 2, method: rpc });
           }
-          if (m.id === 2) { if (m.error) problem = new Error("Codex chưa đọc được hạn mức; kiểm tra đăng nhập ChatGPT."); else result = m.result; child.stdin.end(); }
+          if (m.id === 2) { if (m.error) problem = new Error("Codex chưa trả lời " + rpc + "; kiểm tra đăng nhập ChatGPT."); else result = m.result; child.stdin.end(); }
         }
       });
       const finish = (code) => {
         if (done) return; done = true; clearTimeout(timer); children.delete(child);
         if (problem) return reject(problem);
         if (code !== 0) return reject(new Error("CLI " + name + " không đọc được hạn mức. Kiểm tra đăng nhập hoặc thử lại sau."));
-        try { if (rpc && !result) throw new Error(); resolve(rpc ? result : JSON.parse(output)); }
+        try { if (rpc && !result) throw new Error(); resolve(rpc ? result : text ? output : JSON.parse(output)); }
         catch { reject(new Error("CLI " + name + " trả báo cáo không hợp lệ.")); }
       };
       child.on("error", () => { problem = new Error("Không chạy được CLI " + name + "."); finish(1); });
@@ -132,14 +153,17 @@ function createQueries(dir) {
     });
   }
   return {
-    codex: () => query("codex", ["app-server", "-c", "analytics.enabled=false", "--listen", "stdio://"], true),
+    codex: () => query("codex", ["app-server", "-c", "analytics.enabled=false", "--listen", "stdio://"], "account/rateLimits/read"),
+    codexModels: () => query("codex", ["app-server", "-c", "analytics.enabled=false", "--listen", "stdio://"], "model/list"),
+    agyModels: () => query("agy", ["models"], null, true),
     claude: () => query("claude", ["-p", "/usage", "--output-format", "json", "--max-turns", "1", "--tools", "", "--safe-mode"]),
     antigravity: () => query("agy", ["-p", "/usage", "--output-format", "json", "--print-timeout", "20s", "--mode", "plan"]),
     close: async () => { closed = true; await Promise.allSettled([...children].filter((c) => c.pid).map((c) => killTree(c.pid))); },
   };
 }
 
-function createQuotas({ dir, queries, clock = Date.now, intervalMs = EVERY } = {}) {
+// agyTk (ctl/agy-tai-khoan.js): nhiều tài khoản Antigravity — ghi hạn mức theo tài khoản, đọc tài khoản đang nghỉ.
+function createQuotas({ dir, queries, clock = Date.now, intervalMs = EVERY, agyTk = null } = {}) {
   const reader = queries || createQueries(dir);
   const defs = [
     { id: "codex", name: "Codex · Sol & Astra", source: "Codex app-server", parse: codexBuckets, url: "https://chatgpt.com/codex/settings/usage" },
@@ -148,8 +172,21 @@ function createQuotas({ dir, queries, clock = Date.now, intervalMs = EVERY } = {
   ];
   const states = new Map(defs.map((d) => [d.id, { id: d.id, name: d.name, source: d.source, url: d.url, status: "loading", checkedAt: null, lastSuccessAt: null, nextCheckAt: null, buckets: [], refreshing: false, error: "" }]));
   let pending = null, stopped = false;
-  function snapshot() { return { providers: JSON.parse(JSON.stringify([...states.values()])), intervalMs }; }
-  function refresh() {
+  function snapshot() {
+    const providers = JSON.parse(JSON.stringify([...states.values()]));
+    if (agyTk) { const a = providers.find((p) => p.id === "antigravity"); try { if (a) a.taiKhoan = agyTk.trangThai({ nhanh: true }); } catch {} }
+    return { providers, intervalMs };
+  }
+  // Đọc hạn mức tài khoản Antigravity đang nghỉ (đổi sang ~10 giây rồi đổi về; agyTk tự giữ nhịp 30 phút và chỉ làm khi máy rảnh).
+  let nghiPending = null;
+  function docNghi(force = false) {
+    if (!agyTk || stopped || nghiPending || pending) return nghiPending || Promise.resolve(false);
+    nghiPending = agyTk.docNghi(async () => antigravityBuckets(await reader.antigravity()).buckets, { force })
+      .catch(() => false).finally(() => { nghiPending = null; });
+    return nghiPending;
+  }
+  function refresh(force = false) {
+    if (force && !pending) for (const s of states.values()) s.nextCheckAt = null;
     if (stopped || pending) return pending || Promise.resolve(snapshot());
     const due = defs.filter((d) => !states.get(d.id).nextCheckAt || Date.parse(states.get(d.id).nextCheckAt) <= clock());
     if (!due.length) return Promise.resolve(snapshot());
@@ -159,6 +196,7 @@ function createQuotas({ dir, queries, clock = Date.now, intervalMs = EVERY } = {
         const raw = await reader[d.id](), parsed = d.parse(raw, clock());
         if (stopped) return;
         Object.assign(s, parsed, { status: "ready", error: "", lastSuccessAt: new Date(clock()).toISOString() });
+        if (d.id === "antigravity" && agyTk) { try { agyTk.ghiHanMuc(parsed.buckets); } catch {} }
       } catch (e) {
         if (stopped) return;
         s.status = s.buckets.length ? "stale" : "error";
@@ -167,11 +205,26 @@ function createQuotas({ dir, queries, clock = Date.now, intervalMs = EVERY } = {
       } finally {
         if (!stopped) Object.assign(s, { refreshing: false, checkedAt: new Date(clock()).toISOString(), nextCheckAt: new Date(clock() + (s.status === "ready" ? intervalMs : Math.max(intervalMs, 5 * 60000))).toISOString() });
       }
-    })).finally(() => { pending = null; });
+    })).finally(() => { pending = null; if (!stopped) docNghi(); });
     return pending;
   }
   function get() { refresh(); return snapshot(); }
-  async function close() { stopped = true; await reader.close?.(); await pending; }
-  return { get, refresh, snapshot, close };
+  // Danh sách model của 3 AI, nhớ 6 giờ. AI nào đọc lỗi thì trả lỗi riêng cho AI đó (CEO vẫn gõ được tên model).
+  let modelCache = null, modelPending = null;
+  async function models(force = false) {
+    if (!force && modelCache && clock() - modelCache.at < 6 * 3600000) return modelCache.data;
+    if (modelPending) return modelPending;
+    modelPending = (async () => {
+      const [codex, agy] = await Promise.allSettled([reader.codexModels ? reader.codexModels().then(codexModelList) : Promise.reject(new Error("không hỗ trợ")),
+        reader.agyModels ? reader.agyModels().then(agyModelList) : Promise.reject(new Error("không hỗ trợ"))]);
+      const pick = (r) => r.status === "fulfilled" ? { models: r.value } : { models: [], error: String(r.reason && r.reason.message || r.reason).slice(0, 200) };
+      const data = { claude: { models: CLAUDE_MODELS }, codex: pick(codex), agy: pick(agy), checkedAt: new Date(clock()).toISOString() };
+      if (!data.codex.error && !data.agy.error) modelCache = { at: clock(), data };
+      return data;
+    })().finally(() => { modelPending = null; });
+    return modelPending;
+  }
+  async function close() { stopped = true; await reader.close?.(); await pending; await nghiPending; }
+  return { get, refresh, snapshot, close, models, docNghi };
 }
-module.exports = { createQuotas, codexBuckets, claudeBuckets, antigravityBuckets, claudeReset };
+module.exports = { createQuotas, codexBuckets, claudeBuckets, antigravityBuckets, claudeReset, agyModelList, codexModelList, CLAUDE_MODELS };

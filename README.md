@@ -160,6 +160,27 @@ Khi app đang mở, số liệu tự cập nhật tối đa mỗi 2 phút; nút 
 
 Tham khảo: [Codex app-server](https://learn.chatgpt.com/docs/app-server), [Claude Code /usage](https://code.claude.com/docs/en/interactive-mode), [Antigravity /usage](https://antigravity.google/docs/cli/commands/usage/).
 
+### Hai tài khoản Antigravity (family + Pro)
+
+Antigravity CLI chỉ có **một** chỗ lưu đăng nhập trên máy (Windows Credential Manager `gemini:antigravity`). Đổi thư mục dữ liệu hay HOME vẫn cùng tài khoản, nên văn phòng cất bản sao đăng nhập của từng tài khoản (`van-phong-ao/agy/<id>`) và chép vào chỗ đó khi đổi (`ctl/agy-tai-khoan.js`, `ctl/agy-dang-nhap.ps1`). Token không đi qua Node và không ghi vào file sổ: script PowerShell tự chép và chỉ trả email.
+
+1. Đang đăng nhập tài khoản thứ nhất: mở **Hạn mức**, ở thẻ Antigravity đặt tên (vd. "Family") rồi bấm **Cất**.
+2. Mở `agy` trong terminal, gõ `/logout`, đăng nhập tài khoản thứ hai, rồi đặt tên (vd. "Pro") và bấm **Cất**.
+
+Sau đó:
+- **Xem song song:** thẻ Antigravity hiện % Gemini còn lại của từng tài khoản. Tài khoản đang dùng đọc theo chu kỳ 2 phút. Tài khoản đang nghỉ đọc 30 phút/lần: đổi sang khoảng 10 giây, đọc `/usage`, rồi đổi về. Cửa sổ đã qua mốc mở lại thì coi như đầy.
+- **Tự chuyển** (mặc định bật, ngưỡng 10%): trước lượt Hinata/Kakashi, tài khoản đang dùng còn ≤ ngưỡng thì đổi sang tài khoản kia nếu tài khoản đó còn trên ngưỡng. Cả hai cùng dưới ngưỡng thì giữ nguyên, không đổi qua đổi lại. Lý do đổi ghi vào nhật ký lượt.
+- **Đổi tay:** bấm **Dùng tài khoản này**.
+- **An toàn:** chỉ đổi khi không có tiến trình `agy.exe` nào chạy, vì đổi giữa chừng thì tiến trình đang chạy có thể ghi đè đăng nhập. Trước khi nạp tài khoản mới, văn phòng cất lại token đang dùng vào đúng chỗ của nó, và sau khi nạp thì kiểm lại email. Ứng dụng Antigravity trên máy có thể dùng chung chỗ lưu đăng nhập này (cần kiểm chứng): đang dùng app mà thấy đổi tài khoản thì đó là lý do.
+
+### Chọn model ngoài chế độ tự động
+
+Ở mục **Hạn mức**, mỗi phòng có hai ô:
+- **Model:** danh sách thật đọc từ `agy models` và Codex `model/list` (nhớ 6 giờ; nút **Đọc lại danh sách model**). Claude dùng bí danh opus/sonnet/haiku hoặc mã đầy đủ. Muốn dùng model chưa có trong danh sách thì chọn **Khác…** rồi gõ tên.
+- **Mức suy nghĩ:** low…max; một số model Codex có thêm ultra.
+
+Để cả hai trống là tự động. Codex: model chọn cho phòng Itachi/Sasuke thay model mặc định của vai.
+
 ## Tiết kiệm token: điều phối model và mục lục từ bản đồ
 
 **Điều phối model & mức suy nghĩ** (`ctl/dieu-phoi.js`, xem và chỉnh ở mục **Hạn mức** của bàn làm việc). Mỗi lượt AI được chấm độ khó:
@@ -181,6 +202,19 @@ Rồi chọn cờ thật của CLI:
 - **Ghi lại:** mỗi lượt ghi model, mức và lý do vào nhật ký kiểm toán (`ai.run`) và vào bước của luồng, để sau này đo hiệu suất từng kết hợp.
 
 **Mục lục từ bản đồ** (`ctl/muc-luc.js`). Repo nào có đồ thị Understand Anything (`.ua/knowledge-graph.json`, `.ua/domain-graph.json`) thì trước mỗi lượt, văn phòng tra đồ thị theo việc CEO giao và các blocker OPEN. Nó lấy workflow liên quan (từng bước kèm file:dòng) và tối đa 14 hàm/file, đưa vào prompt (khoảng 1.000 token). Nhờ vậy AI đọc đúng chỗ thay vì dò cả repo. Tóm tắt chỉ là gợi ý: AI phải mở mã kiểm trước khi kết luận. Mã đã đổi sau commit vẽ đồ thị thì prompt ghi rõ số file đã đổi. Repo chưa có đồ thị thì bỏ qua.
+
+**Tra cứu miễn phí bằng Gemini** (`ctl/tra-cuu.js`, `ctl/tra-cuu-mcp.js`, CEO duyệt 16/11/2026). Mở **Tài khoản AI**, dán khóa AI Studio miễn phí (tạo ở aistudio.google.com/apikey). Từ lượt sau, Claude và Codex có thêm MCP `tra-cuu` với hai công cụ:
+- `tim_kiem`: tìm bằng Google, trả lời ngắn kèm nguồn;
+- `doc_tai_lieu`: đọc một trang công khai và trả lời câu hỏi về nó.
+
+Việc đơn giản (tra lỗi, cách dùng thư viện, changelog) giao cho Gemini thay vì để Claude/Codex tự đọc dài. Khóa nằm trong `keys.json`, chỉ máy chủ MCP đọc và gửi qua header; AI không thấy khóa. Đây là chỗ duy nhất văn phòng gửi nội dung ra ngoài, nên đầu vào bị chặn chặt:
+- câu hỏi tối đa 1.500 ký tự và 30 dòng;
+- chặn chuỗi giống khóa, token hoặc mật khẩu;
+- chỉ đọc link http(s) công khai: không localhost, IP nội bộ, `*.ts.net`, hay link có tài khoản/mật khẩu;
+- tối đa 200 lần/ngày cho cả văn phòng;
+- model `gemini-flash-latest` hết hạn mức thì chuyển sang `gemini-flash-lite-latest`.
+
+Tắt bằng `~/.van-phong-ao/tra-cuu.json` với nội dung `{"bat": false}`. Antigravity không cần công cụ này (vốn là Gemini, có tìm kiếm Google).
 
 Đo thực tế 11/11/2026: một lượt Codex chỉ trả lời "ok" đã tốn khoảng 23.000 token, gần như toàn bộ là phần khởi động (lời dặn hệ thống + mô tả công cụ MCP). Vì vậy kết nối MCP theo phòng, mục lục và mức suy nghĩ đúng việc là ba chỗ tiết kiệm chính.
 

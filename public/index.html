@@ -577,6 +577,28 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
         </div>
       </div>
 
+      <!-- Tra cứu Gemini miễn phí (CEO duyệt 16/11/2026) -->
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(59,130,246,0.3);border-radius:16px;padding:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:22px">🔎</span>
+            <div>
+              <b style="font-size:14px;color:#fff">Tra cứu miễn phí (Gemini API)</b>
+              <div style="font-size:11px;color:var(--mute)">Claude/Codex gọi để tìm trên web, đọc tài liệu công khai cho việc đơn giản — đỡ token</div>
+            </div>
+          </div>
+          <span id="geminiKeyBadge" style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;background:rgba(148,163,184,0.2);color:#cbd5e1">○ CHƯA CÓ KHÓA</span>
+        </div>
+        <div style="font-size:11.5px;color:#cbd5e1;line-height:1.6;background:rgba(0,0,0,0.25);border-radius:10px;padding:10px 12px;margin-bottom:12px">
+          Tạo khóa miễn phí ở <code>aistudio.google.com/apikey</code> (đăng nhập Google), rồi dán vào đây. Khóa lưu trên máy (<code>keys.json</code>), không vào repo.
+          Văn phòng chỉ gửi câu hỏi ngắn và link công khai ra Google; chặn mã nguồn, khóa, token; tối đa 200 lần/ngày.
+        </div>
+        <div style="display:flex;gap:8px">
+          <input type="password" id="geminiApiKeyInput" placeholder="AIza..." autocomplete="off" style="flex:1;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:6px 10px;color:#fff;font-size:11px;font-family:monospace">
+          <button class="btn" onclick="saveApiKey('gemini')" style="font-size:11px;padding:6px 14px;background:var(--gold);color:#000;font-weight:700">Lưu khóa</button>
+        </div>
+      </div>
+
       <!-- Google Antigravity / Gemini Card -->
       <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(168,85,247,0.3);border-radius:16px;padding:16px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
@@ -1152,7 +1174,7 @@ window.saveApiKey = async (provider) => {
     alert(d.message || d.error);
     if (!d.ok) return;
     inp.value = "";
-    $(provider + "ApiKeyRow").style.display = "none";
+    const row = $(provider + "ApiKeyRow"); if (row) row.style.display = "none";
     refreshAccounts();
   } catch (err) {
     alert("Lỗi khi lưu API Key: " + err.message);
@@ -1165,6 +1187,8 @@ window.refreshAccounts = async () => {
     const d = await res.json();
     if (!d.ok || !d.accounts) return;
     const a = d.accounts;
+    const gk = $("geminiKeyBadge");
+    if (gk) { const on = !!(a.gemini && a.gemini.hasApiKey); gk.textContent = on ? "● ĐÃ CÓ KHÓA" : "○ CHƯA CÓ KHÓA"; gk.style.background = on ? "rgba(16,185,129,0.2)" : "rgba(148,163,184,0.2)"; gk.style.color = on ? "#34d399" : "#cbd5e1"; }
 
     // Claude
     const clBadge = $("claudeStatusBadge");

@@ -77,3 +77,13 @@ test("Codex: chỉ đội trưởng đặt được effort; 'ultra' và giá tr�
     await ctl.close();
   } finally { fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); }
 });
+
+// CEO chọn model ngoài chế độ tự động (16/11/2026): cố định model + mức cho phòng Itachi thì Sol chạy đúng model đó.
+test("Codex: CEO cố định gpt-6.1-terra mức ultra cho Itachi thì Sol chạy đúng như vậy, Astra vẫn tự động", async (t) => {
+  const { ctl, repo, argvOf, wait } = await fixture(t, []);
+  ctl.runner.dieuPhoi.save({ coDinh: { itachi: { model: "gpt-6.1-terra", effort: "ultra" } } });
+  const run = await wait(ctl.autopilot.start({ workspace: repo, task: "Viết API đăng nhập" }).id, "awaiting_approval");
+  assert.deepEqual(argvOf(run.steps[0].jobId), ["exec", "-m", "gpt-6.1-terra", "-c", "model_reasoning_effort=ultra", "--json"]);
+  assert.equal(run.steps[0].model, "gpt-6.1-terra");
+  assert.deepEqual(argvOf(run.steps[1].jobId), ["exec", "-m", "gpt-6-astra", "-c", "model_reasoning_effort=medium", "--json"]);
+});

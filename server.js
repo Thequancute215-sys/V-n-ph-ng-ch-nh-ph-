@@ -676,7 +676,8 @@ function getAccountsStatus() {
     connected: null, // máy chủ không đọc được phiên đăng nhập trong IDE Antigravity nên không khẳng định
     engine: "Google Gemini (Antigravity IDE)",
     role: "Kiến trúc sư Đặc tả & Fullstack UI/UX (BCC v2.2)",
-    account: null
+    account: null,
+    hasApiKey: keys.has("gemini")   // khóa AI Studio cho công cụ tra cứu miễn phí (ctl/tra-cuu.js)
   };
 
   return {
