@@ -151,7 +151,7 @@ const FULL_NOTE = "\nBẠN ĐANG CHẠY TOÀN QUYỀN trên máy CEO (không san
 const RETRYABLE = /rate.?limit|\b429\b|overloaded|ECONNRESET|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|socket hang up/i;
 const err = (code, msg) => Object.assign(new Error(msg), { code });
 
-function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () => ({}), quotaSnapshot = () => null }) {
+function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () => ({}), quotaSnapshot = () => null, agyTk = null }) {
   const dieuPhoi = createDieuPhoi({ dir, audit });
   const skills = createSkill({ home: () => dir });   // bộ skill mặc định: ghi chú vào prompt + bắt buộc khai skill_da_dung
   // Dòng [ ] OPEN của agent.md (để chấm độ khó và tra mục lục). Đọc lỗi thì coi như không có.
@@ -224,7 +224,10 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     const codexModel = d.kind === "codex" && d.fixed && d.model ? d.model : null;
     const shaped = dieuPhoi.apply(codexArgs(base, role, codexEffort, codexModel), d);
     const argv = withMcp(fullFor(role) ? fullAccessArgs(shaped) : shaped, role, dir, mcpKnown()).map((x) => (x === "{prompt}" ? prompt : x));
-    const chosen = { tier: d.tier, model: d.kind === "codex" ? codexModel || CODEX_MODEL[role] || null : d.model, effort: d.kind === "codex" ? codexEffort || (customEffort ? null : DEFAULT_EFFORT) : d.effort, why: d.why };
+    // Antigravity: tài khoản đang dùng sắp cạn thì đổi sang tài khoản còn nhiều hạn mức hơn trước khi chạy (ctl/agy-tai-khoan.js).
+    const doiTk = d.kind === "agy" && agyTk ? agyTk.truocLuot() : null;
+    const chosen = { tier: d.tier, model: d.kind === "codex" ? codexModel || CODEX_MODEL[role] || null : d.model, effort: d.kind === "codex" ? codexEffort || (customEffort ? null : DEFAULT_EFFORT) : d.effort,
+      why: doiTk && doiTk.toi ? [...d.why, "đổi tài khoản Antigravity: " + doiTk.lyDo] : d.why, ...(doiTk ? { taiKhoan: doiTk } : {}) };
     audit.log(actor, "ai.run", root, { role, retried, task: String(task).slice(0, 500), dieuPhoi: chosen, ...(d.quotaLeft != null ? { quotaLeft: d.quotaLeft } : {}) });
     const before = agentBefore(root);
     const job = jobs.start({ kind: "ai", agent: role, workspace: root, argv, timeoutMs: a.timeoutMs, onExit: (job) => done(job, { workspace: root, role, task, retried, allowRetry, effort, before, hint }) });

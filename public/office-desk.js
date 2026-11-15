@@ -175,10 +175,31 @@ export function createDesk(getOffice) {
     renderQuotas();
   }
 
+  // Tài khoản Antigravity (ctl/agy-tai-khoan.js): family + Pro, xem hạn mức song song, đổi tay hoặc tự chuyển khi cạn.
+  function agyTkHtml(tk) {
+    if (!tk) return "";
+    if (!tk.hoTro) return `<p class="muted">Đổi tài khoản Antigravity hiện chỉ làm được trên Windows.</p>`;
+    const pct = (v) => v === null || v === undefined ? "chưa đọc" : "còn " + Math.round(v) + "%";
+    const rows = (tk.ds || []).map((a) => `<li><strong>${esc(a.nhan)}</strong> · ${esc(a.email)}${a.dangDung ? " · <b>đang dùng</b>" : ""}<br>Gemini ${esc(pct(a.conLai))}` +
+      `${a.hanMuc && a.hanMuc.luc ? " · đọc lúc " + esc(time(a.hanMuc.luc)) : ""}<br>` +
+      (a.dangDung ? "" : `<button type="button" class="btn ghost" data-agy-chuyen="${esc(a.id)}" data-write>Dùng tài khoản này</button> `) +
+      `<button type="button" class="btn ghost" data-agy-xoa="${esc(a.id)}" data-write>Bỏ</button></li>`).join("");
+    return `<div class="agy-tk"><strong>Tài khoản Antigravity</strong>${tk.loi ? `<p class="error">${esc(tk.loi)}</p>` : ""}${tk.dangTrao ? "<p>Đang đổi tài khoản để đọc hạn mức…</p>" : ""}` +
+      (rows ? `<ul>${rows}</ul>` : "<p class=\"muted\">Chưa cất tài khoản nào.</p>") +
+      `<p><label><input type="checkbox" data-agy-tu data-write ${tk.tuChuyen ? "checked" : ""}> Tự chuyển khi tài khoản đang dùng còn ≤ </label><input type="number" min="1" max="50" value="${esc(tk.nguong)}" data-agy-nguong data-write style="width:4.5em">% Gemini</p>` +
+      `<p><label>Cất tài khoản đang đăng nhập trong Antigravity, đặt tên <input data-agy-nhan maxlength="40" placeholder="vd. Pro" style="width:8em"></label> <button type="button" class="btn ghost" data-agy-cat data-write>Cất</button>` +
+      ((tk.ds || []).length > 1 ? ` <button type="button" class="btn ghost" data-agy-doc data-write>Đọc hạn mức tài khoản đang nghỉ</button>` : "") + "</p>" +
+      `<p class="muted">Thêm tài khoản thứ hai: mở <code>agy</code> trong terminal, gõ <code>/logout</code>, đăng nhập tài khoản kia, rồi bấm Cất. Văn phòng chỉ đổi tài khoản khi không có tiến trình Antigravity CLI nào chạy; ứng dụng Antigravity trên máy có thể dùng chung đăng nhập này.</p></div>`;
+  }
+  async function agyTkGoi(path, body, label) {
+    try { await request(path, body, 60000); notice(label); quotas = await request("/quotas"); }
+    catch (e) { notice(e.message, true); }
+    renderQuotas();
+  }
   function renderQuotas() {
     $("deskQuotas").innerHTML = errors.quotas ? `<p class="error">${esc(errors.quotas)}</p>` : !quotas ? '<p>Đang tải hạn mức…</p>' : !quotas.providers?.length ? '<p>Chưa có dữ liệu hạn mức từ các AI.</p>' : quotas.providers.map((p) => {
       const stale = p.status !== "ready" || (p.lastSuccessAt && Date.now() - new Date(p.lastSuccessAt).getTime() > 3 * (quotas.intervalMs || 120000));
-      return `<article class="desk-entry"><strong>${esc(p.name)}</strong>${p.refreshing ? "<p>Đang cập nhật hạn mức…</p>" : ""}${p.error ? `<p class="error">${esc(p.error)}</p>` : ""}${stale ? "<p>Bản đọc chưa được xác nhận; chưa thể kết luận AI còn lượt.</p>" : ""}${(p.buckets || []).map((b) => `<p>${esc([b.group, b.label].filter(Boolean).join(" · "))}: ${Number.isFinite(b.remainingPercent) ? "còn " + esc(b.remainingPercent) + "%" : "Chưa có số liệu"}<br>Mở lại: ${esc(b.resetAt ? time(b.resetAt) : b.resetLabel || "Chưa rõ")}${b.resetAt && new Date(b.resetAt).getTime() <= Date.now() ? " · Đã qua mốc, chờ số liệu mới" : ""}</p>`).join("") || "<p>Chưa có số liệu hạn mức.</p>"}</article>`;
+      return `<article class="desk-entry"><strong>${esc(p.name)}</strong>${p.refreshing ? "<p>Đang cập nhật hạn mức…</p>" : ""}${p.error ? `<p class="error">${esc(p.error)}</p>` : ""}${stale ? "<p>Bản đọc chưa được xác nhận; chưa thể kết luận AI còn lượt.</p>" : ""}${(p.buckets || []).map((b) => `<p>${esc([b.group, b.label].filter(Boolean).join(" · "))}: ${Number.isFinite(b.remainingPercent) ? "còn " + esc(b.remainingPercent) + "%" : "Chưa có số liệu"}<br>Mở lại: ${esc(b.resetAt ? time(b.resetAt) : b.resetLabel || "Chưa rõ")}${b.resetAt && new Date(b.resetAt).getTime() <= Date.now() ? " · Đã qua mốc, chờ số liệu mới" : ""}</p>`).join("") || "<p>Chưa có số liệu hạn mức.</p>"}${p.id === "antigravity" ? agyTkHtml(p.taiKhoan) : ""}</article>`;
     }).join("") + dieuPhoiHtml();
     const p = quotas?.providers?.find((x) => x.id === "claude"), buckets = !errors.quotas && p?.status === "ready" && (!p.lastSuccessAt || Date.now() - new Date(p.lastSuccessAt).getTime() <= 3 * (quotas.intervalMs || 120000)) ? (p.buckets || []).filter((b) => Number.isFinite(b.remainingPercent) && (!b.resetAt || new Date(b.resetAt).getTime() > Date.now())) : [];
     const left = buckets.length ? Math.min(...buckets.map((b) => b.remainingPercent)) : null;
@@ -344,6 +365,9 @@ export function createDesk(getOffice) {
   dialog.addEventListener("change", (e) => {
     const auto = e.target.closest("[data-dp-auto]");
     if (auto) { saveDieuPhoi({ tuDong: auto.checked }, auto.checked ? "Đã bật điều phối tự động." : "Đã tắt điều phối tự động: các AI dùng mặc định của CLI."); return; }
+    const agyTu = e.target.closest("[data-agy-tu]"), agyNg = e.target.closest("[data-agy-nguong]");
+    if (agyTu) { agyTkGoi("/agy-tai-khoan/sua", { tuChuyen: agyTu.checked }, agyTu.checked ? "Đã bật tự chuyển tài khoản Antigravity." : "Đã tắt tự chuyển tài khoản Antigravity."); return; }
+    if (agyNg) { agyTkGoi("/agy-tai-khoan/sua", { nguong: Number(agyNg.value) }, "Đã đặt ngưỡng tự chuyển " + agyNg.value + "%."); return; }
     const box = e.target.closest("[data-dp-room]");
     if (!box) return;
     const model = box.querySelector("[data-dp-model]").value, custom = box.querySelector("[data-dp-custom]"), effort = box.querySelector("[data-dp-effort]").value;
@@ -356,6 +380,11 @@ export function createDesk(getOffice) {
   });
   dialog.addEventListener("click", (e) => {
     if (e.target.closest("[data-dp-reload]")) { loadDpModels(true); return; }
+    const agyCat = e.target.closest("[data-agy-cat]"), agyChuyen = e.target.closest("[data-agy-chuyen]"), agyXoa = e.target.closest("[data-agy-xoa]");
+    if (agyCat) { const nhan = dialog.querySelector("[data-agy-nhan]")?.value || ""; agyTkGoi("/agy-tai-khoan/cat", { nhan }, "Đã cất tài khoản Antigravity đang đăng nhập."); return; }
+    if (agyChuyen) { agyTkGoi("/agy-tai-khoan/" + encodeURIComponent(agyChuyen.dataset.agyChuyen) + "/chuyen", {}, "Đã đổi tài khoản Antigravity. Lượt Hinata/Kakashi kế tiếp dùng tài khoản này."); return; }
+    if (agyXoa) { if (confirm("Bỏ tài khoản này khỏi văn phòng? (Không đăng xuất tài khoản đang dùng trong Antigravity.)")) agyTkGoi("/agy-tai-khoan/" + encodeURIComponent(agyXoa.dataset.agyXoa) + "/xoa", {}, "Đã bỏ tài khoản."); return; }
+    if (e.target.closest("[data-agy-doc]")) { agyTkGoi("/agy-tai-khoan/doc-nghi", {}, "Đang đọc hạn mức tài khoản đang nghỉ (khi máy rảnh Antigravity). Bấm Hạn mức lại sau ít giây."); return; }
     const bk = e.target.closest("[data-bo-kiem]");
     if (bk && !bk.disabled) {
       const workspace = active;

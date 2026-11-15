@@ -162,7 +162,8 @@ function createQueries(dir) {
   };
 }
 
-function createQuotas({ dir, queries, clock = Date.now, intervalMs = EVERY } = {}) {
+// agyTk (ctl/agy-tai-khoan.js): nhiều tài khoản Antigravity — ghi hạn mức theo tài khoản, đọc tài khoản đang nghỉ.
+function createQuotas({ dir, queries, clock = Date.now, intervalMs = EVERY, agyTk = null } = {}) {
   const reader = queries || createQueries(dir);
   const defs = [
     { id: "codex", name: "Codex · Sol & Astra", source: "Codex app-server", parse: codexBuckets, url: "https://chatgpt.com/codex/settings/usage" },
@@ -171,8 +172,21 @@ function createQuotas({ dir, queries, clock = Date.now, intervalMs = EVERY } = {
   ];
   const states = new Map(defs.map((d) => [d.id, { id: d.id, name: d.name, source: d.source, url: d.url, status: "loading", checkedAt: null, lastSuccessAt: null, nextCheckAt: null, buckets: [], refreshing: false, error: "" }]));
   let pending = null, stopped = false;
-  function snapshot() { return { providers: JSON.parse(JSON.stringify([...states.values()])), intervalMs }; }
-  function refresh() {
+  function snapshot() {
+    const providers = JSON.parse(JSON.stringify([...states.values()]));
+    if (agyTk) { const a = providers.find((p) => p.id === "antigravity"); try { if (a) a.taiKhoan = agyTk.trangThai({ nhanh: true }); } catch {} }
+    return { providers, intervalMs };
+  }
+  // Đọc hạn mức tài khoản Antigravity đang nghỉ (đổi sang ~10 giây rồi đổi về; agyTk tự giữ nhịp 30 phút và chỉ làm khi máy rảnh).
+  let nghiPending = null;
+  function docNghi(force = false) {
+    if (!agyTk || stopped || nghiPending || pending) return nghiPending || Promise.resolve(false);
+    nghiPending = agyTk.docNghi(async () => antigravityBuckets(await reader.antigravity()).buckets, { force })
+      .catch(() => false).finally(() => { nghiPending = null; });
+    return nghiPending;
+  }
+  function refresh(force = false) {
+    if (force && !pending) for (const s of states.values()) s.nextCheckAt = null;
     if (stopped || pending) return pending || Promise.resolve(snapshot());
     const due = defs.filter((d) => !states.get(d.id).nextCheckAt || Date.parse(states.get(d.id).nextCheckAt) <= clock());
     if (!due.length) return Promise.resolve(snapshot());
@@ -182,6 +196,7 @@ function createQuotas({ dir, queries, clock = Date.now, intervalMs = EVERY } = {
         const raw = await reader[d.id](), parsed = d.parse(raw, clock());
         if (stopped) return;
         Object.assign(s, parsed, { status: "ready", error: "", lastSuccessAt: new Date(clock()).toISOString() });
+        if (d.id === "antigravity" && agyTk) { try { agyTk.ghiHanMuc(parsed.buckets); } catch {} }
       } catch (e) {
         if (stopped) return;
         s.status = s.buckets.length ? "stale" : "error";
@@ -190,7 +205,7 @@ function createQuotas({ dir, queries, clock = Date.now, intervalMs = EVERY } = {
       } finally {
         if (!stopped) Object.assign(s, { refreshing: false, checkedAt: new Date(clock()).toISOString(), nextCheckAt: new Date(clock() + (s.status === "ready" ? intervalMs : Math.max(intervalMs, 5 * 60000))).toISOString() });
       }
-    })).finally(() => { pending = null; });
+    })).finally(() => { pending = null; if (!stopped) docNghi(); });
     return pending;
   }
   function get() { refresh(); return snapshot(); }
@@ -209,7 +224,7 @@ function createQuotas({ dir, queries, clock = Date.now, intervalMs = EVERY } = {
     })().finally(() => { modelPending = null; });
     return modelPending;
   }
-  async function close() { stopped = true; await reader.close?.(); await pending; }
-  return { get, refresh, snapshot, close, models };
+  async function close() { stopped = true; await reader.close?.(); await pending; await nghiPending; }
+  return { get, refresh, snapshot, close, models, docNghi };
 }
 module.exports = { createQuotas, codexBuckets, claudeBuckets, antigravityBuckets, claudeReset, agyModelList, codexModelList, CLAUDE_MODELS };
