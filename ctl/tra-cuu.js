@@ -14,7 +14,16 @@ const { writeAtomic } = require("../lib/ghi-file");
 const API = "https://generativelanguage.googleapis.com/v1beta/models/";
 const MODELS = ["gemini-flash-latest", "gemini-flash-lite-latest"];   // hết hạn mức model đầu thì thử model sau
 const MAX_NGAY = 200;
-const BI_MAT = /(sk-ant-[\w-]{10,}|sk-[A-Za-z0-9_-]{20,}|AIza[0-9A-Za-z_-]{30,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_\w{20,}|xox[abpr]-[\w-]{10,}|-----BEGIN [A-Z ]*PRIVATE KEY|eyJ[\w-]{10,}\.[\w-]{10,}\.[\w-]{5,}|(password|passwd|mật khẩu|secret|api[_-]?key|token)\s*[:=]\s*\S{6,})/i;
+// Thêm token OAuth của Google (ya29. / 1//0…, đúng loại đăng nhập Antigravity), "Bearer …", và dạng JSON "access_token": "…".
+const BI_MAT = /(sk-ant-[\w-]{10,}|sk-[A-Za-z0-9_-]{20,}|AIza[0-9A-Za-z_-]{30,}|ya29\.[\w-]{20,}|1\/\/0[\w-]{20,}|Bearer\s+[\w.~+\/-]{20,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_\w{20,}|xox[abpr]-[\w-]{10,}|-----BEGIN [A-Z ]*PRIVATE KEY|eyJ[\w-]{10,}\.[\w-]{10,}\.[\w-]{5,}|(password|passwd|mật khẩu|secret|api[_-]?key|token)["']?\s*[:=]\s*["']?\S{6,})/i;
+// Lớp chặn này bắt lộ VÔ Ý (AI dán khóa, mã nguồn, chuỗi mã hóa vào link hay câu hỏi). Không chống được AI cố ý giấu dữ liệu
+// (chia nhỏ, đổi cách mã): phần đó dựa vào giới hạn độ dài, 200 lần/ngày và việc AI chạy trong quyền CEO cấp.
+// Chuỗi mã hóa dài: một đoạn liền chữ+số ≥ 100 ký tự trộn hoa/thường/số (base64), hoặc ≥ 64 ký tự hex.
+const coMaDai = (s) => (String(s).match(/[A-Za-z0-9]+/g) || []).some((x) => (x.length >= 100 && /[A-Z]/.test(x) && /[a-z]/.test(x) && /\d/.test(x)) || (x.length >= 64 && /^[0-9a-f]+$/i.test(x)));
+// Câu hỏi không mang link: link (kể cả link thứ hai cho doc_tai_lieu) phải qua kiemLink.
+const CO_LINK = /https?:\/\/|\bwww\.|\b[a-z0-9-]+(\.[a-z0-9-]+)+\/\S/i;
+// Giải % một lớp; chuỗi có % không hợp lệ (50% off, mã Latin-1) thì chỉ giải các nhóm %XX, không báo lỗi.
+const giaiMot = (s) => { try { return decodeURIComponent(s); } catch { return s.replace(/%([0-9a-f]{2})/gi, (m, h) => String.fromCharCode(parseInt(h, 16))); } };
 const err = (code, message) => Object.assign(new Error(message), { code });
 
 function kiemCau(text, ten = "câu hỏi") {
@@ -23,22 +32,42 @@ function kiemCau(text, ten = "câu hỏi") {
   if (s.length > 1500) throw err("BAD_REQUEST", ten + " dài quá 1500 ký tự: chỉ gửi câu hỏi ngắn, không dán mã nguồn hay nội dung file dự án");
   if (s.split(/\r?\n/).length > 30) throw err("BAD_REQUEST", ten + " quá 30 dòng: chỉ gửi câu hỏi ngắn, không dán mã nguồn hay nội dung file dự án");
   if (BI_MAT.test(s)) throw err("BAD_REQUEST", ten + " có chuỗi giống khóa/token/mật khẩu: không gửi ra ngoài");
+  if (CO_LINK.test(s)) throw err("BAD_REQUEST", ten + " không được chứa link: đưa link vào ô url của doc_tai_lieu (mỗi lần một link)");
+  if (coMaDai(s)) throw err("BAD_REQUEST", ten + " có chuỗi mã hóa dài bất thường: không gửi ra ngoài");
   return s;
 }
 function laIpNoiBo(h) {
-  if (net.isIPv4(h)) { const [a, b] = h.split(".").map(Number); return a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127); }
+  if (net.isIPv4(h)) {
+    const [a, b, c] = h.split(".").map(Number);
+    return a === 10 || a === 127 || a === 0 || a >= 224 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127) ||
+      (a === 198 && (b === 18 || b === 19)) || (a === 192 && b === 0 && c === 0);
+  }
   if (net.isIPv6(h)) return /^(::1?|f[cd]|fe8|::ffff:)/i.test(h);
   return false;
 }
 function kiemLink(url) {
   let u;
   try { u = new URL(String(url || "").trim()); } catch { throw err("BAD_REQUEST", "Link không hợp lệ"); }
-  const h = u.hostname.replace(/^\[|\]$/g, "").toLowerCase();
+  // Bỏ dấu chấm cuối (localhost. / *.ts.net. vẫn là địa chỉ đó) trước khi kiểm.
+  const h = u.hostname.replace(/^\[|\]$/g, "").toLowerCase().replace(/\.+$/, "");
   if (!/^https?:$/.test(u.protocol)) throw err("BAD_REQUEST", "Chỉ đọc link http(s)");
   if (u.username || u.password) throw err("BAD_REQUEST", "Link không được chứa tài khoản/mật khẩu");
   if (u.href.length > 2000) throw err("BAD_REQUEST", "Link quá dài");
   if (!h.includes(".") || /(^|\.)(localhost|local|internal|lan|home|ts\.net)$/.test(h) || laIpNoiBo(h)) throw err("BAD_REQUEST", "Chỉ đọc link công khai trên Internet, không đọc địa chỉ nội bộ");
-  if (BI_MAT.test(u.href)) throw err("BAD_REQUEST", "Link có chuỗi giống khóa/token: không gửi ra ngoài");
+  // Kiểm trên bản đã giải mã % (giải tới khi không đổi, chặn mã hóa hai lần); bỏ phần #… (không cần để đọc trang).
+  u.hash = "";
+  if (u.search.length > 300) throw err("BAD_REQUEST", "Phần ?… của link quá dài: chỉ đọc trang công khai, không gửi dữ liệu kèm link");
+  if (u.pathname.length > 400) throw err("BAD_REQUEST", "Đường dẫn của link quá dài: chỉ đọc trang công khai, không gửi dữ liệu kèm link");
+  if (h.split(".").some((x) => x.length >= 32 && /^[0-9a-f]+$/.test(x))) throw err("BAD_REQUEST", "Tên miền có chuỗi mã hóa dài bất thường: không gửi ra ngoài");
+  let giai = (u.pathname + u.search).replace(/\+/g, " ");
+  for (let i = 0; ; i++) {
+    const next = giaiMot(giai);
+    if (next === giai) break;
+    if (i >= 4) throw err("BAD_REQUEST", "Link mã hóa % nhiều lớp bất thường: không gửi ra ngoài");
+    giai = next;
+  }
+  if (BI_MAT.test(u.href) || BI_MAT.test(giai)) throw err("BAD_REQUEST", "Link có chuỗi giống khóa/token: không gửi ra ngoài");
+  if (coMaDai(giai)) throw err("BAD_REQUEST", "Link có chuỗi mã hóa dài bất thường: không gửi ra ngoài");
   return u.href;
 }
 

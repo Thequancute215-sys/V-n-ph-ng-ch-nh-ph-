@@ -14,7 +14,7 @@ const phong = require("./mcp-phong");
 const kiemAgent = require("../lib/kiem-agent");
 const { createSkill } = require("./skill");
 const mucLuc = require("./muc-luc");                 // mục lục từ bản đồ hệ thống (.ua) đưa vào prompt
-const { createDieuPhoi } = require("./dieu-phoi");   // chọn model + mức suy nghĩ theo độ khó của lượt
+const { createDieuPhoi, kindOf } = require("./dieu-phoi");   // chọn model + mức suy nghĩ theo độ khó của lượt
 const { traCuuBat } = require("./tra-cuu");          // tra cứu Gemini miễn phí cho việc đơn giản
 const { writeAtomic } = require("../lib/ghi-file");
 
@@ -176,6 +176,18 @@ const FULL_NOTE = "\nBẠN ĐANG CHẠY TOÀN QUYỀN trên máy CEO (không san
 const RETRYABLE = /rate.?limit|\b429\b|overloaded|ECONNRESET|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|socket hang up/i;
 const err = (code, msg) => Object.assign(new Error(msg), { code });
 
+// Model trong lệnh (--model X, -m X, --model=X); null = lệnh không chỉ định.
+function modelTrong(argv) {
+  for (let i = 0; i < argv.length; i++) {
+    const x = String(argv[i]);
+    if ((x === "--model" || x === "-m") && argv[i + 1] != null) return String(argv[i + 1]);
+    if (x.startsWith("--model=")) return x.slice(8);
+  }
+  return null;
+}
+// Ảnh chụp hạn mức với phần Antigravity thay bằng hạn mức của tài khoản sẽ chạy.
+const thayAgy = (snap, buckets) => ({ ...(snap || {}), providers: [...((snap && snap.providers) || []).filter((p) => p.id !== "antigravity"), { id: "antigravity", buckets }] });
+
 function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () => ({}), quotaSnapshot = () => null, agyTk = null }) {
   const dieuPhoi = createDieuPhoi({ dir, audit });
   const skills = createSkill({ home: () => dir });   // bộ skill mặc định: ghi chú vào prompt + bắt buộc khai skill_da_dung
@@ -242,7 +254,17 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     const base = argvFor(role);
     // Vai Codex nhận theo cùng dấu hiệu codexArgs dùng (vai có model Codex + lệnh "exec"), kể cả khi chạy qua node/wrapper.
     const isCodex = !!CODEX_MODEL[role] && base.includes("exec");
-    const d = dieuPhoi.decide({ role, argv: base, focus, blockers, returned: !!hint.returned, rework: hint.rework || 0, quota: quota(), explicitEffort: effort, kind: isCodex ? "codex" : null });
+    const decideVoi = (snap) => dieuPhoi.decide({ role, argv: base, focus, blockers, returned: !!hint.returned, rework: hint.rework || 0, quota: snap, explicitEffort: effort, kind: isCodex ? "codex" : null });
+    let d = decideVoi(quota());
+    // Antigravity: tài khoản đang dùng sắp cạn thì đổi sang tài khoản còn nhiều hạn mức hơn trước khi chạy (ctl/agy-tai-khoan.js).
+    // Model thật của lượt (lệnh tự cấu hình có --model thì lấy model đó) quyết định nhóm hạn mức và tài khoản nào dùng được.
+    // Đang tạm đổi sang tài khoản nghỉ thì truocLuot ném AGY_BUSY: lượt không chạy bằng tài khoản nghỉ.
+    let doiTk = null;
+    if (d.kind === "agy" && agyTk) {
+      doiTk = agyTk.truocLuot({ model: modelTrong(dieuPhoi.apply(base, d)) || d.model });
+      // Vừa đổi tài khoản: chấm lại mức theo hạn mức của tài khoản sẽ chạy, không theo tài khoản vừa rời.
+      if (doiTk && doiTk.toi && !d.fixed && doiTk.buckets) d = decideVoi(thayAgy(quota(), doiTk.buckets));
+    }
     // Codex: mức suy nghĩ đi qua codexArgs. Lệnh tự cấu hình đã có mức thì giữ, trừ khi đội trưởng đặt rõ.
     const customEffort = base.some((x, i) => (x === "-c" || x === "--config") && /^model_reasoning_effort=/.test(base[i + 1] || ""));
     const codexEffort = effort || (d.kind === "codex" && !customEffort ? d.effort : null);
@@ -250,12 +272,10 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     const shaped = dieuPhoi.apply(codexArgs(base, role, codexEffort, codexModel), d);
     const loiGiao = prompt + (["claude", "codex"].includes(d.kind) && traCuuBat(dir) ? TRA_CUU_NOTE : "");
     const argv = withMcp(fullFor(role) ? fullAccessArgs(shaped) : shaped, role, dir, mcpKnown()).map((x) => (x === "{prompt}" ? loiGiao : x));
-    // Antigravity: tài khoản đang dùng sắp cạn thì đổi sang tài khoản còn nhiều hạn mức hơn trước khi chạy (ctl/agy-tai-khoan.js).
-    // Model của lượt quyết định nhóm hạn mức và tài khoản nào dùng được (tài khoản Pro có model mà family không có).
-    const doiTk = d.kind === "agy" && agyTk ? agyTk.truocLuot({ model: d.model }) : null;
     const tkWhy = doiTk && doiTk.toi ? ["đổi tài khoản Antigravity: " + doiTk.lyDo] : doiTk && doiTk.loi ? ["tài khoản Antigravity: " + doiTk.loi] : [];
-    const chosen = { tier: d.tier, model: d.kind === "codex" ? codexModel || CODEX_MODEL[role] || null : d.model, effort: d.kind === "codex" ? codexEffort || (customEffort ? null : DEFAULT_EFFORT) : d.effort,
-      why: [...d.why, ...tkWhy], ...(doiTk ? { taiKhoan: doiTk } : {}) };
+    const taiKhoan = doiTk ? (doiTk.toi ? { tu: doiTk.tu, toi: doiTk.toi, lyDo: doiTk.lyDo } : { loi: doiTk.loi }) : null;
+    const chosen = { tier: d.tier, model: d.kind === "codex" ? codexModel || CODEX_MODEL[role] || null : d.kind === "agy" ? modelTrong(shaped) || d.model : d.model, effort: d.kind === "codex" ? codexEffort || (customEffort ? null : DEFAULT_EFFORT) : d.effort,
+      why: [...d.why, ...tkWhy], ...(taiKhoan ? { taiKhoan } : {}) };
     audit.log(actor, "ai.run", root, { role, retried, task: String(task).slice(0, 500), dieuPhoi: chosen, ...(d.quotaLeft != null ? { quotaLeft: d.quotaLeft } : {}) });
     const before = agentBefore(root);
     const job = jobs.start({ kind: "ai", agent: role, workspace: root, argv, timeoutMs: a.timeoutMs, onExit: (job) => done(job, { workspace: root, role, task, retried, allowRetry, effort, before, hint }) });
@@ -283,7 +303,15 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     const log = jobs.rawLog(job.id);
     if (job.status === "failed" && opts.allowRetry && !opts.retried && RETRYABLE.test(log.slice(-20000))) {
       audit.log("ctl", "ai.retry_scheduled", job.id, { role: opts.role });
-      setTimeout(() => { try { run({ ...opts, retried: true }, "ctl-retry"); } catch (e) { audit.log("ctl", "ai.retry_failed", job.id, e.message); } }, MIN).unref();
+      // Antigravity đang tạm đổi tài khoản (AGY_BUSY) đúng lúc chạy lại: hẹn thêm 20 giây (tối đa 6 lần), không bỏ lượt.
+      const thuLai = (lan) => setTimeout(() => {
+        try { run({ ...opts, retried: true }, "ctl-retry"); }
+        catch (e) {
+          if (e.code === "AGY_BUSY" && lan < 6) { audit.log("ctl", "ai.retry_wait_agy", job.id, { role: opts.role }); thuLai(lan + 1); }
+          else audit.log("ctl", "ai.retry_failed", job.id, e.message);
+        }
+      }, lan ? 20000 : MIN).unref();
+      thuLai(0);
       return;
     }
     const h = job.status === "done" ? findHandoff(log) : null;
@@ -385,6 +413,7 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     const agent = WEB_ROLE[writer];
     if (!agent) throw err("BAD_REQUEST", "Không có AI soạn prompt: " + writer);
     const argv = argvFor(agent).map((x) => x === "{prompt}" ? prompt : x);
+    if (agyTk && kindOf(argv) === "agy") agyTk.truocChay();
     return jobs.start({ kind: "ai", agent, workspace: root, argv, timeoutMs: AGENTS[agent].timeoutMs });
   }
 
@@ -418,7 +447,10 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
   function chatArgv(ai) {
     const c = CHAT[ai];
     if (!c) throw err("BAD_REQUEST", "Không có AI để chat: " + ai);
-    return c[1] ? codexArgs(argvFor(c[0]), c[1], null) : argvFor(c[0]);
+    const argv = c[1] ? codexArgs(argvFor(c[0]), c[1], null) : argvFor(c[0]);
+    // Chat với Hinata/Kakashi chạy agy: đang mượn tài khoản nghỉ / còn phải trả lại thì xử lý trước (bận thì AGY_BUSY).
+    if (agyTk && kindOf(argv) === "agy") agyTk.truocChay();
+    return argv;
   }
 
   // Phần chương trình của từng CLI (trước lệnh con/cờ), để chạy lệnh quản lý như `mcp list`.

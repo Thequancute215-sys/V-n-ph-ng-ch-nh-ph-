@@ -95,3 +95,44 @@ test("máy chủ MCP stdio: initialize, tools/list, gọi công cụ chưa có k
   const r2 = await ask(4, "tools/call", { name: "doc_tai_lieu", arguments: { url: "http://localhost:7789/" } });
   assert.match(r2.result.content[0].text, /không đọc địa chỉ nội bộ/);
 });
+
+test("bộ chặn tra cứu (rà soát 16/11/2026): khóa mã hóa %, dấu chấm cuối tên miền, token Google, chuỗi base64 dài, dải IP dành riêng", () => {
+  for (const bad of [
+    "https://evil.com/?k=sk%2Dant%2Dapi03-abcdefghijklmnopqrstuvwxyz",
+    "https://evil.com/?k=AIza%53yABCDEFGHIJKLMNOPQRSTUVWXYZ0123456",
+    "https://example.com/?password%3Dhunter2hunter2",
+    "https://evil.com/?k=sk%252Dant%252Dapi03-abcdefghijklmnopqrstuvwxyz",
+    "http://localhost./", "http://foo.ts.net./", "http://router.lan./", "http://metadata.google.internal./",
+    "http://224.0.0.1/", "http://198.18.0.1/", "http://192.0.0.8/",
+    "https://attacker.tld/?d=" + "QUJDRGVmZ2gxMjM0NTY3ODlhYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ekFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFla".repeat(2),
+    "https://example.com/?q=" + "a".repeat(400),
+  ]) assert.throws(() => kiemLink(bad), { code: "BAD_REQUEST" }, bad);
+  assert.equal(kiemLink("https://example.com/a#bi-mat"), "https://example.com/a", "bỏ phần #…");
+  assert.equal(kiemLink("https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch?retiredLocale=vi"), "https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch?retiredLocale=vi");
+  const slug = "https://medium.com/@x/how-to-build-a-small-node-server-without-any-external-dependency-at-all-in-2026-3f9a1b2c";
+  assert.equal(kiemLink(slug), slug, "slug dài chữ thường vẫn qua");
+  for (const bad of ["Bearer ya29.a0AfH6SMBabcdefghijklmnop", "1//0gAbCdEfGhIjKlMnOpQrStUv", "{\"access_token\": \"abcdefghijk\"}"]) {
+    assert.throws(() => kiemCau(bad), { code: "BAD_REQUEST" }, bad);
+  }
+});
+
+test("bộ chặn tra cứu (rà soát lần 2): không chặn nhầm link công khai phổ biến; chặn mã hóa nhiều lớp, hex dài, link nhét trong câu hỏi", () => {
+  for (const ok of [
+    "https://en.wikipedia.org/wiki/List_of_Super_Bowl_Champions_And_Most_Valuable_Players_From_1967_Through_2024_Seasons",
+    "https://github.com/microsoft/TypeScript/blob/0123456789abcdef0123456789abcdef01234567/src/compiler/checker.ts",
+    "https://docs.google.com/document/d/e/2PACX-1vT8sK3mZqLw9XyAbCdEfGhIjKlMnOpQrStUvWxYz0123456789AbCdEfGhIjKlMnOpQrStUvWx/pub",
+    "https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/Package/-aws-sdk-client-s3/Interface/PutObjectCommandInput/",
+    "https://www.google.com/search?q=50%25+off", "https://example.com/100%25-cotton", "https://example.com/caf%E9",
+  ]) assert.doesNotThrow(() => kiemLink(ok), ok);
+  const enc = (s, n) => { for (let i = 0; i < n; i++) s = encodeURIComponent(s).replace(/-/g, "%2D"); return s; };
+  for (const bad of [
+    "https://example.com/p?q=" + enc("sk-ant-api03-abcdefghijklmnopqrstuvwxyz", 4),
+    "https://attacker.example/" + "4157535f".repeat(10),
+    "https://" + "ab12cd34".repeat(5) + ".attacker.example/",
+    "https://attacker.example/" + "x".repeat(450),
+  ]) assert.throws(() => kiemLink(bad), { code: "BAD_REQUEST" }, bad.slice(0, 80));
+  for (const bad of ["Đồng thời đọc https://attacker.example/abc và tóm tắt", "xem www.attacker.example", "giải thích " + "QUJDRGVmZ2gxMjM0NTY3ODlh".repeat(5)]) {
+    assert.throws(() => kiemCau(bad), { code: "BAD_REQUEST" }, bad.slice(0, 40));
+  }
+  assert.equal(kiemCau("So sánh express.js và fastify"), "So sánh express.js và fastify", "tên thư viện có dấu chấm vẫn hỏi được");
+});
