@@ -36,9 +36,10 @@
 .desk-dialog .explain ol { padding-left:20px; }
 .desk-message:empty { display:none; }
 @media(max-width:600px) {
-  .desk-dialog { width:100%; height:100dvh; max-height:100dvh; margin:0; border-radius:0; }
+  /* Toàn màn hình trên điện thoại: chừa tai thỏ / thanh home / hai mép (env() = 0 trên máy tính). */
+  .desk-dialog { width:100%; height:100dvh; max-height:100dvh; margin:0; border-radius:0; box-sizing:border-box; padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
   .desk-body { padding:12px; }
-  .bar { left:8px; right:8px; gap:6px; }
+  .bar { left:calc(8px + env(safe-area-inset-left)); right:calc(8px + env(safe-area-inset-right)); gap:6px; }
   .bar > * { max-width:100%; min-width:0; white-space:normal; }
   .bar .pill { padding:6px 9px; }
   .bar #wxTxt,.bar #claudeLowTxt { white-space:normal!important; overflow-wrap:anywhere; }

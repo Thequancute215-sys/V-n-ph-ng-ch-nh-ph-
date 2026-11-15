@@ -233,6 +233,21 @@ node tools/cai-skill.js cai    # tải đúng commit đã ghim, chép vào ~/.cl
 - Khi máy đã cài, lời giao việc có danh sách skill và dòng bàn giao bắt buộc có `"skill_da_dung"` (rỗng thì kèm `"skill_ly_do"`); thiếu thì lượt đó bị trả lại.
 - Cài chỉ chép thư mục skill, không chạy file nào, không cài hook; skill anh tự cài (không có `.vp-skill.json`) không bị ghi đè. Muốn nâng bản: đội trưởng đọc diff giữa hai commit rồi mới sửa danh mục.
 
+## Tạo dự án mới
+
+Mở **Dự án** trên bàn làm việc, phần **Tạo dự án mới** (`ctl/du-an-moi.js`), rồi làm theo hai bước.
+
+**1. Gợi ý tên.** Gõ vài câu ý tưởng rồi bấm **Gợi ý tên repo**. Văn phòng hỏi Claude Haiku (một lượt, không công cụ, tối đa 1 phút) lấy 3 tên kèm mô tả. Claude lỗi thì văn phòng tự đặt tên từ chữ trong ý tưởng (bỏ dấu, bỏ từ đệm). Văn phòng kiểm từng tên đã có trên tài khoản GitHub đang đăng nhập hay chưa. Bước này chưa tạo gì.
+
+**2. Duyệt & tạo dự án.** Chọn hoặc sửa tên và mô tả, rồi bấm nút này. Văn phòng chạy quy trình khởi động:
+1. tạo repo **riêng tư** (có README);
+2. tải về thư mục dự án và mở làm dự án (agent.md theo mẫu v2.2);
+3. lưu ý tưởng;
+4. cài bộ kiểm chu trình CI (đẩy nhánh và đưa link PR, không tự merge);
+5. giao Hinata viết đặc tả: vì anh đã duyệt nên văn phòng ghi đè lượt sang Hinata, rồi chu trình /bcc chạy tiếp.
+
+Bỏ chọn ô nào thì bỏ qua bước đó. Mỗi bước hiện trạng thái riêng. Bước tạo hoặc tải repo lỗi thì dừng. Bộ kiểm lỗi thì vẫn giao Hinata và báo "xong một phần". Repo đã tạo không bị xoá. Dùng được cả trên điện thoại đã ghép. Repo được tạo bằng đăng nhập GitHub trong Git Credential Manager (cần quyền repo).
+
 ## Chọn repo GitHub trong app
 
 Ở trang Tổng quan (`prototype.html`), bấm **Chọn repo GitHub**, tìm repo rồi bấm **Mở repo**. Danh sách lấy trực tiếp từ tài khoản GitHub đã đăng nhập trong Git Credential Manager trên máy, gồm cả repo riêng tư và repo được cộng tác; có tải thêm khi danh sách dài. Không cần nhập token vào văn phòng.
@@ -307,6 +322,14 @@ Giao việc, duyệt báo cáo, trả lời câu hỏi của Claude, duyệt ho�
 3. **Danh sách lệnh** (`lib/dieu-khien-xa.js`): chỉ mở xem tình hình, giao việc, duyệt/trả lại, trả lời, chạy lại khi chờ hạn mức, phanh khẩn cấp. Không mở chạy lệnh tùy ý, đọc/ghi file, duyệt rà soát, xuất bản, đẩy nhánh, sửa kết nối hay cấu hình: các việc đó chỉ làm trên máy tính.
 
 Mọi lệnh từ điện thoại (và lệnh bị chặn) ghi vào `~/.van-phong-ao/dieu-khien-xa.log` kèm tên máy và IP; xem ở trang **Điện thoại** trên máy tính. **iPhone/Android với địa chỉ cố định (Tailscale):** cài Tailscale trên máy tính (`winget install --id Tailscale.Tailscale -e`) và trên điện thoại, đăng nhập cùng tài khoản, rồi chạy `powershell -ExecutionPolicy Bypass -File scripts\dien-thoai-tailscale.ps1`. Script mở `https://<tên-máy>.<mạng>.ts.net` chỉ trong mạng riêng của anh (không ra Internet), địa chỉ không đổi giữa các lần bật. Trên iPhone mở link đó bằng Safari → Chia sẻ → **Thêm vào MH chính**, rồi mở app từ biểu tượng và nhập khóa xem + mã ghép **trong app** (iOS tách dữ liệu đăng nhập của app màn hình chính với Safari). Yêu cầu qua Tailscale luôn bị coi là từ xa, dù nối vào từ 127.0.0.1.
+
+**Văn phòng 3D trên điện thoại:** điện thoại đã ghép bấm **Văn phòng 3D** ở đầu trang điều khiển. Văn phòng 3D có cần điều khiển cảm ứng để đi lại. Mở từ xa thì bàn làm việc trong 3D tự gọi qua kênh của điện thoại đã ghép (`/dkx/api`) thay cho `/ctl`, nên chỉ chạy các lệnh trong danh sách điện thoại được phép. Ngoài các lệnh trên còn có:
+- xem ý tưởng, rà soát, xuất bản, nhật ký và danh sách model;
+- chọn dự án đang làm;
+- ghi ý tưởng và giao ý tưởng;
+- tạo dự án mới.
+
+Các việc sau vẫn chỉ làm trên máy tính: đổi cấu hình model, đổi tài khoản Antigravity, rà soát, xuất bản, mở repo tùy ý. Trang điều khiển và văn phòng 3D chừa chỗ cho tai thỏ / Dynamic Island.
 
 Muốn thêm một lớp đăng nhập bằng email trước cả khóa xem: dùng Cloudflare Tunnel có tên miền riêng kèm Cloudflare Access thay cho link `trycloudflare.com`.
 

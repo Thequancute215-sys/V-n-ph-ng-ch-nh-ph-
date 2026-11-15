@@ -29,6 +29,7 @@ const { createNotifier } = require("./thongbao");
 const { createScanner } = require("./ra-soat");
 const { createUpdater } = require("./cap-nhat");
 const { createBoKiem } = require("./bo-kiem");
+const { createDuAnMoi } = require("./du-an-moi");
 const { createAgyTaiKhoan } = require("./agy-tai-khoan");
 const { kindOf } = require("./dieu-phoi");
 const { classify } = require("./policy");
@@ -49,7 +50,7 @@ const HTTP_CODE = {
   AGY_BUSY: 409, AGY_CRED: 502, NO_LOGIN: 409, NOT_SUPPORTED: 501,
 };
 
-function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {}, quotaOptions = {}, updaterOptions = {}, agyOptions = {}, notify = false } = {}) {
+function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {}, quotaOptions = {}, updaterOptions = {}, agyOptions = {}, notify = false } = {}) {
   const db = open(dir);
   const audit = createAudit(db);
   const jobs = createJobs(db, audit, path.join(dir, "logs"));
@@ -93,6 +94,8 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
   // Repo mới tải về VP_PROJECTS_DIR (CEO đặt D:\Projects 04/11/2026 vì ổ C: đầy); bản sao cũ ở ~/Projects vẫn được tìm thấy.
   const defaultProjects = path.join(os.homedir(), "Projects"), projectsDir = githubOptions.projectsDir || process.env.VP_PROJECTS_DIR || defaultProjects;
   const github = createGitHub({ alsoLook: githubOptions.projectsDir || projectsDir === defaultProjects ? [] : [defaultProjects], ...githubOptions, projectsDir, ws, jobs, audit, select: selectWorkspace });
+  // Tạo dự án mới: gợi ý tên repo, CEO duyệt rồi mới tạo repo + tải về + agent.md + bộ kiểm + giao Hinata (ctl/du-an-moi.js).
+  const duAnMoi = createDuAnMoi({ github, ideas, boKiem, audit, dir, ...duAnOptions });
   const quotas = createQuotas({ ...quotaOptions, dir, agyTk });
   const monitor = createMonitor();
   const tokenBuf = Buffer.from(token);
@@ -192,6 +195,9 @@ function createCtl({ dir = home(), token = crypto.randomBytes(32).toString("hex"
     ["GET", "/projects", () => ({ projects: projects() })],
     // Ý tưởng của CEO: bước 1 chu trình, giao Hinata (SPEC_ARCHITECT) đặc tả
     ["GET", "/ideas", (p, qs) => ({ ideas: ideas.list(wsOf(qs.get("workspace"))) })],
+    ["POST", "/du-an-moi/goi-y", async (p, qs, b) => ({ duAnMoi: await duAnMoi.goiY(b.yTuong) })],
+    ["POST", "/du-an-moi", (p, qs, b) => [202, { duAnMoi: duAnMoi.tao({ ten: b.ten, moTa: b.moTa, yTuong: b.yTuong, rieng: true /* luôn riêng tư: công khai chỉ khi CEO tự đổi trên GitHub */, caiBoKiem: b.caiBoKiem !== false, giaoHinata: b.giaoHinata !== false }) }]],
+    ["GET", "/du-an-moi/:id", (p) => ({ duAnMoi: duAnMoi.get(p.id) })],
     ["POST", "/ideas", (p, qs, b) => [201, { idea: ideas.add({ workspace: wsOf(b.workspace), title: b.title, detail: b.detail }) }]],
     ["POST", "/ideas/:id/start", (p, qs, b) => ({ idea: ideas.start(p.id, { force: b.force === true }) })],
     // Rà file .md trước khi cho AI chạy toàn quyền; CEO duyệt điểm bất thường thì luồng đang tạm dừng chạy tiếp.

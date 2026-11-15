@@ -147,6 +147,29 @@ function createGitHub({ ws, jobs, audit, select, projectsDir = path.join(os.home
     throw err("GITHUB_OFFLINE", "GitHub từ chối chạy workflow (HTTP " + response.status + "): " + detail);
   }
   function get(id) { const op = operations.get(id); if (!op) throw err("NOT_FOUND", "Không tìm thấy phiên mở repo; kiểm tra lại dự án đang chọn."); return { ...op }; }
-  return { list, open, get, visibility, dispatch, close: () => { closed = true; } };
+
+  // Tạo dự án mới (ctl/du-an-moi.js, CEO duyệt 16/11/2026): tài khoản đang đăng nhập, repo đã có chưa, tạo repo mới.
+  const login = async () => (await api("/user")).data.login;
+  async function exists(fullName) {
+    if (!validName(fullName)) throw err("BAD_REQUEST", "Tên repo không hợp lệ");
+    try { await api("/repos/" + fullName); return true; } catch (e) { if (e.code === "NOT_FOUND") return false; throw e; }
+  }
+  // Chỉ gọi sau khi CEO bấm duyệt. Mặc định riêng tư; auto_init tạo README để tải về và cài bộ kiểm được ngay.
+  async function createRepo({ name, description = "", isPrivate = true }) {
+    if (!/^[A-Za-z0-9._-]{1,100}$/.test(String(name)) || /^\.+$/.test(name)) throw err("BAD_REQUEST", "Tên repo chỉ gồm chữ, số và dấu . - _ (tối đa 100 ký tự).");
+    const token = await getCredential();
+    let response;
+    try {
+      response = await fetcher("https://api.github.com/user/repos", { method: "POST", headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json", "User-Agent": "VanPhongAI", "Content-Type": "application/json" },
+        body: JSON.stringify({ name, description: String(description).slice(0, 350), private: isPrivate !== false, auto_init: true }), signal: AbortSignal.timeout(20000), redirect: "error" });
+    } catch { throw err("GITHUB_OFFLINE", "Không kết nối được GitHub. Kiểm tra mạng rồi thử lại."); }
+    let data = {}; try { data = await response.json(); } catch {}
+    if (response.status === 201 && validName(data.full_name)) { audit.log("ceo", "github.create_repo", data.full_name, { private: !!data.private }); return { fullName: data.full_name, private: !!data.private, url: "https://github.com/" + data.full_name }; }
+    if (response.status === 401) throw err("GITHUB_AUTH", "Đăng nhập GitHub đã hết hạn. Đăng nhập lại bằng Git Credential Manager.");
+    if (response.status === 403) throw err("GITHUB_LIMIT", "Đăng nhập GitHub trên máy chưa có quyền tạo repo (cần quyền repo).");
+    if (response.status === 422) throw err("CHANGED", "GitHub không tạo được repo \"" + name + "\": tên đã có hoặc không hợp lệ. Chọn tên khác.");
+    throw err("GITHUB_OFFLINE", "GitHub từ chối tạo repo (HTTP " + response.status + "): " + String(data.message || "").slice(0, 200));
+  }
+  return { list, open, get, visibility, dispatch, login, exists, createRepo, close: () => { closed = true; } };
 }
 module.exports = { createGitHub, remoteName };
