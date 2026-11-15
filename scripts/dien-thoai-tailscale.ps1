@@ -1,4 +1,4 @@
-# Mở văn phòng cho điện thoại qua Tailscale: mạng riêng chỉ gồm máy của anh, địa chỉ HTTPS cố định (không đổi như trycloudflare),
+﻿# Mở văn phòng cho điện thoại qua Tailscale: mạng riêng chỉ gồm máy của anh, địa chỉ HTTPS cố định (không đổi như trycloudflare),
 # không mở cổng nào ra Internet. Điện thoại cài app Tailscale, đăng nhập cùng tài khoản là vào được.
 # Chạy:  powershell -ExecutionPolicy Bypass -File scripts\dien-thoai-tailscale.ps1          (bật)
 #        powershell -ExecutionPolicy Bypass -File scripts\dien-thoai-tailscale.ps1 -Tat     (tắt)

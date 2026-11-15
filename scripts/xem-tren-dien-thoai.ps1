@@ -1,4 +1,4 @@
-# Mở đường hầm Cloudflare (miễn phí, không cần tài khoản) để xem văn phòng trên điện thoại.
+﻿# Mở đường hầm Cloudflare (miễn phí, không cần tài khoản) để xem văn phòng trên điện thoại.
 # Cần cài cloudflared một lần:  winget install --id Cloudflare.cloudflared
 # Chạy (cửa sổ khác, sau khi đã npm start):  powershell -ExecutionPolicy Bypass -File scripts\xem-tren-dien-thoai.ps1
 $cfg = Get-Content (Join-Path $PSScriptRoot "..\config.json") -Raw -ErrorAction SilentlyContinue | ConvertFrom-Json
