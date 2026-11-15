@@ -12,16 +12,23 @@ const safeCompare = (value) => { try { const u = new URL(value); return u.protoc
 // Văn phòng 3D mở trên điện thoại (qua Tailscale/đường hầm): /ctl chỉ dùng được trên chính máy tính, nên điện thoại đã ghép
 // gọi qua kênh /dkx/api (lib/dieu-khien-xa.js: chỉ các lệnh trong danh sách điện thoại được phép). Chưa ghép thì báo đi ghép.
 // CEO chọn 16/11/2026: "Mở 3D, nút đi qua máy đã ghép".
+// Chỉ nhớ kết quả chắc chắn (máy tính / điện thoại đã ghép). Chưa ghép hoặc lỗi mạng thì lần sau hỏi lại, để ghép xong
+// hay mạng nối lại là dùng được ngay, không phải tải lại trang.
 let ctlPrefix = null;
+const laMayNay = () => /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
 export async function ctlBase() {
   if (ctlPrefix) return ctlPrefix;
   try {
     const r = await fetch("/dkx/trang-thai", { cache: "no-store", signal: AbortSignal.timeout(8000) });
+    if (r.status === 404) return (ctlPrefix = "/ctl");   // máy chủ cũ chưa có /dkx
     const d = await r.json();
-    ctlPrefix = d.local ? "/ctl" : d.ghep ? "/dkx/api" : "unpaired";
-  } catch { ctlPrefix = "/ctl"; }   // máy chủ cũ chưa có /dkx: giữ đường cũ
-  return ctlPrefix;
+    if (d.local) return (ctlPrefix = "/ctl");
+    if (d.ghep) return (ctlPrefix = "/dkx/api");
+    return "unpaired";
+  } catch { return laMayNay() ? "/ctl" : "/dkx/api"; }
 }
+// Văn phòng 3D: đang gợi ý tên / gửi duyệt / tạo dự án thì giữ khoá nút (lock() chạy lại mỗi lần làm mới).
+let damBan = false;
 globalThis.vpCtlBase = ctlBase;   // index.html (chat với từng AI) dùng chung cách chọn đường
 const CHUA_GHEP = "Điện thoại chưa ghép với văn phòng: mở trang Điều khiển (dieu-khien.html), nhập mã ghép tạo trên máy tính rồi quay lại.";
 
@@ -34,6 +41,7 @@ async function request(path, body, timeout = 15000) {
   catch (e) { throw new Error("Không kết nối được Controller hoặc yêu cầu quá thời gian. Kiểm tra Controller đang chạy. " + e.message); }
   let data;
   try { data = await response.json(); } catch { throw new Error("Controller chưa trả JSON hợp lệ. Kiểm tra Controller và phiên đăng nhập văn phòng."); }
+  if (data.code === "NOT_PAIRED" || data.code === "REMOTE_DENIED") ctlPrefix = null;   // vừa huỷ ghép / đổi mạng: lần sau hỏi lại
   if (!response.ok || data.ok === false) throw Object.assign(new Error((data.code === "CTL_OFFLINE" ? "Controller chưa chạy. " : "") + (data.error || "Lỗi HTTP " + response.status)), { code: data.code });
   return data;
 }
@@ -92,7 +100,7 @@ export function createDesk(getOffice) {
   function lock() {
     dialog.querySelectorAll("[data-write], [data-action]").forEach((b) => { b.disabled = mutating || !active || !!errors.workspace || b.dataset.invalid === "true"; });
     // Tạo dự án mới không cần dự án đang chọn (máy mới cài chưa có dự án nào).
-    dialog.querySelectorAll("[data-dam]").forEach((b) => { b.disabled = mutating; });
+    dialog.querySelectorAll("[data-dam]").forEach((b) => { b.disabled = mutating || damBan; });
     $("deskProject").disabled = mutating || !workspaces.length || !!errors.workspace;
     $("deskGithubLoad").disabled = githubLoading || mutating;
     $("deskGithubMore").disabled = githubLoading || mutating;
@@ -342,7 +350,8 @@ export function createDesk(getOffice) {
   }
   // Tạo dự án mới (ctl/du-an-moi.js): gợi ý tên repo → anh chọn/sửa → Duyệt & tạo → theo dõi từng bước. Dùng được trên điện thoại đã ghép.
   const DAM_TT = { cho: "chờ", dang: "đang làm…", xong: "xong", loi: "lỗi", "bo-qua": "bỏ qua" };
-  let damGoiYData = null, damOp = null, damTimer = null;
+  let damGoiYData = null, damOp = null, damTimer = null, damLoi = 0, damGui = false;
+  const damKhoa = () => { damBan = damGui || !!(damOp && damOp.trangThai === "dang"); lock(); };
   const damTen = (v) => String(v || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[đĐ]/g, "d").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
   function renderDam() {
     const box = $("damKetQua");
@@ -367,8 +376,16 @@ export function createDesk(getOffice) {
   async function damTheoDoi() {
     clearTimeout(damTimer);
     if (!damOp || damOp.trangThai !== "dang") return;
-    try { damOp = (await request("/du-an-moi/" + encodeURIComponent(damOp.id))).duAnMoi; } catch (e) { notice(e.message, true); }
-    renderDam();
+    try { damOp = (await request("/du-an-moi/" + encodeURIComponent(damOp.id))).duAnMoi; damLoi = 0; }
+    catch (e) {
+      // ctl khởi động lại thì phiên theo dõi mất (NOT_FOUND): dừng hỏi, chỉ anh xem repo; lỗi mạng liên tiếp 5 lần cũng dừng.
+      damLoi++;
+      if (e.code === "NOT_FOUND" || damLoi >= 5) {
+        damOp = { ...damOp, trangThai: "loi", buoc: damOp.buoc.map((x) => x.trangThai === "dang" ? { ...x, trangThai: "loi", ghiChu: "Mất phiên theo dõi (máy tính khởi động lại văn phòng?). Xem repo trên GitHub hoặc mục Tải repo GitHub; duyệt lại cùng tên để làm tiếp." } : x) };
+        notice("Mất phiên theo dõi tạo dự án: " + e.message, true);
+      }
+    }
+    renderDam(); damKhoa();
     if (damOp && damOp.trangThai === "dang") damTimer = setTimeout(damTheoDoi, 2000);
     else if (damOp) { notice(damOp.trangThai === "xong" ? "Đã khởi động dự án " + damOp.ten + "." : "Dự án " + damOp.ten + " dừng ở một bước lỗi: xem chi tiết trong mục Dự án.", damOp.trangThai !== "xong"); refreshNow(); }
   }
@@ -403,9 +420,10 @@ export function createDesk(getOffice) {
   $("damGoiY").onclick = async () => {
     const yTuong = $("damYTuong").value.trim();
     if (yTuong.length < 10) { notice("Viết ý tưởng ít nhất 10 ký tự để văn phòng gợi ý tên.", true); return; }
-    $("damGoiY").disabled = true; damOp = null; $("damKetQua").innerHTML = "<p>Đang nghĩ tên repo (tối đa 1 phút)…</p>";
-    try { damGoiYData = (await request("/du-an-moi/goi-y", { yTuong }, 90000)).duAnMoi; } catch (e) { damGoiYData = null; notice(e.message, true); }
-    $("damGoiY").disabled = false; renderDam();
+    if (damOp && damOp.trangThai === "dang") { notice("Đang tạo dự án " + damOp.ten + ": chờ xong rồi gợi ý tiếp.", true); return; }
+    damGui = true; damKhoa(); damOp = null; $("damKetQua").innerHTML = "<p>Đang nghĩ tên repo (tối đa 1 phút)…</p>";
+    try { damGoiYData = (await request("/du-an-moi/goi-y", { yTuong }, 100000)).duAnMoi; } catch (e) { damGoiYData = null; notice(e.message, true); }
+    damGui = false; renderDam(); damKhoa();
   };
   $("damKetQua").addEventListener("change", (e) => {
     if (e.target.name !== "damChon" || !damGoiYData) return;
@@ -419,11 +437,12 @@ export function createDesk(getOffice) {
     const ten = damTen($("damTenRepo").value);
     if (!/^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/.test(ten)) { notice("Tên repo 3–40 ký tự: chữ thường không dấu, số, gạch ngang.", true); return; }
     if (!confirm("Tạo repo riêng tư \"" + ten + "\" trên GitHub và khởi động dự án?")) return;
-    e.target.disabled = true;
+    damGui = true; damKhoa();
     try {
       damOp = (await request("/du-an-moi", { ten, moTa: $("damMoTa").value, yTuong: $("damYTuong").value.trim(), caiBoKiem: $("damBoKiem").checked, giaoHinata: $("damHinata").checked }, 30000)).duAnMoi;
-      damGoiYData = null; renderDam(); damTheoDoi();
-    } catch (err) { e.target.disabled = false; notice(err.message, true); }
+      damGoiYData = null; damLoi = 0; renderDam(); damTheoDoi();
+    } catch (err) { notice(err.message, true); }
+    damGui = false; damKhoa();
   });
   $("deskSwitch").onclick = () => { const path = $("deskProject").value; if (path) mutate("Chuyển sang dự án " + path, async () => { await request("/workspaces/switch", { path }); overview = null; show("progress"); }); };
   $("deskAssign").onsubmit = (e) => {

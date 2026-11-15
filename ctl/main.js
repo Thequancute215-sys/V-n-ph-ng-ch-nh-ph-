@@ -95,7 +95,7 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
   const defaultProjects = path.join(os.homedir(), "Projects"), projectsDir = githubOptions.projectsDir || process.env.VP_PROJECTS_DIR || defaultProjects;
   const github = createGitHub({ alsoLook: githubOptions.projectsDir || projectsDir === defaultProjects ? [] : [defaultProjects], ...githubOptions, projectsDir, ws, jobs, audit, select: selectWorkspace });
   // Tạo dự án mới: gợi ý tên repo, CEO duyệt rồi mới tạo repo + tải về + agent.md + bộ kiểm + giao Hinata (ctl/du-an-moi.js).
-  const duAnMoi = createDuAnMoi({ github, ideas, boKiem, audit, ...duAnOptions });
+  const duAnMoi = createDuAnMoi({ github, ideas, boKiem, audit, dir, ...duAnOptions });
   const quotas = createQuotas({ ...quotaOptions, dir, agyTk });
   const monitor = createMonitor();
   const tokenBuf = Buffer.from(token);
@@ -196,7 +196,7 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     // Ý tưởng của CEO: bước 1 chu trình, giao Hinata (SPEC_ARCHITECT) đặc tả
     ["GET", "/ideas", (p, qs) => ({ ideas: ideas.list(wsOf(qs.get("workspace"))) })],
     ["POST", "/du-an-moi/goi-y", async (p, qs, b) => ({ duAnMoi: await duAnMoi.goiY(b.yTuong) })],
-    ["POST", "/du-an-moi", (p, qs, b) => [202, { duAnMoi: duAnMoi.tao({ ten: b.ten, moTa: b.moTa, yTuong: b.yTuong, rieng: b.rieng !== false, caiBoKiem: b.caiBoKiem !== false, giaoHinata: b.giaoHinata !== false }) }]],
+    ["POST", "/du-an-moi", (p, qs, b) => [202, { duAnMoi: duAnMoi.tao({ ten: b.ten, moTa: b.moTa, yTuong: b.yTuong, rieng: true /* luôn riêng tư: công khai chỉ khi CEO tự đổi trên GitHub */, caiBoKiem: b.caiBoKiem !== false, giaoHinata: b.giaoHinata !== false }) }]],
     ["GET", "/du-an-moi/:id", (p) => ({ duAnMoi: duAnMoi.get(p.id) })],
     ["POST", "/ideas", (p, qs, b) => [201, { idea: ideas.add({ workspace: wsOf(b.workspace), title: b.title, detail: b.detail }) }]],
     ["POST", "/ideas/:id/start", (p, qs, b) => ({ idea: ideas.start(p.id, { force: b.force === true }) })],

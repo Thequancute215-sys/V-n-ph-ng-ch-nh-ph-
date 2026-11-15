@@ -88,3 +88,52 @@ test("điện thoại đã ghép: văn phòng 3D dùng được mục xem, ý t�
   for (const [m, p] of [["POST", "/dieu-phoi"], ["POST", "/agy-tai-khoan/cat"], ["POST", "/agy-tai-khoan/x/chuyen"], ["POST", "/publish/prepare"], ["POST", "/scan/approve"],
     ["POST", "/bo-kiem"], ["POST", "/github/open"], ["POST", "/cap-nhat"], ["POST", "/workspaces"]]) assert.ok(!allowed(m, p), m + " " + p);
 });
+
+// Sau rà soát độc lập 16/11/2026:
+test("gợi ý tên chỉ một lượt Claude tại một thời điểm: cùng ý tưởng dùng chung, ý tưởng khác báo bận", async () => {
+  let goiAi = 0, xongAi;
+  const { dam } = gia({ ai: () => { goiAi++; return new Promise((r) => { xongAi = () => r([{ ten: "abc-xyz", moTa: "" }]); }); } });
+  const a = dam.goiY(Y), b = dam.goiY(Y);
+  assert.throws(() => dam.goiY("Một ý tưởng hoàn toàn khác cho dự án khác"), { code: "AI_BUSY" });
+  await new Promise((r) => setImmediate(r)); xongAi();
+  assert.equal((await a).goiY[0].ten, "abc-xyz"); assert.equal(await b, await a);
+  assert.equal(goiAi, 1);
+});
+
+test("repo đã tạo ở lần duyệt trước (bước sau lỗi): duyệt lại cùng tên thì làm tiếp từ bước tải về, không tạo lại", async () => {
+  const fs = require("node:fs"), os = require("node:os"), path = require("node:path");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vp-dam-"));
+  try {
+    const g = gia();
+    let lanOpen = 0;
+    g.goi.length = 0;
+    const github = { login: async () => "oanh", exists: async () => true,
+      createRepo: async ({ name }) => { g.goi.push(["createRepo", name]); return { fullName: "oanh/" + name, url: "u" }; },
+      open: () => { lanOpen++; if (lanOpen === 1) throw Object.assign(new Error("Đang mở một repo"), { code: "AI_BUSY" }); return { id: "o", status: "running" }; },
+      get: () => ({ id: "o", status: lanOpen < 3 ? "failed" : "done", code: "GITHUB_CLONE", message: "mạng rớt", workspace: "D:/P/oanh/abc-xyz" }) };
+    const ideas = { add: () => ({ id: "i1" }), start: () => ({ runId: "r1" }) }, boKiem = { install: () => ({}) };
+    let dam = createDuAnMoi({ github, ideas, boKiem, dir, goiYAi: async () => [], cho: async () => {} });
+    let r = await xong(dam, dam.tao({ ten: "abc-xyz", yTuong: Y }).id);
+    assert.equal(r.buoc[0].trangThai, "xong"); assert.equal(r.buoc[1].trangThai, "loi", "lần 1: đang mở repo khác → chờ, rồi tải lỗi");
+    dam = createDuAnMoi({ github, ideas, boKiem, dir, goiYAi: async () => [], cho: async () => {} });   // như ctl khởi động lại
+    r = await xong(dam, dam.tao({ ten: "abc-xyz", yTuong: Y }).id);
+    assert.equal(r.trangThai, "xong", JSON.stringify(r.buoc));
+    assert.match(r.buoc[0].ghiChu, /đã tạo ở lần trước/);
+    assert.equal(g.goi.filter((x) => x[0] === "createRepo").length, 1, "chỉ tạo repo một lần");
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("điện thoại: tạo dự án luôn riêng tư (ép rieng=true), gợi ý tên được chờ 95 giây, xoá chat được", async () => {
+  const { handle } = require("../lib/dieu-khien-xa");
+  assert.ok(allowed("POST", "/chat/clear"));
+  const goi = [];
+  const dkx = { thietBiCua: () => ({ id: "tb1", ten: "iPhone" }), xacThuc: () => ({ id: "tb1", ten: "iPhone" }), ghiNhatKy: () => {} };
+  const res = () => { const o = { code: 0, body: "" }; o.writeHead = (c) => { o.code = c; }; o.end = (b) => { o.body = b; }; return o; };
+  for (const [p, body] of [["/dkx/api/du-an-moi", { ten: "abc-xyz", yTuong: Y, rieng: false }], ["/dkx/api/du-an-moi/goi-y", { yTuong: Y }]]) {
+    const req = { method: "POST", headers: { cookie: "vpd=x", host: "oanh.ts.net" }, socket: { remoteAddress: "127.0.0.1" } };
+    await handle(dkx, req, res(), new URL("https://oanh.ts.net" + p), { local: false, hasKey: true, readJson: async () => body,
+      call: async (m, target, b, het) => { goi.push({ target, b, het }); return { status: 202, json: { ok: true } }; } });
+  }
+  assert.equal(goi[0].b.rieng, true, "tham số ẩn rieng:false bị ép thành riêng tư");
+  assert.equal(goi[1].het, 95000);
+});

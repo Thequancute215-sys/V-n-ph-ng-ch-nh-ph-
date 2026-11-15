@@ -10,7 +10,10 @@ const os = require("os");
 const crypto = require("crypto");
 const { spawn } = require("child_process");
 const { resolveProgram } = require("./policy");
+const fs = require("fs");
+const path = require("path");
 const { cleanEnv } = require("../lib/mask");
+const { writeAtomic } = require("../lib/ghi-file");
 
 const err = (code, message) => Object.assign(new Error(message), { code });
 const TEN = /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/;
@@ -59,11 +62,26 @@ function goiYClaude(yTuong) {
   });
 }
 
-function createDuAnMoi({ github, ideas, boKiem, audit = { log() {} }, goiYAi = goiYClaude, cho = (ms) => new Promise((r) => setTimeout(r, ms)) }) {
+function createDuAnMoi({ github, ideas, boKiem, dir = null, audit = { log() {} }, goiYAi = goiYClaude, cho = (ms) => new Promise((r) => setTimeout(r, ms)), now = Date.now }) {
   const ops = new Map();
+  // Repo văn phòng đã tạo (lưu xuống đĩa để còn sau khi ctl khởi động lại): bước sau lỗi thì duyệt lại cùng tên sẽ làm tiếp
+  // từ bước tải về, không báo "tên đã có". Chỉ làm tiếp repo do chính văn phòng tạo trong 7 ngày, không đụng repo cũ của anh.
+  const daTaoFile = dir ? path.join(dir, "du-an-moi.json") : null;
+  let daTaoMem = [];
+  const daTao = () => { if (!daTaoFile) return daTaoMem; try { const d = JSON.parse(fs.readFileSync(daTaoFile, "utf8")); return Array.isArray(d.daTao) ? d.daTao : []; } catch { return []; } };
+  const ghiDaTao = (list) => { const keep = list.filter((x) => now() - Date.parse(x.luc) < 7 * 86400000).slice(-50); if (daTaoFile) writeAtomic(daTaoFile, JSON.stringify({ daTao: keep }, null, 2)); else daTaoMem = keep; };
+  const timDaTao = (ten) => daTao().find((x) => x.ten === ten && now() - Date.parse(x.luc) < 7 * 86400000) || null;
 
-  async function goiY(yTuong) {
+  // Một lượt gợi ý tại một thời điểm (mỗi lượt chạy một tiến trình Claude): cùng ý tưởng thì dùng chung, ý tưởng khác thì báo bận.
+  let goiYDang = null;
+  function goiY(yTuong) {
     yTuong = String(yTuong || "").trim();
+    if (goiYDang) { if (goiYDang.yTuong === yTuong) return goiYDang.p; throw err("AI_BUSY", "Đang gợi ý tên cho một ý tưởng khác: chờ xong (tối đa 1 phút) rồi thử lại."); }
+    const p = goiYMot(yTuong).finally(() => { goiYDang = null; });
+    goiYDang = { yTuong, p };
+    return p;
+  }
+  async function goiYMot(yTuong) {
     if (yTuong.length < 10 || yTuong.length > 2000) throw err("BAD_REQUEST", "Ý tưởng dài 10–2000 ký tự: viết vài câu sản phẩm làm gì, cho ai.");
     let ds = [], nguon = "ai", ghiChu = "";
     try {
@@ -112,11 +130,34 @@ function createDuAnMoi({ github, ideas, boKiem, audit = { log() {} }, goiYAi = g
       catch (e) { s.trangThai = "loi"; s.ghiChu = String(e.message).slice(0, 300); throw e; }
     };
     try {
-      const repo = await lam("repo", async (s) => { const r = await github.createRepo({ name: op.ten, description: moTa, isPrivate: op.rieng }); op.fullName = r.fullName; op.url = r.url; s.ghiChu = r.url; return r; });
+      const repo = await lam("repo", async (s) => {
+        // Văn phòng đã tạo repo này ở lần duyệt trước (bước sau bị lỗi): làm tiếp, không tạo lại.
+        const cu = timDaTao(op.ten);
+        if (cu) { op.fullName = cu.fullName; op.url = "https://github.com/" + cu.fullName; s.ghiChu = op.url + " · đã tạo ở lần trước, làm tiếp"; return { fullName: cu.fullName }; }
+        let r;
+        try { r = await github.createRepo({ name: op.ten, description: moTa, isPrivate: op.rieng }); }
+        catch (e) {
+          // Mất mạng / quá giờ có thể xảy ra SAU khi GitHub đã tạo repo: kiểm lại, có thì coi như đã tạo.
+          if (e.code !== "GITHUB_OFFLINE") throw e;
+          let login = null; try { login = await github.login(); } catch {}
+          if (!login || !(await github.exists(login + "/" + op.ten).catch(() => false))) throw e;
+          r = { fullName: login + "/" + op.ten, url: "https://github.com/" + login + "/" + op.ten };
+        }
+        ghiDaTao([...daTao().filter((x) => x.ten !== op.ten), { ten: op.ten, fullName: r.fullName, luc: new Date(now()).toISOString() }]);
+        op.fullName = r.fullName; op.url = r.url || "https://github.com/" + r.fullName; s.ghiChu = op.url;
+        return r;
+      });
       const root = await lam("tai-ve", async (s) => {
-        let o = github.open(repo.fullName);
-        for (let i = 0; i < 1200 && o.status === "running"; i++) { await cho(500); o = github.get(o.id); }
-        if (o.status !== "done") throw err("GITHUB_CLONE", o.message || "Không tải được repo về máy.");
+        // Đang mở repo khác thì chờ; GitHub vừa tạo repo đôi khi chưa thấy ngay (404) thì thử lại vài lần.
+        let o = null;
+        for (let lan = 0; lan < 6; lan++) {
+          try { o = github.open(repo.fullName); }
+          catch (e) { if (e.code === "AI_BUSY" && lan < 5) { await cho(5000); continue; } throw e; }
+          for (let i = 0; i < 1200 && o.status === "running"; i++) { await cho(500); o = github.get(o.id); }
+          if (o.status === "done" || o.code !== "NOT_FOUND" || lan === 5) break;
+          await cho(3000);
+        }
+        if (!o || o.status !== "done") throw err("GITHUB_CLONE", (o && o.message) || "Không tải được repo về máy.");
         s.ghiChu = o.workspace + (o.agentMdCreated ? " · đã tạo agent.md theo mẫu" : "");
         op.workspace = o.workspace;
         return o.workspace;
