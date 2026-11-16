@@ -327,9 +327,13 @@ Mọi lệnh từ điện thoại (và lệnh bị chặn) ghi vào `~/.van-phon
 - xem ý tưởng, rà soát, xuất bản, nhật ký và danh sách model;
 - chọn dự án đang làm;
 - ghi ý tưởng và giao ý tưởng;
-- tạo dự án mới.
+- tạo dự án mới;
+- đổi tài khoản Antigravity bằng một chạm (menu ☰ → **Tài khoản**);
+- đặt model cho từng phòng: nhãn trên đầu mỗi nhân vật có ô ⚙ hiện model đang dùng, chạm vào thì mở đúng dòng chọn model của phòng đó.
 
-Các việc sau vẫn chỉ làm trên máy tính: đổi cấu hình model, đổi tài khoản Antigravity, rà soát, xuất bản, mở repo tùy ý. Trang điều khiển và văn phòng 3D chừa chỗ cho tai thỏ / Dynamic Island.
+Trên điện thoại: mọi nút nằm trong menu ☰; cần điều khiển hiện ra ở chỗ chạm nửa trái màn hình; kéo nửa phải xoay camera quanh nhân vật 360°, luôn góc nhìn thứ ba và camera không xuống dưới mặt đất.
+
+Các việc sau vẫn chỉ làm trên máy tính: cất/bỏ tài khoản Antigravity, đổi ngưỡng tự chuyển, rà soát, xuất bản, mở repo tùy ý. Trang điều khiển và văn phòng 3D chừa chỗ cho tai thỏ / Dynamic Island.
 
 Muốn thêm một lớp đăng nhập bằng email trước cả khóa xem: dùng Cloudflare Tunnel có tên miền riêng kèm Cloudflare Access thay cho link `trycloudflare.com`.
 

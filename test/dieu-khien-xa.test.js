@@ -13,10 +13,12 @@ const tmp = (t) => { const d = fs.mkdtempSync(path.join(os.tmpdir(), "vp-dkx-"))
 
 test("danh sách lệnh: mở xem/giao việc/duyệt/phanh, chặn chạy lệnh tùy ý, file, rà soát, xuất bản, đẩy nhánh", () => {
   for (const [m, p] of [["GET", "/autopilot"], ["GET", "/workspaces"], ["GET", "/jobs?status=running"], ["POST", "/autopilot"], ["POST", "/autopilot/auto-abc_1/approve"],
-    ["POST", "/autopilot/auto-1/answer"], ["POST", "/handoffs/job-1/reject"], ["POST", "/kill-all"], ["GET", "/autopilot/a1/steps/3/diff"], ["GET", "/ai/status?workspace=C%3A%5Cx"]]) assert.ok(allowed(m, p), m + " " + p);
+    ["POST", "/autopilot/auto-1/answer"], ["POST", "/handoffs/job-1/reject"], ["POST", "/kill-all"], ["GET", "/autopilot/a1/steps/3/diff"], ["GET", "/ai/status?workspace=C%3A%5Cx"],
+    // CEO yêu cầu 16/11/2026: đổi tài khoản Antigravity trong menu điện thoại, đặt model phòng khi chạm nhãn nhân vật
+    ["POST", "/agy-tai-khoan/oanhbui1081979-e87151/chuyen"], ["POST", "/dieu-phoi"]]) assert.ok(allowed(m, p), m + " " + p);
   for (const [m, p] of [["POST", "/jobs"], ["POST", "/jobs/job-1/approve"], ["POST", "/fs/write"], ["GET", "/fs/read"], ["POST", "/scan/approve"], ["POST", "/publish/prepare"],
     ["POST", "/publish/x/release"], ["POST", "/autopilot/a1/push"], ["POST", "/autopilot/a1/web-result"], ["POST", "/ai/run"], ["POST", "/workspaces"], ["POST", "/workspaces/remove"],
-    ["POST", "/dieu-phoi"], ["POST", "/ket-noi/add"], ["POST", "/cap-nhat"], ["GET", "/audit"], ["POST", "/autopilot/../jobs"], ["GET", "/autopilot//x"], ["DELETE", "/autopilot/a1"]]) assert.ok(!allowed(m, p), m + " " + p);
+    ["POST", "/agy-tai-khoan/cat"], ["POST", "/agy-tai-khoan/sua"], ["POST", "/agy-tai-khoan/doc-nghi"], ["POST", "/agy-tai-khoan/a1/xoa"], ["POST", "/agy-tai-khoan/../x/chuyen"], ["POST", "/ket-noi/add"], ["POST", "/cap-nhat"], ["GET", "/audit"], ["POST", "/autopilot/../jobs"], ["GET", "/autopilot//x"], ["DELETE", "/autopilot/a1"]]) assert.ok(!allowed(m, p), m + " " + p);
 });
 
 test("ghép: mã 6 số dùng một lần, hết hạn sau 5 phút, sai 5 lần thì khóa; chỉ lưu bản băm của khóa", (t) => {

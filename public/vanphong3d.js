@@ -10,6 +10,11 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 const STYLE = `
 .vp-lbl { padding: 3px 9px; border-radius: 999px; color: #0f172a; font: 700 12px/1.4 "Segoe UI", system-ui, sans-serif; white-space: nowrap; text-align: center; transition: opacity .25s; }
 .vp-lbl.click { pointer-events: auto; cursor: pointer; }
+/* Model AI của phòng trên nhãn tên (chạm để đổi model cho phòng đó) */
+.vp-lbl .mdl { display: block; margin: 4px auto 0; padding: 2px 8px; border: 0; border-radius: 999px; background: rgba(15, 23, 42, .85); color: #e2e8f0; font: 600 10.5px/1.4 "Segoe UI", system-ui, sans-serif; cursor: pointer; pointer-events: auto; max-width: 210px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vp-lbl .mdl[hidden] { display: none; }
+.vp-lbl.xa, .vp-lbl.xa .mdl { pointer-events: none !important; }   /* nhãn ở xa đã ẩn: không chặn chạm xoay camera */
+.vp-lbl .mdl:focus-visible { outline: 2px solid #ecc970; outline-offset: 2px; }
 .vp-lbl .say, .vp-lbl .req { display: none; margin-top: 6px; max-width: 240px; white-space: normal; padding: 6px 10px; border-radius: 10px; background: rgba(15, 23, 42, .92); color: #f8fafc; font-weight: 500; font-size: 12px; text-align: left; }
 .vp-lbl .req { margin: 0 0 6px; border: 1.5px solid var(--req, #fbbf24); }
 .vp-lbl .req small { display: block; font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--req, #fbbf24); }
@@ -77,7 +82,10 @@ const controls = new OrbitControls(camera, gl.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
 controls.enablePan = false;
-controls.minDistance = 0.4;   // cuộn sát vào đầu = góc nhìn thứ nhất
+// Màn cảm ứng (điện thoại, CEO yêu cầu 16/11/2026): luôn góc nhìn thứ ba — chụm hai ngón không tự vào góc nhìn thứ nhất, kéo nửa phải
+// xoay quanh nhân vật 360°, ngẩng cao hơn trong nhà, camera không bao giờ xuống dưới mặt đất/sàn (xem vòng lặp).
+const CAM_CHAM = typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
+controls.minDistance = CAM_CHAM ? 1.6 : 0.4;   // máy tính: cuộn sát vào đầu = góc nhìn thứ nhất
 controls.maxDistance = 90;
 controls.maxPolarAngle = 1.45;
 controls.rotateSpeed = 0.7;
@@ -920,7 +928,7 @@ scene.add(hero.root);
 function makeTag(text, color, line, id) {
   const tag = document.createElement("div");
   tag.className = "vp-lbl"; tag.style.background = css(color);
-  tag.innerHTML = `<div class="req"><small></small><span></span></div><div></div><div class="say"></div>`;
+  tag.innerHTML = `<div class="req"><small></small><span></span></div><div></div><div class="say"></div><button type="button" class="mdl" hidden></button>`;
   tag.children[1].textContent = text; tag.children[2].textContent = line || "";
   if (opts.onNpcClick) { tag.classList.add("click"); tag.addEventListener("click", () => opts.onNpcClick(id)); }
   return tag;
@@ -1592,7 +1600,7 @@ gl.setAnimationLoop(() => {
   if (camera.position.equals(renderedCam)) camera.position.copy(desiredCam);
   indoor = lerp(indoor, inside ? 1 : 0, 1 - Math.exp(-4 * dt));
   // Trong nhà: nhìn từ ngang vai, không cho camera vọt lên cao nhìn từ trên xuống (kiểu game bắn súng góc nhìn thứ ba)
-  controls.minPolarAngle = 0.95 * indoor;
+  controls.minPolarAngle = (CAM_CHAM ? 0.6 : 0.95) * indoor;
   focus.set(player.pos.x, lerp(lastFocus.y, player.y + lerp(2.2, 1.65, indoor), 1 - Math.exp(-8 * dt)), player.pos.z);
   camera.position.add(v3.subVectors(focus, lastFocus));
   controls.target.copy(focus);
@@ -1605,7 +1613,7 @@ gl.setAnimationLoop(() => {
   const armFree = armDir.length();
   armDir.divideScalar(armFree || 1);
   // Trong nhà tự kéo camera gần (tối đa 4 m) dù ngoài trời đang để xa; ra ngoài thì trả lại khoảng cách cũ
-  let armWant = lerp(armFree, Math.min(armFree, 4), indoor);
+  let armWant = lerp(armFree, Math.min(armFree, CAM_CHAM ? 7 : 4), indoor);
   // Không bao giờ vượt lên trên trần nhà khi đang ở trong nhà
   if (inside && armDir.y > 0.01) armWant = Math.min(armWant, Math.max(0.3, (BASE + H - 0.35 - focus.y) / armDir.y));
   ray.set(focus, armDir); ray.far = armWant;
@@ -1613,8 +1621,16 @@ gl.setAnimationLoop(() => {
   const armTarget = wall ? Math.max(0.3, wall.distance - 0.35) : armWant;
   arm = armTarget < arm ? armTarget : lerp(arm, armTarget, 1 - Math.exp(-3 * dt));
   camera.position.copy(focus).addScaledVector(armDir, Math.min(arm, armWant));
+  // Cảm ứng: tường/kính kéo camera sát lưng thì nâng camera lên nhìn qua vai (không vào góc nhìn thứ nhất), không vượt trần.
+  if (CAM_CHAM && arm < 1.2) {
+    camera.position.y += (1.2 - arm) * 0.9;
+    if (inside) camera.position.y = Math.min(camera.position.y, BASE + H - 0.35);
+  }
+  // Không chui xuống đất: camera luôn cao hơn mặt đất/sàn ngay dưới nó ít nhất 0,3 m
+  const sanCam = groundY(camera.position.x, camera.position.z) + 0.3;
+  if (camera.position.y < sanCam) camera.position.y = sanCam;
   renderedCam.copy(camera.position);
-  hero.body.visible = arm > 0.9;   // camera sát đầu = góc nhìn thứ nhất: ẩn thân để không che màn hình
+  hero.body.visible = arm > (CAM_CHAM ? 0.45 : 0.9);   // camera sát đầu = góc nhìn thứ nhất: ẩn thân để không che màn hình
 
 
   // AI quay sang nhìn khi bạn lại gần, nói một câu
@@ -1627,7 +1643,7 @@ gl.setAnimationLoop(() => {
     animateChar(n.c, dt, t + n.x);
     const near = d < 4, show = d < 22;
     if (n.near !== near) { n.near = near; n.tag.classList.toggle("near", near); }
-    if (n.show !== show) { n.show = show; n.tag.style.opacity = show ? 1 : 0; }
+    if (n.show !== show) { n.show = show; n.tag.style.opacity = show ? 1 : 0; n.tag.classList.toggle("xa", !show); }
   }
   for (const m of ledMats) if (rnd() < 0.04) m.emissiveIntensity = rnd() < 0.5 ? 0.2 : 1.4;
   logoMat.emissiveIntensity = 0.7 + Math.sin(t * 2) * 0.2;
@@ -1690,6 +1706,14 @@ return {
     el.classList.toggle("has-req", Boolean(text));
   },
   setBusy(id, on) { const n = NPC_BY_ID[id]; if (n) n.c.busy = Boolean(on); },
+  // Model AI của phòng hiện trên nhãn tên; chạm vào thì gọi onClick (trang mở bảng chọn model). text rỗng = ẩn.
+  setModel(id, text, onClick) {
+    const el = NPC_BY_ID[id]?.tag; if (!el) return;
+    const b = el.querySelector(".mdl"); if (!b) return;
+    b.textContent = text || ""; b.hidden = !text; b.title = text ? "Đổi model cho phòng này" : "";
+    b.setAttribute("aria-label", text ? "Model đang dùng: " + text + ". Bấm để đổi" : "");
+    b.onclick = (e) => { e.stopPropagation(); if (onClick) onClick(id); };
+  },
   // Câu nói khi lại gần: trang nạp trạng thái thật của dự án (không có dữ liệu thì giữ lời giới thiệu vai).
   setLine(id, text) { const n = NPC_BY_ID[id]; if (n) n.tag.querySelector(".say").textContent = text || n.line; },
 };
