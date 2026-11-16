@@ -57,7 +57,7 @@ function fixture(t) {
   return { temp, origin, repo, git: (...a) => run(repo, ...a), gitIn: run };
 }
 
-test("cài bộ kiểm: nhánh mới từ nhánh chính, đúng 2 file, đẩy lên GitHub; thư mục đang làm không bị đụng", (t) => {
+test("cài bộ kiểm: nhánh mới từ nhánh chính, đúng 3 file (kiểm agent.md, kiểm hợp đồng, workflow), đẩy lên GitHub; thư mục đang làm không bị đụng", (t) => {
   const f = fixture(t);
   const dir = path.join(f.temp, "ctl"); fs.mkdirSync(dir);
   const logs = [];
@@ -72,7 +72,8 @@ test("cài bộ kiểm: nhánh mới từ nhánh chính, đúng 2 file, đẩy l
   assert.ok(!fs.existsSync(path.join(f.repo, "tools", "kiem-agent.js")), "không ghi vào thư mục đang làm");
   assert.equal(f.git("worktree", "list").split("\n").length, 1, "worktree tạm đã gỡ");
   const remote = f.gitIn(f.origin, "ls-tree", "-r", "--name-only", s.last.branch).split("\n").sort();
-  assert.deepEqual(remote, [".github/workflows/kiem-chu-trinh.yml", "README.md", "tools/kiem-agent.js"]);
+  assert.deepEqual(remote, [".github/workflows/kiem-chu-trinh.yml", "README.md", "tools/kiem-agent.js", "tools/kiem-hop-dong.js"]);
+  assert.equal(f.gitIn(f.origin, "show", s.last.branch + ":tools/kiem-hop-dong.js"), fs.readFileSync(path.join(ROOT, "lib", "kiem-hop-dong.js"), "utf8").replace(/\r\n/g, "\n").trim());
   assert.equal(f.gitIn(f.origin, "show", s.last.branch + ":tools/kiem-agent.js"), fs.readFileSync(path.join(ROOT, "lib", "kiem-agent.js"), "utf8").replace(/\r\n/g, "\n").trim());
   assert.equal(f.gitIn(f.origin, "rev-parse", s.last.branch + "^"), f.gitIn(f.origin, "rev-parse", "main"), "tách từ đúng đầu nhánh chính");
   assert.ok(logs.some((l) => l[1] === "bo_kiem.install"));

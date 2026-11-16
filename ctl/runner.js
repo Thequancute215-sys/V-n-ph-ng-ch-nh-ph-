@@ -12,6 +12,7 @@ const { resolveProgram } = require("./policy");
 const { CHAN_CLAUDE } = require("./ket-noi-danh-muc");
 const phong = require("./mcp-phong");
 const kiemAgent = require("../lib/kiem-agent");
+const kiemHopDong = require("../lib/kiem-hop-dong");   // hợp đồng giao tiếp contract/api.json (CEO duyệt 16/11/2026)
 const { createSkill } = require("./skill");
 const mucLuc = require("./muc-luc");                 // mục lục từ bản đồ hệ thống (.ua) đưa vào prompt
 const { createDieuPhoi, kindOf } = require("./dieu-phoi");   // chọn model + mức suy nghĩ theo độ khó của lượt
@@ -296,7 +297,20 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
   function agentProblems(opts) {
     let after;
     try { after = fs.readFileSync(path.join(opts.workspace, "agent.md"), "utf8"); } catch { return ["agent.md: lượt này làm mất file agent.md"]; }
-    return kiemAgent.checkChange(opts.before, after, { role: opts.role, onlyNew: true }).loi.map((x) => "agent.md: " + x);
+    return [...kiemAgent.checkChange(opts.before, after, { role: opts.role, onlyNew: true }).loi.map((x) => "agent.md: " + x), ...hopDongProblems(opts)];
+  }
+  // Repo có hợp đồng giao tiếp (contract/api.json) thì kiểm ngay sau lượt, mỗi vai chịu phần của mình: Sol (người viết hợp đồng)
+  // chịu lỗi cấu trúc; Astra chịu thêm lỗi phía backend; Kakashi chịu thêm lỗi phía frontend. Lỗi thì luồng tự chạy trả lại
+  // đúng lượt đó sửa một lần (ctl/autopilot.js). Repo chưa có hợp đồng thì không kiểm (việc tạo là luật của giao thức, Claude chốt).
+  function hopDongProblems(opts) {
+    const PHAN = { SOL_ARCHITECT_PLANNER: "cau-truc", CODEX_ASTRA_DEV: "Backend", FRONTEND_UIUX_DEV: "Frontend" };
+    const phan = PHAN[opts.role];
+    if (!phan) return [];
+    let r;
+    try { r = kiemHopDong.kiemRepo(opts.workspace); } catch (e) { return ["hop-dong: không kiểm được contract/api.json: " + String(e.message).slice(0, 200)]; }
+    if (!r.coHopDong) return [];
+    const cuaVai = (l) => !/^(Backend|Frontend) /.test(l) || l.startsWith(phan + " ");
+    return r.loi.filter(cuaVai).slice(0, 20).map((l) => "hop-dong: " + l);
   }
 
   function done(job, opts) {
