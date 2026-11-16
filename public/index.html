@@ -810,12 +810,19 @@ const syncTurn = () => desk.syncTurn();
   nut.innerHTML = '<span aria-hidden="true">☰</span><span>Menu</span><i class="dot" aria-hidden="true"></i>';
   const man = document.createElement("div"); man.className = "phone-scrim";
   document.body.append(man, nut);
-  const mo = (open) => { bar.classList.toggle("open", open); man.classList.toggle("open", open); nut.setAttribute("aria-expanded", String(open)); if (open) bar.scrollTop = 0; };
+  const mo = (open) => { bar.classList.toggle("open", open); man.classList.toggle("open", open); nut.setAttribute("aria-expanded", String(open)); if (open) bar.scrollTop = 0; else setTimeout(() => { if (window.scrollX || window.scrollY) window.scrollTo(0, 0); }, 50); };
   nut.addEventListener("click", () => mo(!bar.classList.contains("open")));
   man.addEventListener("click", () => mo(false));
   bar.addEventListener("click", (e) => { if (NHO.matches && e.target.closest("button, a")) mo(false); });
   addEventListener("keydown", (e) => { if (e.key === "Escape" && bar.classList.contains("open")) mo(false); });
   NHO.addEventListener("change", () => mo(false));
+  // Trang văn phòng không bao giờ cuộn (mọi thứ position: fixed). iPhone đôi khi cuộn/lệch trang sau khi đóng menu, hộp thoại
+  // hay bàn phím: kéo về đúng chỗ (CEO thấy giao diện "nhảy lung tung" 17/11/2026).
+  const veGoc = () => { if (window.scrollX || window.scrollY) window.scrollTo(0, 0); };
+  addEventListener("scroll", veGoc, { passive: true });
+  document.addEventListener("close", () => setTimeout(veGoc, 50), true);   // mọi <dialog> đóng
+  if (window.visualViewport) visualViewport.addEventListener("resize", () => setTimeout(veGoc, 50));
+  man.addEventListener("click", () => setTimeout(veGoc, 50));
   const cho = $("ceoWaitPill");
   const cham = () => { nut.classList.toggle("attn", !cho.hidden); nut.setAttribute("aria-label", cho.hidden ? "Mở menu chức năng" : "Mở menu chức năng (có việc chờ anh)"); };
   new MutationObserver(cham).observe(cho, { attributes: true, attributeFilter: ["hidden"] });

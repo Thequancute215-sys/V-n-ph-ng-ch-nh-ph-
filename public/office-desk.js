@@ -180,7 +180,7 @@ export function createDesk(getOffice) {
     dpModelsLoading = true; dpModelsError = "";
     try { dpModels = (await request("/dieu-phoi/models" + (force ? "?lai=1" : ""), undefined, 60000)).models; }
     catch (e) { dpModelsError = e.message; }
-    dpModelsLoading = false; renderQuotas();
+    dpModelsLoading = false; renderQuotas(); if (sheet.open) veSheet();
   }
   const dpList = (kind) => (dpModels && dpModels[kind] && dpModels[kind].models) || [];
   function dpRow([room, label, kind]) {
@@ -262,16 +262,82 @@ export function createDesk(getOffice) {
       office.setModel(room, text ? "⚙ " + text : "", moChonModel);
     }
   }
-  function moChonModel(room) {
-    show("quotas");
-    setTimeout(() => {
-      const row = dialog.querySelector(`[data-dp-room="${room}"]`);
-      if (!row) return;
-      row.scrollIntoView({ block: "center" }); row.classList.add("dp-chon");
-      const sel = row.querySelector("[data-dp-model]"); if (sel) sel.focus();
-      setTimeout(() => row.classList.remove("dp-chon"), 2500);
-    }, 60);
+  // Bảng chọn model cho một phòng (chạm ô ⚙ dưới tên nhân vật — CEO yêu cầu 17/11/2026: chạm để chọn, không bắt gõ tên).
+  // Model thật của AI phòng đó dạng thẻ (ghi "chỉ Pro"/"chỉ Family" nếu chỉ một tài khoản Antigravity có), mức suy nghĩ dạng nút,
+  // gõ tên tay chỉ là lựa chọn phụ. Lưu = POST /dieu-phoi { coDinh: { phòng: { model, effort } | null } }.
+  const AI_TEN = { agy: "Antigravity", codex: "Codex", claude: "Claude" };
+  const TEN_MUC = { low: "Thấp", medium: "Vừa", high: "Cao", xhigh: "Rất cao", max: "Tối đa", ultra: "Ultra" };
+  // Model chỉ có mã (đọc lúc tài khoản đó đang nghỉ): "claude-opus-5-5-high" → "Claude Opus 5.5 (High)".
+  function tenDep(id) {
+    const t = String(id).split("-").filter(Boolean), out = [];
+    let muc = "";
+    if (t.length > 1 && /^(minimal|low|medium|high|xhigh|max|thinking)$/i.test(t[t.length - 1])) muc = t.pop();
+    for (const x of t) {
+      if (/^\d+$/.test(x) && out.length && /^\d+(\.\d+)*$/.test(out[out.length - 1])) out[out.length - 1] += "." + x;
+      else out.push(/^[a-z]/.test(x) ? x[0].toUpperCase() + x.slice(1) : x.toUpperCase());
+    }
+    return out.join(" ") + (muc ? " (" + muc[0].toUpperCase() + muc.slice(1) + ")" : "");
   }
+  const sheet = document.createElement("dialog"); sheet.className = "desk-dialog model-sheet"; sheet.setAttribute("aria-labelledby", "msTitle");
+  document.body.append(sheet);
+  let msRoom = null, msChon = null, msBan = false, msLoi = "";
+  function moChonModel(room) {
+    if (!DP_ROOMS.some((x) => x[0] === room)) return;
+    const f = dieuPhoi && dieuPhoi.coDinh ? dieuPhoi.coDinh[room] : null;
+    msRoom = room; msChon = { model: f && f.model ? f.model : null, effort: f && f.effort ? f.effort : null }; msLoi = "";
+    veSheet();
+    if (!sheet.open) sheet.showModal();
+    if (!dpModels && !dpModelsLoading) loadDpModels();
+  }
+  function veSheet() {
+    if (!msRoom) return;
+    const [room, label, kind] = DP_ROOMS.find((x) => x[0] === msRoom);
+    const list = dpList(kind), cur = msChon.model;
+    const f = dieuPhoi && dieuPhoi.coDinh ? dieuPhoi.coDinh[room] : null;
+    const dangDung = !dieuPhoi ? "đang tải…" : f && (f.model || f.effort) ? [f.model || "model tự động", f.effort ? "mức " + (TEN_MUC[f.effort] || f.effort) : ""].filter(Boolean).join(" · ") : dieuPhoi.tuDong ? "Tự động (theo độ khó)" : "Mặc định của CLI";
+    const own = list.find((m) => m.id === cur);
+    const efforts = own && own.efforts && own.efforts.length ? own.efforts : kind === "codex" ? [...DP_EFFORTS, "ultra"] : DP_EFFORTS;
+    const loi = (dpModels && dpModels[kind] && dpModels[kind].error) || dpModelsError;
+    const the = (on, attrs, ten, phu) => `<button type="button" class="ms-the${on ? " on" : ""}" ${attrs} aria-pressed="${on}"${msBan ? " disabled" : ""}><b>${esc(ten)}</b>${phu ? `<small>${esc(phu)}</small>` : ""}</button>`;
+    const body = sheet.querySelector(".desk-body"), cuon = body ? body.scrollTop : 0;
+    sheet.innerHTML = `<div class="desk-head"><h2 id="msTitle">Model cho ${esc(label)}</h2><button type="button" data-ms-dong>Đóng</button></div><div class="desk-body">` +
+      `<p class="muted">Đang dùng: <b>${esc(dangDung)}</b></p>` +
+      '<h3 class="ms-h">Model</h3><div class="ms-ds" role="group" aria-label="Chọn model">' +
+      the(!cur, 'data-ms-model=""', kind === "codex" ? "Theo vai (tự động)" : "Tự động", "Văn phòng tự chọn theo độ khó của lượt và hạn mức còn lại") +
+      list.map((m) => the(m.id === cur, `data-ms-model="${esc(m.id)}"`, (String(m.name || m.id).replace(/ · chỉ .*$/, "") === m.id ? tenDep(m.id) : String(m.name).replace(/ · chỉ .*$/, "")),
+        [m.id, m.chiCo && m.chiCo.length ? "chỉ tài khoản " + m.chiCo.join(", ") : ""].filter(Boolean).join(" · "))).join("") +
+      (cur && !own ? the(true, `data-ms-model="${esc(cur)}"`, cur, list.length ? "đang cố định, không có trong danh sách vừa đọc" : "đang cố định") : "") +
+      "</div>" +
+      (dpModelsLoading && !list.length ? `<p class="muted ms-dang">Đang đọc danh sách model của ${esc(AI_TEN[kind])}… Lần đầu sau khi bật văn phòng có thể mất tới 1 phút.</p>` : "") +
+      (loi && !list.length ? `<p class="error">Chưa đọc được danh sách model: ${esc(loi)}</p>` : "") +
+      (!dpModelsLoading ? '<p><button type="button" class="btn ghost" data-ms-lai>Đọc lại danh sách model</button></p>' : "") +
+      `<details class="ms-khac"><summary>Gõ tên model khác</summary><label>Tên model <input data-ms-go maxlength="60" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="vd. gemini-3.8-flash-high"></label><button type="button" data-ms-dung-go>Dùng tên này</button></details>` +
+      '<h3 class="ms-h">Mức suy nghĩ</h3><div class="ms-muc" role="group" aria-label="Chọn mức suy nghĩ">' +
+      the(!msChon.effort, 'data-ms-effort=""', cur ? "Mặc định" : "Tự động") + efforts.map((e) => the(msChon.effort === e, `data-ms-effort="${esc(e)}"`, TEN_MUC[e] || e)).join("") + "</div>" +
+      `<p class="desk-message${msLoi ? " error" : ""}" role="status">${esc(msLoi)}</p>` +
+      `<div class="desk-actions"><button type="button" class="ms-luu" data-ms-luu${msBan ? " disabled" : ""}>${msBan ? "Đang lưu…" : "Lưu cho " + esc(label.split(" · ")[0])}</button><button type="button" data-ms-dong>Huỷ</button></div></div>`;
+    const moi = sheet.querySelector(".desk-body"); if (moi) moi.scrollTop = cuon;
+  }
+  sheet.addEventListener("click", async (e) => {
+    if (e.target === sheet) return sheet.close();   // chạm ra ngoài hộp
+    const b = e.target.closest("button"); if (!b || b.disabled) return;
+    if (b.matches("[data-ms-dong]")) return sheet.close();
+    if (b.matches("[data-ms-lai]")) return loadDpModels(true);
+    if (b.hasAttribute("data-ms-model")) { msChon.model = b.dataset.msModel || null; msLoi = ""; return veSheet(); }
+    if (b.hasAttribute("data-ms-effort")) { msChon.effort = b.dataset.msEffort || null; msLoi = ""; return veSheet(); }
+    if (b.matches("[data-ms-dung-go]")) {
+      const v = String(sheet.querySelector("[data-ms-go]").value || "").trim();
+      if (!/^[\w.:-]{2,60}$/.test(v)) { msLoi = "Tên model chỉ gồm chữ, số và . : - _ (2–60 ký tự)."; return veSheet(); }
+      msChon.model = v; msLoi = ""; return veSheet();
+    }
+    if (b.matches("[data-ms-luu]")) {
+      msBan = true; msLoi = ""; veSheet();
+      const v = !msChon.model && !msChon.effort ? null : { model: msChon.model, effort: msChon.effort };
+      try { const d = await request("/dieu-phoi", { coDinh: { [msRoom]: v } }, 20000); dieuPhoi = d.dieuPhoi || dieuPhoi; veModelNhan(); msBan = false; sheet.close(); renderQuotas(); }
+      catch (err) { msBan = false; msLoi = "Chưa lưu được: " + err.message; veSheet(); }
+    }
+  });
+  sheet.addEventListener("close", () => { msRoom = null; });
   function renderQuotas() {
     renderTkMenu(); veModelNhan();
     $("deskQuotas").innerHTML = errors.quotas ? `<p class="error">${esc(errors.quotas)}</p>` : !quotas ? '<p>Đang tải hạn mức…</p>' : !quotas.providers?.length ? '<p>Chưa có dữ liệu hạn mức từ các AI.</p>' : quotas.providers.map((p) => {

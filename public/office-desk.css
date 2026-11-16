@@ -74,6 +74,24 @@
    Dự án…) nằm trong ngăn kéo bên trái, ẩn sẵn, mở bằng nút ☰ ở góc. CEO yêu cầu 16/11/2026 (iPhone ngang bị nút che hết cảnh). */
 .phone-menu, .phone-scrim { display: none; }
 .desk-tk { display: none; }
+/* Bảng chọn model của một phòng (chạm ô ⚙ dưới tên nhân vật) */
+.model-sheet { width:min(560px, calc(100vw - 32px)); }
+.model-sheet .ms-h { font-size:13px; color:#ecc970; margin:14px 0 6px; }
+.model-sheet .ms-ds, .model-sheet .ms-muc { display:grid; gap:6px; }
+.model-sheet .ms-ds { grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); }
+.model-sheet .ms-muc { grid-template-columns:repeat(auto-fill, minmax(84px, 1fr)); }
+.model-sheet .ms-the { display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-height:44px; text-align:left; }
+.model-sheet .ms-the b { font-size:13px; }
+.model-sheet .ms-the small { color:#94a3b8; font-size:11px; overflow-wrap:anywhere; }
+.model-sheet .ms-the.on { border-color:#ecc970; background:rgba(236,201,112,.16); box-shadow:inset 0 0 0 1px #ecc970; }
+.model-sheet .ms-luu { background:#ecc970; color:#111; font-weight:700; border-color:#ecc970; }
+.model-sheet .ms-khac { margin:10px 0; }
+.model-sheet .ms-khac summary { cursor:pointer; color:#7dd3fc; font-size:13px; }
+/* iPhone: ô chữ nhỏ hơn 16px làm Safari tự phóng to cả trang khi chạm, đóng lại vẫn lệch ("nhảy lung tung"); chạm nhanh hai lần cũng phóng to */
+@media (pointer: coarse) {
+  input, select, textarea { font-size:16px !important; }
+  html, body { touch-action:manipulation; }
+}
 .desk-dialog .dp-chon { outline: 2px solid #ecc970; outline-offset: 4px; border-radius: 8px; }
 @media (max-width: 700px), (max-height: 520px), (pointer: coarse) and (max-width: 950px) {
   .phone-menu { display: inline-flex; align-items: center; gap: 6px; position: fixed; z-index: 26; top: calc(8px + env(safe-area-inset-top)); left: calc(8px + env(safe-area-inset-left));

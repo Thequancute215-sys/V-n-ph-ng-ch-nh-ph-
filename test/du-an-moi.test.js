@@ -151,3 +151,15 @@ test("điện thoại: đặt model phòng được, nhưng không bật/tắt �
   assert.equal(goi[0].target, "/dieu-phoi");
   assert.deepEqual(goi[0].b, { coDinh: { hinata: { model: "gemini-4-argon-high", effort: null } } }, "bỏ tuDong khỏi yêu cầu từ điện thoại");
 });
+
+test("điện thoại: đọc danh sách model chờ tới 70 giây, đổi tài khoản Antigravity chờ 60 giây (lần đầu chậm)", async () => {
+  const { handle } = require("../lib/dieu-khien-xa");
+  const goi = [];
+  const dkx = { thietBiCua: () => ({ id: "tb1", ten: "iPhone" }), xacThuc: () => ({ id: "tb1", ten: "iPhone" }), ghiNhatKy: () => {} };
+  for (const [m, p] of [["GET", "/dkx/api/dieu-phoi/models"], ["POST", "/dkx/api/agy-tai-khoan/oanh-1/chuyen"], ["GET", "/dkx/api/quotas"]]) {
+    const req = { method: m, headers: { cookie: "vpd=x", host: "oanh.ts.net" }, socket: { remoteAddress: "127.0.0.1" } };
+    await handle(dkx, req, { writeHead() {}, end() {} }, new URL("https://oanh.ts.net" + p), { local: false, hasKey: true, readJson: async () => ({}),
+      call: async (mm, target, b, het) => { goi.push([target, het]); return { status: 200, json: { ok: true } }; } });
+  }
+  assert.deepEqual(goi, [["/dieu-phoi/models", 70000], ["/agy-tai-khoan/oanh-1/chuyen", 60000], ["/quotas", 10000]]);
+});
