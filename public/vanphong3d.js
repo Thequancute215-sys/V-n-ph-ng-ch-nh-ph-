@@ -23,7 +23,9 @@ body.hide-bubbles .vp-lbl .say, body.hide-bubbles .vp-lbl .req { display: none !
 .vp-room p { margin: 4px 0 0; font-size: 13px; color: #cbd5e1; }
 .vp-joy, .vp-jump { display: none; }
 @media (pointer: coarse) {
-  .vp-joy { display: block; position: fixed; z-index: 15; left: 24px; bottom: 120px; width: 120px; height: 120px; border-radius: 50%; background: rgba(15, 23, 42, .45); border: 2px solid rgba(255, 255, 255, .25); touch-action: none; }
+  /* Cần nổi: ẩn cho tới khi chạm nửa trái màn hình, hiện ngay dưới ngón tay (JS đặt left/top). */
+  .vp-joy { display: block; position: fixed; z-index: 15; left: 0; top: 0; width: 120px; height: 120px; border-radius: 50%; background: rgba(15, 23, 42, .45); border: 2px solid rgba(255, 255, 255, .25); touch-action: none; pointer-events: none; opacity: 0; transition: opacity .12s; }
+  .vp-joy.on { opacity: 1; transition: none; }
   .vp-joy i { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%; background: rgba(245, 158, 11, .9); }
   .vp-jump { display: block; position: fixed; z-index: 15; right: 24px; bottom: 140px; width: 76px; height: 76px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .25); background: rgba(15, 23, 42, .6); color: #f1f5f9; font: 600 14px "Segoe UI", sans-serif; }
 }
@@ -1350,20 +1352,36 @@ jumpBtn.className = "vp-jump"; jumpBtn.type = "button"; jumpBtn.textContent = "N
 jumpBtn.addEventListener("pointerdown", (e) => { e.preventDefault(); jump(); });
 document.body.appendChild(jumpBtn);
 
-// Cần điều khiển ảo cho màn cảm ứng
+// Cần điều khiển nổi kiểu game FPS (màn cảm ứng): chạm vào cảnh 3D ở nửa trái màn hình thì cần hiện ngay dưới ngón tay;
+// kéo quá vành thì cả cần đi theo ngón tay; nhả tay thì ẩn. Nửa phải vẫn xoay camera (OrbitControls) như cũ, kể cả cùng lúc.
+// Nghe ở pha capture của window và chặn sự kiện của ngón đang điều khiển, để OrbitControls không nhận nhầm ngón đó thành xoay.
 const joyEl = document.createElement("div"), knob = document.createElement("i");
 joyEl.className = "vp-joy"; joyEl.setAttribute("aria-hidden", "true"); joyEl.appendChild(knob); document.body.appendChild(joyEl);
-let joyId = null;
+const JOY_R = 60;   // bán kính vành (nửa cạnh 120px)
+let joyId = null, joyCx = 0, joyCy = 0;
+const joyPlace = () => { joyEl.style.left = (joyCx - JOY_R) + "px"; joyEl.style.top = (joyCy - JOY_R) + "px"; };
 function joyMove(e) {
-  const r = joyEl.getBoundingClientRect(), max = r.width / 2;
-  let dx = e.clientX - (r.left + max), dy = e.clientY - (r.top + max);
-  const d = Math.hypot(dx, dy); if (d > max) { dx *= max / d; dy *= max / d; }
+  let dx = e.clientX - joyCx, dy = e.clientY - joyCy;
+  const d = Math.hypot(dx, dy);
+  if (d > JOY_R) {   // kéo quá vành: dời tâm theo ngón tay (cần "trôi" theo), giữ hướng đang đẩy
+    joyCx += dx * (1 - JOY_R / d); joyCy += dy * (1 - JOY_R / d); joyPlace();
+    dx = e.clientX - joyCx; dy = e.clientY - joyCy;
+  }
   knob.style.transform = `translate(${dx}px, ${dy}px)`;
-  joy.x = dx / max; joy.y = dy / max;
+  joy.x = dx / JOY_R; joy.y = dy / JOY_R;
 }
-joyEl.addEventListener("pointerdown", (e) => { joyId = e.pointerId; joyEl.setPointerCapture(joyId); joyMove(e); e.stopPropagation(); });
-joyEl.addEventListener("pointermove", (e) => { if (e.pointerId === joyId) joyMove(e); });
-for (const ev of ["pointerup", "pointercancel"]) joyEl.addEventListener(ev, (e) => { if (e.pointerId !== joyId) return; joyId = null; joy.x = joy.y = 0; knob.style.transform = ""; });
+function joyEnd() { joyId = null; joy.x = joy.y = 0; knob.style.transform = ""; joyEl.classList.remove("on"); }
+addEventListener("pointerdown", (e) => {
+  if (joyId !== null || e.pointerType === "mouse" || e.target !== gl.domElement || e.clientX > innerWidth / 2) return;
+  joyId = e.pointerId;
+  // Không để vành tràn ra ngoài màn hình (mép trái / trên / dưới)
+  joyCx = Math.max(JOY_R + 4, e.clientX); joyCy = Math.min(Math.max(JOY_R + 4, e.clientY), innerHeight - JOY_R - 4);
+  joyPlace(); joyEl.classList.add("on"); joyMove(e);
+  e.stopPropagation(); e.preventDefault();
+}, { capture: true });
+addEventListener("pointermove", (e) => { if (e.pointerId !== joyId) return; joyMove(e); e.stopPropagation(); }, { capture: true });
+for (const ev of ["pointerup", "pointercancel"]) addEventListener(ev, (e) => { if (e.pointerId !== joyId) return; joyEnd(); e.stopPropagation(); }, { capture: true });
+addEventListener("blur", joyEnd);
 
 // Thẻ "Bạn đang ở" đổi khi bước sang phòng khác
 const card = document.createElement("div");
