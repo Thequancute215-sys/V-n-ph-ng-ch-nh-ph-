@@ -82,13 +82,22 @@ controls.maxDistance = 90;
 controls.maxPolarAngle = 1.45;
 controls.rotateSpeed = 0.7;
 
+// Kích thước theo chính khung chứa (#gl: phủ kín màn hình), không theo innerWidth/innerHeight: trên iPhone, sau khi xoay ngang
+// hoặc thanh Safari co lại, innerHeight có lúc đo trước khi màn hình ổn định nên canvas thấp hơn màn hình, lộ dải nền tối ở đáy
+// (CEO thấy 16/11/2026). Canvas luôn 100% khung (CSS) và đo lại khi khung đổi cỡ, khi xoay máy, khi thanh trình duyệt đổi.
+gl.domElement.style.cssText += ";display:block;width:100%;height:100%";
+const coKhung = () => [Math.max(1, opts.gl.clientWidth || innerWidth), Math.max(1, opts.gl.clientHeight || innerHeight)];
 function resize() {
-  gl.setSize(innerWidth, innerHeight);
-  lblR.setSize(innerWidth, innerHeight);
-  camera.aspect = innerWidth / innerHeight;
+  const [w, h] = coKhung();
+  gl.setSize(w, h, false);
+  lblR.setSize(w, h);
+  camera.aspect = w / h;
   camera.updateProjectionMatrix();
 }
 addEventListener("resize", resize);
+addEventListener("orientationchange", () => { resize(); setTimeout(resize, 250); setTimeout(resize, 800); });
+if (window.visualViewport) visualViewport.addEventListener("resize", resize);
+if (window.ResizeObserver) new ResizeObserver(resize).observe(opts.gl);
 resize();
 
 // ================= Vật liệu, khối dùng chung & va chạm =================
@@ -1561,7 +1570,7 @@ function adaptQuality(raw) {
   let next = pr;
   if (avg > 1 / 45 && pr > PR_MIN) { prBad = pr; prBadUntil = now + 30000; next = Math.max(PR_MIN, pr - 0.25); }
   else if (avg < 1 / 55 && pr < PR_MAX && (pr + 0.25 < prBad || now > prBadUntil)) next = Math.min(PR_MAX, pr + 0.25);
-  if (next !== pr) { pr = next; gl.setPixelRatio(pr); gl.setSize(innerWidth, innerHeight); }
+  if (next !== pr) { pr = next; gl.setPixelRatio(pr); const [w, h] = coKhung(); gl.setSize(w, h, false); }
 }
 gl.setAnimationLoop(() => {
   const raw = clock.getDelta(), dt = Math.min(raw, 0.05), t = clock.elapsedTime;
