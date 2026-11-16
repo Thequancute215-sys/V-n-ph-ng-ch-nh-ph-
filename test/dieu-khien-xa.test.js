@@ -138,3 +138,14 @@ test("iPhone: biểu tượng màn hình chính mở thẳng trang điều khi�
   assert.notEqual(m.id, "/", "khác app văn phòng 3D để cài được cả hai");
   assert.match(fs.readFileSync(path.join(__dirname, "..", "public", "dieu-khien.html"), "utf8"), /apple-mobile-web-app-capable/);
 });
+
+test("iPhone: app màn hình chính có hướng dẫn cài, đường về bảng điều khiển và nút tải lại", () => {
+  const pub = (f) => fs.readFileSync(path.join(__dirname, "..", "public", f), "utf8");
+  const dk = pub("dieu-khien.html");
+  assert.match(dk, /Thêm vào MH chính/, "trang điều khiển tự hướng dẫn cài trên iPhone");
+  assert.ok(dk.includes('goiYCai("ghep")'),"hướng dẫn hiện cả lúc chưa ghép (cài trước rồi ghép trong app)");
+  assert.match(pub("index.html"), /apple-mobile-web-app-capable/, "văn phòng 3D cũng chạy toàn màn hình khi mở từ biểu tượng");
+  const desk = pub("office-desk.js");
+  assert.ok(desk.includes('href="dieu-khien.html" data-chi-dt'),"văn phòng 3D có đường về bảng điều khiển (app không có nút Back)");
+  assert.match(desk, /data-tai-lai/, "mở từ biểu tượng có nút tải lại");
+});

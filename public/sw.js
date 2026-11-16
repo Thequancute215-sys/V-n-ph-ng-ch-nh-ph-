@@ -2,7 +2,7 @@
 // (offline.html) thay vì trang lỗi của trình duyệt. KHÔNG lưu đệm trang hay dữ liệu nào khác: văn phòng là dữ liệu trực tiếp,
 // lưu đệm sẽ hiện giao diện cũ (bài học BROWSER-CACHE).
 "use strict";
-const CACHE = "vp-offline-v2";
+const CACHE = "vp-offline-v3";
 const OFFLINE = ["offline.html"]; // trang tự chứa (biểu tượng nhúng sẵn), không cần tải gì thêm khi văn phòng tắt
 
 self.addEventListener("install", (e) => {

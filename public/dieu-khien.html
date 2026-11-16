@@ -52,10 +52,13 @@
   .skeleton { height: 64px; border-radius: 14px; margin: 12px 0; background: linear-gradient(90deg, #11151c, #1a202a, #11151c); background-size: 200% 100%; animation: sk 1.2s infinite; }
   @keyframes sk { to { background-position: -200% 0; } }
   @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+  .cai { border-color: #5b4a1c; }
+  .cai ol { padding-left: 20px; margin: 8px 0; } .cai li { margin: 6px 0; }
+  header button[data-cai-app] { min-height: 36px; padding: 6px 10px; font-size: 14px; }
 </style>
 </head>
 <body>
-<header><h1>Điều khiển văn phòng</h1><span id="who" class="muted"></span><a class="btn3d" id="mo3d" href="/" hidden>Văn phòng 3D</a></header>
+<header><h1>Điều khiển văn phòng</h1><span id="who" class="muted"></span><button type="button" data-cai-app hidden>Cài app</button><a class="btn3d" id="mo3d" href="/" hidden>Văn phòng 3D</a></header>
 <main id="app"><div class="skeleton"></div><div class="skeleton"></div></main>
 <div id="msg" role="status" aria-live="polite"></div>
 <nav class="tabs" id="tabs" hidden aria-label="Mục điều khiển">
@@ -73,6 +76,22 @@ const ROLE = { SPEC_ARCHITECT: "Hinata · đặc tả", SOL_ARCHITECT_PLANNER: "
 const STATUS = { running: ["Đang chạy", "run"], reporting: ["Claude đang báo cáo", "run"], awaiting_approval: ["Chờ anh duyệt", "wait"], awaiting_answer: ["Claude hỏi anh", "wait"], attention: ["Cần anh xem", "bad"], waiting_quota: ["Chờ hạn mức", "wait"], awaiting_scan: ["Chờ duyệt rà soát (trên máy tính)", "wait"], approved: ["Đã duyệt", ""], acknowledged: ["Đã xem", ""], rejected: ["Đã trả lại", ""], stopped: ["Đã dừng", ""] };
 const LIVE = new Set(["running", "reporting", "awaiting_approval", "awaiting_answer", "attention", "waiting_quota", "awaiting_scan"]);
 let tab = "tinh-hinh", data = null, loading = false, busy = false, timer = null;
+
+// Cài lên màn hình chính iPhone/iPad (CEO hỏi 17/11/2026): Safari không có nút "Cài app" như Android (nút data-cai-app ở đầu trang,
+// app.js lo), phải qua Chia sẻ → Thêm vào MH chính. Đã mở từ biểu tượng (standalone) thì không nhắc nữa.
+const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const DA_CAI = navigator.standalone === true || matchMedia("(display-mode: standalone)").matches;
+const anCai = () => { try { return localStorage.getItem("vp-an-cai") === "1"; } catch { return false; } };
+function goiYCai(luc) {
+  if (!IOS || DA_CAI || (luc !== "ghep" && anCai())) return "";
+  return `<div class="card cai"><h3>Cài thành app trên màn hình chính</h3>
+    <ol><li>Bấm nút <b>Chia sẻ</b> (ô vuông có mũi tên lên): ở thanh dưới của Safari, hoặc góc trên bên phải nếu dùng Chrome.</li>
+    <li>Chọn <b>Thêm vào MH chính</b> (không thấy thì kéo danh sách xuống), rồi bấm <b>Thêm</b>.</li>
+    <li>Mở biểu tượng <b>Điều khiển VP</b>: chạy toàn màn hình như app, không còn thanh địa chỉ.</li></ol>
+    <p class="muted">${luc === "ghep" ? "Nên cài trước rồi ghép ngay trong app: app có bộ nhớ đăng nhập riêng, ghép ở đây thì vào app phải ghép lại." : "App có bộ nhớ đăng nhập riêng: lần đầu mở app thì nhập khóa văn phòng (nếu có) và ghép máy lại một lần."}
+    Không tải file hay cài chứng chỉ nào, vẫn đi qua Tailscale như bây giờ.</p>
+    ${luc === "ghep" ? "" : '<div class="row"><button type="button" data-act="an-cai">Để sau</button></div>'}</div>`;
+}
 
 function note(text, bad) { $("msg").innerHTML = `<div class="${bad ? "err" : ""}">${esc(text)}</div>`; clearTimeout(note.t); note.t = setTimeout(() => ($("msg").innerHTML = ""), bad ? 7000 : 3500); }
 async function api(path, body) {
@@ -96,7 +115,7 @@ async function start() {
 
 function showPair(local) {
   $("tabs").hidden = true;
-  $("app").innerHTML = `<div class="card"><h3>Ghép điện thoại này</h3>
+  $("app").innerHTML = goiYCai("ghep") + `<div class="card"><h3>Ghép điện thoại này</h3>
     <p class="muted">Trên máy tính chạy văn phòng: mở trang <b>Điện thoại</b> → bấm <b>Tạo mã ghép</b>. Mã có 6 số, dùng một lần, hết hạn sau 5 phút.</p>
     <form id="pair"><label for="ma">Mã ghép</label><input id="ma" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required>
     <label for="ten">Tên máy (để nhận ra khi thu hồi)</label><input id="ten" maxlength="40" placeholder="Ví dụ: iPhone của Quân">
@@ -134,7 +153,7 @@ function render() {
   $("badge").innerHTML = n ? `<span class="badge">${n}</span>` : "";
   for (const b of document.querySelectorAll("[data-tab]")) b.setAttribute("aria-selected", String(b.dataset.tab === tab));
   const view = { "tinh-hinh": viewStatus, "giao-viec": viewAssign, "cho-duyet": viewPending, "han-muc": viewQuota }[tab];
-  $("app").innerHTML = view() + `<p class="muted">Cập nhật lúc ${new Date(data.at).toLocaleTimeString("vi-VN")} · tự làm mới mỗi 10 giây.</p>`;
+  $("app").innerHTML = (tab === "tinh-hinh" ? goiYCai() : "") + view() + `<p class="muted">Cập nhật lúc ${new Date(data.at).toLocaleTimeString("vi-VN")} · tự làm mới mỗi 10 giây.</p>`;
   if (tab === "giao-viec") bindAssign();
 }
 
@@ -195,6 +214,7 @@ document.addEventListener("click", async (e) => {
   const t = e.target.closest("[data-tab]");
   if (t) { tab = t.dataset.tab; if (data) render(); return; }
   const b = e.target.closest("[data-act]");
+  if (b && b.dataset.act === "an-cai") { try { localStorage.setItem("vp-an-cai", "1"); } catch {} b.closest(".cai").remove(); return; }
   if (!b || busy) return;
   const id = encodeURIComponent(b.dataset.id || ""), act = b.dataset.act;
   if (act === "thoat") { if (!confirm("Huỷ ghép máy này? Muốn dùng lại phải nhập mã ghép mới.")) return; try { await api("/thoat", {}); } catch {} clearInterval(timer); return showPair(false); }
