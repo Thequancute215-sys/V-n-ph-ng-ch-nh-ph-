@@ -357,6 +357,9 @@ if (require.main === module) {
     ctl.audit.log("ctl", "start", null, { port, pid: process.pid });
     // Đọc sẵn kết nối của các AI để lượt đầu tiên đã tắt đúng kết nối không thuộc phòng (ctl/mcp-phong.js).
     setTimeout(() => ctl.connectors.status().catch(() => {}), 3000).unref();
+    // Đọc sẵn danh sách model của các AI (nhớ 6 giờ) để bảng chọn model trên điện thoại hiện ngay, không phải chờ lần đầu.
+    setTimeout(() => ctl.quotas.models().catch(() => {}), 20000).unref();
+    setInterval(() => ctl.quotas.models(true).catch(() => {}), 6 * 3600 * 1000).unref();
     // Hỏi GitHub có bản phát hành mới không: 1 phút sau khi bật, rồi mỗi 6 giờ (trang Cập nhật cũng có nút kiểm ngay).
     const checkUpdate = () => ctl.updater.refresh().catch(() => {});
     setTimeout(checkUpdate, 60 * 1000).unref();
