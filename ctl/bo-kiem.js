@@ -15,6 +15,7 @@ const { maskSecrets } = require("../lib/mask");
 const err = (code, message) => Object.assign(new Error(message), { code });
 const FILES = {
   "tools/kiem-agent.js": path.join(__dirname, "..", "lib", "kiem-agent.js"),
+  "tools/kiem-hop-dong.js": path.join(__dirname, "..", "lib", "kiem-hop-dong.js"),   // hợp đồng giao tiếp (16/11/2026)
   ".github/workflows/kiem-chu-trinh.yml": path.join(__dirname, "khung", "kiem-chu-trinh.yml"),
 };
 const norm = (s) => String(s).replace(/\r\n/g, "\n");

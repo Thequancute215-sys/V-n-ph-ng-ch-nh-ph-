@@ -14,6 +14,7 @@ const { maskSecrets, looksLikeKey } = require("../lib/mask");
 const { writeAtomic } = require("../lib/ghi-file");
 const { readTurn } = require("./handoff");
 const nhanh = require("./nhanh");
+const songSong = require("./song-song");   // Astra + Kakashi chạy song song theo hợp đồng (giao thức [8], CEO duyệt 16/11/2026)
 const ACTIVE = new Set(["running", "reporting", "awaiting_approval", "awaiting_answer", "attention", "waiting_quota", "awaiting_scan"]);
 // Trạng thái cần CEO: báo ra máy (thông báo Windows) một lần mỗi khi luồng chuyển vào.
 const NOTIFY = { awaiting_answer: "Claude hỏi anh, cần chọn phương án", awaiting_approval: "Claude đã gửi báo cáo, chờ anh duyệt", attention: "Luồng gặp lỗi, cần anh xem", waiting_quota: "AI hết hạn mức, luồng đang chờ", awaiting_scan: "File .md có điểm bất thường mới, luồng tạm dừng chờ anh duyệt" };
@@ -21,6 +22,8 @@ const WEB_MAX = 400000;
 const PROVIDER = { CODEX_ASTRA_DEV: "codex", SOL_ARCHITECT_PLANNER: "codex", SOL_ARCHITECT_ADVISOR: "codex", CLAUDE_AUDITOR: "claude", SPEC_ARCHITECT: "antigravity", FRONTEND_UIUX_DEV: "antigravity" };
 // Hai vai viết code: Claude trả việc về một trong hai là còn sửa tiếp, không phải báo cáo cuối.
 const DEVS = ["CODEX_ASTRA_DEV", "FRONTEND_UIUX_DEV"];
+// Lỗi bàn giao AI tự sửa được nếu được trả lại: mọi lỗi trừ lượt chết giữa chừng (failed/killed/timeout).
+const sauDuoc = (x) => !/^Lượt AI kết thúc với trạng thái/.test(String(x));
 const PROVIDER_NAME = { codex: "Codex", claude: "Claude", antigravity: "Antigravity" };
 const WRITER_NAME = { claude: "Claude (đội trưởng)", codex: "Codex (Sol/Astra)", antigravity: "Antigravity (Hinata)" };
 const WRITER_ORDER = ["claude", "codex", "antigravity"];
@@ -147,6 +150,7 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
   // Mốc kết thúc của lượt cuối = HEAD hiện tại (sau commit file và commit agent.md khi chuyển lượt).
   function closeStep(run) {
     const step = run.steps[run.steps.length - 1];
+    if (step && step.songSong && step.head) return;   // bước chạy song song đã có mốc riêng (commit phần của bên đó)
     if (run.git && step && step.base && nhanh.branchOf(run.workspace) === run.git.branch) step.head = nhanh.head(run.workspace);
   }
   // Giải thích lưu kèm lượt để CEO đọc khi duyệt: che khóa, cắt độ dài.
@@ -286,12 +290,19 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     const task = "ĐẶC CÁCH CEO cho luồng " + run.id + ": tự chạy và duyệt bàn giao NỘI BỘ cho việc này, CEO chỉ nhận báo cáo cuối của Claude để duyệt. Giữ đúng quyền theo vai, không push/merge/release, không xóa dữ liệu người dùng." + where + " " + book + ": bạn không tự commit hoặc đổi NEXT_OWNER. Không làm việc ngoài yêu cầu. Nếu là Claude: còn lỗi cần sửa thì next_owner CODEX_ASTRA_DEV (backend, API) hoặc FRONTEND_UIUX_DEV (giao diện); kiến trúc đã duyệt nhưng chưa code thì chuyển CODEX_ASTRA_DEV (Phase chỉ có giao diện thì FRONTEND_UIUX_DEV); khi nghiệm thu xong thì next_owner SPEC_ARCHITECT để kết thúc; thấy AI khác đi sai hướng thì hỏi CEO bằng ask_ceo, không tự ra lệnh sửa." +
       (decisions ? "\nQUYẾT ĐỊNH CỦA CEO TRONG LUỒNG NÀY (làm theo):\n" + decisions : "") + "\nVIỆC CEO GIAO:\n" + run.task +
       (role === "CLAUDE_AUDITOR" ? explainForClaude(run) + deletesForClaude(run) : "") +
-      (run.retryNote && run.retryNote.role === role ? "\n\nLƯỢT TRƯỚC CỦA BẠN BỊ TRẢ LẠI vì bàn giao chưa đạt (phần giải thích cho CEO, khai skill đã dùng hoặc luật agent.md): " + run.retryNote.problems + "\nKhông làm lại việc đã xong; kiểm lại thay đổi đã có (git diff), sửa đúng các lỗi trên (lỗi agent.md: trả các vùng không thuộc vai bạn về như cũ, nén log), rồi bàn giao lại với giai_thich đầy đủ và đúng sự thật." : "");
+      (run.retryNote && run.retryNote.role === role ? "\n\nLƯỢT TRƯỚC CỦA BẠN BỊ TRẢ LẠI vì bàn giao chưa đạt (dòng JSON bàn giao, phần giải thích cho CEO, khai skill đã dùng hoặc luật agent.md): " + run.retryNote.problems + "\nKhông làm lại việc đã xong; kiểm lại thay đổi đã có (git diff), sửa đúng các lỗi trên (lỗi agent.md: trả các vùng không thuộc vai bạn về như cũ, nén log; next_owner là vai KẾ TIẾP theo chu trình, không phải vai của bạn), rồi bàn giao lại: in đúng MỘT dòng JSON bàn giao theo mẫu, giai_thich đầy đủ và đúng sự thật." : "");
     const returned = !!(run.retryNote && run.retryNote.role === role);
     const note = run.retryNote;
     run.retryNote = null;
     // Mức suy luận đội trưởng đặt cho vai này (nếu có) thắng điều phối tự động; còn lại ctl/dieu-phoi.js chọn theo độ khó.
     const effort = (run.effort || {})[role] || null;
+    // Tới lượt Astra mà hợp đồng giao tiếp đã chốt và khai đủ thư mục hai bên: Astra (backend) và Kakashi (frontend) chạy song song
+    // theo giao thức [8] (ctl/song-song.js). Không đủ điều kiện thì chạy lần lượt như cũ, ghi lý do một lần vào nhật ký.
+    if (role === "CODEX_ASTRA_DEV" && run.git && run.songSong !== false && !run.ss) {
+      const dk = songSong.dieuKien(run.workspace);
+      if (dk.ok) return batDauSongSong(run, dk, { effort, returned, task });
+      if (run.songSongBoQua !== dk.why) { run.songSongBoQua = dk.why; audit.log("autopilot", "song_song.bo_qua", run.id, { why: dk.why }); }
+    }
     const base = run.git ? nhanh.head(run.workspace) : null;
     const loose = run.git ? new Set(nhanh.untracked(run.workspace)) : null;   // chụp trước khi AI chạy
     let job;
@@ -312,6 +323,143 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     // Lượt trả lại vì giải thích: ghi cờ vào chính bước mới (kể cả khi bước được chạy sau vì chờ Antigravity đổi tài khoản).
     run.choAgyLan = 0; run.jobId = job.id; run.steps.push({ jobId: job.id, role, startedAt: Date.now(), base, ...model, ...(note && note.explainRetried && note.role === role ? { explainRetried: true } : {}) }); save(run);
     audit.log("ceo-autopilot", "step.start", run.id, { role, job: job.id });
+  }
+
+  // ================= CHẠY SONG SONG ASTRA + KAKASHI (giao thức [8], ctl/song-song.js) =================
+  const BEN = ["CODEX_ASTRA_DEV", "FRONTEND_UIUX_DEV"];
+  const TEN_BEN = { CODEX_ASTRA_DEV: "Astra (backend)", FRONTEND_UIUX_DEV: "Kakashi (frontend)" };
+  function loiSongSong(vai, thuMuc) {
+    const khac = vai === "CODEX_ASTRA_DEV" ? "FRONTEND_UIUX_DEV" : "CODEX_ASTRA_DEV";
+    const cua = thuMuc[songSong.VAI[vai]], kia = thuMuc[songSong.VAI[khac]];
+    return `\n\nCHẠY SONG SONG (giao thức [8] của agent-protocol.md): bạn là ${vai}, làm CÙNG LÚC với ${khac} (${TEN_BEN[khac]}) theo cùng một hợp đồng.` +
+      ` Thư mục hiện tại là worktree riêng của bạn (bản sao repo, không phải thư mục chính).` +
+      `\n1. CHỈ sửa/tạo file trong: ${cua.join(", ")}. Không đụng ${kia.join(", ")} (phần của ${khac}), không sửa file ngoài phần của bạn, không xoá file (cần xoá thì ghi de_nghi_xoa).` +
+      `\n2. KHÔNG sửa agent.md và contract/api.json: bộ điều phối ghi nhật ký [4.1] và chuyển lượt sau khi gộp hai phần. Không chuyển nhánh, không push.` +
+      `\n3. contract/api.json là chuẩn DUY NHẤT giữa hai bên: dùng đúng đường dẫn, phương thức, operationId, tên trường, kiểu dữ liệu, mã lỗi và tên sự kiện trong đó; không thêm/bớt/đổi tên.` +
+      ` Thấy hợp đồng thiếu hay mâu thuẫn thì KHÔNG tự đoán: làm phần còn lại, ghi rõ điểm cần Sol chốt vào giai_thich.` +
+      (vai === "FRONTEND_UIUX_DEV" ? ` Backend đang được viết song song: gọi API qua một lớp client duy nhất theo hợp đồng; dữ liệu mẫu (nếu cần để chạy thử) lấy đúng schema/example của hợp đồng và chỉ nằm trong lớp đó.` : ` Frontend đang được viết song song và sẽ gọi đúng hợp đồng: trả lỗi theo mã lỗi trong hợp đồng; có thêm smoke test kiểm phản hồi bằng \`node tools/kiem-hop-dong.js --kiem-mau <Tên> <file>\` nếu repo có.`) +
+      `\n4. Xong thì chạy \`node tools/kiem-hop-dong.js\` (nếu có) để chắc phần của bạn khớp hợp đồng. Dòng JSON bàn giao: next_owner là SOL_ARCHITECT_ADVISOR; files chỉ gồm file trong phần của bạn.`;
+  }
+  function batDauSongSong(run, dk, { effort, returned, task }) {
+    // Một lượt song song dùng ít nhất 2 bước: không đủ chỗ trong giới hạn lượt thì chạy lần lượt (giới hạn sẽ báo CEO như cũ).
+    if (stepsSinceCeo(run) + 2 > run.maxSteps) { audit.log("autopilot", "song_song.bo_qua", run.id, { why: "không đủ 2 lượt trong giới hạn" }); run.songSong = false; save(run); return launch(run); }
+    let ss;
+    try { ss = songSong.tao(run.workspace, { id: run.id + "-" + run.steps.length, dir }); }
+    catch (e) { run.songSong = false; audit.log("autopilot", "song_song.loi_tao", run.id, { loi: maskSecrets(e.message) }); save(run); return launch(run); }
+    run.ss = { base: ss.base, wt: ss.wt, thuMuc: dk.thuMuc, task, effort, returned, jobs: {}, traLai: {}, cho: {} };
+    audit.log("autopilot", "song_song.bat_dau", run.id, { base: ss.base, thuMuc: dk.thuMuc });
+    save(run);
+    for (const vai of BEN) { if (!run.ss) return; chayBen(run, vai, null); }
+  }
+  function chayBen(run, vai, ghiChuTraLai) {
+    const s = run.ss;
+    if (!s) return;
+    s.cho[vai] = null;
+    const tra = ghiChuTraLai ? `\n\nLƯỢT TRƯỚC CỦA BẠN BỊ TRẢ LẠI vì bàn giao chưa đạt: ${ghiChuTraLai}\nKhông làm lại việc đã xong; sửa đúng các lỗi trên (file ngoài phần của bạn thì trả về như cũ), rồi in lại đúng MỘT dòng JSON bàn giao.` : "";
+    let job;
+    try {
+      job = runner.run({ workspace: run.workspace, role: vai, task: s.task + loiSongSong(vai, s.thuMuc) + tra, allowRetry: false, effort: vai === "CODEX_ASTRA_DEV" ? s.effort : null,
+        hint: { focus: run.task, returned: !!ghiChuTraLai || s.returned, rework: run.rework || 0 }, cwd: s.wt[vai], songSong: { base: s.base, thuMuc: s.thuMuc } }, "ceo-autopilot");
+    } catch (e) {
+      // Antigravity đang tạm đổi tài khoản: chờ rồi chạy lại đúng bên này (bên kia vẫn chạy).
+      if (e.code === "AGY_BUSY" && (s.choLan || 0) < 15 && Date.now() < run.deadline) { s.choLan = (s.choLan || 0) + 1; s.cho[vai] = { luc: Date.now() + choAgyMs, ghiChu: ghiChuTraLai }; save(run); return; }
+      // File .md bất thường cần CEO duyệt (chế độ toàn quyền): như khi chạy lần lượt, tạm dừng ở awaiting_scan rồi chạy lại lượt Astra.
+      if (e.code === "NEEDS_SCAN_APPROVAL") {
+        dungSongSong(run, null);
+        run.status = "awaiting_scan"; run.scan = { total: e.scan.total, fingerprint: e.scan.fingerprint, role: "CODEX_ASTRA_DEV", since: Date.now() }; save(run);
+        audit.log("autopilot", "scan.pause", run.id, { role: vai, total: e.scan.total, songSong: true });
+        return;
+      }
+      return dungSongSong(run, `Không chạy được ${TEN_BEN[vai]} khi chạy song song: ${e.message}`);
+    }
+    s.jobs[vai] = job.id; run.jobId = job.id;
+    const dp = job.dieuPhoi || {};
+    run.steps.push({ jobId: job.id, role: vai, startedAt: Date.now(), base: s.base, songSong: true, saved: { songSong: true }, deleteChecked: true,
+      ...(dp.model ? { model: dp.model } : {}), ...(dp.effort ? { effort: dp.effort } : {}), ...(dp.tier ? { tier: dp.tier } : {}), ...(ghiChuTraLai ? { explainRetried: true } : {}) });
+    save(run);
+    audit.log("ceo-autopilot", "step.start", run.id, { role: vai, job: job.id, songSong: true });
+  }
+  // Dừng chạy song song: gỡ run.ss NGAY (để vòng lặp/bên kia không chạy tiếp trên trạng thái cũ), huỷ lượt còn chạy, từ chối bàn
+  // giao chưa quyết, gỡ worktree sau khi các tiến trình đã dừng. Worktree giữ lại khi gộp lỗi (để CEO xem).
+  // problem = null: chỉ dọn, không báo cáo (CEO dừng luồng, chờ duyệt file .md, controller tắt).
+  function dungSongSong(run, problem, { giuWorktree = false } = {}) {
+    const s = run.ss;
+    if (!s) return;
+    run.ss = null; save(run);
+    const dangChay = BEN.map((v) => s.jobs[v] && jobs.get(s.jobs[v])).filter((j) => j && j.status === "running");
+    const kills = dangChay.map((j) => Promise.resolve(jobs.kill(j.id, "autopilot")).catch(() => {}));
+    for (const vai of BEN) { const h = s.jobs[vai] && runner.get(s.jobs[vai]); if (h && !h.decided) { try { runner.reject(s.jobs[vai], "ceo-autopilot"); } catch {} } }
+    if (!giuWorktree) Promise.all(kills).then(() => { try { songSong.don(run.workspace, s); } catch {} });
+    audit.log("autopilot", "song_song.dung", run.id, { problem: problem ? maskSecrets(problem).slice(0, 500) : "dọn" });
+    if (problem && run.status === "running") report(run, problem);
+  }
+  async function tickSongSong(run) {
+    const s = run.ss;
+    if (Date.now() > run.deadline) return dungSongSong(run, "Luồng đã hết thời gian khi Astra và Kakashi đang chạy song song.");
+    for (const vai of BEN) { if (!run.ss) return; if (s.cho[vai] && Date.now() >= s.cho[vai].luc) chayBen(run, vai, s.cho[vai].ghiChu); }
+    if (!run.ss) return;
+    const ket = {};
+    for (const vai of BEN) {
+      if (s.cho[vai]) return;   // bên này đang chờ Antigravity đổi tài khoản
+      const j = s.jobs[vai] && jobs.get(s.jobs[vai]);
+      if (!j || j.status === "running") return;
+      const h = runner.get(j.id);
+      if (!h) return;   // bàn giao đang được ghi
+      ket[vai] = { job: j, h };
+    }
+    // CEO đã tự từ chối bàn giao của một bên (bảng Điều khiển máy): không gộp phần đó, dừng, báo CEO.
+    for (const vai of BEN) if (ket[vai].h.decided === "rejected" && !ket[vai].h.problems.length) return dungSongSong(run, `CEO đã từ chối bàn giao của ${TEN_BEN[vai]} khi chạy song song.`);
+    // Cả hai đã xong: bên nào chưa đạt mà sửa được thì trả lại riêng bên đó một lần; không sửa được thì dừng, báo CEO.
+    const traLai = [];
+    for (const vai of BEN) {
+      const { job, h } = ket[vai];
+      if (!h.problems.length) continue;
+      const log = (jobs.rawLog(job.id) || "").slice(-8000);
+      if (QUOTA_HIT.test(log)) return dungSongSong(run, `${TEN_BEN[vai]} hết hạn mức khi chạy song song: chờ hạn mức rồi chạy lại luồng.`);
+      if (h.problems.every(sauDuoc) && !s.traLai[vai]) { traLai.push(vai); continue; }
+      return dungSongSong(run, `${TEN_BEN[vai]} bàn giao chưa đạt khi chạy song song: ${h.problems.join("; ")}`);
+    }
+    if (traLai.length) {
+      if (stepsSinceCeo(run) + traLai.length > run.maxSteps) return dungSongSong(run, "Đã hết giới hạn " + run.maxSteps + " lượt nội bộ khi chạy song song.");
+      for (const vai of traLai) {
+        if (!run.ss) return;
+        const { job, h } = ket[vai];
+        if (!h.decided) { try { runner.reject(job.id, "ceo-autopilot"); } catch {} }
+        const step = run.steps.find((x) => x.jobId === job.id); if (step) step.explainRejected = h.problems.join("; ").slice(0, 1500);
+        s.traLai[vai] = true;
+        audit.log("autopilot", "explain.retry", run.id, { role: vai, job: job.id, songSong: true });
+        try { songSong.datLaiSo(s, vai); } catch {}
+        chayBen(run, vai, h.problems.join("; ").slice(0, 1500));
+      }
+      save(run);
+      return;
+    }
+    // Chốt sau lượt như khi chạy lần lượt: log có chuỗi giống khóa API thì dừng; đề nghị xoá chuyển cho Claude.
+    for (const vai of BEN) if (looksLikeKey(jobs.rawLog(ket[vai].job.id) || "")) return dungSongSong(run, `Log lượt ${vai} (chạy song song) có chuỗi giống khóa API: CEO kiểm tra trước khi chạy tiếp.`);
+    const proposals = (run.deleteProposals = run.deleteProposals || []);
+    for (const vai of BEN) {
+      const p = ket[vai].h.payload || {};
+      if (Array.isArray(p.de_nghi_xoa)) for (const d of p.de_nghi_xoa) proposals.push({ path: cut(d && d.duong_dan, 500), reason: cut(d && d.ly_do, 1000), by: vai, step: run.steps.length, status: "chờ Claude" });
+    }
+    // Cả hai đạt: gộp hai phần vào nhánh của luồng, ghi agent.md, chuyển lượt cho SOL_ARCHITECT_ADVISOR.
+    let kq;
+    try { kq = songSong.gop(run.workspace, s, { task: run.task, branch: run.git && run.git.branch, handoffs: Object.fromEntries(BEN.map((v) => [v, ket[v].h.payload || {}])) }); }
+    catch (e) { return dungSongSong(run, "Gộp phần chạy song song không được: " + e.message, { giuWorktree: ["MERGE_CONFLICT", "SECRET"].includes(e.code) }); }
+    try {
+      for (const vai of BEN) {
+        const { job, h } = ket[vai];
+        if (!h.decided) { try { runner.ghiNhan(job.id, "ceo-autopilot", { songSong: true }); } catch {} }
+        // Mốc kết thúc của từng bên = commit phần của bên đó (diff base..mốc chỉ gồm việc của bên đó, cho CEO và Claude xem).
+        for (const step of run.steps.filter((x) => x.songSong && x.role === vai && !x.head)) step.head = kq.dau[vai];
+        const step = run.steps.find((x) => x.jobId === job.id);
+        if (step && h.payload && Array.isArray(h.payload.giai_thich)) step.explain = maskExplain(h.payload.giai_thich);
+      }
+      audit.log("autopilot", "song_song.gop", run.id, { gopVao: kq.gopVao, head: nhanh.head(run.workspace) });
+    } finally {
+      run.ss = null; save(run);
+      try { songSong.don(run.workspace, s); } catch {}
+    }
+    if (!closing && run.status === "running") launch(run);
   }
 
   // Lời giải thích của các lượt (Hinata, Sol, Astra) kèm mốc commit, để Claude chạy git diff base..head và đối chiếu.
@@ -375,7 +523,7 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     ticking = true;
     try {
       for (const run of runs.values()) {
-        if (run.status === "stopped") { rejectPending(run); continue; }
+        if (run.status === "stopped") { if (run.ss) dungSongSong(run, null); rejectPending(run); continue; }
         if (run.status === "waiting_quota") {
           if (run.web?.status === "writing") finishWeb(run);
           if (Date.now() >= run.wait.until) resume(run, "autopilot");
@@ -385,6 +533,8 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
         try {
           // Lượt đang chờ Antigravity đổi tài khoản xong (AGY_BUSY): tới giờ thì chạy lại, chưa tới thì đợi (không xử lý lại lượt trước).
           if (run.choAgy) { if (run.status === "running" && Date.now() >= run.choAgy) launch(run); continue; }
+          // Astra và Kakashi đang chạy song song: chờ cả hai, trả lại riêng bên chưa đạt, gộp khi cả hai đạt.
+          if (run.ss) { if (run.status === "running") { await tickSongSong(run); continue; } dungSongSong(run, null); }   // luồng đã sang báo cáo: dọn rồi xử lý như thường
           const job = jobs.get(run.jobId);
           if (!job) { run.status = "attention"; run.problem = "Không tìm thấy công việc đang theo dõi."; save(run); continue; }
           if (job.status === "running") {
@@ -408,9 +558,10 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
           if (!handoff) { report(run, "Công việc " + job.id + " kết thúc mà không có bàn giao."); continue; }
           const stepNow = run.steps[run.steps.length - 1];
           if (handoff.payload && Array.isArray(handoff.payload.giai_thich)) stepNow.explain = maskExplain(handoff.payload.giai_thich);
-          // Chỉ thiếu/sai phần giải thích hoặc sai luật agent.md (lib/kiem-agent.js): trả lại đúng vai đó một lần để sửa
-          // (không dừng cả luồng); lần hai vẫn sai thì báo CEO.
-          if (handoff.problems.length && handoff.problems.every((x) => x.startsWith("giai_thich") || x.startsWith("agent.md:") || x.startsWith("skill_da_dung")) &&!stepNow.explainRetried && readTurn(run.workspace).nextOwner === handoff.role) {
+          // Bàn giao chưa đạt mà AI sửa được trong lượt (giải thích, khai skill, luật agent.md, thiếu hoặc sai mẫu dòng JSON, next_owner
+          // trùng vai, claim_fixed sai dạng…): trả lại đúng vai đó một lần để sửa, không dừng cả luồng; lần hai vẫn sai thì báo CEO.
+          // Lượt chết giữa chừng thì báo CEO như cũ. CEO yêu cầu 16/11/2026 (luồng speak-coach dừng vì Sol ghi next_owner trùng vai).
+          if (handoff.problems.length && handoff.problems.every(sauDuoc) &&!stepNow.explainRetried && readTurn(run.workspace).nextOwner === handoff.role) {
             if (!handoff.decided) runner.reject(job.id, "ceo-autopilot");
             stepNow.explainRejected = handoff.problems.join("; ").slice(0, 1500);
             run.retryNote = { role: handoff.role, problems: stepNow.explainRejected, explainRetried: true };
@@ -471,6 +622,7 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     if (!["running", "reporting", "awaiting_answer", "waiting_quota", "awaiting_scan"].includes(run.status)) throw err("NOT_RUNNING", "Luồng không còn chạy.");
     run.status = "stopped"; run.problem = "CEO đã dừng luồng."; save(run);
     audit.log("ceo", "autopilot.stop", run.id);
+    if (run.ss) dungSongSong(run, null);
     const job = jobs.get(run.jobId); if (job?.status === "running") await jobs.kill(job.id, "ceo");
     rejectPending(run);
     if (run.steps.length && !run.steps[run.steps.length - 1].saved) { saveStep(run, " (dở dang: CEO dừng luồng)"); closeStep(run); save(run); }
@@ -509,6 +661,12 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     if (!step) throw err("NOT_FOUND", "Luồng không có lượt " + n);
     if (!run.git || !step.base) throw err("NO_GIT", "Lượt này không có mốc git (dự án không phải repo git hoặc luồng tạo trước khi có nhánh riêng).");
     if (step.jobId === run.jobId && jobs.get(step.jobId)?.status === "running") throw err("AI_BUSY", "Lượt này đang chạy: xem diff khi AI làm xong.");
+    // Bước chạy song song: diff từ mốc chung tới commit phần của bên đó (có sau khi gộp). Chưa gộp thì chưa có diff trên nhánh.
+    if (step.songSong) {
+      if (jobs.get(step.jobId)?.status === "running") throw err("AI_BUSY", "Lượt này đang chạy song song: xem diff khi hai bên làm xong và đã gộp.");
+      if (!step.head) throw err(step.explainRejected ? "NOT_READY" : "AI_BUSY", step.explainRejected ? "Lượt này bị trả lại; phần sửa nằm ở lượt chạy lại của cùng vai." : "Hai bên chưa gộp xong: xem diff sau khi gộp.");
+      return { step: n, role: step.role, ...nhanh.diff(run.workspace, step.base, step.head) };
+    }
     const end = step.head || run.steps[i + 1]?.base || (nhanh.branchOf(run.workspace) === run.git.branch ? null : undefined);
     if (end === undefined) throw err("NO_GIT", "Repo không còn đứng trên nhánh " + run.git.branch + " và lượt chưa có mốc kết thúc.");
     return { step: n, role: step.role, ...nhanh.diff(run.workspace, step.base, end) };
@@ -565,11 +723,12 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
   }
 
   function cancelJob(id) {
-    for (const run of runs.values()) if (["running", "reporting"].includes(run.status) && run.jobId === id) { run.status = "stopped"; run.problem = "Công việc đã được dừng từ bảng điều khiển."; save(run); }
+    // Chạy song song: dừng một trong hai lượt (hoặc kill-all) là dừng cả luồng, huỷ bên còn lại, gỡ worktree.
+    for (const run of runs.values()) if (["running", "reporting"].includes(run.status) && (run.jobId === id || (run.ss && Object.values(run.ss.jobs || {}).includes(id)))) { run.status = "stopped"; run.problem = "Công việc đã được dừng từ bảng điều khiển."; save(run); if (run.ss) dungSongSong(run, null); }
   }
   function cancelAll() { for (const r of runs.values()) if (["running", "reporting"].includes(r.status)) cancelJob(r.jobId); }
   const timer = setInterval(tick, intervalMs); timer.unref();
-  function close() { closing = true; clearInterval(timer); for (const r of runs.values()) if (["running", "reporting"].includes(r.status)) { r.status = "attention"; r.problem = "Controller đã tắt khi luồng chưa hoàn thành."; save(r); } }
+  function close() { closing = true; clearInterval(timer); for (const r of runs.values()) if (["running", "reporting"].includes(r.status)) { if (r.ss) { try { dungSongSong(r, null); } catch {} } r.status = "attention"; r.problem = "Controller đã tắt khi luồng chưa hoàn thành."; save(r); } }
   // CEO bấm "Chạy lại ngay" khi đang chờ hạn mức (ví dụ đã đổi gói hoặc hạn mức mở sớm).
   function resumeNow(id) {
     const run = get(id);

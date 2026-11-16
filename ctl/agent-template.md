@@ -1,4 +1,4 @@
-# AGENT.MD (v2.2) — NGUỒN SỰ THẬT DUY NHẤT & SỔ BÀN GIAO THEO LƯỢT
+# AGENT.MD (v2.3) — NGUỒN SỰ THẬT DUY NHẤT & SỔ BÀN GIAO THEO LƯỢT
 > LUẬT TỐI CAO CHO MỌI AI (chi tiết: ~/.ai/agent-protocol.md):
 > 1. Chỉ AI có vai trò trùng NEXT_OWNER ở Vùng [4] mới được sửa và commit file này.
 > 2. Vùng [4.1] chỉ giữ log Phase hiện tại (tối đa 25 dòng); Phase đã xong nén thành 1 dòng ở Vùng [4.2] (tối đa 5 dòng).
@@ -21,6 +21,8 @@
   5. Không đổi tên trường API/Database khi chưa cập nhật Vùng [3].
   6. Clean code có máy kiểm: mỗi PR phải qua CI gồm bộ kiểm agent.md (`tools/kiem-agent.js`), lint và test của stack. Sol chốt công cụ lint/test ở Vùng [3]; CI đỏ thì không merge. Cài CI: Văn phòng → Dự án đang ở đâu → "Cài bộ kiểm vào repo".
   7. Cập nhật không cài lại: người dùng lên bản mới bằng một nút/thao tác trong app, không xoá đi tải lại. Chỉ bản Chủ Dự Án phát hành (tag `vX.Y.Z` trên nhánh chính) mới tới người dùng; merge không phải phát hành. Dữ liệu người dùng giữ nguyên; đổi schema bằng migration chỉ thêm (không xoá/đổi tên cột) để bản cũ vẫn chạy khi phải quay lại; bản mới lỗi thì quay về bản cũ.
+  8. Chạy thật có máy kiểm: dự án có backend phải có `npm run smoke` (bật app, gọi các đường dẫn chính, kiểm phản hồi theo hợp đồng bằng `node tools/kiem-hop-dong.js --kiem-mau <Tên> <file>`) và nên có `npm run perf` (thời gian, bộ nhớ sau nhiều yêu cầu: bắt rò bộ nhớ). Python: `tests/smoke`, `tests/perf`. CI chạy các bước này; rò bộ nhớ và hiệu năng phải đo, không chỉ đọc code.
+  9. Hợp đồng trước, code sau: Backend và Frontend giao tiếp đúng `contract/api.json` (OpenAPI 3 dạng JSON, Sol viết, Claude duyệt; giao thức [8]). Không ai tự đổi hợp đồng; đổi thì quay về Sol, tăng `info.version`, Claude duyệt lại. CI chạy `node tools/kiem-hop-dong.js`.
 
 ## [2] ĐẶC TẢ SẢN PHẨM, AI AGENT & THIẾT KẾ FULLSTACK FRONTEND (UI/UX) (Chủ: SPEC_ARCHITECT)
 ### [2.1] SẢN PHẨM & PHẠM VI MVP
@@ -66,11 +68,11 @@
 ## [3] KIẾN TRÚC, HỢP ĐỒNG & LỘ TRÌNH (Chủ: SOL_ARCHITECT_PLANNER)
 - Cây thư mục (Tách rõ Frontend theo Component Tree Vùng [2] và Backend): [Chưa cập nhật]
 - Schema DB & Index: [Chưa cập nhật]
-- API Contract & Giao thức streaming (khớp chuẩn state matrix Vùng [2]): [Chưa cập nhật]
-- CI, lint, test (luật [1].6): [Chưa cập nhật: công cụ lint/test của stack, lệnh chạy, thêm vào .github/workflows/kiem-chu-trinh.yml]
+- API Contract & Giao thức streaming (khớp chuẩn state matrix Vùng [2]): [Chưa cập nhật: tóm tắt ở đây, bản đầy đủ máy đọc được ở `contract/api.json` — OpenAPI 3 JSON: đường dẫn, phương thức, operationId, schema, mã lỗi, example; `x-thu-muc` {backend, frontend} tách rời; `x-tien-to-api`; `x-su-kien` cho WebSocket/SSE/sự kiện mạng; `x-phase` theo Phase. Đủ hợp đồng + thư mục tách rời thì Astra và Kakashi chạy song song (giao thức [8])]
+- CI, lint, test, chạy thật (luật [1].6, [1].8): [Chưa cập nhật: công cụ lint/test của stack, lệnh smoke/perf, lệnh chạy; .github/workflows/kiem-chu-trinh.yml đã có kiểm agent.md + hợp đồng]
 - Cập nhật & phát hành (luật [1].7): [Chưa cập nhật: theo loại app — web: triển khai + báo "Có bản mới, tải lại"; app chạy bằng Node trên máy: git fast-forward theo tag như Văn phòng AI; Electron/Tauri: bộ tự cập nhật đọc GitHub Releases; điện thoại: cửa hàng hoặc OTA. Nêu cách migration DB, cách quay lại, workflow kiểm tag khớp phiên bản]
-- Lộ trình Phase (mỗi Phase ghi rõ phần Backend & API cho CODEX_ASTRA_DEV và phần giao diện cho FRONTEND_UIUX_DEV):
-  - [ ] Phase 1: Cấu hình lõi, Design System Setup, Schema DB, CI (lint + test + bộ kiểm agent.md) và khung phát hành/cập nhật
+- Lộ trình Phase (mỗi Phase ghi rõ phần Backend & API cho CODEX_ASTRA_DEV, phần giao diện cho FRONTEND_UIUX_DEV, các đường dẫn/sự kiện của hợp đồng thuộc Phase đó (`x-phase`), và "Kiểm tay của Chủ Dự Án": các bước tự làm trên máy thật kèm kết quả mong đợi. Cuối Phase cập nhật `docs/TICH-HOP.md`: cách chạy, biến môi trường, cách frontend/engine nối backend, lỗi thường gặp. Thiếu một trong các mục này thì Claude không cho đóng Phase — giao thức [9]):
+  - [ ] Phase 1: Cấu hình lõi, Design System Setup, Schema DB, hợp đồng `contract/api.json`, CI (lint + test + bộ kiểm agent.md + kiểm hợp đồng + smoke) và khung phát hành/cập nhật
   - [ ] Phase 2: Backend lõi & AI Agent Engine
   - [ ] Phase 3: Tầng API, Streaming SSE & Frontend Component Shell
   - [ ] Phase 4: Frontend UI/UX Integration & State Handling (5 trạng thái)

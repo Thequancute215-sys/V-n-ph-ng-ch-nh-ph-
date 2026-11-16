@@ -1,6 +1,9 @@
 # Văn phòng AI cài vào repo dự án (ctl/bo-kiem.js). Mỗi PR và mỗi lần cập nhật nhánh chính:
 #   1. kiểm chu trình agent.md (tools/kiem-agent.js) và từng commit sửa agent.md trong PR;
-#   2. lint và test theo công nghệ có trong repo (Node: npm run lint / npm test; Python: ruff / pytest).
+#   2. hợp đồng giao tiếp contract/api.json khớp mã backend/frontend (tools/kiem-hop-dong.js; chưa có hợp đồng thì bỏ qua);
+#   3. lint và test theo công nghệ có trong repo (Node: npm run lint / npm test; Python: ruff / pytest);
+#   4. chạy thật: npm run smoke (bật app, gọi các đường dẫn chính, kiểm phản hồi theo hợp đồng) và npm run perf (thời gian,
+#      bộ nhớ sau nhiều yêu cầu để bắt rò bộ nhớ) nếu dự án có. Luật [1].8 trong agent.md.
 # Luật [1] trong agent.md: mỗi PR phải qua bước này. Sol chốt lint/test của dự án ở Vùng [3]; thêm bước riêng thì sửa file này.
 # Chỉ quyền đọc repo, không triển khai gì.
 name: Kiểm chu trình
@@ -35,6 +38,8 @@ jobs:
         env:
           BASE: origin/${{ github.base_ref }}
         run: node tools/kiem-agent.js --neu-co --tu "$BASE"
+      - name: Kiểm hợp đồng giao tiếp (contract/api.json)
+        run: node tools/kiem-hop-dong.js --neu-co
       - name: Lint và test (Node)
         if: hashFiles('package.json') != ''
         run: |
@@ -43,6 +48,9 @@ jobs:
           has() { node -e 'const s=(require("./package.json").scripts||{})[process.argv[1]];process.exit(s&&!/no test specified/.test(s)?0:1)' "$1"; }
           if has lint; then npm run lint; else echo "::warning::Chưa có script lint trong package.json (luật [1] của agent.md yêu cầu)"; fi
           if has test; then npm test; else echo "::warning::Chưa có script test trong package.json (luật [1] của agent.md yêu cầu)"; fi
+          # Chạy thật (luật [1].8): smoke = bật app và gọi các đường dẫn chính; perf = đo thời gian và bộ nhớ (bắt rò bộ nhớ).
+          if has smoke; then npm run smoke; else echo "::warning::Chưa có script smoke trong package.json (luật [1].8 của agent.md yêu cầu khi dự án có backend)"; fi
+          if has perf; then npm run perf; else echo "::notice::Chưa có script perf trong package.json (luật [1].8)"; fi
       - uses: actions/setup-python@v5
         if: hashFiles('pyproject.toml', 'requirements.txt', 'setup.py') != ''
         with:
@@ -55,3 +63,5 @@ jobs:
           if [ -f pyproject.toml ] || [ -f setup.py ]; then pip install -e . || echo "::warning::Không cài được dự án bằng pip install -e ."; fi
           ruff check .
           if ls tests test 2>/dev/null | grep -q .; then pytest -q; else echo "::warning::Chưa có thư mục tests (luật [1] của agent.md yêu cầu)"; fi
+          # Chạy thật (luật [1].8): smoke/perf đặt trong tests/smoke, tests/perf (pytest đã chạy ở trên); thiếu thì nhắc.
+          if [ ! -d tests/smoke ]; then echo "::warning::Chưa có tests/smoke (luật [1].8 của agent.md yêu cầu khi dự án có backend)"; fi
