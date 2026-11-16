@@ -181,22 +181,26 @@ function createQuotas({ dir, queries, clock = Date.now, intervalMs = EVERY, agyT
   let nghiPending = null;
   function docNghi(force = false) {
     if (!agyTk || stopped || nghiPending || pending) return nghiPending || Promise.resolve(false);
-    nghiPending = agyTk.docNghi(async () => antigravityBuckets(await reader.antigravity()).buckets, { force })
+    nghiPending = agyTk.docNghi(async () => antigravityBuckets(await reader.antigravity()).buckets,
+      { force, docModels: reader.agyModels ? async () => agyModelList(await reader.agyModels()).map((m) => m.id) : null })
       .catch(() => false).finally(() => { nghiPending = null; });
     return nghiPending;
   }
   function refresh(force = false) {
     if (force && !pending) for (const s of states.values()) s.nextCheckAt = null;
     if (stopped || pending) return pending || Promise.resolve(snapshot());
-    const due = defs.filter((d) => !states.get(d.id).nextCheckAt || Date.parse(states.get(d.id).nextCheckAt) <= clock());
+    // Đang tạm đổi tài khoản Antigravity để đọc tài khoản nghỉ thì không đọc Antigravity chen vào (tránh ghi nhầm, tránh chặn lúc đổi về).
+    const due = defs.filter((d) => !(d.id === "antigravity" && agyTk && agyTk.dangTrao()) && (!states.get(d.id).nextCheckAt || Date.parse(states.get(d.id).nextCheckAt) <= clock()));
     if (!due.length) return Promise.resolve(snapshot());
     pending = Promise.allSettled(due.map(async (d) => {
       const s = states.get(d.id); s.refreshing = true;
       try {
-        const raw = await reader[d.id](), parsed = d.parse(raw, clock());
+        // Antigravity: biết chắc hạn mức vừa đọc là của tài khoản nào (đổi tài khoản chen giữa thì không ghi cho tài khoản nào).
+        const r = d.id === "antigravity" && agyTk ? await agyTk.docVoiTk(() => reader.antigravity()) : { value: await reader[d.id]() };
+        const parsed = d.parse(r.value, clock());
         if (stopped) return;
         Object.assign(s, parsed, { status: "ready", error: "", lastSuccessAt: new Date(clock()).toISOString() });
-        if (d.id === "antigravity" && agyTk) { try { agyTk.ghiHanMuc(parsed.buckets); } catch {} }
+        if (d.id === "antigravity" && agyTk && r.email) { try { agyTk.ghiHanMuc(parsed.buckets, r.email); } catch {} }
       } catch (e) {
         if (stopped) return;
         s.status = s.buckets.length ? "stale" : "error";
@@ -210,17 +214,34 @@ function createQuotas({ dir, queries, clock = Date.now, intervalMs = EVERY, agyT
   }
   function get() { refresh(); return snapshot(); }
   // Danh sách model của 3 AI, nhớ 6 giờ. AI nào đọc lỗi thì trả lỗi riêng cho AI đó (CEO vẫn gõ được tên model).
+  // Antigravity: mỗi tài khoản thấy model khác nhau. Danh sách vừa đọc ghi cho tài khoản đang dùng; bảng chọn hiện hợp các
+  // tài khoản đã cất, model chỉ một số tài khoản có thì ghi "chỉ <tên>" để CEO biết lượt sẽ chạy bằng tài khoản nào.
   let modelCache = null, modelPending = null;
+  function gopAgy(data) {
+    if (!agyTk) return data;
+    let tk; try { tk = agyTk.modelTheoTk(); } catch { return data; }
+    if (!tk.length) return data;
+    const map = new Map((data.agy.models || []).map((m) => [m.id, m]));
+    for (const t of tk) for (const id of t.models) if (!map.has(id)) map.set(id, { id, name: id, efforts: EFFORTS });
+    const models = [...map.values()].map((m) => {
+      const co = tk.filter((t) => t.models.includes(m.id)).map((t) => t.nhan);
+      return co.length && co.length < tk.length ? { ...m, name: m.name + " · chỉ " + co.join(", "), chiCo: co } : m;
+    });
+    return { ...data, agy: { ...data.agy, models } };
+  }
   async function models(force = false) {
-    if (!force && modelCache && clock() - modelCache.at < 6 * 3600000) return modelCache.data;
+    if (!force && modelCache && clock() - modelCache.at < 6 * 3600000) return gopAgy(modelCache.data);
     if (modelPending) return modelPending;
     modelPending = (async () => {
+      // Danh sách model Antigravity ghi cho đúng tài khoản đã đọc, ngay khi đọc xong (không đợi Codex: chờ lâu thì tài khoản có thể đã đổi).
+      const docAgy = () => (agyTk ? agyTk.docVoiTk(() => reader.agyModels()) : reader.agyModels().then((value) => ({ value, email: null })))
+        .then(({ value, email }) => { const list = agyModelList(value); if (agyTk && email) { try { agyTk.ghiModels(list.map((m) => m.id), email); } catch {} } return list; });
       const [codex, agy] = await Promise.allSettled([reader.codexModels ? reader.codexModels().then(codexModelList) : Promise.reject(new Error("không hỗ trợ")),
-        reader.agyModels ? reader.agyModels().then(agyModelList) : Promise.reject(new Error("không hỗ trợ"))]);
+        reader.agyModels ? docAgy() : Promise.reject(new Error("không hỗ trợ"))]);
       const pick = (r) => r.status === "fulfilled" ? { models: r.value } : { models: [], error: String(r.reason && r.reason.message || r.reason).slice(0, 200) };
       const data = { claude: { models: CLAUDE_MODELS }, codex: pick(codex), agy: pick(agy), checkedAt: new Date(clock()).toISOString() };
       if (!data.codex.error && !data.agy.error) modelCache = { at: clock(), data };
-      return data;
+      return gopAgy(data);
     })().finally(() => { modelPending = null; });
     return modelPending;
   }

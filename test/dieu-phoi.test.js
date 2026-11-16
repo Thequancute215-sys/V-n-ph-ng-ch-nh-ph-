@@ -168,3 +168,9 @@ test("chọn model ngoài tự động: model Codex cố định thay model củ
   assert.deepEqual(agyModelList("Fetching available models...\r\ngemini-3.8-flash-high\tGemini 3.8 Flash (High)\r\nclaude-sonnet-4-6\tClaude Sonnet 4.6 (Thinking)\r\n").map((m) => m.id), ["gemini-3.8-flash-high", "claude-sonnet-4-6"]);
   assert.throws(() => agyModelList("lỗi"), /Antigravity/);
 });
+
+test("hạn mức Antigravity cho điều phối tự động chỉ xét nhóm Gemini (Flash), không bị nhóm Argon của tài khoản Pro kéo xuống", () => {
+  const snap = { providers: [{ id: "antigravity", buckets: [{ group: "Gemini", remainingPercent: 70 }, { group: "Gemini 4 Argon", remainingPercent: 2 }, { group: "Claude / GPT trong Antigravity", remainingPercent: 1 }] }] };
+  assert.equal(remaining(snap, "agy"), 70);
+  assert.equal(remaining({ providers: [{ id: "antigravity", buckets: [{ group: "Gemini 4 Argon", remainingPercent: 30 }] }] }, "agy"), 30, "không có nhóm Gemini thì xét nhóm khác (trừ Claude/GPT)");
+});

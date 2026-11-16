@@ -47,10 +47,10 @@ const HTTP_CODE = {
   CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_WAITING: 409, NEEDS_SPEC_TURN: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409, HANDOFF_PENDING: 409, NEEDS_ANSWER: 409, NO_QUESTION: 422, BAD_OPTION: 400,
   CHAT_BUSY: 409, PUBLISH_BUSY: 409, NOT_READY: 409, NO_RELEASE_WORKFLOW: 422, NOT_ON_MAIN: 409, TAG_EXISTS: 409, DIRTY_REPO: 409, NEEDS_SCAN_APPROVAL: 409, NO_COMMIT: 409, NO_QUOTA: 409, NO_GIT: 422, NO_REMOTE: 422, GIT_PUSH: 502,
   UPDATE_BUSY: 409, NOT_APP: 409, UPDATE_FAILED: 500, GIT_BRANCH: 409,
-  AGY_BUSY: 409, AGY_CRED: 502, NO_LOGIN: 409, NOT_SUPPORTED: 501,
+  AGY_BUSY: 409, AGY_UNSAVED: 409, AGY_CRED: 502, NO_LOGIN: 409, NOT_SUPPORTED: 501,
 };
 
-function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {}, quotaOptions = {}, updaterOptions = {}, agyOptions = {}, notify = false } = {}) {
+function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {}, quotaOptions = {}, updaterOptions = {}, agyOptions = {}, autopilotOptions = {}, notify = false } = {}) {
   const db = open(dir);
   const audit = createAudit(db);
   const jobs = createJobs(db, audit, path.join(dir, "logs"));
@@ -65,7 +65,7 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
   const agyTk = createAgyTaiKhoan({ dir, audit, agyJobs: () => jobs.list("running").filter((j) => kindOf(j.argv) === "agy").length, ...agyOptions });
   // connectors khai báo bên dưới: chỉ gọi khi chạy lượt, lúc đó đã có.
   const runner = createRunner({ jobs, ws, audit, db, dir, scanner, mcpKnown: () => connectors.known(), quotaSnapshot: () => quotas.snapshot(), agyTk });
-  const autopilot = createAutopilot({ runner, jobs, ws, audit, dir, quotaSnapshot: () => quotas.snapshot(), notify: notifier, scanner });
+  const autopilot = createAutopilot({ runner, jobs, ws, audit, dir, quotaSnapshot: () => quotas.snapshot(), notify: notifier, scanner, ...autopilotOptions });
   const ideas = createIdeas({ dir, ws, runner, autopilot, audit });
   const publisher = createPublisher({ jobs, ws, audit, dir, notify: notifier, github: () => github });
   const chat = createChat({ jobs, ws, runner, audit, dir });
@@ -207,7 +207,8 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
   ["POST", "/ket-noi/phong", async (p, qs, b) => ({ ketNoi: await connectors.setPhong(String(b.room || ""), b.ids) })],
     ["GET", "/dieu-phoi", () => ({ dieuPhoi: runner.dieuPhoi.status() })],
     ["GET", "/agy-tai-khoan", () => ({ taiKhoan: agyTk.trangThai() })],
-    ["POST", "/agy-tai-khoan/cat", (p, qs, b) => ({ taiKhoan: agyTk.cat(b.nhan) })],
+    // Cất xong thì đọc luôn danh sách model của tài khoản vừa cất (mỗi tài khoản thấy model khác nhau).
+    ["POST", "/agy-tai-khoan/cat", (p, qs, b) => { const taiKhoan = agyTk.cat(b.nhan); quotas.models(true).catch(() => {}); return { taiKhoan }; }],
     ["POST", "/agy-tai-khoan/sua", (p, qs, b) => ({ taiKhoan: agyTk.sua(b || {}) })],
     ["POST", "/agy-tai-khoan/doc-nghi", () => { quotas.docNghi(true); return [202, { taiKhoan: agyTk.trangThai() }]; }],
     ["POST", "/agy-tai-khoan/:id/chuyen", (p) => { agyTk.chuyen(p.id); quotas.refresh(true); return { taiKhoan: agyTk.trangThai() }; }],
@@ -342,7 +343,7 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     db.close();
   }
 
-  return { server, jobs, ws, files, runner, autopilot, scanner, publisher, chat, connectors, journal, github, quotas, updater, boKiem, audit, token, close };
+  return { server, jobs, ws, files, runner, autopilot, scanner, publisher, chat, connectors, journal, github, quotas, agyTk, updater, boKiem, audit, token, close };
 }
 
 if (require.main === module) {

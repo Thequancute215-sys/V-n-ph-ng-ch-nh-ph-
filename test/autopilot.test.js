@@ -10,7 +10,7 @@ const { createAutopilot } = require("../ctl/autopilot");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const spec = "SPEC_ARCHITECT", sol = "SOL_ARCHITECT_PLANNER", dev = "CODEX_ASTRA_DEV", claude = "CLAUDE_AUDITOR";
 
-async function fixture(t, mode = "normal") {
+async function fixture(t, mode = "normal", ctlOpts = {}) {
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), "vp-auto-")), dir = path.join(temp, "home"), repo = path.join(temp, "repo");
   fs.mkdirSync(dir); fs.mkdirSync(repo);
   const git = (...a) => execFileSync("git", a, { cwd: repo, encoding: "utf8", stdio: "pipe" }).trim();
@@ -25,7 +25,7 @@ async function fixture(t, mode = "normal") {
     const next={SPEC_ARCHITECT:'SOL_ARCHITECT_PLANNER',SOL_ARCHITECT_PLANNER:'CODEX_ASTRA_DEV',CODEX_ASTRA_DEV:'CLAUDE_AUDITOR',CLAUDE_AUDITOR:'SPEC_ARCHITECT'}[role];
     console.log(JSON.stringify({result:(role==='CLAUDE_AUDITOR'?'Claude báo cáo: đã kiểm thử và hoàn tất.\\n':'Xong lượt.\\n')+JSON.stringify({role,next_owner:next,files:[],claim_fixed:[],giai_thich:[{van_de:'Vấn đề của lượt thử nghiệm',da_lam:'Đã làm phần việc thử nghiệm',vi_sao:'Vì đây là CLI giả dùng cho test',phuong_an_khac:[]}]})}));`);
   fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify(Object.fromEntries([spec, sol, dev, claude, "CLAUDE_REPORTER"].map((role) => [role, [process.execPath, fake, role, mode, "{prompt}"]]))));
-  const ctl = createCtl({ dir });
+  const ctl = createCtl({ dir, ...ctlOpts });
   await new Promise((r) => ctl.server.listen(0, "127.0.0.1", r));
   ctl.ws.add(repo);
   const base = "http://127.0.0.1:" + ctl.server.address().port;
@@ -122,4 +122,15 @@ test("khởi động lại không tự chạy lại việc dang dở; trạng th
     assert.equal(restored.get(r.run.id).status, "attention");
     await sleep(700); assert.equal(ctl.jobs.list().length, 1);
   } finally { restored.close(); }
+});
+
+test("Antigravity đang tạm đổi tài khoản để đọc hạn mức (AGY_BUSY): luồng chờ rồi chạy lại đúng lượt đó, không dừng, không gọi Claude báo cáo", async (t) => {
+  const { ctl, repo, call, wait } = await fixture(t, "normal", { autopilotOptions: { choAgyMs: 300 } });
+  const that = ctl.runner.run; let lan = 0;
+  ctl.runner.run = (o, actor) => { if (o.role === sol && lan++ === 0) throw Object.assign(new Error("Văn phòng đang tạm đổi sang tài khoản Antigravity nghỉ"), { code: "AGY_BUSY" }); return that(o, actor); };
+  const response = await call("/autopilot", { workspace: repo, task: "Thực hiện việc kiểm thử trong dự án này" });
+  const run = await wait(response.run.id, "awaiting_approval");
+  assert.deepEqual(run.steps.map((s) => s.role), [spec, sol, dev, claude], "chạy lại đúng lượt Sol, không lặp lượt Hinata");
+  assert.equal(lan, 2);
+  assert.ok(ctl.audit.recent(200).some((a) => a.action === "step.wait_agy"));
 });

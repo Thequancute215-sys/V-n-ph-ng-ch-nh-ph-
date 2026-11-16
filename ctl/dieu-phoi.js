@@ -35,11 +35,15 @@ const kindOf = (argv) => {
 };
 const step = (t, d) => TIERS[Math.max(0, Math.min(2, TIERS.indexOf(t) + d))];
 
-// Phần trăm còn lại thấp nhất của AI (bỏ nhóm Claude/GPT bên Antigravity: Hinata và Kakashi chỉ dùng Gemini). null = chưa đọc được.
-function remaining(snapshot, kind) {
+// Phần trăm còn lại thấp nhất của AI. Antigravity: chỉ xét nhóm "Gemini" (các model Flash mà bảng tự động dùng); bỏ nhóm
+// Claude/GPT và nhóm riêng của tài khoản Pro (Gemini 4 Argon) vì lượt tự động không tiêu chúng. null = chưa đọc được.
+// Cửa sổ đã qua mốc mở lại thì coi như 100% (bản đọc cũ khi đọc lại lỗi), giống bảng hạn mức và bộ đổi tài khoản.
+function remaining(snapshot, kind, now = Date.now()) {
   const p = ((snapshot && snapshot.providers) || []).find((x) => x.id === PROVIDER[kind]);
-  const b = ((p && p.buckets) || []).filter((x) => typeof x.remainingPercent === "number" && !(kind === "agy" && /Claude|GPT/i.test(String(x.group || x.label))));
-  return b.length ? Math.min(...b.map((x) => x.remainingPercent)) : null;
+  const all = ((p && p.buckets) || []).filter((x) => typeof x.remainingPercent === "number");
+  const gemini = kind === "agy" ? all.filter((x) => String(x.group || x.label) === "Gemini") : [];
+  const b = kind !== "agy" ? all : gemini.length ? gemini : all.filter((x) => !/Claude|GPT/i.test(String(x.group || x.label)));
+  return b.length ? Math.min(...b.map((x) => (x.resetAt && Date.parse(x.resetAt) <= now ? 100 : x.remainingPercent))) : null;
 }
 
 // Chấm độ khó. focus: việc CEO giao (không kèm lời dặn chung của bộ điều phối); blockers: dòng [ ] OPEN của agent.md.
