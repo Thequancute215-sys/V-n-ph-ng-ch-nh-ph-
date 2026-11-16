@@ -180,6 +180,8 @@ function createQuotas({ dir, queries, clock = Date.now, intervalMs = EVERY, agyT
   // Đọc hạn mức tài khoản Antigravity đang nghỉ (đổi sang ~10 giây rồi đổi về; agyTk tự giữ nhịp 30 phút và chỉ làm khi máy rảnh).
   let nghiPending = null;
   function docNghi(force = false) {
+    // Anh bấm đọc ngay (force) đúng lúc bảng hạn mức đang làm mới hoặc đang có lần đọc thường: chờ xong rồi đọc, không bỏ qua im lặng.
+    if (force && agyTk && !stopped && (pending || nghiPending)) return Promise.resolve(pending).catch(() => {}).then(() => nghiPending).then((r) => r || docNghi(true));
     if (!agyTk || stopped || nghiPending || pending) return nghiPending || Promise.resolve(false);
     nghiPending = agyTk.docNghi(async () => antigravityBuckets(await reader.antigravity()).buckets,
       { force, docModels: reader.agyModels ? async () => agyModelList(await reader.agyModels()).map((m) => m.id) : null })

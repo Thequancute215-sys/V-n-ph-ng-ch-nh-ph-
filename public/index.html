@@ -798,6 +798,29 @@ try {
 // ================= ĐI TỚI PHÒNG & ZOOM =================
 const desk = createDesk(() => office);
 const syncTurn = () => desk.syncTurn();
+
+// ================= ĐIỆN THOẠI: NGĂN KÉO CHỨC NĂNG =================
+// Màn nhỏ (điện thoại dọc/ngang, cửa sổ nhỏ): thanh trên + các nút điều phối nằm trong ngăn kéo bên trái (CSS ở office-desk.css),
+// mở bằng nút ☰; bấm một chức năng hoặc chạm ra ngoài thì đóng để cảnh 3D thoáng. Chấm vàng = có việc chờ anh.
+{
+  const NHO = matchMedia("(max-width: 700px), (max-height: 520px), (pointer: coarse) and (max-width: 950px)");
+  const bar = document.querySelector(".bar");
+  const nut = document.createElement("button");
+  nut.type = "button"; nut.className = "phone-menu"; nut.setAttribute("aria-label", "Mở menu chức năng"); nut.setAttribute("aria-expanded", "false");
+  nut.innerHTML = '<span aria-hidden="true">☰</span><span>Menu</span><i class="dot" aria-hidden="true"></i>';
+  const man = document.createElement("div"); man.className = "phone-scrim";
+  document.body.append(man, nut);
+  const mo = (open) => { bar.classList.toggle("open", open); man.classList.toggle("open", open); nut.setAttribute("aria-expanded", String(open)); if (open) bar.scrollTop = 0; };
+  nut.addEventListener("click", () => mo(!bar.classList.contains("open")));
+  man.addEventListener("click", () => mo(false));
+  bar.addEventListener("click", (e) => { if (NHO.matches && e.target.closest("button, a")) mo(false); });
+  addEventListener("keydown", (e) => { if (e.key === "Escape" && bar.classList.contains("open")) mo(false); });
+  NHO.addEventListener("change", () => mo(false));
+  const cho = $("ceoWaitPill");
+  const cham = () => { nut.classList.toggle("attn", !cho.hidden); nut.setAttribute("aria-label", cho.hidden ? "Mở menu chức năng" : "Mở menu chức năng (có việc chờ anh)"); };
+  new MutationObserver(cham).observe(cho, { attributes: true, attributeFilter: ["hidden"] });
+  cham();
+}
 syncTurn();
 setInterval(syncTurn, 10000);
 

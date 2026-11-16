@@ -155,13 +155,15 @@ function createGitHub({ ws, jobs, audit, select, projectsDir = path.join(os.home
     try { await api("/repos/" + fullName); return true; } catch (e) { if (e.code === "NOT_FOUND") return false; throw e; }
   }
   // Chỉ gọi sau khi CEO bấm duyệt. Mặc định riêng tư; auto_init tạo README để tải về và cài bộ kiểm được ngay.
+  // Tạo repo kèm commit đầu (auto_init) đôi khi GitHub trả lời chậm (thử thật 16/11/2026: một lần treo quá 20 giây, lần sau 6 giây):
+  // chờ tới 45 giây; quá giờ thì bên gọi (ctl/du-an-moi.js) kiểm lại repo đã có chưa.
   async function createRepo({ name, description = "", isPrivate = true }) {
     if (!/^[A-Za-z0-9._-]{1,100}$/.test(String(name)) || /^\.+$/.test(name)) throw err("BAD_REQUEST", "Tên repo chỉ gồm chữ, số và dấu . - _ (tối đa 100 ký tự).");
     const token = await getCredential();
     let response;
     try {
       response = await fetcher("https://api.github.com/user/repos", { method: "POST", headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json", "User-Agent": "VanPhongAI", "Content-Type": "application/json" },
-        body: JSON.stringify({ name, description: String(description).slice(0, 350), private: isPrivate !== false, auto_init: true }), signal: AbortSignal.timeout(20000), redirect: "error" });
+        body: JSON.stringify({ name, description: String(description).slice(0, 350), private: isPrivate !== false, auto_init: true }), signal: AbortSignal.timeout(45000), redirect: "error" });
     } catch { throw err("GITHUB_OFFLINE", "Không kết nối được GitHub. Kiểm tra mạng rồi thử lại."); }
     let data = {}; try { data = await response.json(); } catch {}
     if (response.status === 201 && validName(data.full_name)) { audit.log("ceo", "github.create_repo", data.full_name, { private: !!data.private }); return { fullName: data.full_name, private: !!data.private, url: "https://github.com/" + data.full_name }; }
