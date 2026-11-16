@@ -73,6 +73,8 @@
 /* ĐIỆN THOẠI (dọc, hoặc xoay ngang: màn thấp) và cửa sổ nhỏ: cảnh 3D chiếm cả màn hình. Mọi nút chức năng (thanh trên, Nhật ký,
    Dự án…) nằm trong ngăn kéo bên trái, ẩn sẵn, mở bằng nút ☰ ở góc. CEO yêu cầu 16/11/2026 (iPhone ngang bị nút che hết cảnh). */
 .phone-menu, .phone-scrim { display: none; }
+.desk-tk { display: none; }
+.desk-dialog .dp-chon { outline: 2px solid #ecc970; outline-offset: 4px; border-radius: 8px; }
 @media (max-width: 700px), (max-height: 520px), (pointer: coarse) and (max-width: 950px) {
   .phone-menu { display: inline-flex; align-items: center; gap: 6px; position: fixed; z-index: 26; top: calc(8px + env(safe-area-inset-top)); left: calc(8px + env(safe-area-inset-left));
     height: 40px; padding: 0 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.2); background: rgba(12,18,32,.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
@@ -94,6 +96,14 @@
   .bar .desk-tools button, .bar .desk-tools a { flex: 1 1 45%; white-space: normal; text-align: left; }
   .bar .more-menu { position: static; min-width: 0; max-height: none; margin-top: 8px; padding: 0; background: transparent; border: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
   .bar .more-menu > * { white-space: normal; }
+  /* Khối tài khoản trong ngăn kéo: đổi tài khoản Antigravity bằng một chạm, mở trang quản lý */
+  .bar .desk-tk { display: flex; flex-direction: column; gap: 6px; padding: 10px; border: 1px solid rgba(255,255,255,.12); border-radius: 12px; background: rgba(255,255,255,.04); pointer-events: auto; }
+  .bar .desk-tk strong { font-size: 13px; color: #ecc970; }
+  .bar .desk-tk p { margin: 0; font-size: 12px; }
+  .bar .desk-tk-ds { display: flex; flex-wrap: wrap; gap: 6px; }
+  .bar .desk-tk-ds button { flex: 1 1 45%; }
+  .bar .desk-tk-ds button.on { border-color: #ecc970; color: #fde68a; }
+  .bar .desk-tk .btn { justify-content: flex-start; white-space: normal; text-align: left; }
   /* Bớt các thứ đè lên cảnh 3D */
   .links, .hint { display: none !important; }
   .room-nav-pill { padding: 4px; gap: 2px; }

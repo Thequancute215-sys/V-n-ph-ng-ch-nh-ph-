@@ -82,10 +82,11 @@ test("bước lỗi: tạo repo lỗi thì dừng ngay; bộ kiểm lỗi thì v
   assert.ok(!g.goi.some((x) => x[0] === "boKiem" || x[0] === "idea.start"));
 });
 
-test("điện thoại đã ghép: văn phòng 3D dùng được mục xem, ý tưởng, tạo dự án; vẫn chặn cấu hình, đổi tài khoản, xuất bản", () => {
+test("điện thoại đã ghép: văn phòng 3D dùng được mục xem, ý tưởng, tạo dự án, đổi tài khoản Antigravity, đặt model phòng; vẫn chặn cất/bỏ tài khoản, xuất bản", () => {
   for (const [m, p] of [["GET", "/ideas?workspace=x"], ["POST", "/ideas"], ["POST", "/ideas/idea-abc/start"], ["GET", "/scan"], ["GET", "/publish"], ["GET", "/nhat-ky"],
-    ["POST", "/workspaces/switch"], ["GET", "/dieu-phoi/models"], ["GET", "/agy-tai-khoan"], ["POST", "/du-an-moi/goi-y"], ["POST", "/du-an-moi"], ["GET", "/du-an-moi/da-1"]]) assert.ok(allowed(m, p), m + " " + p);
-  for (const [m, p] of [["POST", "/dieu-phoi"], ["POST", "/agy-tai-khoan/cat"], ["POST", "/agy-tai-khoan/x/chuyen"], ["POST", "/publish/prepare"], ["POST", "/scan/approve"],
+    ["POST", "/workspaces/switch"], ["GET", "/dieu-phoi/models"], ["GET", "/agy-tai-khoan"], ["POST", "/du-an-moi/goi-y"], ["POST", "/du-an-moi"], ["GET", "/du-an-moi/da-1"],
+    ["POST", "/agy-tai-khoan/x/chuyen"], ["POST", "/dieu-phoi"]]) assert.ok(allowed(m, p), m + " " + p);
+  for (const [m, p] of [["POST", "/agy-tai-khoan/cat"], ["POST", "/agy-tai-khoan/x/xoa"], ["POST", "/agy-tai-khoan/sua"], ["POST", "/publish/prepare"], ["POST", "/scan/approve"],
     ["POST", "/bo-kiem"], ["POST", "/github/open"], ["POST", "/cap-nhat"], ["POST", "/workspaces"]]) assert.ok(!allowed(m, p), m + " " + p);
 });
 
@@ -136,4 +137,17 @@ test("điện thoại: tạo dự án luôn riêng tư (ép rieng=true), gợi �
   }
   assert.equal(goi[0].b.rieng, true, "tham số ẩn rieng:false bị ép thành riêng tư");
   assert.equal(goi[1].het, 95000);
+});
+
+test("điện thoại: đặt model phòng được, nhưng không bật/tắt điều phối tự động (chỉ chuyển coDinh)", async () => {
+  const { handle } = require("../lib/dieu-khien-xa");
+  const goi = [];
+  const dkx = { thietBiCua: () => ({ id: "tb1", ten: "iPhone" }), xacThuc: () => ({ id: "tb1", ten: "iPhone" }), ghiNhatKy: () => {} };
+  const res = () => { const o = { code: 0, body: "" }; o.writeHead = (c) => { o.code = c; }; o.end = (b) => { o.body = b; }; return o; };
+  const req = { method: "POST", headers: { cookie: "vpd=x", host: "oanh.ts.net" }, socket: { remoteAddress: "127.0.0.1" } };
+  await handle(dkx, req, res(), new URL("https://oanh.ts.net/dkx/api/dieu-phoi"), { local: false, hasKey: true,
+    readJson: async () => ({ tuDong: false, coDinh: { hinata: { model: "gemini-4-argon-high", effort: null } } }),
+    call: async (m, target, b) => { goi.push({ target, b }); return { status: 200, json: { ok: true } }; } });
+  assert.equal(goi[0].target, "/dieu-phoi");
+  assert.deepEqual(goi[0].b, { coDinh: { hinata: { model: "gemini-4-argon-high", effort: null } } }, "bỏ tuDong khỏi yêu cầu từ điện thoại");
 });

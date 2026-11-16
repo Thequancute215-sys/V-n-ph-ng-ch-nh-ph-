@@ -54,6 +54,20 @@ export function createDesk(getOffice) {
     '<a class="btn ghost" href="dien-thoai.html" title="Ghép điện thoại để điều khiển văn phòng từ xa">Điện thoại</a>' +
     '<a class="btn ghost" href="cap-nhat.html" id="deskUpdate" title="Phiên bản app và cập nhật">Cập nhật</a>';
   document.querySelector(".bar").append(toolbar);
+  // Menu điện thoại (ngăn kéo ☰): đổi tài khoản Antigravity bằng một chạm + quản lý tài khoản (CEO yêu cầu 16/11/2026).
+  // Trên máy tính khối này ẩn (đã có trong mục Hạn mức và nút Tài khoản AI).
+  const tkMenu = document.createElement("div"); tkMenu.className = "desk-tk"; tkMenu.setAttribute("aria-label", "Tài khoản AI");
+  document.querySelector(".bar").append(tkMenu);
+  tkMenu.addEventListener("click", (e) => {
+    const doi = e.target.closest("[data-tk-chuyen]");
+    if (doi && !doi.disabled) {
+      // Mở mục Hạn mức (có bảng tài khoản + dòng thông báo) để anh thấy kết quả hoặc lý do lỗi (vd. Antigravity đang chạy).
+      show("quotas");
+      const ten = doi.dataset.tkNhan || "";
+      mutate("Đổi Antigravity sang tài khoản " + ten, () => request("/agy-tai-khoan/" + encodeURIComponent(doi.dataset.tkChuyen) + "/chuyen", {}, 60000));
+    } else if (e.target.closest("[data-tk-quanly]")) show("quotas");
+    else if (e.target.closest("[data-tk-ai]")) document.getElementById("openAccountsBtn")?.click();
+  });
   // Có bản mới thì nút Cập nhật ghi rõ (ctl tự hỏi GitHub mỗi 6 giờ; đây chỉ đọc kết quả đã có, không gọi mạng).
   request("/cap-nhat").then((d) => {
     const s = d.capNhat;
@@ -224,7 +238,42 @@ export function createDesk(getOffice) {
     catch (e) { notice(e.message, true); }
     renderQuotas();
   }
+  // Khối tài khoản trong menu điện thoại: danh sách tài khoản Antigravity (đang dùng + % còn lại), đổi bằng một chạm.
+  function renderTkMenu() {
+    const tk = quotas?.providers?.find((p) => p.id === "antigravity")?.taiKhoan;
+    const pct = (v) => v === null || v === undefined ? "" : " · " + Math.round(v) + "%";
+    const ds = tk && tk.hoTro ? tk.ds || [] : [];
+    tkMenu.innerHTML = '<strong>Tài khoản</strong>' +
+      (ds.length ? '<div class="desk-tk-ds">' + ds.map((a) => `<button type="button" class="btn ghost${a.dangDung ? " on" : ""}" data-tk-chuyen="${esc(a.id)}" data-tk-nhan="${esc(a.nhan)}"${a.dangDung ? ' aria-current="true"' : ""} title="${a.dangDung ? "Đang dùng" : "Đổi Antigravity sang tài khoản này"}">${a.dangDung ? "✓ " : ""}${esc(a.nhan)}${esc(pct(a.conLai))}</button>`).join("") + "</div>"
+        : !quotas ? '<p class="muted">Đang tải tài khoản…</p>' : errors.quotas ? `<p class="error">${esc(errors.quotas)}</p>` : tk && !tk.hoTro ? '<p class="muted">Đổi tài khoản Antigravity chỉ làm được khi văn phòng chạy trên Windows.</p>' : '<p class="muted">Chưa cất tài khoản Antigravity nào.</p>') +
+      (tk && tk.loi ? `<p class="error">${esc(tk.loi)}</p>` : "") +
+      (tk && tk.dangTrao ? '<p class="muted">Đang đổi tài khoản để đọc hạn mức…</p>' : "") +
+      '<button type="button" class="btn ghost" data-tk-quanly>Quản lý tài khoản Antigravity</button>' +
+      '<button type="button" class="btn ghost" data-tk-ai>Tài khoản AI (Claude, GPT, Gemini)</button>';
+    tkMenu.querySelectorAll("[data-tk-chuyen]").forEach((b) => { b.disabled = mutating || b.classList.contains("on") || !!(tk && tk.dangTrao); });
+  }
+  // Model của từng phòng hiện trên nhãn tên nhân vật trong 3D; chạm vào thì mở mục Hạn mức ở đúng dòng chọn model của phòng đó.
+  function veModelNhan() {
+    const office = getOffice();
+    if (!office || !office.setModel) return;
+    for (const [room] of DP_ROOMS) {
+      const f = dieuPhoi && dieuPhoi.coDinh ? dieuPhoi.coDinh[room] : null;
+      const text = !dieuPhoi ? "" : f && f.model ? f.model + (f.effort ? " · " + f.effort : "") : f && f.effort ? "Tự động · " + f.effort : dieuPhoi.tuDong ? "Tự động" : "Mặc định CLI";
+      office.setModel(room, text ? "⚙ " + text : "", moChonModel);
+    }
+  }
+  function moChonModel(room) {
+    show("quotas");
+    setTimeout(() => {
+      const row = dialog.querySelector(`[data-dp-room="${room}"]`);
+      if (!row) return;
+      row.scrollIntoView({ block: "center" }); row.classList.add("dp-chon");
+      const sel = row.querySelector("[data-dp-model]"); if (sel) sel.focus();
+      setTimeout(() => row.classList.remove("dp-chon"), 2500);
+    }, 60);
+  }
   function renderQuotas() {
+    renderTkMenu(); veModelNhan();
     $("deskQuotas").innerHTML = errors.quotas ? `<p class="error">${esc(errors.quotas)}</p>` : !quotas ? '<p>Đang tải hạn mức…</p>' : !quotas.providers?.length ? '<p>Chưa có dữ liệu hạn mức từ các AI.</p>' : quotas.providers.map((p) => {
       const stale = p.status !== "ready" || (p.lastSuccessAt && Date.now() - new Date(p.lastSuccessAt).getTime() > 3 * (quotas.intervalMs || 120000));
       return `<article class="desk-entry"><strong>${esc(p.name)}</strong>${p.refreshing ? "<p>Đang cập nhật hạn mức…</p>" : ""}${p.error ? `<p class="error">${esc(p.error)}</p>` : ""}${stale ? "<p>Bản đọc chưa được xác nhận; chưa thể kết luận AI còn lượt.</p>" : ""}${(p.buckets || []).map((b) => `<p>${esc([b.group, b.label].filter(Boolean).join(" · "))}: ${Number.isFinite(b.remainingPercent) ? "còn " + esc(b.remainingPercent) + "%" : "Chưa có số liệu"}<br>Mở lại: ${esc(b.resetAt ? time(b.resetAt) : b.resetLabel || "Chưa rõ")}${b.resetAt && new Date(b.resetAt).getTime() <= Date.now() ? " · Đã qua mốc, chờ số liệu mới" : ""}</p>`).join("") || "<p>Chưa có số liệu hạn mức.</p>"}${p.id === "antigravity" ? agyTkHtml(p.taiKhoan) : ""}</article>`;
