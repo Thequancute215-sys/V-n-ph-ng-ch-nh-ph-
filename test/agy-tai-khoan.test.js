@@ -410,3 +410,23 @@ test("model Pro có mà Family đã biết là không có (Pro chưa đọc danh
   const r = tk.truocLuot({ model: "claude-opus-5-5-high" });
   assert.equal(r && r.toi, pro);
 });
+
+test("bấm đọc tài khoản nghỉ đúng lúc bảng hạn mức đang làm mới: chờ làm mới xong rồi đọc, không bỏ qua im lặng", async (t) => {
+  const { createQuotas } = require("../ctl/quotas");
+  const { tk, k, fam } = haiTk(t);
+  tk.chuyen(fam);
+  let mo = null;
+  const qdir = fs.mkdtempSync(path.join(os.tmpdir(), "vp-q-"));
+  const usage = () => ({ status: "SUCCESS", num_turns: 0, command: { name: "usage", data: { groups: [{ name: "Gemini Models", buckets: [{ id: "w", window: "weekly", remaining_fraction: k.kho.get("goc").email === "pro@gmail.com" ? 0.66 : 0.3, reset_time: SAU_7_NGAY }] }] } } });
+  const q = createQuotas({ dir: qdir, agyTk: tk, queries: {
+    codex: async () => ({}), claude: async () => ({}),
+    antigravity: () => (mo ? usage() : new Promise((r) => { mo = () => r(usage()); })) } });
+  t.after(async () => { await q.close(); fs.rmSync(qdir, { recursive: true, force: true }); });
+  q.refresh(true);                       // đang làm mới (đọc Antigravity chưa xong)
+  await new Promise((r) => setTimeout(r, 20));
+  const p = q.docNghi(true);             // anh bấm "đọc ngay"
+  mo();
+  assert.equal(await p, true, "đã đọc tài khoản nghỉ sau khi làm mới xong");
+  assert.equal(tk.trangThai().ds.find((a) => a.nhan === "Pro").conLai, 66);
+  assert.equal(k.kho.get("goc").email, "family@gmail.com", "trả lại tài khoản đang dùng");
+});
