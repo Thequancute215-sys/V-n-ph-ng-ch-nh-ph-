@@ -38,7 +38,11 @@ test("mẫu agent.md có luật clean code (CI) và cập nhật không cài l�
   assert.match(MAU, /6\. Clean code có máy kiểm: mỗi PR phải qua CI/);
   assert.match(MAU, /7\. Cập nhật không cài lại:/);
   assert.match(MAU, /Cập nhật & phát hành \(luật \[1\]\.7\)/);
-  assert.match(MAU, /Phase 1: .*CI \(lint \+ test \+ bộ kiểm agent\.md\) và khung phát hành\/cập nhật/);
+  assert.match(MAU, /Phase 1: .*hợp đồng `contract\/api\.json`, CI \(lint \+ test \+ bộ kiểm agent\.md \+ kiểm hợp đồng \+ smoke\) và khung phát hành\/cập nhật/);
+  // Giao thức v2.3 (16/11/2026): chạy thật, hợp đồng trước, Phase có kiểm tay + tài liệu tích hợp
+  assert.match(MAU, /8\. Chạy thật có máy kiểm: .*npm run smoke/);
+  assert.match(MAU, /9\. Hợp đồng trước, code sau: .*contract\/api\.json/);
+  assert.match(MAU, /Kiểm tay của Chủ Dự Án/); assert.match(MAU, /docs\/TICH-HOP\.md/);
   assert.deepEqual(k.checkText(MAU), []);
   const wf = fs.readFileSync(FILES[".github/workflows/kiem-chu-trinh.yml"], "utf8").replace(/\r\n/g, "\n");   // checkout Windows có thể là CRLF
   assert.match(wf, /node tools\/kiem-agent\.js --neu-co\n/); assert.match(wf, /--tu "\$BASE"/); assert.match(wf, /contents: read/);

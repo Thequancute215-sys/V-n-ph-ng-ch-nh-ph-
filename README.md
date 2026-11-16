@@ -299,14 +299,33 @@ Chạy tay: `node tools/kiem-agent.js` (agent.md ở thư mục đang đứng), 
 - Vùng [3] của mẫu có mục để Sol chốt CI và cách cập nhật theo loại app (web, app Node trên máy, Electron/Tauri, điện thoại). Phase 1 phải dựng sẵn CI và khung phát hành.
 - **Cài bộ kiểm vào repo dự án:** Văn phòng → **Dự án đang ở đâu** → **Cài bộ kiểm vào repo**. Văn phòng làm các bước sau:
   1. tách nhánh `vp/bo-kiem-chu-trinh-…` từ nhánh chính, trong một worktree tạm (thư mục và nhánh đang làm không bị đụng);
-  2. thêm `tools/kiem-agent.js` (bản chép của `lib/kiem-agent.js`, tự chạy được) và `.github/workflows/kiem-chu-trinh.yml`;
+  2. thêm `tools/kiem-agent.js`, `tools/kiem-hop-dong.js` (bản chép của `lib/kiem-agent.js`, `lib/kiem-hop-dong.js`, tự chạy được) và `.github/workflows/kiem-chu-trinh.yml`;
   3. đẩy nhánh lên GitHub và mở trang tạo PR để anh merge.
 
-  Workflow kiểm agent.md (repo công khai giữ agent.md trên máy thì bỏ qua), rồi lint/test:
-  - Node: `npm run lint`, `npm test`;
-  - Python: `ruff`, `pytest`.
+  Workflow kiểm agent.md (repo công khai giữ agent.md trên máy thì bỏ qua), hợp đồng giao tiếp (chưa có `contract/api.json` thì bỏ qua), rồi lint/test và chạy thật:
+  - Node: `npm run lint`, `npm test`, `npm run smoke`, `npm run perf`;
+  - Python: `ruff`, `pytest` (smoke/perf để trong `tests/smoke`, `tests/perf`).
 
   Chưa có script lint/test thì chỉ cảnh báo, có mà hỏng thì đỏ. Bộ kiểm của văn phòng đổi thì mục này báo "bản cũ", bấm **Cài lại bộ kiểm**.
+
+## Hợp đồng giao tiếp và chạy song song Backend/Frontend
+
+Giao thức [8] và [9] (CEO duyệt 16/11/2026): chốt hợp đồng trước, hai bên code sau, Claude kiểm, CEO tự kiểm trên máy thật.
+
+- **Hợp đồng máy đọc được:** Sol viết `contract/api.json` (OpenAPI 3 dạng JSON) cùng lúc với Vùng [3].
+  - Trong đó có đường dẫn, `operationId`, schema, mã lỗi và ví dụ.
+  - Phần mở rộng: `x-thu-muc` (thư mục backend/frontend), `x-tien-to-api`, `x-su-kien` (WebSocket/SSE/sự kiện mạng game), `x-phase`.
+  - `node tools/kiem-hop-dong.js` kiểm hợp đồng đúng chuẩn, backend có đủ đường dẫn của Phase hiện tại, frontend không gọi đường dẫn ngoài hợp đồng.
+  - `--kiem-mau <Tên> <file>` kiểm một phản hồi thật theo kiểu dữ liệu.
+  - Văn phòng chạy bộ kiểm này sau mỗi lượt Sol, Astra, Kakashi; sai thì trả lại đúng lượt đó sửa.
+- **Chạy song song:** tới lượt Astra mà hợp đồng đạt, khai đủ hai thư mục tách rời và repo sạch, thì Astra (backend) và Kakashi (frontend) chạy cùng lúc.
+  - Mỗi bên một git worktree riêng.
+  - Mỗi bên chỉ được sửa thư mục của mình, không sửa `agent.md` hay hợp đồng, không xoá file.
+  - Bên nào sai thì bị trả lại riêng một lần.
+  - Hai bên đạt thì văn phòng gộp vào nhánh của luồng và ghi agent.md bằng hai commit đúng giao thức, rồi chuyển sang Sol cố vấn.
+  - Gộp bị xung đột thì dừng, giữ worktree, báo CEO.
+- **Chạy thật và nghiệm thu:** dự án có backend phải có `npm run smoke`, nên có `npm run perf`. Mỗi Phase ghi "Kiểm tay của Chủ Dự Án" và cập nhật `docs/TICH-HOP.md`. Thiếu thì Claude không cho đóng Phase.
+- **Bàn giao sai mẫu** (thiếu dòng JSON, `next_owner` trùng vai…) được trả lại đúng lượt đó sửa một lần thay vì dừng cả luồng.
 
 ## Xem trên điện thoại
 
