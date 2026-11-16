@@ -38,6 +38,8 @@ async function fixture(t, mode = "dung") {
     if(role==='FRONTEND_UIUX_DEV'){if(!/CHẠY SONG SONG/.test(prompt))process.exit(3);ghi('client/api.js',"export const list = () => fetch('/api/bai');\\n");files=['client/api.js'];
       if(mode==='lan'&&!tra){ghi('server/hack.js','// Kakashi sửa lấn sang backend\\n');files.push('server/hack.js');}
       if(mode==='lan'&&tra){try{fs.unlinkSync('server/hack.js');}catch{}}}
+    // cham: Kakashi chạy lâu (để CEO kịp thao tác giữa chừng trong test)
+    if(mode==='cham'&&role==='FRONTEND_UIUX_DEV'){const t=Date.now();while(Date.now()-t<4000){}}
     console.log(JSON.stringify({result:'Xong.'+String.fromCharCode(10)+JSON.stringify({role,next_owner:next,files,claim_fixed:[],done:role==='CLAUDE_AUDITOR'?true:undefined,giai_thich:[{van_de:'Vấn đề của lượt thử nghiệm',da_lam:'Đã làm phần việc thử nghiệm',vi_sao:'Vì đây là CLI giả dùng cho test',phuong_an_khac:[]}]})}));`);
   fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify(Object.fromEntries(["CODEX_ASTRA_DEV", "FRONTEND_UIUX_DEV", "SOL_ARCHITECT_ADVISOR", "CLAUDE_AUDITOR", "CLAUDE_REPORTER", "SPEC_ARCHITECT", "SOL_ARCHITECT_PLANNER"].map((r) => [r, [process.execPath, fake, r, mode, "{prompt}"]]))));
   fs.writeFileSync(path.join(dir, "quyen.json"), JSON.stringify({ toanQuyen: false }));
@@ -74,6 +76,9 @@ test("luồng tự chạy: tới lượt Astra thì Astra + Kakashi chạy song 
   const run = await wait(r.run.id, "awaiting_approval");
   assert.deepEqual(run.steps.map((s) => s.role), ["CODEX_ASTRA_DEV", "FRONTEND_UIUX_DEV", "SOL_ARCHITECT_ADVISOR", "CLAUDE_AUDITOR"]);
   assert.ok(run.steps[0].songSong && run.steps[1].songSong);
+  // Diff từng lượt (CEO và Claude xem): mỗi bên chỉ thấy đúng phần của mình
+  assert.deepEqual(ctl.autopilot.stepDiff(run.id, 1).files.map((f) => f.path), ["server/routes.js"]);
+  assert.deepEqual(ctl.autopilot.stepDiff(run.id, 2).files.map((f) => f.path), ["client/api.js"]);
   assert.equal(fs.readFileSync(path.join(repo, "server", "routes.js"), "utf8").includes("/api/bai"), true, "phần của Astra đã vào nhánh");
   assert.equal(fs.readFileSync(path.join(repo, "client", "api.js"), "utf8").includes("/api/bai"), true, "phần của Kakashi đã vào nhánh");
   const log = git("log", "--format=%s", base + "..HEAD");
@@ -103,4 +108,59 @@ test("rào chắn: Kakashi sửa lấn sang thư mục backend thì bị trả l
   assert.equal(kakashi[1].explainRetried, true);
   assert.ok(!fs.existsSync(path.join(repo, "server", "hack.js")), "file lấn sang không vào nhánh");
   assert.ok(fs.existsSync(path.join(repo, "client", "api.js")));
+});
+
+test("CEO thao tác giữa chừng: duyệt tay bàn giao song song bị chặn; từ chối tay thì luồng dừng, không gộp phần đó, worktree được gỡ", async (t) => {
+  const { ctl, repo, git, call, wait } = await fixture(t, "cham");
+  const base = git("rev-parse", "HEAD");
+  const r = await call("/autopilot", { workspace: repo, task: "Làm API danh sách bài và giao diện gọi nó" });
+  let astra = null;
+  for (let i = 0; i < 200 && !astra; i++) { const run = ctl.autopilot.get(r.run.id); const st = run.steps.find((s) => s.role === "CODEX_ASTRA_DEV"); if (st && ctl.runner.get(st.jobId)) astra = st.jobId; else await sleep(50); }
+  assert.ok(astra, "Astra đã bàn giao");
+  assert.throws(() => ctl.runner.approve(astra, "ceo"), { code: "SONG_SONG" });
+  ctl.runner.reject(astra, "ceo");
+  const run = await wait(r.run.id, "awaiting_approval");
+  assert.match(run.problem, /CEO đã từ chối bàn giao của Astra/);
+  assert.ok(!fs.existsSync(path.join(repo, "server", "routes.js")), "phần CEO từ chối không được gộp");
+  assert.equal(git("rev-parse", "HEAD"), base);
+  for (let i = 0; i < 100 && git("worktree", "list").split("\n").length > 1; i++) await sleep(50);
+  assert.equal(git("worktree", "list").split("\n").length, 1, "worktree đã gỡ");
+});
+
+test("CEO dừng một lượt đang chạy song song từ bảng điều khiển: cả luồng dừng, bên còn lại bị huỷ, worktree được gỡ", async (t) => {
+  const { ctl, repo, git, call } = await fixture(t, "cham");
+  const r = await call("/autopilot", { workspace: repo, task: "Làm API danh sách bài và giao diện gọi nó" });
+  let kakashi = null;
+  for (let i = 0; i < 200 && !kakashi; i++) { const st = ctl.autopilot.get(r.run.id).steps.find((s) => s.role === "FRONTEND_UIUX_DEV"); if (st) kakashi = st.jobId; else await sleep(50); }
+  ctl.autopilot.cancelJob(kakashi); await ctl.jobs.kill(kakashi, "ceo");
+  const run = ctl.autopilot.get(r.run.id);
+  assert.equal(run.status, "stopped");
+  for (let i = 0; i < 100 && git("worktree", "list").split("\n").length > 1; i++) await sleep(50);
+  assert.equal(git("worktree", "list").split("\n").length, 1, "worktree đã gỡ");
+  await sleep(700);
+  assert.equal(ctl.autopilot.get(r.run.id).status, "stopped", "không chạy báo cáo Claude sau khi CEO dừng");
+});
+
+test("rào chắn và sổ: đổi tên file ra ngoài phần mình bị bắt; [4.1] gần đầy không vượt 25 dòng; còn blocker OPEN thì không chạy song song", async (t) => {
+  const { repo, git, dir } = await fixture(t);
+  fs.mkdirSync(path.join(repo, "client")); fs.writeFileSync(path.join(repo, "client", "a.js"), "x\n"); git("add", "-A"); git("commit", "-qm", "a");
+  const ss = songSong.tao(repo, { id: "thu", dir });
+  t.after(() => songSong.don(repo, ss));
+  const wt = ss.wt.FRONTEND_UIUX_DEV;
+  fs.mkdirSync(path.join(wt, "server"), { recursive: true });
+  execFileSync("git", ["mv", "client/a.js", "server/a.js"], { cwd: wt, stdio: "ignore" });
+  const loi = songSong.phamVi(wt, ss.base, "FRONTEND_UIUX_DEV", { backend: ["server"], frontend: ["client"] }).join("\n");
+  assert.match(loi, /tự xoá client\/a.js/); assert.match(loi, /sửa server\/a.js ngoài phần của mình/);
+  // [4.1] đã 24 dòng: thêm 1 dòng cho Astra, dòng của Kakashi thay vào chỗ còn lại không được nữa → vẫn ≤ 25
+  const md = fs.readFileSync(path.join(repo, "agent.md"), "utf8").replace("- File đã sửa: [Chưa có]", Array.from({ length: 24 }, (_, i) => "- ghi chú " + i).join("\n"));
+  fs.writeFileSync(path.join(repo, "agent.md"), md); git("commit", "-qam", "so day");
+  songSong.don(repo, ss);
+  const ss2 = songSong.tao(repo, { id: "thu2", dir });
+  t.after(() => songSong.don(repo, ss2));
+  songSong.gop(repo, ss2, { task: "thử", handoffs: {} });
+  const z = kiemAgent.parse(fs.readFileSync(path.join(repo, "agent.md"), "utf8")).zones["4.1"].filter((l) => l.trim());
+  assert.ok(z.length <= 25, "[4.1] có " + z.length + " dòng");
+  fs.writeFileSync(path.join(repo, "agent.md"), fs.readFileSync(path.join(repo, "agent.md"), "utf8").replace("- AUDIT_STATUS: PASS", "- AUDIT_STATUS: REJECT\n- [ ] OPEN P2-H01 [HIGH - server]: lỗi backend"));
+  git("commit", "-qam", "blocker");
+  assert.match(songSong.dieuKien(repo).why, /còn blocker/);
 });

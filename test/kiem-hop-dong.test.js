@@ -80,8 +80,48 @@ test("lệch mã: backend thiếu đường dẫn, frontend gọi đường dẫ
 
 test("tham số đường dẫn theo nhiều framework: :id, {id}, <int:id>, [id]", () => {
   const re = regexBackend("/api/bai-noi/{id}/cham");
-  for (const s of ["'/api/bai-noi/:id/cham'", "\"/api/bai-noi/{id}/cham\"", "'/api/bai-noi/<int:id>/cham'", "pages/api/bai-noi/[id]/cham"]) assert.ok(re.test(s), s);
+  for (const s of ["'/api/bai-noi/:id/cham'", "\"/api/bai-noi/{id}/cham\"", "'/api/bai-noi/<int:id>/cham'", "'/api/bai-noi/[id]/cham'", "\"api/bai-noi/<id>/cham/\""]) assert.ok(re.test(s), s);
   assert.ok(!re.test("'/api/bai-noi/:id/cham-lai'"));
+  assert.ok(!regexBackend("/api/users").test("app.get('/api/users/:id')"), "không khớp theo tiền tố: có /api/users/:id chưa phải có /api/users");
+});
+
+test("rà soát 16/11/2026: route ghép tiền tố, Next.js theo tên file, ghép chuỗi ở frontend, servers.url, ${BASE}, readOnly, constructor, x-thu-muc lỗi, không có Phase, BOM", (t) => {
+  // Express mount + Next.js file route: không báo thiếu
+  let r = kiemRepo(repo(t, {
+    "server/app.js": "const r = express.Router();\napp.use('/api', r);\nr.get('/bai-noi', list);\nio.emit('cham.xong', kq);",
+    "server/app/api/bai-noi/[id]/cham/route.ts": "export async function POST(req) { return Response.json({ diem: 1 }); }",
+    "Assets/Scripts/Net.cs": "var u1 = baseUrl + \"/api/bai-noi/\" + id + \"/cham\"; var u2 = \"/api/bai-noi\"; Socket.On(\"cham.xong\", Hien);",
+  }));
+  assert.deepEqual(r.loi, [], r.loi.join("\n"));
+  // ${BASE} trước tiền tố vẫn bị bắt khi gọi đường dẫn ngoài hợp đồng
+  r = kiemRepo(repo(t, { ...{ "server/routes.js": "app.get('/api/bai-noi', list);\napp.post('/api/bai-noi/:id/cham', cham);\nio.emit(\"cham.xong\", kq);" }, "client/a.ts": "fetch(`${BASE}/api/khong-co`); fetch('https://h.vn/api/khong-co2'); socket.on('cham.xong', f);" }));
+  assert.match(r.loi.join("\n"), /Frontend gọi \/api\/khong-co /); assert.match(r.loi.join("\n"), /Frontend gọi \/api\/khong-co2/);
+  // servers[0].url là tiền tố, paths không kèm tiền tố; đường dẫn có gạch cuối
+  const d = HOP_DONG(); d.servers = [{ url: "https://may.vn/api" }]; delete d["x-tien-to-api"];
+  d.paths = { "/bai-noi/": d.paths["/api/bai-noi"], "/bai-noi/{id}/cham": d.paths["/api/bai-noi/{id}/cham"] };
+  r = kiemRepo(repo(t, { "server/routes.js": "app.get('/api/bai-noi/', list);\napp.post('/api/bai-noi/:id/cham', cham);\nio.emit('cham.xong', k);", "client/a.ts": "fetch('/api/bai-noi/'); fetch(`/api/bai-noi/${id}/cham`); s.on('cham.xong', f);" }, d));
+  assert.deepEqual(r.loi, [], r.loi.join("\n"));
+  // Ví dụ của yêu cầu không có trường readOnly bắt buộc (id do máy chủ sinh): không báo
+  const d2 = HOP_DONG();
+  d2.components.schemas.BaiMoi = { type: "object", required: ["id", "chuDe"], properties: { id: { type: "integer", readOnly: true }, chuDe: { type: "string" } } };
+  d2.paths["/api/bai-noi"].post = { operationId: "taoBai", requestBody: { content: { "application/json": { schema: { $ref: "#/components/schemas/BaiMoi" }, example: { chuDe: "x" } } } }, responses: { 201: { description: "ok" } } };
+  assert.deepEqual(kiemCauTruc(d2).loi, []);
+  // Trường tên constructor/toString không lọt additionalProperties:false, required "toString" không bị coi là có
+  assert.match(kiemMau(HOP_DONG(), "BaiNoi", { id: 1, chuDe: "x", constructor: 1 }).join(), /"constructor" không có trong hợp đồng/);
+  // x-thu-muc có phần tử không phải chuỗi: báo lỗi cấu trúc, không sập
+  const d3 = HOP_DONG(); d3["x-thu-muc"].backend = [null];
+  assert.match(kiemRepo(repo(t, {}, d3)).loi.join(), /x-thu-muc.backend phải là mảng đường dẫn/);
+  // Không có agent.md (repo công khai trên CI): bỏ qua mục có x-phase, cảnh báo
+  const khongPhase = repo(t, { ...BE_DUNG, ...FE_DUNG });
+  fs.rmSync(path.join(khongPhase, "agent.md"));
+  const d4 = HOP_DONG(); d4.paths["/api/bang-xep-hang"]["x-phase"] = 9;
+  fs.writeFileSync(path.join(khongPhase, "contract/api.json"), JSON.stringify(d4));
+  r = kiemRepo(khongPhase);
+  assert.deepEqual(r.loi, []); assert.match(r.canhBao.join(), /Không đọc được CURRENT_PHASE/);
+  // --kiem-mau đọc được file có BOM
+  const out = [];
+  fs.writeFileSync(path.join(khongPhase, "bom.json"), "﻿" + JSON.stringify({ diem: 5 }));
+  assert.equal(main(["--file", path.join(khongPhase, "contract/api.json"), "--kiem-mau", "KetQuaCham", path.join(khongPhase, "bom.json")], { log: (s) => out.push(s), error: (s) => out.push(s) }), 0, out.join("\n"));
 });
 
 test("kiểm mẫu thật: phản hồi lệch kiểu thì báo đúng chỗ", () => {
@@ -107,17 +147,19 @@ test("dòng lệnh: --neu-co bỏ qua khi chưa có hợp đồng; có lỗi th�
   assert.ok(out.some((s) => /lớn hơn 100/.test(s)));
 });
 
-test("văn phòng kiểm hợp đồng ngay sau lượt Astra: backend thiếu đường dẫn thì bàn giao có lỗi hop-dong (luồng tự chạy trả lại sửa)", async (t) => {
+test("văn phòng kiểm hợp đồng ngay sau lượt Astra: lượt làm mất đường dẫn thì bàn giao có lỗi hop-dong; lỗi có sẵn từ trước không tính", async (t) => {
   const { createCtl } = require("../ctl/main");
   const { execFileSync } = require("node:child_process");
-  const root = repo(t, { "server/routes.js": "app.get('/api/bai-noi', list);" });
+  // Trước lượt: đủ hai đường dẫn, nhưng thiếu sự kiện "cham.xong" (lỗi có sẵn, không bắt Astra chịu)
+  const root = repo(t, { "server/routes.js": "app.get('/api/bai-noi', list);\napp.post('/api/bai-noi/:id/cham', cham);" });
   fs.writeFileSync(path.join(root, "agent.md"), "# Agent\n## [4] KHÓA LƯỢT\n- CURRENT_PHASE: Phase 2 - Thử\n- LAST_UPDATED_BY: CLAUDE_AUDITOR\n- NEXT_OWNER (MUTEX LOCK): CODEX_ASTRA_DEV\n## [5] CHỐT CHẶN\n- AUDIT_STATUS: PASS\n");
   const git = (...a) => execFileSync("git", a, { cwd: root, stdio: "ignore" });
   git("init", "-q"); git("config", "user.email", "t@t"); git("config", "user.name", "t"); git("add", "-A"); git("commit", "-qm", "init");
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "vp-hopdong-home-"));
   t.after(() => fs.rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
   const fake = path.join(home, "dev.cjs");
-  fs.writeFileSync(fake, `console.log(JSON.stringify({result:'Xong.'+String.fromCharCode(10)+JSON.stringify({role:'CODEX_ASTRA_DEV',next_owner:'CLAUDE_AUDITOR',files:['server/routes.js'],claim_fixed:[],skill_da_dung:[],skill_ly_do:'thử',giai_thich:[{van_de:'Vấn đề thử nghiệm của lượt',da_lam:'Đã làm phần việc thử nghiệm',vi_sao:'Vì đây là CLI giả dùng cho test',phuong_an_khac:[]}]})}));`);
+  // Lượt Astra viết lại routes.js và làm mất đường dẫn chấm bài (lỗi mới của lượt)
+  fs.writeFileSync(fake, `require('fs').writeFileSync('server/routes.js', "app.get('/api/bai-noi', list);\\n");console.log(JSON.stringify({result:'Xong.'+String.fromCharCode(10)+JSON.stringify({role:'CODEX_ASTRA_DEV',next_owner:'CLAUDE_AUDITOR',files:['server/routes.js'],claim_fixed:[],skill_da_dung:[],skill_ly_do:'thử',giai_thich:[{van_de:'Vấn đề thử nghiệm của lượt',da_lam:'Đã làm phần việc thử nghiệm',vi_sao:'Vì đây là CLI giả dùng cho test',phuong_an_khac:[]}]})}));`);
   fs.writeFileSync(path.join(home, "ctl-agents.json"), JSON.stringify({ CODEX_ASTRA_DEV: [process.execPath, fake, "{prompt}"] }));
   fs.writeFileSync(path.join(home, "quyen.json"), JSON.stringify({ toanQuyen: false }));
   const ctl = createCtl({ dir: home });
@@ -129,5 +171,6 @@ test("văn phòng kiểm hợp đồng ngay sau lượt Astra: backend thiếu �
     const loi = h.problems.join("\n");
     assert.match(loi, /hop-dong: Backend chưa có đường dẫn \/api\/bai-noi\/\{id\}\/cham/);
     assert.doesNotMatch(loi, /hop-dong: Frontend/, "phần frontend không tính cho Astra");
+    assert.doesNotMatch(loi, /sự kiện "cham.xong"/, "lỗi có sẵn từ trước lượt không tính cho Astra");
   } finally { await ctl.close(); }
 });

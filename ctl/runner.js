@@ -283,10 +283,11 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
       why: [...d.why, ...tkWhy], ...(taiKhoan ? { taiKhoan } : {}) };
     audit.log(actor, "ai.run", root, { role, retried, task: String(task).slice(0, 500), dieuPhoi: chosen, ...(d.quotaLeft != null ? { quotaLeft: d.quotaLeft } : {}) });
     // Chạy song song: agent.md trong worktree đã được bộ điều phối ghi khoá lượt cho vai này (chưa commit) nên lấy đúng bản đó làm mốc.
+    const hopDongTruoc = PHAN_HD[role] ? loiHopDong(wd) || [] : [];   // mốc lỗi hợp đồng trước lượt
     let before = null;
     if (cwd) { try { before = fs.readFileSync(path.join(wd, "agent.md"), "utf8"); } catch {} }
     if (before === null) before = agentBefore(wd);
-    const job = jobs.start({ kind: "ai", agent: role, workspace: wd, argv, timeoutMs: a.timeoutMs, onExit: (job) => done(job, { workspace: root, cwd: cwd || null, songSong, role, task, retried, allowRetry, effort, before, hint }) });
+    const job = jobs.start({ kind: "ai", agent: role, workspace: wd, argv, timeoutMs: a.timeoutMs, onExit: (job) => done(job, { workspace: root, cwd: cwd || null, songSong, role, task, retried, allowRetry, effort, before, hint, hopDongTruoc }) });
     return { ...job, dieuPhoi: chosen };
   }
 
@@ -309,15 +310,18 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
   // Repo có hợp đồng giao tiếp (contract/api.json) thì kiểm ngay sau lượt, mỗi vai chịu phần của mình: Sol (người viết hợp đồng)
   // chịu lỗi cấu trúc; Astra chịu thêm lỗi phía backend; Kakashi chịu thêm lỗi phía frontend. Lỗi thì luồng tự chạy trả lại
   // đúng lượt đó sửa một lần (ctl/autopilot.js). Repo chưa có hợp đồng thì không kiểm (việc tạo là luật của giao thức, Claude chốt).
+  // Lỗi cấu trúc hợp đồng chỉ tính cho Sol (người viết); Astra/Kakashi bị cấm sửa hợp đồng nên chỉ chịu lỗi phía mình, và chỉ lỗi
+  // MỚI so với lúc bắt đầu lượt (opts.hopDongTruoc) — lỗi có sẵn từ trước không bắt họ sửa.
+  const PHAN_HD = { SOL_ARCHITECT_PLANNER: "cau-truc", CODEX_ASTRA_DEV: "Backend", FRONTEND_UIUX_DEV: "Frontend" };
+  const loiHopDong = (wd) => { try { const r = kiemHopDong.kiemRepo(wd); return r.coHopDong ? r.loi : null; } catch (e) { return ["không kiểm được contract/api.json: " + String(e.message).slice(0, 200)]; } };
   function hopDongProblems(opts) {
-    const PHAN = { SOL_ARCHITECT_PLANNER: "cau-truc", CODEX_ASTRA_DEV: "Backend", FRONTEND_UIUX_DEV: "Frontend" };
-    const phan = PHAN[opts.role];
+    const phan = PHAN_HD[opts.role];
     if (!phan) return [];
-    let r;
-    try { r = kiemHopDong.kiemRepo(opts.cwd || opts.workspace); } catch (e) { return ["hop-dong: không kiểm được contract/api.json: " + String(e.message).slice(0, 200)]; }
-    if (!r.coHopDong) return [];
-    const cuaVai = (l) => !/^(Backend|Frontend) /.test(l) || l.startsWith(phan + " ");
-    return r.loi.filter(cuaVai).slice(0, 20).map((l) => "hop-dong: " + l);
+    const loi = loiHopDong(opts.cwd || opts.workspace);
+    if (!loi) return [];
+    const truoc = new Set(opts.hopDongTruoc || []);
+    const cuaVai = (l) => (phan === "cau-truc" ? !/^(Backend|Frontend) /.test(l) : l.startsWith(phan + " ") && !truoc.has(l));
+    return loi.filter(cuaVai).slice(0, 20).map((l) => "hop-dong: " + l);
   }
 
   function done(job, opts) {
@@ -363,6 +367,9 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     const h = view(q.get.get(jobId));
     if (!h) throw err("NOT_FOUND", "Không có bàn giao của " + jobId);
     if (h.decided) throw err("DECIDED", "Bàn giao này đã " + h.decided);
+    // Bàn giao của lượt chạy song song (worktree trong <dir>/song-song): luồng tự chạy tự gộp và ghi agent.md, không duyệt tay
+    // (duyệt tay sẽ commit sổ trong worktree và làm lệch phần gộp). CEO vẫn từ chối được: luồng dừng, báo CEO.
+    if (String(h.workspace).startsWith(path.join(dir, "song-song") + path.sep)) throw err("SONG_SONG", "Bàn giao này thuộc lượt chạy song song: luồng tự chạy sẽ tự gộp, không duyệt tay. Muốn dừng thì bấm Từ chối hoặc dừng luồng.");
     if (h.problems.length) throw err("INVALID_HANDOFF", "Bàn giao không hợp lệ: " + h.problems.join("; "));
     if (h.payload && h.payload.ask_ceo && !nextOwner) throw err("NEEDS_ANSWER", "Claude đang hỏi CEO: chọn một phương án thay vì duyệt thẳng");
     const target = nextOwner || h.next_owner;

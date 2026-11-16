@@ -277,11 +277,11 @@ test("bảng chọn model: đổi tài khoản trong lúc đọc model thì khô
   const qdir = fs.mkdtempSync(path.join(os.tmpdir(), "vp-q-"));
   const q = createQuotas({ dir: qdir, agyTk: tk, queries: {
     codex: async () => ({}), claude: async () => ({}), antigravity: async () => ({}),
-    codexModels: () => new Promise((r) => setTimeout(() => r({ data: [] }), 60)),
-    agyModels: async () => { const s = theoTk(); await new Promise((r) => setTimeout(r, 30)); return s; } } });
+    codexModels: () => new Promise((r) => setTimeout(() => r({ data: [] }), 600)),
+    agyModels: async () => { const s = theoTk(); await new Promise((r) => setTimeout(r, 300)); return s; } } });
   t.after(async () => { await q.close(); fs.rmSync(qdir, { recursive: true, force: true }); });
   const m = q.models(true);
-  await new Promise((r) => setTimeout(r, 10));
+  await new Promise((r) => setTimeout(r, 100));
   tk.chuyen(fam);
   await m;
   assert.deepEqual(tk.modelTheoTk(), [], "đọc lúc ở Pro, xong lúc ở Family: không ghi cho ai");

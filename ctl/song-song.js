@@ -15,6 +15,7 @@ const path = require("path");
 const nhanh = require("./nhanh");
 const { readTurn, setTurn } = require("./handoff");
 const kiemHopDong = require("../lib/kiem-hop-dong");
+const kiemAgent = require("../lib/kiem-agent");
 const { looksLikeKey } = require("../lib/mask");
 
 const err = (code, message) => Object.assign(new Error(message), { code });
@@ -38,6 +39,8 @@ function dieuKien(root) {
   if (!be.length || !fe.length) return { ok: false, why: "hợp đồng chưa khai đủ thư mục backend và frontend (x-thu-muc)" };
   if (be.some((b) => fe.some((f) => trongThuMuc(chuan(f), [b]) || trongThuMuc(chuan(b), [f])))) return { ok: false, why: "thư mục backend và frontend chồng nhau: không tách được phần của từng bên" };
   if (nhanh.dirty(root).length) return { ok: false, why: "repo đang có thay đổi chưa commit" };
+  // Claude trả blocker về Astra (sửa lỗi): sửa lần lượt, không mở lại song song (Kakashi không phải làm lại phần không lỗi).
+  try { if (kiemAgent.parse(fs.readFileSync(path.join(root, "agent.md"), "utf8")).open.length) return { ok: false, why: "còn blocker [ ] OPEN: sửa lỗi chạy lần lượt" }; } catch {}
   return { ok: true, thuMuc: { backend: be, frontend: fe } };
 }
 
@@ -65,18 +68,21 @@ function tao(root, { id, dir }) {
 // Rào chắn sau lượt của một bên: file đổi ngoài thư mục của mình, file đang theo dõi bị xoá. agent.md không tính (văn phòng ghi lại).
 function phamVi(wt, base, vai, thuMuc) {
   const dirs = thuMuc[VAI[vai]] || [];
-  const xoa = new Set(nhanh.deleted(wt, base).map(chuan));
-  const doi = new Set([...(tryGit(wt, ["diff", "--name-only", "-z", base]) || "").split("\0"), ...nhanh.untracked(wt)].map(chuan).filter(Boolean));
+  // --no-renames: đổi tên/di chuyển file tính là xoá + thêm, để không lách được rào chắn bằng git mv.
+  const ds = (loc) => (tryGit(wt, ["diff", "--no-renames", "--name-only", "-z", ...(loc ? ["--diff-filter=" + loc] : []), base]) || "").split("\0").map(chuan).filter(Boolean);
+  const xoa = new Set(ds("D"));
+  const doi = new Set([...ds(null), ...nhanh.untracked(wt).map(chuan)]);
   const loi = [];
-  for (const f of doi) if (f !== "agent.md" && !xoa.has(f) && !trongThuMuc(f, dirs)) loi.push(`song-song: ${vai} sửa ${f} ngoài phần của mình (${dirs.join(", ")})`);
+  for (const f of doi) if (f !== "agent.md" && !xoa.has(f) && !trongThuMuc(f, dirs)) loi.push(`song-song: ${vai} sửa ${f} ngoài phần của mình (${dirs.join(", ")}). File chung (package.json, lockfile, docs/…) thuộc bên nào thì Sol ghi trong x-thu-muc của bên đó; bên kia ghi yêu cầu vào giai_thich`);
   for (const f of xoa) if (f !== "agent.md") loi.push(`song-song: ${vai} tự xoá ${f} (chỉ Claude được xoá; ghi đề nghị vào de_nghi_xoa)`);
   return loi.slice(0, 20);
 }
 
 // Commit phần việc của từng bên trong worktree (trừ agent.md), gộp vào thư mục chính, rồi ghi agent.md hai commit đúng giao thức.
 // handoffs: { CODEX_ASTRA_DEV: payload, FRONTEND_UIUX_DEV: payload } (dòng JSON bàn giao đã hợp lệ).
-function gop(root, ss, { task = "", handoffs = {} }) {
+function gop(root, ss, { task = "", handoffs = {}, branch = null }) {
   const tieuDe = String(task).split(/\r?\n/)[0].slice(0, 60);
+  if (branch && nhanh.branchOf(root) !== branch) throw err("NOT_ON_BRANCH", `Repo chính không còn đứng trên nhánh ${branch} của luồng: không gộp phần chạy song song vào nhánh khác`);
   const dau = {};
   for (const vai of ["CODEX_ASTRA_DEV", "FRONTEND_UIUX_DEV"]) {
     const wt = ss.wt[vai];
@@ -116,8 +122,13 @@ function gop(root, ss, { task = "", handoffs = {} }) {
     if (m) {
       const tu = m.index + m[0].length, sau = txt.slice(tu).search(/^#{2,3}\s*\[/m);
       const het = sau < 0 ? txt.length : tu + sau;
-      const khoi = txt.slice(tu, het).replace(/\s+$/, "");
-      txt = txt.slice(0, tu) + (khoi ? khoi + nl : "") + dong(vai) + nl + nl + txt.slice(het);
+      // Mỗi vai một dòng "(song song)": có rồi thì thay, chưa có thì thêm nếu [4.1] còn chỗ (tối đa 25 dòng không rỗng — Luật 2).
+      const dongs = txt.slice(tu, het).replace(/\s+$/, "").split(/\r?\n/);
+      const cu = dongs.findIndex((l) => l.startsWith(`- ${vai} (song song):`));
+      if (cu >= 0) dongs[cu] = dong(vai);
+      else if (dongs.filter((l) => l.trim()).length < 25) dongs.push(dong(vai));
+      const khoi = dongs.join(nl).replace(/\s+$/, "");
+      txt = txt.slice(0, tu) + (khoi ? khoi + nl : "") + nl + txt.slice(het);
     }
     fs.writeFileSync(f, txt);
     setTurn(root, vai, next);
@@ -134,4 +145,11 @@ function don(root, ss) {
   tryGit(root, ["worktree", "prune"]);
 }
 
-module.exports = { VAI, dieuKien, tao, phamVi, gop, don, trongThuMuc };
+// Trước khi trả lại một bên: đưa agent.md trong worktree về như lúc giao (AI có thể đã tự sửa khoá lượt), để bên đó chạy lại được.
+function datLaiSo(ss, vai) {
+  const wt = ss.wt[vai];
+  tryGit(wt, ["checkout", ss.base, "--", "agent.md"]);
+  if (vai === "FRONTEND_UIUX_DEV") { const t = readTurn(wt); setTurn(wt, t.lastUpdatedBy || "CODEX_ASTRA_DEV", "FRONTEND_UIUX_DEV"); }
+}
+
+module.exports = { VAI, dieuKien, tao, phamVi, gop, don, datLaiSo, trongThuMuc };
