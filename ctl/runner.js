@@ -12,7 +12,8 @@ const { resolveProgram } = require("./policy");
 const { CHAN_CLAUDE } = require("./ket-noi-danh-muc");
 const phong = require("./mcp-phong");
 const kiemAgent = require("../lib/kiem-agent");
-const kiemHopDong = require("../lib/kiem-hop-dong");   // hợp đồng giao tiếp contract/api.json (CEO duyệt 16/11/2026)
+const kiemHopDong = require("../lib/kiem-hop-dong");
+const songSong = require("./song-song");   // hợp đồng giao tiếp contract/api.json (CEO duyệt 16/11/2026)
 const { createSkill } = require("./skill");
 const mucLuc = require("./muc-luc");                 // mục lục từ bản đồ hệ thống (.ua) đưa vào prompt
 const { createDieuPhoi, kindOf } = require("./dieu-phoi");   // chọn model + mức suy nghĩ theo độ khó của lượt
@@ -234,17 +235,20 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
 
   // hint (luồng tự động truyền): focus = đúng việc CEO giao (không kèm lời dặn chung), returned = lượt trước của vai này bị trả lại,
   // rework = số lần Codex đã phải sửa lại. Dùng để chấm độ khó và tra mục lục.
-  function run({ workspace, role, task = "", retried = false, allowRetry = true, effort = null, hint = {} }, actor = "ceo") {
+  // cwd + songSong (luồng tự chạy, ctl/song-song.js): lượt chạy trong worktree riêng của Astra/Kakashi khi hai bên làm song song;
+  // khoá lượt, "đang bận", bàn giao chờ duyệt và các bộ kiểm sau lượt tính theo worktree đó, còn dự án (workspace) vẫn là repo chính.
+  function run({ workspace, role, task = "", retried = false, allowRetry = true, effort = null, hint = {}, cwd = null, songSong = null }, actor = "ceo") {
     const root = ws.find(workspace).path;
+    const wd = cwd || root;
     const a = AGENTS[role];
     if (!a) throw err("BAD_REQUEST", "Vai không hợp lệ: " + role);
     if (!a.argv) throw err("NO_CLI", role + " chưa có CLI chạy nền");
-    const turn = readTurn(root);
+    const turn = readTurn(wd);
     if (turn.nextOwner !== role) throw err("NOT_YOUR_TURN", `Đang là lượt của ${turn.nextOwner}, không phải ${role}`);
-    if (jobs.aiBusy(root)) throw err("AI_BUSY", "Workspace này đang có 1 lượt AI chạy hoặc chờ duyệt");
+    if (jobs.aiBusy(wd)) throw err("AI_BUSY", "Workspace này đang có 1 lượt AI chạy hoặc chờ duyệt");
     // AI thường tự sửa NEXT_OWNER trong agent.md trước khi CEO duyệt, nên chỉ đọc agent.md là chưa đủ: còn bàn giao chưa quyết
     // thì không cho chạy lượt kế tiếp, nếu không thì lượt được chuyển mà CEO chưa bấm duyệt.
-    const pending = q.openFor.get(root);
+    const pending = q.openFor.get(wd);
     if (pending) throw err("HANDOFF_PENDING", `Bàn giao ${pending.job_id} đang chờ CEO duyệt hoặc từ chối: xử lý xong rồi mới chạy lượt kế tiếp`);
     guard(root, role);
     const approvalNote = fullFor(role) ? FULL_NOTE : role.startsWith("SOL_") || role === "CODEX_ASTRA_DEV" ? "\nCodex đang bật automatic review trong sandbox workspace-write. Lệnh git ghi metadata .git (kể cả git pull --ff-only) cần yêu cầu quyền bổ sung ngay từ đầu qua automatic review; không chạy thử nó trong sandbox rồi lách lỗi bằng công cụ khác. Không dùng cờ bỏ qua sandbox hoặc bỏ qua duyệt." : "";
@@ -278,8 +282,11 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     const chosen = { tier: d.tier, model: d.kind === "codex" ? codexModel || CODEX_MODEL[role] || null : d.kind === "agy" ? modelTrong(shaped) || d.model : d.model, effort: d.kind === "codex" ? codexEffort || (customEffort ? null : DEFAULT_EFFORT) : d.effort,
       why: [...d.why, ...tkWhy], ...(taiKhoan ? { taiKhoan } : {}) };
     audit.log(actor, "ai.run", root, { role, retried, task: String(task).slice(0, 500), dieuPhoi: chosen, ...(d.quotaLeft != null ? { quotaLeft: d.quotaLeft } : {}) });
-    const before = agentBefore(root);
-    const job = jobs.start({ kind: "ai", agent: role, workspace: root, argv, timeoutMs: a.timeoutMs, onExit: (job) => done(job, { workspace: root, role, task, retried, allowRetry, effort, before, hint }) });
+    // Chạy song song: agent.md trong worktree đã được bộ điều phối ghi khoá lượt cho vai này (chưa commit) nên lấy đúng bản đó làm mốc.
+    let before = null;
+    if (cwd) { try { before = fs.readFileSync(path.join(wd, "agent.md"), "utf8"); } catch {} }
+    if (before === null) before = agentBefore(wd);
+    const job = jobs.start({ kind: "ai", agent: role, workspace: wd, argv, timeoutMs: a.timeoutMs, onExit: (job) => done(job, { workspace: root, cwd: cwd || null, songSong, role, task, retried, allowRetry, effort, before, hint }) });
     return { ...job, dieuPhoi: chosen };
   }
 
@@ -296,7 +303,7 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
   // "agent.md:" để luồng tự động nhận ra và trả lại đúng lượt đó sửa một lần.
   function agentProblems(opts) {
     let after;
-    try { after = fs.readFileSync(path.join(opts.workspace, "agent.md"), "utf8"); } catch { return ["agent.md: lượt này làm mất file agent.md"]; }
+    try { after = fs.readFileSync(path.join(opts.cwd || opts.workspace, "agent.md"), "utf8"); } catch { return ["agent.md: lượt này làm mất file agent.md"]; }
     return [...kiemAgent.checkChange(opts.before, after, { role: opts.role, onlyNew: true }).loi.map((x) => "agent.md: " + x), ...hopDongProblems(opts)];
   }
   // Repo có hợp đồng giao tiếp (contract/api.json) thì kiểm ngay sau lượt, mỗi vai chịu phần của mình: Sol (người viết hợp đồng)
@@ -307,7 +314,7 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     const phan = PHAN[opts.role];
     if (!phan) return [];
     let r;
-    try { r = kiemHopDong.kiemRepo(opts.workspace); } catch (e) { return ["hop-dong: không kiểm được contract/api.json: " + String(e.message).slice(0, 200)]; }
+    try { r = kiemHopDong.kiemRepo(opts.cwd || opts.workspace); } catch (e) { return ["hop-dong: không kiểm được contract/api.json: " + String(e.message).slice(0, 200)]; }
     if (!r.coHopDong) return [];
     const cuaVai = (l) => !/^(Backend|Frontend) /.test(l) || l.startsWith(phan + " ");
     return r.loi.filter(cuaVai).slice(0, 20).map((l) => "hop-dong: " + l);
@@ -329,8 +336,10 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
       return;
     }
     const h = job.status === "done" ? findHandoff(log) : null;
-    const problems = job.status !== "done" ? ["Lượt AI kết thúc với trạng thái " + job.status] : h ? [...checkHandoff(h, opts.role, { skills: skills.daCai() }), ...agentProblems(opts)] : ["Không tìm thấy dòng JSON bàn giao trong log"];
-    q.put.run(job.id, opts.workspace, opts.role, h && typeof h.next_owner === "string" ? h.next_owner : null, h ? JSON.stringify(h) : null, JSON.stringify(problems));
+    // Chạy song song: thêm rào chắn phạm vi (chỉ sửa thư mục của mình, không tự xoá file) — ctl/song-song.js.
+    const raoChan = h && opts.songSong && opts.cwd ? songSong.phamVi(opts.cwd, opts.songSong.base, opts.role, opts.songSong.thuMuc) : [];
+    const problems = job.status !== "done" ? ["Lượt AI kết thúc với trạng thái " + job.status] : h ? [...checkHandoff(h, opts.role, { skills: skills.daCai() }), ...agentProblems(opts), ...raoChan] : ["Không tìm thấy dòng JSON bàn giao trong log"];
+    q.put.run(job.id, opts.cwd || opts.workspace, opts.role, h && typeof h.next_owner === "string" ? h.next_owner : null, h ? JSON.stringify(h) : null, JSON.stringify(problems));
     audit.log("ctl", "ai.handoff", job.id, { role: opts.role, next: h && h.next_owner, problems });
   }
 
@@ -390,6 +399,16 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     audit.log(actor, "handoff.answer", jobId, { question: ask.question.slice(0, 500), option: opt.id, label: opt.label, next }, "approved");
     const decision = `Quyết định của CEO cho câu hỏi của Claude ("${ask.question.slice(0, 600)}"): chọn ${opt.id} — ${opt.label}.` + (opt.task ? " Lệnh: " + opt.task : "");
     return { ...r, option: opt, next, decision };
+  }
+
+  // Chạy song song: bàn giao của Astra/Kakashi đã đạt và đã được gộp; văn phòng tự ghi agent.md (ctl/song-song.js) nên chỉ đánh
+  // dấu đã duyệt, không đụng khoá lượt trong worktree.
+  function ghiNhan(jobId, actor = "ceo", extra = {}) {
+    const h = view(q.get.get(jobId));
+    if (!h) throw err("NOT_FOUND", "Không có bàn giao của " + jobId);
+    if (!q.decide.run("approved", Date.now(), jobId).changes) throw err("DECIDED", "Bàn giao này đã " + h.decided);
+    audit.log(actor, "handoff.approve", jobId, { role: h.role, next: h.next_owner, ...extra }, "approved");
+    return view(q.get.get(jobId));
   }
 
   function reject(jobId, actor = "ceo") {
@@ -474,7 +493,7 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     return cut > 0 ? a.slice(0, cut) : [a[0]];
   }
 
-  return { run, report, dieuPhoi, webPrompt, applyWeb, chatArgv, cliOf, fullOn, CODEX_MODEL, DEFAULT_EFFORT, status, approve, answer, reject, conflicts, get: (id) => view(q.get.get(id)), pending: () => q.open.all().map(view), AGENTS };
+  return { run, report, dieuPhoi, webPrompt, applyWeb, chatArgv, cliOf, fullOn, CODEX_MODEL, DEFAULT_EFFORT, status, approve, answer, reject, ghiNhan, conflicts, get: (id) => view(q.get.get(id)), pending: () => q.open.all().map(view), AGENTS };
 }
 
 module.exports = { createRunner, AGENTS, fullAccessArgs, withMcp, FULL_ROLES };

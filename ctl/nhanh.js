@@ -136,4 +136,4 @@ function compareUrl(remote, main, branch) {
   return m ? `https://github.com/${m[1]}/${m[2]}/compare/${enc(main)}...${enc(branch)}?expand=1` : null;
 }
 
-module.exports = { git, preflight, prepare, save, diff, push, compareUrl, head, branchOf, defaultBranch, slug, isRepo, agentMdLocal, deleted, restore, untracked };
+module.exports = { git, preflight, prepare, save, diff, push, compareUrl, head, branchOf, defaultBranch, slug, isRepo, agentMdLocal, deleted, restore, untracked, dirty };
