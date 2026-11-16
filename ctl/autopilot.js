@@ -21,6 +21,8 @@ const WEB_MAX = 400000;
 const PROVIDER = { CODEX_ASTRA_DEV: "codex", SOL_ARCHITECT_PLANNER: "codex", SOL_ARCHITECT_ADVISOR: "codex", CLAUDE_AUDITOR: "claude", SPEC_ARCHITECT: "antigravity", FRONTEND_UIUX_DEV: "antigravity" };
 // Hai vai viết code: Claude trả việc về một trong hai là còn sửa tiếp, không phải báo cáo cuối.
 const DEVS = ["CODEX_ASTRA_DEV", "FRONTEND_UIUX_DEV"];
+// Lỗi bàn giao AI tự sửa được nếu được trả lại: mọi lỗi trừ lượt chết giữa chừng (failed/killed/timeout).
+const sauDuoc = (x) => !/^Lượt AI kết thúc với trạng thái/.test(String(x));
 const PROVIDER_NAME = { codex: "Codex", claude: "Claude", antigravity: "Antigravity" };
 const WRITER_NAME = { claude: "Claude (đội trưởng)", codex: "Codex (Sol/Astra)", antigravity: "Antigravity (Hinata)" };
 const WRITER_ORDER = ["claude", "codex", "antigravity"];
@@ -286,7 +288,7 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     const task = "ĐẶC CÁCH CEO cho luồng " + run.id + ": tự chạy và duyệt bàn giao NỘI BỘ cho việc này, CEO chỉ nhận báo cáo cuối của Claude để duyệt. Giữ đúng quyền theo vai, không push/merge/release, không xóa dữ liệu người dùng." + where + " " + book + ": bạn không tự commit hoặc đổi NEXT_OWNER. Không làm việc ngoài yêu cầu. Nếu là Claude: còn lỗi cần sửa thì next_owner CODEX_ASTRA_DEV (backend, API) hoặc FRONTEND_UIUX_DEV (giao diện); kiến trúc đã duyệt nhưng chưa code thì chuyển CODEX_ASTRA_DEV (Phase chỉ có giao diện thì FRONTEND_UIUX_DEV); khi nghiệm thu xong thì next_owner SPEC_ARCHITECT để kết thúc; thấy AI khác đi sai hướng thì hỏi CEO bằng ask_ceo, không tự ra lệnh sửa." +
       (decisions ? "\nQUYẾT ĐỊNH CỦA CEO TRONG LUỒNG NÀY (làm theo):\n" + decisions : "") + "\nVIỆC CEO GIAO:\n" + run.task +
       (role === "CLAUDE_AUDITOR" ? explainForClaude(run) + deletesForClaude(run) : "") +
-      (run.retryNote && run.retryNote.role === role ? "\n\nLƯỢT TRƯỚC CỦA BẠN BỊ TRẢ LẠI vì bàn giao chưa đạt (phần giải thích cho CEO, khai skill đã dùng hoặc luật agent.md): " + run.retryNote.problems + "\nKhông làm lại việc đã xong; kiểm lại thay đổi đã có (git diff), sửa đúng các lỗi trên (lỗi agent.md: trả các vùng không thuộc vai bạn về như cũ, nén log), rồi bàn giao lại với giai_thich đầy đủ và đúng sự thật." : "");
+      (run.retryNote && run.retryNote.role === role ? "\n\nLƯỢT TRƯỚC CỦA BẠN BỊ TRẢ LẠI vì bàn giao chưa đạt (dòng JSON bàn giao, phần giải thích cho CEO, khai skill đã dùng hoặc luật agent.md): " + run.retryNote.problems + "\nKhông làm lại việc đã xong; kiểm lại thay đổi đã có (git diff), sửa đúng các lỗi trên (lỗi agent.md: trả các vùng không thuộc vai bạn về như cũ, nén log; next_owner là vai KẾ TIẾP theo chu trình, không phải vai của bạn), rồi bàn giao lại: in đúng MỘT dòng JSON bàn giao theo mẫu, giai_thich đầy đủ và đúng sự thật." : "");
     const returned = !!(run.retryNote && run.retryNote.role === role);
     const note = run.retryNote;
     run.retryNote = null;
@@ -408,9 +410,10 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
           if (!handoff) { report(run, "Công việc " + job.id + " kết thúc mà không có bàn giao."); continue; }
           const stepNow = run.steps[run.steps.length - 1];
           if (handoff.payload && Array.isArray(handoff.payload.giai_thich)) stepNow.explain = maskExplain(handoff.payload.giai_thich);
-          // Chỉ thiếu/sai phần giải thích hoặc sai luật agent.md (lib/kiem-agent.js): trả lại đúng vai đó một lần để sửa
-          // (không dừng cả luồng); lần hai vẫn sai thì báo CEO.
-          if (handoff.problems.length && handoff.problems.every((x) => x.startsWith("giai_thich") || x.startsWith("agent.md:") || x.startsWith("skill_da_dung")) &&!stepNow.explainRetried && readTurn(run.workspace).nextOwner === handoff.role) {
+          // Bàn giao chưa đạt mà AI sửa được trong lượt (giải thích, khai skill, luật agent.md, thiếu hoặc sai mẫu dòng JSON, next_owner
+          // trùng vai, claim_fixed sai dạng…): trả lại đúng vai đó một lần để sửa, không dừng cả luồng; lần hai vẫn sai thì báo CEO.
+          // Lượt chết giữa chừng thì báo CEO như cũ. CEO yêu cầu 16/11/2026 (luồng speak-coach dừng vì Sol ghi next_owner trùng vai).
+          if (handoff.problems.length && handoff.problems.every(sauDuoc) &&!stepNow.explainRetried && readTurn(run.workspace).nextOwner === handoff.role) {
             if (!handoff.decided) runner.reject(job.id, "ceo-autopilot");
             stepNow.explainRejected = handoff.problems.join("; ").slice(0, 1500);
             run.retryNote = { role: handoff.role, problems: stepNow.explainRejected, explainRetried: true };

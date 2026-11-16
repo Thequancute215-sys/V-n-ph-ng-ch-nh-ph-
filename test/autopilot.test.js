@@ -22,7 +22,9 @@ async function fixture(t, mode = "normal", ctlOpts = {}) {
     if(role==='CLAUDE_REPORTER'){ console.log(JSON.stringify({result:mode==='bad-quota'?"You've hit your session limit · resets 2:50am (Asia/Bangkok)":'Claude báo cáo: luồng đã dừng, cần CEO xem nguyên nhân.'}));process.exit(mode==='bad-quota'?1:0); }
     if(mode==='slow'){setInterval(()=>{},1000);return;}
     if(mode.startsWith('bad')){console.log('Không có dòng bàn giao');process.exit(0);}
-    const next={SPEC_ARCHITECT:'SOL_ARCHITECT_PLANNER',SOL_ARCHITECT_PLANNER:'CODEX_ASTRA_DEV',CODEX_ASTRA_DEV:'CLAUDE_AUDITOR',CLAUDE_AUDITOR:'SPEC_ARCHITECT'}[role];
+    let next={SPEC_ARCHITECT:'SOL_ARCHITECT_PLANNER',SOL_ARCHITECT_PLANNER:'CODEX_ASTRA_DEV',CODEX_ASTRA_DEV:'CLAUDE_AUDITOR',CLAUDE_AUDITOR:'SPEC_ARCHITECT'}[role];
+    // sol-tu-tro: Sol ghi next_owner trùng vai mình ở lượt đầu; được trả lại (lời giao có "BỊ TRẢ LẠI") thì sửa đúng.
+    if(mode==='sol-tu-tro'&&role==='SOL_ARCHITECT_PLANNER'&&!/BỊ TRẢ LẠI/.test(process.argv[4]||''))next=role;
     console.log(JSON.stringify({result:(role==='CLAUDE_AUDITOR'?'Claude báo cáo: đã kiểm thử và hoàn tất.\\n':'Xong lượt.\\n')+JSON.stringify({role,next_owner:next,files:[],claim_fixed:[],giai_thich:[{van_de:'Vấn đề của lượt thử nghiệm',da_lam:'Đã làm phần việc thử nghiệm',vi_sao:'Vì đây là CLI giả dùng cho test',phuong_an_khac:[]}]})}));`);
   fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify(Object.fromEntries([spec, sol, dev, claude, "CLAUDE_REPORTER"].map((role) => [role, [process.execPath, fake, role, mode, "{prompt}"]]))));
   const ctl = createCtl({ dir, ...ctlOpts });
@@ -133,4 +135,15 @@ test("Antigravity đang tạm đổi tài khoản để đọc hạn mức (AGY_
   assert.deepEqual(run.steps.map((s) => s.role), [spec, sol, dev, claude], "chạy lại đúng lượt Sol, không lặp lượt Hinata");
   assert.equal(lan, 2);
   assert.ok(ctl.audit.recent(200).some((a) => a.action === "step.wait_agy"));
+});
+
+test("bàn giao sai mẫu (Sol ghi next_owner trùng vai mình): trả lại đúng lượt đó một lần, sửa xong thì luồng chạy tiếp", async (t) => {
+  const { ctl, repo, call, wait } = await fixture(t, "sol-tu-tro");
+  const response = await call("/autopilot", { workspace: repo, task: "Thực hiện việc kiểm thử trong dự án này" });
+  const run = await wait(response.run.id, "awaiting_approval");
+  assert.deepEqual(run.steps.map((s) => s.role), [spec, sol, sol, dev, claude], "Sol được trả lại một lần rồi luồng chạy tiếp");
+  assert.equal(run.steps[2].explainRetried, true);
+  assert.match(run.steps[1].explainRejected, /next_owner không được trùng vai hiện tại/);
+  assert.equal(ctl.runner.get(run.steps[1].jobId).decided, "rejected");
+  assert.ok(ctl.audit.recent(200).some((a) => a.action === "explain.retry"));
 });
