@@ -149,3 +149,10 @@ test("iPhone: app màn hình chính có hướng dẫn cài, đường về bả
   assert.ok(desk.includes('href="dieu-khien.html" data-chi-dt'),"văn phòng 3D có đường về bảng điều khiển (app không có nút Back)");
   assert.match(desk, /data-tai-lai/, "mở từ biểu tượng có nút tải lại");
 });
+
+test("điện thoại: văn phòng 3D nhìn từ mắt nhân vật, không zoom, không có cần camera bị tường kéo sát", () => {
+  const s = fs.readFileSync(path.join(__dirname, "..", "public", "vanphong3d.js"), "utf8");
+  assert.ok(s.includes("controls.maxDistance = CAM_CHAM ? 0.05"), "camera ngay tại mắt");
+  assert.ok(s.includes("if (CAM_CHAM) { controls.enableZoom = false;"), "chụm hai ngón không zoom");
+  assert.ok(s.includes("hero.body.visible = false; heroLabel.visible = false;"), "ẩn thân và nhãn của chính mình");
+});

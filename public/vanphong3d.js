@@ -82,12 +82,15 @@ const controls = new OrbitControls(camera, gl.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
 controls.enablePan = false;
-// Màn cảm ứng (điện thoại, CEO yêu cầu 16/11/2026): luôn góc nhìn thứ ba — chụm hai ngón không tự vào góc nhìn thứ nhất, kéo nửa phải
-// xoay quanh nhân vật 360°, ngẩng cao hơn trong nhà, camera không bao giờ xuống dưới mặt đất/sàn (xem vòng lặp).
+// Màn cảm ứng (điện thoại, CEO chọn 17/11/2026): góc nhìn từ mắt nhân vật. Camera đặt ngay tại mắt, OrbitControls quay quanh
+// một điểm sát trước mắt (5 cm) nên kéo nửa phải màn hình = quay đầu nhìn 360°, ngẩng lên/cúi xuống; không zoom.
+// Trước đây góc nhìn thứ ba: kính/tường sau lưng kéo camera sát vào lưng nhân vật, trông như hình "tự zoom".
 const CAM_CHAM = typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
-controls.minDistance = CAM_CHAM ? 1.6 : 0.4;   // máy tính: cuộn sát vào đầu = góc nhìn thứ nhất
-controls.maxDistance = 90;
-controls.maxPolarAngle = 1.45;
+const MAT_CAO = 1.72;   // độ cao mắt so với chân nhân vật (đầu ở ~1,68 m sau khi thu nhỏ 0,85)
+controls.minDistance = CAM_CHAM ? 0.05 : 0.4;   // máy tính: cuộn sát vào đầu = góc nhìn thứ nhất
+controls.maxDistance = CAM_CHAM ? 0.05 : 90;
+controls.maxPolarAngle = CAM_CHAM ? Math.PI - 0.35 : 1.45;   // điện thoại: ngẩng nhìn lên được (camera nằm dưới điểm nhìn)
+if (CAM_CHAM) { controls.enableZoom = false; controls.minPolarAngle = 0.25; }
 controls.rotateSpeed = 0.7;
 
 // Kích thước theo chính khung chứa (#gl: phủ kín màn hình), không theo innerWidth/innerHeight: trên iPhone, sau khi xoay ngang
@@ -1357,6 +1360,8 @@ const focus = new THREE.Vector3(), lastFocus = new THREE.Vector3();
 function cameraBehind() {
   const inHouse = Math.abs(player.pos.x) < W / 2 && Math.abs(player.pos.z) < D / 2;
   const dist = inHouse ? 4 : 9, back = new THREE.Vector3(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
+  // Điện thoại: nhìn thẳng về hướng nhân vật đang quay mặt, ngang tầm mắt
+  if (CAM_CHAM) return void camera.position.set(focus.x + back.x * 0.05, focus.y, focus.z + back.z * 0.05);
   camera.position.set(player.pos.x + back.x * dist, player.y + (inHouse ? 2.4 : 5.2), player.pos.z + back.z * dist);
 }
 function goHome() {
@@ -1600,20 +1605,25 @@ gl.setAnimationLoop(() => {
   if (camera.position.equals(renderedCam)) camera.position.copy(desiredCam);
   indoor = lerp(indoor, inside ? 1 : 0, 1 - Math.exp(-4 * dt));
   // Trong nhà: nhìn từ ngang vai, không cho camera vọt lên cao nhìn từ trên xuống (kiểu game bắn súng góc nhìn thứ ba)
-  controls.minPolarAngle = (CAM_CHAM ? 0.6 : 0.95) * indoor;
-  focus.set(player.pos.x, lerp(lastFocus.y, player.y + lerp(2.2, 1.65, indoor), 1 - Math.exp(-8 * dt)), player.pos.z);
+  if (!CAM_CHAM) controls.minPolarAngle = 0.95 * indoor;
+  focus.set(player.pos.x, lerp(lastFocus.y, player.y + (CAM_CHAM ? MAT_CAO : lerp(2.2, 1.65, indoor)), 1 - Math.exp(-8 * dt)), player.pos.z);
   camera.position.add(v3.subVectors(focus, lastFocus));
   controls.target.copy(focus);
   lastFocus.copy(focus);
   controls.update();
   desiredCam.copy(camera.position);
+  if (CAM_CHAM) {
+    // Góc nhìn từ mắt: camera đã ở đúng mắt, không cần cần co giãn theo tường; ẩn thân và nhãn tên của chính mình
+    arm = 0; hero.body.visible = false; heroLabel.visible = false;
+    renderedCam.copy(camera.position);
+  } else {
   // Cần camera co giãn: có tường/kính/mái chắn giữa nhân vật và camera thì kéo camera vào trước chỗ chắn,
   // hết chắn thì giãn ra từ từ. Nhờ vậy camera không đứng sau tường hay nhìn xuyên vách.
   armDir.subVectors(desiredCam, focus);
   const armFree = armDir.length();
   armDir.divideScalar(armFree || 1);
   // Trong nhà tự kéo camera gần (tối đa 4 m) dù ngoài trời đang để xa; ra ngoài thì trả lại khoảng cách cũ
-  let armWant = lerp(armFree, Math.min(armFree, CAM_CHAM ? 7 : 4), indoor);
+  let armWant = lerp(armFree, Math.min(armFree, 4), indoor);
   // Không bao giờ vượt lên trên trần nhà khi đang ở trong nhà
   if (inside && armDir.y > 0.01) armWant = Math.min(armWant, Math.max(0.3, (BASE + H - 0.35 - focus.y) / armDir.y));
   ray.set(focus, armDir); ray.far = armWant;
@@ -1621,16 +1631,12 @@ gl.setAnimationLoop(() => {
   const armTarget = wall ? Math.max(0.3, wall.distance - 0.35) : armWant;
   arm = armTarget < arm ? armTarget : lerp(arm, armTarget, 1 - Math.exp(-3 * dt));
   camera.position.copy(focus).addScaledVector(armDir, Math.min(arm, armWant));
-  // Cảm ứng: tường/kính kéo camera sát lưng thì nâng camera lên nhìn qua vai (không vào góc nhìn thứ nhất), không vượt trần.
-  if (CAM_CHAM && arm < 1.2) {
-    camera.position.y += (1.2 - arm) * 0.9;
-    if (inside) camera.position.y = Math.min(camera.position.y, BASE + H - 0.35);
-  }
   // Không chui xuống đất: camera luôn cao hơn mặt đất/sàn ngay dưới nó ít nhất 0,3 m
   const sanCam = groundY(camera.position.x, camera.position.z) + 0.3;
   if (camera.position.y < sanCam) camera.position.y = sanCam;
   renderedCam.copy(camera.position);
-  hero.body.visible = arm > (CAM_CHAM ? 0.45 : 0.9);   // camera sát đầu = góc nhìn thứ nhất: ẩn thân để không che màn hình
+  hero.body.visible = arm > 0.9;   // camera sát đầu = góc nhìn thứ nhất: ẩn thân để không che màn hình
+  }
 
 
   // AI quay sang nhìn khi bạn lại gần, nói một câu
@@ -1677,7 +1683,7 @@ const NPC_BY_ID = Object.fromEntries(NPCS.map((n) => [n.room, n]));
 const tagOf = (id) => (id === "ceo" ? heroTag : NPC_BY_ID[id]?.tag);
 // Đứng giữa phòng, quay mặt về bàn của người phụ trách; camera đặt sau lưng.
 function goToRoom(id) {
-  if (id === "all" || id === "gate") { goHome(); if (id === "all") camera.position.set(player.pos.x, 40, player.pos.z + 46); return; }
+  if (id === "all" || id === "gate") { goHome(); if (id === "all" && !CAM_CHAM) camera.position.set(player.pos.x, 40, player.pos.z + 46); return; }
   const r = ZONES.find((z) => z.id === id);
   if (!r) return;
   const north = r.z1 <= -6;
