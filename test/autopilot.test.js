@@ -147,3 +147,11 @@ test("bàn giao sai mẫu (Sol ghi next_owner trùng vai mình): trả lại đ�
   assert.equal(ctl.runner.get(run.steps[1].jobId).decided, "rejected");
   assert.ok(ctl.audit.recent(200).some((a) => a.action === "explain.retry"));
 });
+
+test("nhánh của luồng chỉ có trên máy: lời giao dặn AI bỏ qua git pull --ff-only đầu phiên (thử thật speak-coach: Sol dừng vì pull lỗi)", async (t) => {
+  const { ctl, repo, call, wait } = await fixture(t);
+  const response = await call("/autopilot", { workspace: repo, task: "Thực hiện việc kiểm thử trong dự án này" });
+  const run = await wait(response.run.id, "awaiting_approval");
+  const argv = (ctl.jobs.get(run.steps[0].jobId).argv || []).join(" ");
+  assert.match(argv, /BỎ QUA bước git pull --ff-only đầu phiên/);
+});
