@@ -14,6 +14,7 @@ const phong = require("./mcp-phong");
 const kiemAgent = require("../lib/kiem-agent");
 const kiemHopDong = require("../lib/kiem-hop-dong");
 const songSong = require("./song-song");   // hợp đồng giao tiếp contract/api.json (CEO duyệt 16/11/2026)
+const { createMienHopDong } = require("./mien-hop-dong");
 const { createSkill } = require("./skill");
 const mucLuc = require("./muc-luc");                 // mục lục từ bản đồ hệ thống (.ua) đưa vào prompt
 const { createDieuPhoi, kindOf } = require("./dieu-phoi");   // chọn model + mức suy nghĩ theo độ khó của lượt
@@ -42,7 +43,7 @@ const END = (role) => `\n\nKẾT THÚC BẮT BUỘC: dòng cuối cùng của c�
 const CAPTAIN = `\n\nQUYỀN ĐỘI TRƯỞNG: bạn được phản biện Antigravity, Sol, Codex khi thấy hướng đi sai. Muốn bắt sửa hoặc đổi hướng thì KHÔNG tự ra lệnh: ` +
   `thêm vào dòng JSON trường "ask_ceo":{"question":"<vì sao hướng hiện tại hỏng, hướng mới tốt hơn thế nào>","options":[{"id":"A","label":"<phương án đề xuất>","next_owner":"<VAI sẽ làm>","task":"<lệnh cụ thể cho vai đó>"},{"id":"B","label":"Giữ hướng hiện tại","next_owner":"<VAI>"}]} ` +
   `(2–4 phương án). CEO trả lời ở phần theo dõi chu trình; việc chạy tiếp theo phương án CEO chọn. Nghiệm thu đạt và hết việc thì thêm "done":true.` +
-  ` HỢP ĐỒNG (giao thức [8], [9]): dự án có API hay sự kiện mạng mà chưa có contract/api.json đạt \`node tools/kiem-hop-dong.js\` thì ghi blocker [HIGH] cho SOL_ARCHITECT_PLANNER và không PASS kiến trúc; Vùng [3] ghi "Không có API" thì kiểm dự án đúng là không có API.` +
+  ` HỢP ĐỒNG (giao thức [8], [9]): dự án có API hay sự kiện mạng mà chưa có contract/api.json đạt \`node tools/kiem-hop-dong.js\` thì ghi blocker [HIGH] cho SOL_ARCHITECT_PLANNER và không PASS kiến trúc. Miễn hợp đồng ("Không có API") chỉ CEO duyệt, Claude không tự cho miễn; thấy dự án thật ra có API dù đã được miễn thì hỏi CEO bằng ask_ceo.` +
   DELETE_CLAUDE + ` ĐỐI CHIẾU GIẢI THÍCH: với mỗi lượt có "GIẢI THÍCH CỦA CÁC LƯỢT" trong việc giao, chạy git diff <base>..<head> của lượt đó và kiểm từng mục: da_lam có đúng với diff không, van_de/nguyên nhân gốc có thật trong code không, phuong_an_khac bị bỏ có thật sự kém hơn không. ` +
   `Câu trả lời của bạn (trước dòng JSON) phải có mục "VÌ SAO LÀM VẬY & PHƯƠNG ÁN KHÁC" cho CEO: mỗi thay đổi một dòng tóm lý do và kết luận KHỚP / KHÔNG KHỚP DIFF / CHƯA KIỂM CHỨNG kèm chỗ lệch (file:dòng). Giải thích không khớp diff hoặc bịa nguyên nhân là lỗi: ghi vào Vùng [5] và không nghiệm thu đạt.` +
   ` Lượt kế tiếp là Sol (gpt-6.1-sol) hoặc Astra (gpt-6-astra) thì bạn được tự đặt mức suy luận, không cần hỏi CEO: thêm "effort":"high" | "xhigh" | "max" khi việc khó (kiến trúc phức tạp, lỗi khó tìm, bảo mật, sửa lại nhiều lần), "medium" để trở về mặc định. Chỉ nâng khi cần vì mức cao tốn hạn mức hơn.`;
@@ -84,7 +85,7 @@ const DOCKER_AUDIT = " Diff có Dockerfile/docker-compose: kiểm image gốc đ
   "không mở cổng thừa hay chạy --privileged, có healthcheck; thiếu là lỗi bảo mật ghi Vùng [5].";
 const AGENTS = {
   CLAUDE_AUDITOR: { argv: CLAUDE, timeoutMs: 20 * MIN, prompt: "Bạn là CLAUDE_AUDITOR (Đội trưởng kiểm duyệt). Đọc toàn bộ ./agent.md và data/BAI-HOC.md nếu có. Thẩm định diff từ LAST_AUDITED_COMMIT đến HEAD (git diff), đối chiếu Vùng [2], [3] và các CLAIM_FIXED ở [4.1]. Chỉ được sửa Vùng [5] và 2 dòng LAST_UPDATED_BY/NEXT_OWNER của Vùng [4]; không sửa code. Lỗi mới ghi theo mẫu `- [ ] OPEN P{phase}-C{số} [...]`. Lỗi giao diện (component, style, 5 trạng thái, responsive, bàn phím, tương phản) giao FRONTEND_UIUX_DEV sửa; lỗi backend, API, CSDL, bảo mật máy chủ giao CODEX_ASTRA_DEV." + DOCKER_AUDIT },
-  SOL_ARCHITECT_PLANNER: { argv: CODEX, timeoutMs: 30 * MIN, prompt: "Bạn là SOL_ARCHITECT_PLANNER (GPT Sol). Đọc ./agent.md. Thiết kế/cập nhật Vùng [3]: cây thư mục, schema DB kèm lý do từng index, API contract đủ method/path/request/response/mã lỗi, lộ trình Phase có điều kiện nghiệm thu đo được; mỗi Phase tách rõ phần Backend & API (CODEX_ASTRA_DEV) và phần Frontend/giao diện (FRONTEND_UIUX_DEV) cùng thư mục của từng phần. HỢP ĐỒNG GIAO TIẾP (giao thức [8], bắt buộc): tạo hoặc cập nhật contract/api.json cùng lúc với Vùng [3] — OpenAPI 3 viết bằng JSON: mỗi đường dẫn đủ phương thức, operationId, tham số, requestBody, responses theo từng mã (kể cả mã lỗi), schema trong components.schemas (tên trường, kiểu, required), example khớp schema; x-thu-muc { backend: [...], frontend: [...] } tách rời nhau (file chung ở gốc repo như package.json giao cho đúng một bên); x-tien-to-api hoặc servers[0].url; x-su-kien cho WebSocket/SSE/sự kiện mạng; x-phase cho từng đường dẫn/sự kiện. Đổi hợp đồng thì tăng info.version. Chạy `node tools/kiem-hop-dong.js` (nếu repo có) tới khi phần cấu trúc đạt. Dự án thật sự không có API hay sự kiện mạng (công cụ dòng lệnh, game offline…) thì ghi đúng chữ 'API Contract: Không có API' ở Vùng [3] thay vì tạo file. Không viết code. next_owner thường là CLAUDE_AUDITOR." },
+  SOL_ARCHITECT_PLANNER: { argv: CODEX, timeoutMs: 30 * MIN, prompt: "Bạn là SOL_ARCHITECT_PLANNER (GPT Sol). Đọc ./agent.md. Thiết kế/cập nhật Vùng [3]: cây thư mục, schema DB kèm lý do từng index, API contract đủ method/path/request/response/mã lỗi, lộ trình Phase có điều kiện nghiệm thu đo được; mỗi Phase tách rõ phần Backend & API (CODEX_ASTRA_DEV) và phần Frontend/giao diện (FRONTEND_UIUX_DEV) cùng thư mục của từng phần. HỢP ĐỒNG GIAO TIẾP (giao thức [8], bắt buộc): tạo hoặc cập nhật contract/api.json cùng lúc với Vùng [3] — OpenAPI 3 viết bằng JSON: mỗi đường dẫn đủ phương thức, operationId, tham số, requestBody, responses theo từng mã (kể cả mã lỗi), schema trong components.schemas (tên trường, kiểu, required), example khớp schema; x-thu-muc { backend: [...], frontend: [...] } tách rời nhau (file chung ở gốc repo như package.json giao cho đúng một bên); x-tien-to-api hoặc servers[0].url; x-su-kien cho WebSocket/SSE/sự kiện mạng; x-phase cho từng đường dẫn/sự kiện. Đổi hợp đồng thì tăng info.version. Chạy `node tools/kiem-hop-dong.js` (nếu repo có) tới khi phần cấu trúc đạt. Dự án thật sự không có API hay sự kiện mạng (công cụ dòng lệnh, game offline…) thì ghi đúng chữ 'API Contract: Không có API' ở Vùng [3] kèm lý do cụ thể; đó chỉ là ĐỀ NGHỊ miễn: văn phòng hỏi CEO kèm giải thích, CEO không đồng ý thì phải tạo hợp đồng. Không viết code. next_owner thường là CLAUDE_AUDITOR." },
   SOL_ARCHITECT_ADVISOR: { argv: CODEX, timeoutMs: 30 * MIN, prompt: "Bạn là SOL_ARCHITECT_ADVISOR (GPT Sol). Đọc ./agent.md. Đối chiếu code hiện tại với Vùng [3], ghi nhận xét và đề xuất ngắn vào [4.1]. Không sửa Vùng [3], không viết code. next_owner là CLAUDE_AUDITOR." },
   CODEX_ASTRA_DEV: { argv: CODEX, timeoutMs: 30 * MIN, prompt: "Bạn là CODEX_ASTRA_DEV (Codex Astra). Đọc ./agent.md: Vùng [1], [3] và các blocker [ ] OPEN ở [5]. Bạn phụ trách Backend, API, CSDL, AI Agent và hạ tầng; phần giao diện (component, trang, style, trạng thái hiển thị) là việc của FRONTEND_UIUX_DEV (Kakashi), không tự viết thay. Viết code chuẩn production (cấm TODO/placeholder), chạy `npm test` nếu có. Ghi danh sách file và `CLAIM_FIXED: [ID] -> [file]` vào [4.1]. Không sửa [3], [5]. Được commit cục bộ, không push. next_owner là FRONTEND_UIUX_DEV khi Phase hiện tại còn phần giao diện chưa làm, SOL_ARCHITECT_ADVISOR khi đã xong cả hai phần, hoặc CLAUDE_AUDITOR nếu đang trả bài blocker." + DOCKER_DEV },
   FRONTEND_UIUX_DEV: { base: "SPEC_ARCHITECT", argv: AGY_FE, timeoutMs: 30 * MIN, prompt: "Bạn là FRONTEND_UIUX_DEV (Antigravity/Kakashi), chuyên gia Fullstack Frontend & UI/UX. Đọc ./agent.md: Vùng [2] (nhất là [2.4] Design Tokens, Component Tree, 5 trạng thái), Vùng [1], [3] (cây thư mục, API contract) và các blocker [ ] OPEN ở [5]. Viết code giao diện chuẩn production theo đúng Design Tokens và Component Tree: đủ 5 trạng thái (rỗng, đang tải, lỗi có nút thử lại, có dữ liệu, AI đang chạy), responsive 375/768/1280px, điều hướng bằng bàn phím, tương phản WCAG AA; gọi API đúng hợp đồng Vùng [3], không tự bịa endpoint hay dữ liệu giả thay cho API thật (cấm TODO/placeholder). Không sửa backend, CSDL hay hạ tầng: thiếu API thì ghi vào [4.1] để Astra làm. Chạy `npm test` / `npm run build` / `npm run lint` nếu repo có. Không sửa Vùng [2], [3], [5]. Ghi danh sách file và `CLAIM_FIXED: [ID] -> [file]` vào [4.1]. Dùng công cụ đọc/ghi file của Antigravity thay vì chạy shell để đọc hoặc sửa file. next_owner là SOL_ARCHITECT_ADVISOR, CODEX_ASTRA_DEV nếu còn thiếu API phải làm trước, hoặc CLAUDE_AUDITOR nếu đang trả bài blocker." },
@@ -192,6 +193,7 @@ function modelTrong(argv) {
 const thayAgy = (snap, buckets) => ({ ...(snap || {}), providers: [...((snap && snap.providers) || []).filter((p) => p.id !== "antigravity"), { id: "antigravity", buckets }] });
 
 function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () => ({}), quotaSnapshot = () => null, agyTk = null }) {
+  const mien = createMienHopDong({ dir });   // miễn hợp đồng giao tiếp: chỉ CEO duyệt (ctl/mien-hop-dong.js)
   const dieuPhoi = createDieuPhoi({ dir, audit });
   const skills = createSkill({ home: () => dir });   // bộ skill mặc định: ghi chú vào prompt + bắt buộc khai skill_da_dung
   // Dòng [ ] OPEN của agent.md (để chấm độ khó và tra mục lục). Đọc lỗi thì coi như không có.
@@ -208,6 +210,7 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     open: db.prepare("SELECT job_id, workspace, role, next_owner, payload, problems, decided, decided_at FROM handoffs WHERE decided IS NULL ORDER BY rowid DESC LIMIT 50"),
     openFor: db.prepare("SELECT job_id FROM handoffs WHERE decided IS NULL AND workspace = ? LIMIT 1"),
     decide: db.prepare("UPDATE handoffs SET decided = ?, decided_at = ? WHERE job_id = ? AND decided IS NULL"),
+    setProblems: db.prepare("UPDATE handoffs SET problems = ? WHERE job_id = ? AND decided IS NULL"),
   };
   const view = (h) => h && { ...h, payload: h.payload ? JSON.parse(h.payload) : null, problems: JSON.parse(h.problems || "[]") };
 
@@ -316,13 +319,21 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
   const PHAN_HD = { SOL_ARCHITECT_PLANNER: "cau-truc", CODEX_ASTRA_DEV: "Backend", FRONTEND_UIUX_DEV: "Frontend" };
   // Sol (lượt lập kế hoạch) phải có hợp đồng, trừ khi Vùng [3] ghi rõ "Không có API" (giao thức [8]): dự án chưa có thì chu trình
   // tự bắt Sol tạo (trả lại lượt Sol), không trông vào AI tự nhớ.
-  const canHopDong = (wd) => { try { const z = kiemAgent.parse(fs.readFileSync(path.join(wd, "agent.md"), "utf8")).zones["3"]; return Array.isArray(z) && !/không có api/i.test(z.join("\n")); } catch { return false; } };
+  // Vùng [3] của Sol: "co" = cần hợp đồng, "mien" = Sol đề nghị miễn ("Không có API" — chỉ CEO duyệt), "khong" = sổ chưa có Vùng [3].
+  const canHopDong = (wd) => { try { const z = kiemAgent.parse(fs.readFileSync(path.join(wd, "agent.md"), "utf8")).zones["3"]; return !Array.isArray(z) ? "khong" : /không có api/i.test(z.join("\n")) ? "mien" : "co"; } catch { return "khong"; } };
   const loiHopDong = (wd) => { try { const r = kiemHopDong.kiemRepo(wd); return r.coHopDong ? r.loi : null; } catch (e) { return ["không kiểm được contract/api.json: " + String(e.message).slice(0, 200)]; } };
   function hopDongProblems(opts) {
     const phan = PHAN_HD[opts.role];
     if (!phan) return [];
     const loi = loiHopDong(opts.cwd || opts.workspace);
-    if (!loi) return phan === "cau-truc" && canHopDong(opts.cwd || opts.workspace) ? ["hop-dong: chưa có contract/api.json — Sol tạo hợp đồng giao tiếp cùng Vùng [3] (giao thức [8]); dự án không có API hay sự kiện mạng thì ghi 'API Contract: Không có API' ở Vùng [3]"] : [];
+    if (!loi) {
+      if (phan !== "cau-truc") return [];
+      const can = canHopDong(opts.cwd || opts.workspace);
+      if (can === "co") return ["hop-dong: chưa có contract/api.json — Sol tạo hợp đồng giao tiếp cùng Vùng [3] (giao thức [8]); dự án thật sự không có API hay sự kiện mạng thì ghi 'API Contract: Không có API' ở Vùng [3] kèm lý do, văn phòng sẽ hỏi CEO duyệt miễn"];
+      // Đề nghị miễn: chỉ CEO quyết. Chưa duyệt thì luồng tự chạy dừng lại hỏi CEO (kèm giải thích), không trả lại Sol.
+      if (can === "mien" && !mien.coMien(opts.workspace)) return ["hop-dong-mien: Sol đề nghị miễn hợp đồng giao tiếp (Vùng [3] ghi 'Không có API') — chờ CEO duyệt"];
+      return [];
+    }
     const truoc = new Set(opts.hopDongTruoc || []);
     const cuaVai = (l) => (phan === "cau-truc" ? !/^(Backend|Frontend) /.test(l) : l.startsWith(phan + " ") && !truoc.has(l));
     return loi.filter(cuaVai).slice(0, 20).map((l) => "hop-dong: " + l);
@@ -422,6 +433,16 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     return view(q.get.get(jobId));
   }
 
+  // Bỏ một loại lỗi khỏi bàn giao chưa quyết (CEO vừa quyết điều đó, vd. duyệt miễn hợp đồng giao tiếp).
+  function boLoi(jobId, re, actor = "ceo") {
+    const h = view(q.get.get(jobId));
+    if (!h || h.decided) return null;
+    const con = h.problems.filter((x) => !re.test(x));
+    q.setProblems.run(JSON.stringify(con), jobId);
+    audit.log(actor, "handoff.bo_loi", jobId, { bo: h.problems.length - con.length });
+    return view(q.get.get(jobId));
+  }
+
   function reject(jobId, actor = "ceo") {
     const h = q.get.get(jobId);
     if (!h) throw err("NOT_FOUND", "Không có bàn giao của " + jobId);
@@ -504,7 +525,7 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     return cut > 0 ? a.slice(0, cut) : [a[0]];
   }
 
-  return { run, report, dieuPhoi, webPrompt, applyWeb, chatArgv, cliOf, fullOn, CODEX_MODEL, DEFAULT_EFFORT, status, approve, answer, reject, ghiNhan, conflicts, get: (id) => view(q.get.get(id)), pending: () => q.open.all().map(view), AGENTS };
+  return { run, report, dieuPhoi, webPrompt, applyWeb, chatArgv, cliOf, fullOn, CODEX_MODEL, DEFAULT_EFFORT, status, approve, answer, reject, ghiNhan, boLoi, conflicts, get: (id) => view(q.get.get(id)), pending: () => q.open.all().map(view), AGENTS };
 }
 
 module.exports = { createRunner, AGENTS, fullAccessArgs, withMcp, FULL_ROLES };

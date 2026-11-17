@@ -185,7 +185,7 @@
 
   // Claude (đội trưởng) phản biện AI khác và hỏi CEO trước khi bắt sửa: câu hỏi + một nút cho mỗi phương án.
   function askHtml(ask, attr, id) {
-    return `<div class="entry warn"><strong>❓ Claude hỏi anh</strong><p style="white-space:pre-wrap">${esc(ask.question)}</p>` + ask.options.map((o) =>
+    return `<div class="entry warn"><strong>❓ ${ask.kind === "mien-hop-dong" ? "Sol đề nghị miễn hợp đồng: anh quyết" : "Claude hỏi anh"}</strong><p style="white-space:pre-wrap">${esc(ask.question)}</p>` + ask.options.map((o) =>
       `<div class="actions"><button class="primary" ${attr}="${esc(id)}" data-opt="${esc(o.id)}">${esc(o.id)}</button><span>${esc(o.label)}${o.next_owner ? ` <span class="mono muted">→ ${esc(o.next_owner)}</span>` : ""}${o.task ? `<br><span class="muted">Lệnh: ${esc(o.task)}</span>` : ""}</span></div>`).join("") + "</div>";
   }
 

@@ -198,6 +198,8 @@ test("dự án chưa có hợp đồng: lượt Sol lập kế hoạch bị tr�
     } finally { await ctl.close(); }
   };
   assert.match(await chay("- API Contract & Giao thức streaming: [Chưa cập nhật]", false), /hop-dong: chưa có contract\/api.json — Sol tạo hợp đồng/);
-  assert.doesNotMatch(await chay("- API Contract: Không có API (công cụ dòng lệnh)", false), /hop-dong/);
+  // "Không có API" chỉ là đề nghị: chưa được CEO duyệt thì bàn giao chờ CEO (luồng tự chạy hỏi CEO, không tự miễn)
+  const deNghi = await chay("- API Contract: Không có API (công cụ dòng lệnh)", false);
+  assert.match(deNghi, /hop-dong-mien: Sol đề nghị miễn hợp đồng/); assert.doesNotMatch(deNghi, /hop-dong: chưa có/);
   assert.doesNotMatch(await chay("- API Contract: contract/api.json", true), /hop-dong/);
 });
