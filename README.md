@@ -350,7 +350,7 @@ Mọi lệnh từ điện thoại (và lệnh bị chặn) ghi vào `~/.van-phon
 - đổi tài khoản Antigravity bằng một chạm (menu ☰ → **Tài khoản**);
 - đặt model cho từng phòng: nhãn trên đầu mỗi nhân vật có ô ⚙ hiện model đang dùng, chạm vào thì mở đúng dòng chọn model của phòng đó.
 
-Trên điện thoại: mọi nút nằm trong menu ☰; cần điều khiển hiện ra ở chỗ chạm nửa trái màn hình; kéo nửa phải xoay camera quanh nhân vật 360°, luôn góc nhìn thứ ba và camera không xuống dưới mặt đất.
+Trên điện thoại: mọi nút nằm trong menu ☰; cần điều khiển hiện ra ở chỗ chạm nửa trái màn hình; nhìn từ mắt nhân vật: kéo nửa phải để quay đầu 360°, ngẩng lên hay cúi xuống; không zoom nên hình không còn tự kéo sát khi đứng cạnh kính hay tường.
 
 Các việc sau vẫn chỉ làm trên máy tính: cất/bỏ tài khoản Antigravity, đổi ngưỡng tự chuyển, rà soát, xuất bản, mở repo tùy ý. Trang điều khiển và văn phòng 3D chừa chỗ cho tai thỏ / Dynamic Island.
 
