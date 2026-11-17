@@ -318,6 +318,7 @@ Giao thức [8] và [9] (CEO duyệt 16/11/2026): chốt hợp đồng trước,
   - `node tools/kiem-hop-dong.js` kiểm hợp đồng đúng chuẩn, backend có đủ đường dẫn của Phase hiện tại, frontend không gọi đường dẫn ngoài hợp đồng.
   - `--kiem-mau <Tên> <file>` kiểm một phản hồi thật theo kiểu dữ liệu.
   - Văn phòng chạy bộ kiểm này sau mỗi lượt Sol, Astra, Kakashi; sai thì trả lại đúng lượt đó sửa.
+  - Dự án (mới hay cũ) chưa có hợp đồng thì lượt Sol lập kế hoạch kế tiếp bị trả lại để tạo. Dự án không có API hay sự kiện mạng thì Sol ghi "API Contract: Không có API" ở Vùng [3].
 - **Chạy song song:** tới lượt Astra mà hợp đồng đạt, khai đủ hai thư mục tách rời và repo sạch, thì Astra (backend) và Kakashi (frontend) chạy cùng lúc.
   - Mỗi bên một git worktree riêng.
   - Mỗi bên chỉ được sửa thư mục của mình, không sửa `agent.md` hay hợp đồng, không xoá file.
