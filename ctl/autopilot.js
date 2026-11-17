@@ -344,7 +344,7 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
       `\n3. contract/api.json là chuẩn DUY NHẤT giữa hai bên: dùng đúng đường dẫn, phương thức, operationId, tên trường, kiểu dữ liệu, mã lỗi và tên sự kiện trong đó; không thêm/bớt/đổi tên.` +
       ` Thấy hợp đồng thiếu hay mâu thuẫn thì KHÔNG tự đoán: làm phần còn lại, ghi rõ điểm cần Sol chốt vào giai_thich.` +
       (vai === "FRONTEND_UIUX_DEV" ? ` Backend đang được viết song song: gọi API qua một lớp client duy nhất theo hợp đồng; dữ liệu mẫu (nếu cần để chạy thử) lấy đúng schema/example của hợp đồng và chỉ nằm trong lớp đó.` : ` Frontend đang được viết song song và sẽ gọi đúng hợp đồng: trả lỗi theo mã lỗi trong hợp đồng; có thêm smoke test kiểm phản hồi bằng \`node tools/kiem-hop-dong.js --kiem-mau <Tên> <file>\` nếu repo có.`) +
-      `\n4. Xong thì chạy \`node tools/kiem-hop-dong.js\` (nếu có) để chắc phần của bạn khớp hợp đồng. Dòng JSON bàn giao: next_owner là SOL_ARCHITECT_ADVISOR; files chỉ gồm file trong phần của bạn.`;
+      `\n4. Xong thì kiểm phần của bạn khớp hợp đồng. ${require("./runner").KIEM_HD} Dòng JSON bàn giao: next_owner là SOL_ARCHITECT_ADVISOR; files chỉ gồm file trong phần của bạn.`;
   }
   function batDauSongSong(run, dk, { effort, returned, task }) {
     // Một lượt song song dùng ít nhất 2 bước: không đủ chỗ trong giới hạn lượt thì chạy lần lượt (giới hạn sẽ báo CEO như cũ).

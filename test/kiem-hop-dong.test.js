@@ -203,3 +203,14 @@ test("dự án chưa có hợp đồng: lượt Sol lập kế hoạch bị tr�
   assert.match(deNghi, /hop-dong-mien: Sol đề nghị miễn hợp đồng/); assert.doesNotMatch(deNghi, /hop-dong: chưa có/);
   assert.doesNotMatch(await chay("- API Contract: contract/api.json", true), /hop-dong/);
 });
+
+test("lời giao Sol: repo chưa cài bộ kiểm thì chạy bộ kiểm của văn phòng, cấm tải validator từ mạng; lượt lập kế hoạch có 45 phút", () => {
+  const { AGENTS, KIEM_HD } = require("../ctl/runner");
+  const p = AGENTS.SOL_ARCHITECT_PLANNER.prompt;
+  const goc = path.join(__dirname, "..", "tools", "kiem-hop-dong.js").split(path.sep).join("/");
+  assert.ok(p.includes(goc), "trỏ tới bộ kiểm của văn phòng bằng đường dẫn tuyệt đối");
+  assert.ok(fs.existsSync(goc));
+  assert.match(p, /KHÔNG tải hay cài validator/);
+  assert.ok(KIEM_HD.includes(goc));
+  assert.equal(AGENTS.SOL_ARCHITECT_PLANNER.timeoutMs, 45 * 60 * 1000);
+});
