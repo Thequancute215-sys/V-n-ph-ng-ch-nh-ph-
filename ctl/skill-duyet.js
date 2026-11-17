@@ -134,7 +134,10 @@ function quet(goc, sub = "") {
   // Loại repo theo cái văn phòng CÀI được: bộ skill, máy chủ MCP (npm), hay loại khác (chỉ giải thích / lưu tham khảo).
   const loai = skills.length ? "skill" : mcpGoi.length ? "mcp" : "khac";
   const docFile = files.filter((f) => /^(README|readme)(\.\w+)?$/.test(path.posix.basename(f))).slice(0, 5);
-  return { soFile: files.length, catBot, dungLuong: tong, loai, skills, mcpGoi, mcpPython, docFile, scripts, nhiPhan, hook, mcp, tuChay, giayPhep, canhBao: canhBao.slice(0, 200), tongCanhBao: canhBao.length };
+  // File dặn AI: AI nào mở repo bằng Claude/Codex/Gemini/Cursor sẽ tự nạp. Luôn liệt kê (Claude phát hiện máy rà bỏ sót 17/11/2026:
+  // AGENTS.md của breakscale ra lệnh cho AI, câu chữ không độc hại nên bộ quy tắc không bắt).
+  const fileDanAi = files.filter((f) => /(^|\/)(AGENTS|CLAUDE|GEMINI)\.md$|(^|\/)\.(cursorrules|windsurfrules|clinerules)$|(^|\/)\.github\/copilot-instructions\.md$|(^|\/)\.cursor\/rules\//i.test(f)).slice(0, 30);
+  return { soFile: files.length, catBot, dungLuong: tong, loai, skills, mcpGoi, mcpPython, docFile, fileDanAi, scripts, nhiPhan, hook, mcp, tuChay, giayPhep, canhBao: canhBao.slice(0, 200), tongCanhBao: canhBao.length };
 }
 function safeRead(goc, rel, max = 256 * 1024) {
   try { const p = path.join(goc, rel); if (fs.statSync(p).size > max) return ""; return fs.readFileSync(p, "utf8"); } catch { return ""; }
@@ -220,6 +223,7 @@ function tomTatQuet(q) {
     `SKILL.md (${q.skills.length}): ${ds(q.skills.map((s) => s.dir + (s.name ? " [" + s.name + "]" : "")), 40)}`,
     `Gói máy chủ MCP (npm): ${ds((q.mcpGoi || []).map((m) => `${m.goi}@${m.phienBan} (${m.file}, lệnh ${m.bin.join("/")})`))}`,
     `MCP Python: ${ds(q.mcpPython || [])}`,
+    `File dặn AI (AI mở repo sẽ tự nạp; đọc xem có ra lệnh gì không): ${ds(q.fileDanAi || [])}`,
     `Script: ${ds(q.scripts)}`, `File nhị phân: ${ds(q.nhiPhan)}`, `Hook: ${ds(q.hook)}`, `Cấu hình MCP: ${ds(q.mcp)}`,
     `Script tự chạy khi cài (npm): ${ds(q.tuChay, 8)}`,
     `Điểm bất thường máy rà thấy (${q.tongCanhBao}): ` + (q.canhBao.slice(0, 25).map((x) => `${x.file}:${x.line} ${x.name}`).join("; ") || "không có"),

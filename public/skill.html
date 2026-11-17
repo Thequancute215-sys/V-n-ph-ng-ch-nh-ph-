@@ -142,7 +142,7 @@ pre { white-space: pre-wrap; background: #f6f5f2; padding: 10px; font: 13px/1.5 
         ${(q.mcpGoi || []).length ? `<h3>Gói máy chủ MCP (${q.mcpGoi.length})</h3>${ds(q.mcpGoi.map((m) => `${m.goi}@${m.phienBan} · ${m.file}`))}` : ""}
         ${(q.mcpPython || []).length ? `<h3>MCP Python (chưa cài tự động được)</h3>${ds(q.mcpPython)}` : ""}
         <h3>Script (${q.scripts.length})</h3>${ds(q.scripts)}<h3>File chạy được / nhị phân (${q.nhiPhan.length})</h3>${ds(q.nhiPhan)}</div>
-      <div><h3>Hook (${q.hook.length})</h3>${ds(q.hook)}<h3>Cấu hình MCP cho AI (${q.mcp.length})</h3>${ds(q.mcp)}<h3>Tự chạy khi cài npm (${q.tuChay.length})</h3>${ds(q.tuChay)}
+      <div>${(q.fileDanAi || []).length ? `<h3>File dặn AI (${q.fileDanAi.length})</h3>${ds(q.fileDanAi)}<p class="note" style="margin-top:0">AI nào mở repo này sẽ tự đọc các file trên.</p>` : ""}<h3>Hook (${q.hook.length})</h3>${ds(q.hook)}<h3>Cấu hình MCP cho AI (${q.mcp.length})</h3>${ds(q.mcp)}<h3>Tự chạy khi cài npm (${q.tuChay.length})</h3>${ds(q.tuChay)}
         <h3>Điểm bất thường (${q.tongCanhBao})</h3>${ds(q.canhBao.map((x) => `${x.file}:${x.line} · ${x.name}`), 15)}</div></div></details>`;
   }
   function phanTichHtml(p) {
