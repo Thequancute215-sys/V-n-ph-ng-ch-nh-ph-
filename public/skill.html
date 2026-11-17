@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skill của đội · Văn phòng AI</title>
+<link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script src="app.js" defer></script>
+<style>
+:root { --ink: #1b2a8a; --ink2: #3b4bb5; --paper: #f7f4ee; --line: #1b2a8a; --mute: #5b6170; --ok: #15803d; --warn: #b45309; --bad: #b91c1c; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 15px/1.55 "Segoe UI", system-ui, sans-serif;
+  background-image: linear-gradient(rgba(27,42,138,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(27,42,138,.05) 1px, transparent 1px); background-size: 24px 24px; }
+header { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; padding: 20px 20px 12px; border-bottom: 2px solid var(--line); flex-wrap: wrap; }
+.kicker { font: 600 12px/1.2 ui-monospace, Consolas, monospace; letter-spacing: .12em; color: var(--ink2); }
+h1 { margin: 4px 0 0; font-size: clamp(24px, 4vw, 34px); font-weight: 800; letter-spacing: -.01em; }
+h2 { font-size: 18px; margin: 26px 0 8px; }
+.back { border: 2px solid var(--line); padding: 7px 12px; color: var(--ink); text-decoration: none; font: 700 12px ui-monospace, Consolas, monospace; letter-spacing: .08em; background: #fff; }
+main { padding: 16px 20px 48px; max-width: 1080px; margin: 0 auto; }
+.note { font-size: 13px; color: var(--mute); margin: 6px 0 12px; }
+.box { border: 2px solid var(--line); background: #fffdf9; padding: 14px 16px; margin: 12px 0; }
+form.add { display: flex; gap: 8px; flex-wrap: wrap; }
+input[type=url], input[type=text] { flex: 1 1 320px; padding: 10px 12px; border: 1.5px solid var(--line); font: inherit; background: #fff; color: var(--ink); min-width: 0; }
+button { border: 1.5px solid var(--line); background: #fff; color: var(--ink); padding: 8px 14px; font: 700 13px inherit; cursor: pointer; min-height: 40px; }
+button.pri { background: var(--ink); color: #fff; }
+button.no { color: var(--bad); border-color: var(--bad); }
+button:disabled { opacity: .5; cursor: wait; }
+:focus-visible { outline: 3px solid #f59e0b; outline-offset: 2px; }
+.msg { margin: 10px 0; padding: 8px 12px; border: 1.5px solid var(--line); background: #fff; }
+.msg.err { border-color: var(--bad); color: var(--bad); }
+.card { border: 2px solid var(--line); background: #fff; margin: 12px 0; }
+.card > .top { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 10px 14px; border-bottom: 1px solid rgba(27,42,138,.2); }
+.card > .top a { color: var(--ink); font-weight: 800; overflow-wrap: anywhere; }
+.card > .body { padding: 12px 14px; }
+.pill { font: 700 11px ui-monospace, Consolas, monospace; letter-spacing: .06em; padding: 2px 8px; border: 1.5px solid currentColor; text-transform: uppercase; }
+.pill.run { color: var(--ink2); } .pill.wait { color: var(--warn); } .pill.ok { color: var(--ok); } .pill.bad { color: var(--bad); } .pill.mute { color: var(--mute); }
+.mono { font: 12px ui-monospace, Consolas, monospace; color: var(--mute); }
+.spin { display: inline-block; width: 12px; height: 12px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: sp 1s linear infinite; vertical-align: -1px; margin-right: 6px; }
+@keyframes sp { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid > div { min-width: 0; }
+h3 { font-size: 14px; margin: 12px 0 6px; letter-spacing: .02em; }
+ul { margin: 4px 0; padding-left: 20px; } li { margin: 3px 0; overflow-wrap: anywhere; }
+.risk { list-style: none; padding: 0; }
+.risk li { border-left: 4px solid var(--mute); padding: 4px 8px; margin: 6px 0; background: rgba(27,42,138,.03); }
+.risk li.cao { border-color: var(--bad); } .risk li.vua { border-color: var(--warn); } .risk li.thap { border-color: var(--ok); }
+.risk b { font: 700 11px ui-monospace, Consolas, monospace; text-transform: uppercase; margin-right: 6px; }
+.verdict { padding: 10px 12px; border: 2px solid var(--ink2); background: #eef0ff; margin: 10px 0; }
+.verdict.khong { border-color: var(--bad); background: #fdf0f0; }
+details { margin: 8px 0; } summary { cursor: pointer; font-weight: 700; }
+pre { white-space: pre-wrap; background: #f6f5f2; padding: 10px; font: 13px/1.5 "Segoe UI", system-ui, sans-serif; max-height: 420px; overflow: auto; margin: 6px 0; }
+.decide { border-top: 1px dashed rgba(27,42,138,.35); margin-top: 12px; padding-top: 12px; display: grid; gap: 10px; }
+.decide fieldset { border: 0; padding: 0; margin: 0; display: flex; gap: 12px; flex-wrap: wrap; }
+.decide legend { font-weight: 700; margin-bottom: 4px; }
+.decide label.r { display: flex; gap: 6px; align-items: flex-start; border: 1.5px solid rgba(27,42,138,.4); padding: 6px 10px; cursor: pointer; flex: 1 1 260px; }
+.decide .row { display: flex; gap: 8px; flex-wrap: wrap; }
+.table { border: 2px solid var(--line); background: #fffdf9; }
+.trow { display: grid; grid-template-columns: minmax(180px, 1.2fr) 60px minmax(200px, 2fr) 150px; gap: 10px; padding: 9px 12px; border-top: 1px solid rgba(27,42,138,.18); align-items: center; }
+.trow.head { border-top: 0; font: 700 11px ui-monospace, Consolas, monospace; letter-spacing: .08em; color: var(--ink2); background: rgba(27,42,138,.04); }
+.trow a { color: var(--ink); font-weight: 700; overflow-wrap: anywhere; }
+.st.du { color: var(--ok); } .st.cu { color: var(--warn); } .st.thieu { color: var(--bad); }
+.empty { padding: 18px; text-align: center; color: var(--mute); }
+.sk { height: 60px; margin: 10px 0; background: linear-gradient(90deg, #efece6, #fff, #efece6); background-size: 200% 100%; animation: sk 1.2s infinite; border: 2px solid rgba(27,42,138,.15); }
+@keyframes sk { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .sk { animation: none; } }
+@media (max-width: 760px) {
+  main, header { padding-left: 16px; padding-right: 16px; }
+  .grid { grid-template-columns: 1fr; }
+  .trow.head { display: none; }
+  .trow { grid-template-columns: 1fr; gap: 2px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div><div class="kicker">VĂN PHÒNG AI · KHO SKILL</div><h1>Skill của đội</h1></div>
+  <a class="back" href="index.html">← VỀ VĂN PHÒNG</a>
+</header>
+<main>
+  <section class="box" aria-labelledby="addH">
+    <h2 id="addH" style="margin-top:0">Thêm skill từ GitHub</h2>
+    <form class="add" id="add">
+      <label for="link" class="note" style="flex-basis:100%;margin:0">Dán link repo (ví dụ https://github.com/chu/repo, hoặc link tới một thư mục skill trong repo)</label>
+      <input type="url" id="link" required placeholder="https://github.com/…" autocomplete="off" spellcheck="false">
+      <button class="pri" type="submit" id="addBtn">Nhờ đội trưởng xem</button>
+    </form>
+    <p class="note">Văn phòng tải đúng một bản (commit) của repo vào thư mục cách ly, không chạy file nào trong đó. Máy rà tìm script, hook, kết nối MCP và lệnh lạ; rồi <b>Claude đội trưởng</b> đọc ở chế độ chỉ đọc, giải thích skill làm gì, rủi ro gì, nên cài hay không. <b>Anh duyệt thì mới cài</b> cho Claude, Codex và Antigravity, ghim đúng bản đã xem.</p>
+  </section>
+  <div id="msg" role="status" aria-live="polite"></div>
+  <h2>Đề xuất</h2>
+  <div id="list" aria-live="polite"><div class="sk"></div><div class="sk"></div></div>
+  <h2>Bộ skill đang dùng</h2>
+  <p class="note" id="kiemNote"></p>
+  <div class="table" id="table"><div class="sk" style="margin:0;border:0"></div></div>
+</main>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const PHONG = { hinata: "Hinata · đặc tả & UI/UX", itachi: "Itachi · kiến trúc", sasuke: "Sasuke · backend", kakashi: "Kakashi · frontend", sakura: "Sakura · kiểm duyệt" };
+  const TT = { "dang-tai": ["Đang tải về", "run"], "dang-phan-tich": ["Đội trưởng đang đọc", "run"], "cho-duyet": ["Chờ anh duyệt", "wait"], loi: ["Lỗi", "bad"],
+    "dang-cai": ["Đang cài", "run"], "da-cai": ["Đã cài", "ok"], "tu-choi": ["Không cài", "mute"] };
+  const KQ = { cai: "cài mới", nang: "nâng bản", giu: "đã đúng bản", nhan: "nhận thư mục có sẵn", trung: "BỎ QUA vì trùng tên skill anh tự cài" };
+  const AI = { claude: "Claude", codex: "Codex", agy: "Antigravity" };
+  let data = null, busy = false, timer = null, loadErr = "";
+  async function req(path, body) {
+    const r = await fetch("/ctl" + path, { cache: "no-store", method: body ? "POST" : "GET", headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(body ? 120000 : 30000) });
+    let d; try { d = await r.json(); } catch { throw new Error("Bộ điều khiển chưa trả lời (văn phòng có đang chạy trên máy tính này không?)"); }
+    if (!r.ok || d.ok === false) throw new Error(d.error || "Lỗi HTTP " + r.status);
+    return d;
+  }
+  const msg = (t, err) => { $("msg").innerHTML = t ? `<div class="msg${err ? " err" : ""}">${esc(t)}</div>` : ""; };
+  const ds = (arr, n = 12) => arr && arr.length ? `<ul>${arr.slice(0, n).map((x) => `<li class="mono">${esc(x)}</li>`).join("")}${arr.length > n ? `<li class="mono">… và ${arr.length - n} mục nữa</li>` : ""}</ul>` : `<p class="mono">không có</p>`;
+  const MB = (b) => (b / 1048576).toFixed(1) + " MB";
+
+  function quetHtml(q, d) {
+    if (!q) return "";
+    return `<details><summary>Máy rà thấy gì (không cần AI)</summary>
+      <p>${q.soFile} file, ${MB(q.dungLuong)}${q.catBot ? " (quá nhiều, đã cắt bớt)" : ""} · Giấy phép: <b>${esc(q.giayPhep || "không thấy file LICENSE")}</b></p>
+      <div class="grid"><div><h3>Skill sẽ cài (${(d.seCai || []).length})</h3>${ds(d.seCai, 40)}
+        ${d.trungTen && d.trungTen.length ? `<p style="color:var(--warn)">Trùng tên skill anh tự cài trên máy (sẽ bỏ qua, không ghi đè): ${esc(d.trungTen.join(", "))}</p>` : ""}
+        <h3>Script (${q.scripts.length})</h3>${ds(q.scripts)}<h3>File chạy được / nhị phân (${q.nhiPhan.length})</h3>${ds(q.nhiPhan)}</div>
+      <div><h3>Hook (${q.hook.length})</h3>${ds(q.hook)}<h3>Kết nối MCP (${q.mcp.length})</h3>${ds(q.mcp)}<h3>Tự chạy khi cài npm (${q.tuChay.length})</h3>${ds(q.tuChay)}
+        <h3>Điểm bất thường (${q.tongCanhBao})</h3>${ds(q.canhBao.map((x) => `${x.file}:${x.line} · ${x.name}`), 15)}</div></div></details>`;
+  }
+  function phanTichHtml(p) {
+    if (!p) return "";
+    const nhom = { A: "Nhóm A: cả đội bắt buộc dùng mỗi khi khớp việc", B: "Nhóm B: chỉ dùng khi anh giao đích danh", khong: "Không nên cài" }[p.deNghi];
+    return `<div class="verdict${p.deNghi === "khong" ? " khong" : ""}"><b>Đội trưởng đề nghị: ${esc(nhom)}</b><br>${esc(p.lyDo)}</div>
+      <div class="grid"><div><h3>Skill này làm gì</h3><p>${esc(p.tomTat)}</p><h3>Khi nào dùng</h3><p>${esc(p.cachDung)}</p>
+        ${p.phong.length ? `<h3>Phòng được lợi</h3><p>${p.phong.map((x) => esc(PHONG[x] || x)).join(", ")}</p>` : ""}
+        ${p.trungVoi ? `<h3>Trùng với bộ đang có</h3><p>${esc(p.trungVoi)}</p>` : ""}</div>
+      <div><h3>Rủi ro</h3>${p.ruiRo.length ? `<ul class="risk">${p.ruiRo.map((r) => `<li class="${r.muc}"><b>${{ cao: "cao", vua: "vừa", thap: "thấp" }[r.muc]}</b>${esc(r.noiDung)}</li>`).join("")}</ul>` : "<p>Đội trưởng không thấy rủi ro đáng kể.</p>"}</div></div>
+      ${p.giaiThich ? `<details><summary>Đội trưởng giải thích đầy đủ</summary><pre>${esc(p.giaiThich)}</pre></details>` : ""}`;
+  }
+  function cardHtml(d) {
+    const [t, c] = TT[d.trangThai] || [d.trangThai, "mute"];
+    const run = c === "run";
+    const commit = d.commit ? `<a class="mono" href="https://github.com/${esc(d.repo)}/tree/${esc(d.commit)}${d.sub ? "/" + esc(d.sub) : ""}" target="_blank" rel="noopener noreferrer">@${esc(d.commit.slice(0, 7))}</a>` : "";
+    let body = "";
+    if (d.trangThai === "dang-tai") body = `<p><span class="spin" aria-hidden="true"></span>Đang tải đúng một bản của repo và rà file (không chạy gì trong đó)…</p>`;
+    else if (d.trangThai === "dang-phan-tich") body = `<p><span class="spin" aria-hidden="true"></span>Claude đội trưởng đang đọc skill ở chế độ chỉ đọc. Thường mất 1–5 phút; trang tự cập nhật.</p>` + quetHtml(d.quet, d);
+    else if (d.trangThai === "loi") body = `<p style="color:var(--bad)">${esc(d.loi)}</p>` + quetHtml(d.quet, d) + `<div class="row" style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" data-lai="${esc(d.id)}">Phân tích lại</button><button type="button" class="no" data-bo="${esc(d.id)}">Bỏ đề xuất</button></div>`;
+    else if (d.trangThai === "cho-duyet") {
+      const p = d.phanTich || {}, mac = p.deNghi === "A" || p.deNghi === "B" ? p.deNghi : "";
+      body = phanTichHtml(p) + quetHtml(d.quet, d) + `<form class="decide" data-duyet="${esc(d.id)}">
+        <fieldset><legend>Cài cho cả đội thì xếp vào nhóm nào?</legend>
+          <label class="r"><input type="radio" name="nhom" value="A"${mac === "A" ? " checked" : ""} required><span><b>Nhóm A</b><br><span class="note">Mỗi lượt, AI phải xem và dùng khi skill khớp việc.</span></span></label>
+          <label class="r"><input type="radio" name="nhom" value="B"${mac === "B" ? " checked" : ""}><span><b>Nhóm B</b><br><span class="note">Chỉ dùng khi anh giao đích danh (việc nhạy cảm, cần công cụ/khóa riêng).</span></span></label></fieldset>
+        <label>Dùng cho (một dòng, đội đọc dòng này để biết khi nào dùng)<br><input type="text" name="dungCho" maxlength="300" value="${esc(p.dungCho || "")}" required style="width:100%"></label>
+        ${p.deNghi === "khong" ? `<p style="color:var(--bad);margin:0">Đội trưởng đề nghị KHÔNG cài. Anh vẫn có thể cài nếu đã cân nhắc.</p>` : ""}
+        <div class="row"><button class="pri" type="submit">Duyệt và cài</button><button type="button" class="no" data-bo="${esc(d.id)}">Không cài</button></div></form>`;
+    } else if (d.trangThai === "da-cai") {
+      const kq = d.ketQuaCai || [], ok = kq.filter((x) => x.kq !== "trung");
+      body = `<p>Đã thêm vào bộ skill (nhóm <b>${esc(d.nhom)}</b>): ${esc(d.dungCho)}</p><p class="note">${ok.length} lần cài cho ${[...new Set(ok.map((x) => AI[x.ai] || x.ai))].join(", ") || "—"}.` +
+        (kq.some((x) => x.kq === "trung") ? ` Bỏ qua vì trùng tên skill anh tự cài: ${esc([...new Set(kq.filter((x) => x.kq === "trung").map((x) => x.ten))].join(", "))}.` : "") + ` Lượt làm việc tiếp theo của đội sẽ thấy skill này.</p>`;
+    } else if (d.trangThai === "dang-cai") body = `<p><span class="spin" aria-hidden="true"></span>Đang chép skill cho Claude, Codex, Antigravity…</p>`;
+    else body = `<p class="note">Anh đã chọn không cài${d.phanTich ? " (đội trưởng đề nghị: " + esc(d.phanTich.deNghi) + ")" : ""}.</p>`;
+    return `<article class="card" aria-busy="${run}"><div class="top"><a href="https://github.com/${esc(d.repo)}" target="_blank" rel="noopener noreferrer">${esc(d.repo)}</a>${d.sub ? `<span class="mono">/${esc(d.sub)}</span>` : ""}${commit}
+      <span class="pill ${c}">${esc(t)}</span><span class="mono" style="margin-left:auto">${esc(new Date(d.luc).toLocaleString("vi-VN"))}</span></div><div class="body">${body}</div></article>`;
+  }
+  function render() {
+    if (!data) { if (loadErr) { $("list").innerHTML = `<div class="box"><p style="color:var(--bad)">${esc(loadErr)}</p><button type="button" id="retry">Thử lại</button></div>`; $("table").innerHTML = ""; } return; }
+    $("list").innerHTML = data.deXuat.length ? data.deXuat.map(cardHtml).join("") : `<div class="box empty">Chưa có đề xuất nào. Dán link repo skill ở trên để đội trưởng xem giúp.</div>`;
+    const theo = {};
+    for (const r of data.skill.nguon) (theo[r.repo] = theo[r.repo] || []).push(r);
+    $("kiemNote").textContent = data.skill.daCai ? "Máy đã cài bộ skill lúc " + new Date(data.skill.luc).toLocaleString("vi-VN") + "." : "Máy chưa cài bộ skill mặc định: chạy `node tools/cai-skill.js cai` trong thư mục văn phòng.";
+    $("table").innerHTML = `<div class="trow head"><span>NGUỒN</span><span>NHÓM</span><span>DÙNG CHO</span><span>ĐÃ CÀI</span></div>` + data.danhMuc.map((n) => {
+      const st = (theo[n.repo] || []).map((r) => `<span class="st ${r.trangThai}" title="${esc(AI[r.ai])}: ${{ du: "đã cài đúng bản", cu: "bản cũ", thieu: "chưa cài" }[r.trangThai]}">${{ du: "✓", cu: "↻", thieu: "✗" }[r.trangThai]} ${esc(AI[r.ai])}</span>`).join(" · ");
+      return `<div class="trow"><span><a href="https://github.com/${esc(n.repo)}/tree/${esc(n.commit)}" target="_blank" rel="noopener noreferrer">${esc(n.repo)}</a><br><span class="mono">${n.ceoThem ? "anh duyệt thêm " + esc(new Date(n.them.luc).toLocaleDateString("vi-VN")) : "bộ mặc định"} · ${esc(n.giayPhep || "")}</span></span>
+        <span><b>${esc(n.nhom)}</b></span><span>${esc(n.dungCho)}</span><span class="mono">${st}</span></div>`;
+    }).join("");
+    document.querySelectorAll("main button").forEach((b) => { if (b.id !== "retry") b.disabled = busy; });
+  }
+  async function load() {
+    try { data = await req("/skill"); loadErr = ""; }
+    catch (e) { loadErr = e.message; if (data) msg(e.message, true); }
+    render();
+    clearTimeout(timer);
+    if (data && data.deXuat.some((d) => ["dang-tai", "dang-phan-tich", "dang-cai"].includes(d.trangThai))) timer = setTimeout(load, 4000);
+  }
+  async function act(fn, ok) {
+    if (busy) return;
+    busy = true; render();
+    try { await fn(); if (ok) msg(ok); } catch (e) { msg(e.message, true); }
+    finally { busy = false; await load(); }
+  }
+  $("add").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const link = $("link").value.trim();
+    act(async () => { await req("/skill/de-xuat", { link }); $("link").value = ""; }, "Đã gửi cho đội trưởng. Kết quả hiện bên dưới khi đọc xong.");
+  });
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-lai], button[data-bo], #retry");
+    if (!b) return;
+    if (b.id === "retry") return load();
+    if (b.dataset.lai) return act(() => req(`/skill/de-xuat/${encodeURIComponent(b.dataset.lai)}/phan-tich-lai`, {}), "Đang phân tích lại.");
+    if (b.dataset.bo && confirm("Không cài skill này? Bản tải về để xem sẽ bị xoá.")) act(() => req(`/skill/de-xuat/${encodeURIComponent(b.dataset.bo)}/tu-choi`, {}), "Đã ghi: không cài.");
+  });
+  document.addEventListener("submit", (e) => {
+    const f = e.target.closest("form[data-duyet]");
+    if (!f) return;
+    e.preventDefault();
+    const nhom = (f.querySelector("input[name=nhom]:checked") || {}).value, dungCho = f.querySelector("input[name=dungCho]").value.trim();
+    if (!confirm(`Cài skill này cho Claude, Codex và Antigravity, xếp nhóm ${nhom}?`)) return;
+    act(() => req(`/skill/de-xuat/${encodeURIComponent(f.dataset.duyet)}/duyet`, { nhom, dungCho }), "Đã cài. Lượt làm việc tiếp theo của đội sẽ thấy skill này.");
+  });
+  load();
+})();
+</script>
+</body>
+</html>

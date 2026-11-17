@@ -51,6 +51,7 @@ export function createDesk(getOffice) {
   const toolbar = document.createElement("nav"); toolbar.className = "desk-tools"; toolbar.setAttribute("aria-label", "Điều phối dự án");
   toolbar.innerHTML = ["journal", "tasks", "assign", "ideas", "projects", "quotas", "progress", "publish"].map((key) => `<button type="button" class="btn ghost" data-desk="${key}" aria-controls="officeDesk" aria-expanded="false">${names[key]}</button>`).join("") +
     '<a class="btn ghost" href="ket-noi.html" title="Kết nối (MCP) của đội: Notion, Figma, Google Drive…">Kết nối</a>' +
+    '<a class="btn ghost" href="skill.html" title="Bộ skill của đội; dán link GitHub để đội trưởng xem rồi anh duyệt cài">Skill</a>' +
     '<a class="btn ghost" href="dien-thoai.html" title="Ghép điện thoại để điều khiển văn phòng từ xa">Điện thoại</a>' +
     '<a class="btn ghost" href="cap-nhat.html" id="deskUpdate" title="Phiên bản app và cập nhật">Cập nhật</a>' +
     '<a class="btn ghost" href="dieu-khien.html" data-chi-dt style="display:none" title="Về bảng điều khiển trên điện thoại">← Bảng điều khiển</a>' +
