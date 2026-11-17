@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Skill của đội · Văn phòng AI</title>
+<title>Repo & Skill · Văn phòng AI</title>
 <link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -76,38 +76,46 @@ pre { white-space: pre-wrap; background: #f6f5f2; padding: 10px; font: 13px/1.5 
 </head>
 <body>
 <header>
-  <div><div class="kicker">VĂN PHÒNG AI · KHO SKILL</div><h1>Skill của đội</h1></div>
+  <div><div class="kicker">VĂN PHÒNG AI · KHO REPO &amp; SKILL</div><h1>Repo &amp; Skill của đội</h1></div>
   <a class="back" href="index.html">← VỀ VĂN PHÒNG</a>
 </header>
 <main>
   <section class="box" aria-labelledby="addH">
-    <h2 id="addH" style="margin-top:0">Thêm skill từ GitHub</h2>
+    <h2 id="addH" style="margin-top:0">Nhờ đội trưởng xem một repo GitHub</h2>
     <form class="add" id="add">
-      <label for="link" class="note" style="flex-basis:100%;margin:0">Dán link repo (ví dụ https://github.com/chu/repo, hoặc link tới một thư mục skill trong repo)</label>
+      <label for="link" class="note" style="flex-basis:100%;margin:0">Dán link bất kỳ repo nào: bộ skill, máy chủ MCP, ứng dụng, thư viện, công cụ, mẫu dự án… (có thể là link tới một thư mục trong repo)</label>
       <input type="url" id="link" required placeholder="https://github.com/…" autocomplete="off" spellcheck="false">
       <button class="pri" type="submit" id="addBtn">Nhờ đội trưởng xem</button>
     </form>
-    <p class="note">Văn phòng tải đúng một bản (commit) của repo vào thư mục cách ly, không chạy file nào trong đó. Máy rà tìm script, hook, kết nối MCP và lệnh lạ; rồi <b>Claude đội trưởng</b> đọc ở chế độ chỉ đọc, giải thích skill làm gì, rủi ro gì, nên cài hay không. <b>Anh duyệt thì mới cài</b> cho Claude, Codex và Antigravity, ghim đúng bản đã xem.</p>
+    <p class="note">Văn phòng tải đúng một bản (commit) của repo vào thư mục cách ly, không chạy file nào trong đó. Máy rà tìm skill, máy chủ MCP, script, hook và lệnh lạ; rồi <b>Claude đội trưởng</b> đọc ở chế độ chỉ đọc và giải thích: repo là gì, văn phòng dùng vào việc gì, rủi ro gì. <b>Anh quyết:</b> cài thành skill, cài máy chủ MCP cho phòng anh chọn, lưu tham khảo, hoặc không dùng.</p>
   </section>
   <div id="msg" role="status" aria-live="polite"></div>
-  <h2>Đề xuất</h2>
+  <h2>Repo đang xem</h2>
   <div id="list" aria-live="polite"><div class="sk"></div><div class="sk"></div></div>
+  <h2>Thư viện tham khảo</h2>
+  <p class="note">Repo anh đã lưu để đội tra lại sau (không cài gì).</p>
+  <div id="thamKhao"></div>
   <h2>Bộ skill đang dùng</h2>
   <p class="note" id="kiemNote"></p>
   <div class="table" id="table"><div class="sk" style="margin:0;border:0"></div></div>
+  <p class="note">Máy chủ MCP anh duyệt nằm ở trang <a href="ket-noi.html">Kết nối</a> (bật/tắt theo phòng ở đó).</p>
 </main>
 <script>
 (() => {
   const $ = (id) => document.getElementById(id);
   const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const PHONG = { hinata: "Hinata · đặc tả & UI/UX", itachi: "Itachi · kiến trúc", sasuke: "Sasuke · backend", kakashi: "Kakashi · frontend", sakura: "Sakura · kiểm duyệt" };
-  const TT = { "dang-tai": ["Đang tải về", "run"], "dang-phan-tich": ["Đội trưởng đang đọc", "run"], "cho-duyet": ["Chờ anh duyệt", "wait"], loi: ["Lỗi", "bad"],
-    "dang-cai": ["Đang cài", "run"], "da-cai": ["Đã cài", "ok"], "tu-choi": ["Không cài", "mute"] };
-  const KQ = { cai: "cài mới", nang: "nâng bản", giu: "đã đúng bản", nhan: "nhận thư mục có sẵn", trung: "BỎ QUA vì trùng tên skill anh tự cài" };
+  const PHONG_MCP = ["itachi", "sasuke", "sakura"];
+  const TT = { "dang-tai": ["Đang tải về", "run"], "dang-phan-tich": ["Đội trưởng đang đọc", "run"], "cho-duyet": ["Chờ anh quyết", "wait"], loi: ["Lỗi", "bad"],
+    "dang-cai": ["Đang cài", "run"], "da-cai": ["Đã cài", "ok"], "tu-choi": ["Không dùng", "mute"], "tham-khao": ["Lưu tham khảo", "ok"] };
+  const LOAI = { skill: "Bộ skill", mcp: "Máy chủ MCP", khac: "Repo khác" };
+  const DE_NGHI = { A: "Cài skill, nhóm A: cả đội bắt buộc dùng mỗi khi khớp việc", B: "Cài skill, nhóm B: chỉ dùng khi anh giao đích danh", cai: "Cài máy chủ MCP cho các phòng được lợi",
+    "tham-khao": "Lưu tham khảo, không cài", khong: "Không nên dùng" };
+  const KHOP = { dung: ["khớp link anh dán", "ok"], "doi-chu": ["khác tên nhưng cùng một repo (đã đổi chủ)", "ok"], khac: ["KHÁC repo anh dán: gói có thể không phải của repo này", "bad"], "khong-ghi": ["gói không ghi repo nguồn", "warn"] };
   const AI = { claude: "Claude", codex: "Codex", agy: "Antigravity" };
   let data = null, busy = false, timer = null, loadErr = "";
   async function req(path, body) {
-    const r = await fetch("/ctl" + path, { cache: "no-store", method: body ? "POST" : "GET", headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(body ? 120000 : 30000) });
+    const r = await fetch("/ctl" + path, { cache: "no-store", method: body ? "POST" : "GET", headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(body ? 360000 : 30000) });
     let d; try { d = await r.json(); } catch { throw new Error("Bộ điều khiển chưa trả lời (văn phòng có đang chạy trên máy tính này không?)"); }
     if (!r.ok || d.ok === false) throw new Error(d.error || "Lỗi HTTP " + r.status);
     return d;
@@ -116,55 +124,92 @@ pre { white-space: pre-wrap; background: #f6f5f2; padding: 10px; font: 13px/1.5 
   const ds = (arr, n = 12) => arr && arr.length ? `<ul>${arr.slice(0, n).map((x) => `<li class="mono">${esc(x)}</li>`).join("")}${arr.length > n ? `<li class="mono">… và ${arr.length - n} mục nữa</li>` : ""}</ul>` : `<p class="mono">không có</p>`;
   const MB = (b) => (b / 1048576).toFixed(1) + " MB";
 
+  function npmHtml(n) {
+    if (!n) return "";
+    const [kt, kc] = KHOP[n.khop] || [n.khop, "warn"];
+    return `<div class="box" style="margin:10px 0"><h3 style="margin-top:0">Gói npm sẽ cài</h3>
+      <p><b class="mono">${esc(n.goi)}@${esc(n.ban || "—")}</b>${n.ngay ? ` · ra ${esc(n.ngay)} (${esc(n.tuoiNgay)} ngày)` : ""}${n.moiNhat && n.moiNhat !== n.ban ? ` · bỏ qua bản mới nhất ${esc(n.moiNhat)} (${esc(n.tuoiMoiNhat)} ngày, còn quá mới)` : ""}</p>
+      <p>Repo ghi trong gói: <span class="mono">${esc(n.repoNpm || "không ghi")}</span> · <span style="color:var(--${kc === "ok" ? "ok" : kc === "bad" ? "bad" : "warn"})">${esc(kt)}</span></p>
+      <p class="note">Thư viện con: ${esc(n.soPhuThuoc ?? "?")} · Script tự chạy khi cài: ${esc((n.scriptCai || []).join("; ") || "không")} (văn phòng cài với --ignore-scripts, không chạy) · Mã trên npm là bản đóng gói, không chắc trùng từng byte với mã nguồn đã đọc.</p>
+      ${n.loi ? `<p style="color:var(--bad);margin:0">${esc(n.loi)}</p>` : ""}</div>`;
+  }
   function quetHtml(q, d) {
     if (!q) return "";
     return `<details><summary>Máy rà thấy gì (không cần AI)</summary>
       <p>${q.soFile} file, ${MB(q.dungLuong)}${q.catBot ? " (quá nhiều, đã cắt bớt)" : ""} · Giấy phép: <b>${esc(q.giayPhep || "không thấy file LICENSE")}</b></p>
-      <div class="grid"><div><h3>Skill sẽ cài (${(d.seCai || []).length})</h3>${ds(d.seCai, 40)}
-        ${d.trungTen && d.trungTen.length ? `<p style="color:var(--warn)">Trùng tên skill anh tự cài trên máy (sẽ bỏ qua, không ghi đè): ${esc(d.trungTen.join(", "))}</p>` : ""}
+      <div class="grid"><div>${q.loai === "skill" ? `<h3>Skill sẽ cài (${(d.seCai || []).length})</h3>${ds(d.seCai, 40)}
+        ${d.trungTen && d.trungTen.length ? `<p style="color:var(--warn)">Trùng tên skill anh tự cài trên máy (sẽ bỏ qua, không ghi đè): ${esc(d.trungTen.join(", "))}</p>` : ""}` : ""}
+        ${(q.mcpGoi || []).length ? `<h3>Gói máy chủ MCP (${q.mcpGoi.length})</h3>${ds(q.mcpGoi.map((m) => `${m.goi}@${m.phienBan} · ${m.file}`))}` : ""}
+        ${(q.mcpPython || []).length ? `<h3>MCP Python (chưa cài tự động được)</h3>${ds(q.mcpPython)}` : ""}
         <h3>Script (${q.scripts.length})</h3>${ds(q.scripts)}<h3>File chạy được / nhị phân (${q.nhiPhan.length})</h3>${ds(q.nhiPhan)}</div>
-      <div><h3>Hook (${q.hook.length})</h3>${ds(q.hook)}<h3>Kết nối MCP (${q.mcp.length})</h3>${ds(q.mcp)}<h3>Tự chạy khi cài npm (${q.tuChay.length})</h3>${ds(q.tuChay)}
+      <div><h3>Hook (${q.hook.length})</h3>${ds(q.hook)}<h3>Cấu hình MCP cho AI (${q.mcp.length})</h3>${ds(q.mcp)}<h3>Tự chạy khi cài npm (${q.tuChay.length})</h3>${ds(q.tuChay)}
         <h3>Điểm bất thường (${q.tongCanhBao})</h3>${ds(q.canhBao.map((x) => `${x.file}:${x.line} · ${x.name}`), 15)}</div></div></details>`;
   }
   function phanTichHtml(p) {
     if (!p) return "";
-    const nhom = { A: "Nhóm A: cả đội bắt buộc dùng mỗi khi khớp việc", B: "Nhóm B: chỉ dùng khi anh giao đích danh", khong: "Không nên cài" }[p.deNghi];
-    return `<div class="verdict${p.deNghi === "khong" ? " khong" : ""}"><b>Đội trưởng đề nghị: ${esc(nhom)}</b><br>${esc(p.lyDo)}</div>
-      <div class="grid"><div><h3>Skill này làm gì</h3><p>${esc(p.tomTat)}</p><h3>Khi nào dùng</h3><p>${esc(p.cachDung)}</p>
+    return `<div class="verdict${p.deNghi === "khong" ? " khong" : ""}"><b>Đội trưởng đề nghị: ${esc(DE_NGHI[p.deNghi] || p.deNghi)}</b><br>${esc(p.lyDo)}</div>
+      <div class="grid"><div>${p.loaiRepo ? `<h3>Đây là</h3><p>${esc(p.loaiRepo)}</p>` : ""}<h3>Làm được gì</h3><p>${esc(p.tomTat)}</p><h3>Văn phòng dùng vào việc gì</h3><p>${esc(p.cachDung)}</p>
         ${p.phong.length ? `<h3>Phòng được lợi</h3><p>${p.phong.map((x) => esc(PHONG[x] || x)).join(", ")}</p>` : ""}
-        ${p.trungVoi ? `<h3>Trùng với bộ đang có</h3><p>${esc(p.trungVoi)}</p>` : ""}</div>
-      <div><h3>Rủi ro</h3>${p.ruiRo.length ? `<ul class="risk">${p.ruiRo.map((r) => `<li class="${r.muc}"><b>${{ cao: "cao", vua: "vừa", thap: "thấp" }[r.muc]}</b>${esc(r.noiDung)}</li>`).join("")}</ul>` : "<p>Đội trưởng không thấy rủi ro đáng kể.</p>"}</div></div>
+        ${p.trungVoi ? `<h3>Trùng với thứ đang có</h3><p>${esc(p.trungVoi)}</p>` : ""}</div>
+      <div><h3>Rủi ro</h3>${p.ruiRo.length ? `<ul class="risk">${p.ruiRo.map((r) => `<li class="${r.muc}"><b>${{ cao: "cao", vua: "vừa", thap: "thấp" }[r.muc]}</b>${esc(r.noiDung)}</li>`).join("")}</ul>` : "<p>Đội trưởng không thấy rủi ro đáng kể.</p>"}
+        ${p.guiRaNgoai ? `<h3>Gửi dữ liệu ra ngoài</h3><p>${esc(p.guiRaNgoai)}</p>` : ""}${p.canKhoa ? `<p style="color:var(--warn)"><b>Cần khóa API hoặc tài khoản riêng.</b></p>` : ""}</div></div>
       ${p.giaiThich ? `<details><summary>Đội trưởng giải thích đầy đủ</summary><pre>${esc(p.giaiThich)}</pre></details>` : ""}`;
+  }
+  function quyetHtml(d) {
+    const p = d.phanTich || {}, id = esc(d.id);
+    const nutKhac = `<button type="button" data-tk="${id}">Lưu tham khảo</button><button type="button" class="no" data-bo="${id}">Không dùng</button>`;
+    const canhKhong = p.deNghi === "khong" ? `<p style="color:var(--bad);margin:0">Đội trưởng đề nghị KHÔNG dùng. Anh vẫn có thể cài nếu đã cân nhắc.</p>` : "";
+    if (d.loai === "skill") {
+      const mac = p.deNghi === "A" || p.deNghi === "B" ? p.deNghi : "";
+      return `<form class="decide" data-duyet="${id}" data-loai="skill">
+        <fieldset><legend>Cài cho cả đội thì xếp vào nhóm nào?</legend>
+          <label class="r"><input type="radio" name="nhom" value="A"${mac === "A" ? " checked" : ""} required><span><b>Nhóm A</b><br><span class="note">Mỗi lượt, AI phải xem và dùng khi skill khớp việc.</span></span></label>
+          <label class="r"><input type="radio" name="nhom" value="B"${mac === "B" ? " checked" : ""}><span><b>Nhóm B</b><br><span class="note">Chỉ dùng khi anh giao đích danh (việc nhạy cảm, cần công cụ/khóa riêng).</span></span></label></fieldset>
+        <label>Dùng cho (một dòng, đội đọc dòng này để biết khi nào dùng)<br><input type="text" name="dungCho" maxlength="300" value="${esc(p.dungCho || "")}" required style="width:100%"></label>
+        ${canhKhong}<div class="row"><button class="pri" type="submit">Duyệt và cài skill</button>${nutKhac}</div></form>`;
+    }
+    if (d.loai === "mcp") {
+      const n = d.npm || {}, coThe = n.ban && !n.loi;
+      const chon = new Set((p.phong || []).filter((x) => PHONG_MCP.includes(x)));
+      return `<form class="decide" data-duyet="${id}" data-loai="mcp">
+        <fieldset><legend>Bật máy chủ MCP này cho phòng nào? (đổi sau được ở trang Kết nối)</legend>
+          ${PHONG_MCP.map((r) => `<label class="r" style="flex:1 1 160px"><input type="checkbox" name="phong" value="${r}"${chon.has(r) ? " checked" : ""}><span>${esc(PHONG[r])}</span></label>`).join("")}</fieldset>
+        <p class="note" style="margin:0">Kakashi và Hinata (Antigravity) chưa dùng được MCP. Chạy với: <span class="mono">${esc((p.args || []).join(" ") || "(không đối số)")}</span></p>
+        ${n.khop === "khac" ? `<label class="r"><input type="checkbox" name="chapNhan"><span style="color:var(--bad)">Tôi hiểu gói npm ghi repo khác (${esc(n.repoNpm)}) và vẫn muốn cài.</span></label>` : ""}
+        ${canhKhong}<div class="row">${coThe ? `<button class="pri" type="submit">Duyệt và cài MCP</button>` : `<span class="note" style="color:var(--bad)">${esc(n.loi || "Chưa cài được")}</span>`}${nutKhac}</div></form>`;
+    }
+    return `<div class="decide"><p class="note" style="margin:0">Repo này không cài được thành skill hay máy chủ MCP. Anh lưu tham khảo để đội tra lại, hoặc bỏ.</p><div class="row">${nutKhac}</div></div>`;
   }
   function cardHtml(d) {
     const [t, c] = TT[d.trangThai] || [d.trangThai, "mute"];
     const run = c === "run";
     const commit = d.commit ? `<a class="mono" href="https://github.com/${esc(d.repo)}/tree/${esc(d.commit)}${d.sub ? "/" + esc(d.sub) : ""}" target="_blank" rel="noopener noreferrer">@${esc(d.commit.slice(0, 7))}</a>` : "";
+    const loai = d.loai ? `<span class="pill mute">${esc(LOAI[d.loai] || d.loai)}</span>` : "";
     let body = "";
-    if (d.trangThai === "dang-tai") body = `<p><span class="spin" aria-hidden="true"></span>Đang tải đúng một bản của repo và rà file (không chạy gì trong đó)…</p>`;
-    else if (d.trangThai === "dang-phan-tich") body = `<p><span class="spin" aria-hidden="true"></span>Claude đội trưởng đang đọc skill ở chế độ chỉ đọc. Thường mất 1–5 phút; trang tự cập nhật.</p>` + quetHtml(d.quet, d);
-    else if (d.trangThai === "loi") body = `<p style="color:var(--bad)">${esc(d.loi)}</p>` + quetHtml(d.quet, d) + `<div class="row" style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" data-lai="${esc(d.id)}">Phân tích lại</button><button type="button" class="no" data-bo="${esc(d.id)}">Bỏ đề xuất</button></div>`;
-    else if (d.trangThai === "cho-duyet") {
-      const p = d.phanTich || {}, mac = p.deNghi === "A" || p.deNghi === "B" ? p.deNghi : "";
-      body = phanTichHtml(p) + quetHtml(d.quet, d) + `<form class="decide" data-duyet="${esc(d.id)}">
-        <fieldset><legend>Cài cho cả đội thì xếp vào nhóm nào?</legend>
-          <label class="r"><input type="radio" name="nhom" value="A"${mac === "A" ? " checked" : ""} required><span><b>Nhóm A</b><br><span class="note">Mỗi lượt, AI phải xem và dùng khi skill khớp việc.</span></span></label>
-          <label class="r"><input type="radio" name="nhom" value="B"${mac === "B" ? " checked" : ""}><span><b>Nhóm B</b><br><span class="note">Chỉ dùng khi anh giao đích danh (việc nhạy cảm, cần công cụ/khóa riêng).</span></span></label></fieldset>
-        <label>Dùng cho (một dòng, đội đọc dòng này để biết khi nào dùng)<br><input type="text" name="dungCho" maxlength="300" value="${esc(p.dungCho || "")}" required style="width:100%"></label>
-        ${p.deNghi === "khong" ? `<p style="color:var(--bad);margin:0">Đội trưởng đề nghị KHÔNG cài. Anh vẫn có thể cài nếu đã cân nhắc.</p>` : ""}
-        <div class="row"><button class="pri" type="submit">Duyệt và cài</button><button type="button" class="no" data-bo="${esc(d.id)}">Không cài</button></div></form>`;
-    } else if (d.trangThai === "da-cai") {
+    if (d.trangThai === "dang-tai") body = `<p><span class="spin" aria-hidden="true"></span>Đang tải đúng một bản của repo, rà file và tra npm (không chạy gì trong đó)…</p>`;
+    else if (d.trangThai === "dang-phan-tich") body = `<p><span class="spin" aria-hidden="true"></span>Claude đội trưởng đang đọc repo ở chế độ chỉ đọc. Thường mất 1–5 phút; trang tự cập nhật.</p>` + npmHtml(d.npm) + quetHtml(d.quet, d);
+    else if (d.trangThai === "loi") body = `<p style="color:var(--bad)">${esc(d.loi)}</p>` + npmHtml(d.npm) + quetHtml(d.quet, d) + `<div class="row" style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" data-lai="${esc(d.id)}">Phân tích lại</button><button type="button" class="no" data-bo="${esc(d.id)}">Bỏ</button></div>`;
+    else if (d.trangThai === "cho-duyet") body = (d.loi ? `<p style="color:var(--bad)">${esc(d.loi)}</p>` : "") + phanTichHtml(d.phanTich) + npmHtml(d.npm) + quetHtml(d.quet, d) + quyetHtml(d);
+    else if (d.trangThai === "da-cai" && d.mcpId) body = `<p>Đã cài máy chủ MCP <b class="mono">${esc(d.mcpId)}</b> (${esc(d.npm && d.npm.goi)}@${esc(d.npm && d.npm.ban)}), bật cho: ${esc((d.phongBat || []).map((r) => PHONG[r] || r).join(", ") || "chưa phòng nào")}. Đổi phòng ở trang <a href="ket-noi.html">Kết nối</a>.</p>`;
+    else if (d.trangThai === "da-cai") {
       const kq = d.ketQuaCai || [], ok = kq.filter((x) => x.kq !== "trung");
       body = `<p>Đã thêm vào bộ skill (nhóm <b>${esc(d.nhom)}</b>): ${esc(d.dungCho)}</p><p class="note">${ok.length} lần cài cho ${[...new Set(ok.map((x) => AI[x.ai] || x.ai))].join(", ") || "—"}.` +
         (kq.some((x) => x.kq === "trung") ? ` Bỏ qua vì trùng tên skill anh tự cài: ${esc([...new Set(kq.filter((x) => x.kq === "trung").map((x) => x.ten))].join(", "))}.` : "") + ` Lượt làm việc tiếp theo của đội sẽ thấy skill này.</p>`;
-    } else if (d.trangThai === "dang-cai") body = `<p><span class="spin" aria-hidden="true"></span>Đang chép skill cho Claude, Codex, Antigravity…</p>`;
-    else body = `<p class="note">Anh đã chọn không cài${d.phanTich ? " (đội trưởng đề nghị: " + esc(d.phanTich.deNghi) + ")" : ""}.</p>`;
+    } else if (d.trangThai === "dang-cai") body = `<p><span class="spin" aria-hidden="true"></span>Đang cài…</p>`;
+    else body = `<p class="note">Anh đã chọn không dùng${d.phanTich ? " (đội trưởng đề nghị: " + esc(DE_NGHI[d.phanTich.deNghi] || d.phanTich.deNghi) + ")" : ""}.</p>`;
     return `<article class="card" aria-busy="${run}"><div class="top"><a href="https://github.com/${esc(d.repo)}" target="_blank" rel="noopener noreferrer">${esc(d.repo)}</a>${d.sub ? `<span class="mono">/${esc(d.sub)}</span>` : ""}${commit}
-      <span class="pill ${c}">${esc(t)}</span><span class="mono" style="margin-left:auto">${esc(new Date(d.luc).toLocaleString("vi-VN"))}</span></div><div class="body">${body}</div></article>`;
+      ${loai}<span class="pill ${c}">${esc(t)}</span><span class="mono" style="margin-left:auto">${esc(new Date(d.luc).toLocaleString("vi-VN"))}</span></div><div class="body">${body}</div></article>`;
+  }
+  function thamKhaoHtml(d) {
+    const p = d.phanTich || {};
+    return `<details class="card"><summary style="padding:10px 14px"><a href="https://github.com/${esc(d.repo)}" target="_blank" rel="noopener noreferrer">${esc(d.repo)}</a> · ${esc(p.loaiRepo || LOAI[d.loai] || "")} — ${esc(p.tomTat).slice(0, 160)}</summary>
+      <div class="body">${phanTichHtml(p)}<p class="note">Lưu lúc ${esc(new Date(d.capNhat || d.luc).toLocaleString("vi-VN"))} · commit <span class="mono">${esc(String(d.commit || "").slice(0, 7))}</span></p></div></details>`;
   }
   function render() {
     if (!data) { if (loadErr) { $("list").innerHTML = `<div class="box"><p style="color:var(--bad)">${esc(loadErr)}</p><button type="button" id="retry">Thử lại</button></div>`; $("table").innerHTML = ""; } return; }
-    $("list").innerHTML = data.deXuat.length ? data.deXuat.map(cardHtml).join("") : `<div class="box empty">Chưa có đề xuất nào. Dán link repo skill ở trên để đội trưởng xem giúp.</div>`;
+    const dangXem = data.deXuat.filter((d) => d.trangThai !== "tham-khao"), tk = data.deXuat.filter((d) => d.trangThai === "tham-khao");
+    $("list").innerHTML = dangXem.length ? dangXem.map(cardHtml).join("") : `<div class="box empty">Chưa xem repo nào. Dán link ở trên để đội trưởng xem giúp.</div>`;
+    $("thamKhao").innerHTML = tk.length ? tk.map(thamKhaoHtml).join("") : `<div class="box empty">Chưa lưu repo nào.</div>`;
     const theo = {};
     for (const r of data.skill.nguon) (theo[r.repo] = theo[r.repo] || []).push(r);
     $("kiemNote").textContent = data.skill.daCai ? "Máy đã cài bộ skill lúc " + new Date(data.skill.luc).toLocaleString("vi-VN") + "." : "Máy chưa cài bộ skill mặc định: chạy `node tools/cai-skill.js cai` trong thư mục văn phòng.";
@@ -194,19 +239,27 @@ pre { white-space: pre-wrap; background: #f6f5f2; padding: 10px; font: 13px/1.5 
     act(async () => { await req("/skill/de-xuat", { link }); $("link").value = ""; }, "Đã gửi cho đội trưởng. Kết quả hiện bên dưới khi đọc xong.");
   });
   document.addEventListener("click", (e) => {
-    const b = e.target.closest("button[data-lai], button[data-bo], #retry");
+    const b = e.target.closest("button[data-lai], button[data-bo], button[data-tk], #retry");
     if (!b) return;
     if (b.id === "retry") return load();
-    if (b.dataset.lai) return act(() => req(`/skill/de-xuat/${encodeURIComponent(b.dataset.lai)}/phan-tich-lai`, {}), "Đang phân tích lại.");
-    if (b.dataset.bo && confirm("Không cài skill này? Bản tải về để xem sẽ bị xoá.")) act(() => req(`/skill/de-xuat/${encodeURIComponent(b.dataset.bo)}/tu-choi`, {}), "Đã ghi: không cài.");
+    const id = encodeURIComponent(b.dataset.lai || b.dataset.bo || b.dataset.tk);
+    if (b.dataset.lai) return act(() => req(`/skill/de-xuat/${id}/phan-tich-lai`, {}), "Đang phân tích lại.");
+    if (b.dataset.tk) return act(() => req(`/skill/de-xuat/${id}/tham-khao`, {}), "Đã lưu vào thư viện tham khảo.");
+    if (b.dataset.bo && confirm("Không dùng repo này? Bản tải về để xem sẽ bị xoá.")) act(() => req(`/skill/de-xuat/${id}/tu-choi`, {}), "Đã ghi: không dùng.");
   });
   document.addEventListener("submit", (e) => {
     const f = e.target.closest("form[data-duyet]");
     if (!f) return;
     e.preventDefault();
+    const url = `/skill/de-xuat/${encodeURIComponent(f.dataset.duyet)}/duyet`;
+    if (f.dataset.loai === "mcp") {
+      const phong = [...f.querySelectorAll("input[name=phong]:checked")].map((x) => x.value), chap = f.querySelector("input[name=chapNhan]");
+      if (!confirm(`Cài máy chủ MCP này (tải từ npm, không chạy script cài) và bật cho: ${phong.map((r) => PHONG[r]).join(", ") || "chưa phòng nào"}?`)) return;
+      return act(() => req(url, { phong, chapNhanRepoKhac: !!(chap && chap.checked) }), "Đã cài máy chủ MCP. Lượt chạy kế tiếp của phòng được bật sẽ dùng được.");
+    }
     const nhom = (f.querySelector("input[name=nhom]:checked") || {}).value, dungCho = f.querySelector("input[name=dungCho]").value.trim();
     if (!confirm(`Cài skill này cho Claude, Codex và Antigravity, xếp nhóm ${nhom}?`)) return;
-    act(() => req(`/skill/de-xuat/${encodeURIComponent(f.dataset.duyet)}/duyet`, { nhom, dungCho }), "Đã cài. Lượt làm việc tiếp theo của đội sẽ thấy skill này.");
+    act(() => req(url, { nhom, dungCho }), "Đã cài. Lượt làm việc tiếp theo của đội sẽ thấy skill này.");
   });
   load();
 })();

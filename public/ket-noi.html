@@ -85,7 +85,7 @@ button.act:disabled { opacity: .5; cursor: wait; }
   const NPC = { hinata: ["Hinata", "H", "#9333ea"], itachi: ["Itachi", "I", "#059669"], sasuke: ["Sasuke", "S", "#2563eb"], kakashi: ["Kakashi", "K", "#71717a"], sakura: ["Sakura", "S", "#db2777"] };
   const ICON = { notion: "📝", figma: "🎨", canva: "🖌️", webflow: "🌐", gitbook: "📘", supabase: "🗄️", cloudflare: "☁️", "google-drive": "📁", "google-docs": "📄", "google-sheets": "📊", "google-slides": "📽️", "blaze-sql": "🧮", "claude-docs": "📚",
     "chrome-devtools": "🧪", gmail: "✉️", "google-calendar": "📅", zoom: "🎥", composio: "🧩", vercel: "▲", appdeploy: "🚀", capcut: "🎬" };
-  const GROUP = { "tai-lieu": "Tài liệu", "thiet-ke": "Thiết kế", "du-lieu": "Dữ liệu", gui: "Gửi đi", "trien-khai": "Triển khai", "sang-tao": "Sáng tạo", "kiem-thu": "Kiểm thử" };
+  const GROUP = { "tai-lieu": "Tài liệu", "thiet-ke": "Thiết kế", "du-lieu": "Dữ liệu", gui: "Gửi đi", "trien-khai": "Triển khai", "sang-tao": "Sáng tạo", "kiem-thu": "Kiểm thử", them: "Anh duyệt thêm" };
   const ST = { "da-ket-noi": ["✓ Đã kết nối", "ok"], "da-cau-hinh": ["✓ Đã thêm", "ok"], "can-dang-nhap": ["⚠ Cần đăng nhập", "warn"], loi: ["⚠ Lỗi", "warn"], tat: ["Đang tắt", "none"], "chua-co": ["— Chưa có", "none"], cu: ["↻ Bản cũ", "warn"], "khong-ho-tro": ["·", "none"] };
   let data = null, filter = "all", busy = false;
   const ten = (id) => (data && data.rows.find((r) => r.id === id)?.name) || id;
