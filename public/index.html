@@ -214,6 +214,11 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
 <meta name="theme-color" content="#06080d">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
+<!-- iPhone: mở từ biểu tượng màn hình chính thì chạy toàn màn hình, thanh trạng thái trong suốt (mọi thứ đã chừa env(safe-area-inset-*)) -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Văn phòng AI">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <script src="app.js" defer></script>
 </head>
 <body>

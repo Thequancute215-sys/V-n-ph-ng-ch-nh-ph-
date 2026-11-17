@@ -52,8 +52,16 @@ export function createDesk(getOffice) {
   toolbar.innerHTML = ["journal", "tasks", "assign", "ideas", "projects", "quotas", "progress", "publish"].map((key) => `<button type="button" class="btn ghost" data-desk="${key}" aria-controls="officeDesk" aria-expanded="false">${names[key]}</button>`).join("") +
     '<a class="btn ghost" href="ket-noi.html" title="Kết nối (MCP) của đội: Notion, Figma, Google Drive…">Kết nối</a>' +
     '<a class="btn ghost" href="dien-thoai.html" title="Ghép điện thoại để điều khiển văn phòng từ xa">Điện thoại</a>' +
-    '<a class="btn ghost" href="cap-nhat.html" id="deskUpdate" title="Phiên bản app và cập nhật">Cập nhật</a>';
+    '<a class="btn ghost" href="cap-nhat.html" id="deskUpdate" title="Phiên bản app và cập nhật">Cập nhật</a>' +
+    '<a class="btn ghost" href="dieu-khien.html" data-chi-dt style="display:none" title="Về bảng điều khiển trên điện thoại">← Bảng điều khiển</a>' +
+    '<button type="button" class="btn ghost" data-tai-lai style="display:none" title="Tải lại văn phòng">↻ Tải lại</button>';
   document.querySelector(".bar").append(toolbar);
+  // App trên màn hình chính iPhone không có nút Back hay nút tải lại của trình duyệt (CEO hỏi 17/11/2026):
+  // điện thoại (không phải máy chạy văn phòng) có nút về bảng điều khiển; mở từ biểu tượng thì có thêm nút tải lại.
+  ctlBase().then((b) => { if (b !== "/ctl") toolbar.querySelector("[data-chi-dt]").style.display = ""; });
+  if (navigator.standalone === true || matchMedia("(display-mode: standalone)").matches) {
+    const tl = toolbar.querySelector("[data-tai-lai]"); tl.style.display = ""; tl.addEventListener("click", () => location.reload());
+  }
   // Menu điện thoại (ngăn kéo ☰): đổi tài khoản Antigravity bằng một chạm + quản lý tài khoản (CEO yêu cầu 16/11/2026).
   // Trên máy tính khối này ẩn (đã có trong mục Hạn mức và nút Tài khoản AI).
   const tkMenu = document.createElement("div"); tkMenu.className = "desk-tk"; tkMenu.setAttribute("aria-label", "Tài khoản AI");
