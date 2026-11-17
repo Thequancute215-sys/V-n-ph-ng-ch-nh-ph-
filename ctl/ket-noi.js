@@ -9,8 +9,8 @@ const { execFile } = require("child_process");
 
 const err = (code, message) => Object.assign(new Error(message), { code });
 const { CATALOG, CHAN_CLAUDE } = require("./ket-noi-danh-muc");
-const phong = require("./mcp-phong");
-const cdt = require("./chrome-devtools");   // MCP chạy trên máy   // mỗi phòng chỉ bật vài kết nối đúng phần việc
+const phong = require("./mcp-phong");      // mỗi phòng chỉ bật vài kết nối đúng phần việc
+const mcpMay = require("./mcp-may");        // MCP chạy trên máy: Chrome DevTools + MCP CEO duyệt thêm
 
 // Đọc `claude mcp list` / `agy mcp list` (chữ) và `codex mcp list --json`.
 function parseClaude(text) {
@@ -52,14 +52,19 @@ function createConnectors({ runner, audit, dir, run = execFile }) {
     }
     const s = cache;
     const giao = phong.read(dir);
-    const rows = CATALOG.map((c) => {
-      // MCP chạy trên máy (Chrome DevTools): không đăng ký vào CLI, văn phòng gắn vào lượt; trạng thái = đã cài đúng bản chưa.
+    // Danh mục + MCP chạy trên máy CEO duyệt thêm (ctl/mcp-may.js) chưa có trong danh mục.
+    const dsMay = mcpMay.tatCa(dir);
+    const danhMuc = [...CATALOG, ...mcpMay.catalogMay(dir).filter((m) => !CATALOG.some((c) => c.id === m.id))];
+    const rows = danhMuc.map((c) => {
+      // MCP chạy trên máy: không đăng ký vào CLI, văn phòng gắn vào lượt; trạng thái = đã cài đúng bản chưa.
       if (c.may) {
-        const t = cdt.trangThai(dir), st = t.daCai ? (t.dungBan ? "da-cau-hinh" : "cu") : "chua-co";
+        const def = dsMay.find((d) => d.id === c.id);
+        const t = def ? mcpMay.trangThai(dir, def) : { daCai: false }, st = t.daCai ? (t.dungBan ? "da-cau-hinh" : "cu") : "chua-co";
         const ai = { claude: st, codex: st, agy: "khong-ho-tro" };
         const rooms = Object.keys(phong.PHONG).filter((k) => giao[k].includes(c.id));
         return { id: c.id, name: c.name, nhom: c.nhom, url: null, chan: false, note: c.note || null, web: false, app: null, may: true,
-          phienBan: t.phienBan, canBan: t.canBan, ai, rooms, ready: Object.fromEntries(rooms.map((k) => [k, t.daCai])), coTheGiao: Object.keys(phong.PHONG).filter((k) => phong.hopLe(c.id, k)) };
+          goi: def && def.goi, repo: def && def.repo || null, phienBan: t.phienBan, canBan: t.canBan, ai, rooms, ready: Object.fromEntries(rooms.map((k) => [k, t.daCai])),
+          coTheGiao: Object.keys(phong.PHONG).filter((k) => phong.hopLe(c.id, k, dir)) };
       }
       const ai = {
         // App sáng tạo: MCP chạy trên máy (vd. capcut) nối cho AI nào thì hiện ở cột AI đó.
@@ -76,7 +81,7 @@ function createConnectors({ runner, audit, dir, run = execFile }) {
       return { id: c.id, name: c.name, nhom: c.nhom, url: c.url || null, chan: Boolean(c.chan), note: c.note || null, web: Boolean(c.web), app, ai, rooms, ready, coTheGiao };
     });
     // Kết nối riêng của máy (vd. đã tự thêm) không có trong danh mục
-    const known = new Set(CATALOG.flatMap((c) => [c.claude, c.id]));
+    const known = new Set(danhMuc.flatMap((c) => [c.claude, c.id]));
     const extra = [...Object.keys(s.claude).filter((k) => !known.has(k)).map((k) => ({ ai: "claude", name: k, state: s.claude[k] })),
       ...Object.keys(s.codex).filter((k) => !known.has(k)).map((k) => ({ ai: "codex", name: k, state: s.codex[k] })),
       ...Object.keys(s.agy).filter((k) => !known.has(k)).map((k) => ({ ai: "agy", name: k, state: s.agy[k] }))];
@@ -113,9 +118,10 @@ function createConnectors({ runner, audit, dir, run = execFile }) {
   // Cài MCP chạy trên máy (CEO bấm Cài trên trang Kết nối): tải đúng phiên bản đã ghim, không chạy script cài.
   let dangCai = null;
   async function caiMay(id) {
-    if (id !== cdt.ID) throw err("BAD_REQUEST", "Không có kết nối chạy trên máy: " + id);
+    const def = mcpMay.tim(dir, id);
+    if (!def) throw err("BAD_REQUEST", "Không có kết nối chạy trên máy: " + id);
     if (dangCai) throw err("TOO_MANY", "Đang cài, chờ xong đã");
-    dangCai = cdt.cai(dir);
+    dangCai = mcpMay.cai(dir, def);
     try { const t = await dangCai; audit.log("ceo", "mcp.cai_may", id, { phienBan: t.phienBan, ok: true }); }
     catch (e) { audit.log("ceo", "mcp.cai_may", id, { ok: false }); throw e; }
     finally { dangCai = null; }

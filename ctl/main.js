@@ -222,7 +222,8 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     ["GET", "/skill", () => { const t = skillDuyet.trangThai(); return { skill: t.kiem, danhMuc: t.danhMuc, deXuat: t.deXuat }; }],
     // CEO dán link repo GitHub: tải đúng một commit vào thư mục cách ly, máy rà, rồi Claude đội trưởng đọc chỉ-đọc và giải thích.
     ["POST", "/skill/de-xuat", async (p, qs, b) => [202, { deXuat: await skillDuyet.deXuat(b.link) }]],
-    ["POST", "/skill/de-xuat/:id/duyet", (p, qs, b) => ({ deXuat: skillDuyet.duyet(p.id, { nhom: b.nhom, dungCho: b.dungCho }) })],
+    ["POST", "/skill/de-xuat/:id/duyet", async (p, qs, b) => ({ deXuat: await skillDuyet.duyet(p.id, { nhom: b.nhom, dungCho: b.dungCho, phong: b.phong, chapNhanRepoKhac: b.chapNhanRepoKhac === true }) })],
+    ["POST", "/skill/de-xuat/:id/tham-khao", (p) => ({ deXuat: skillDuyet.thamKhao(p.id) })],
     ["POST", "/skill/de-xuat/:id/tu-choi", (p) => ({ deXuat: skillDuyet.tuChoi(p.id) })],
     ["POST", "/skill/de-xuat/:id/phan-tich-lai", (p) => [202, { deXuat: skillDuyet.phanTichLai(p.id) }]],
     ["POST", "/dieu-phoi", (p, qs, b) => ({ dieuPhoi: runner.dieuPhoi.save(b) })],

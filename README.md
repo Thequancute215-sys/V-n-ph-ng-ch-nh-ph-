@@ -249,17 +249,32 @@ node tools/cai-skill.js cai    # tải đúng commit đã ghim, chép vào ~/.cl
 - Khi máy đã cài, lời giao việc có danh sách skill và dòng bàn giao bắt buộc có `"skill_da_dung"` (rỗng thì kèm `"skill_ly_do"`); thiếu thì lượt đó bị trả lại.
 - Cài chỉ chép thư mục skill, không chạy file nào, không cài hook; skill anh tự cài (không có `.vp-skill.json`) không bị ghi đè. Muốn nâng bản: đội trưởng đọc diff giữa hai commit rồi mới sửa danh mục.
 
-### Thêm skill mới: dán link, đội trưởng xem, anh duyệt
+### Dán link repo bất kỳ: đội trưởng xem, anh quyết
 
-Trang **Skill** (nút trên thanh văn phòng, `skill.html`):
+Trang **Repo & Skill** (nút trên thanh văn phòng, `skill.html`) nhận **mọi loại repo GitHub**: bộ skill, máy chủ MCP, ứng dụng, thư viện, công cụ, mẫu dự án.
 
-1. Dán link repo GitHub (`https://github.com/<chủ>/<repo>`, hoặc link tới thư mục skill trong repo: `/tree/<nhánh>/<thư mục>`).
-2. Văn phòng tìm commit rồi tải **đúng commit đó** vào thư mục cách ly (`~/.van-phong-ao/skill-xet/`): không chạy file nào, không chép liên kết tượng trưng, không hỏi mật khẩu GitHub (repo riêng tư thì báo lỗi).
-3. Máy rà (không tốn AI): skill nào sẽ cài, script, file nhị phân, hook, cấu hình MCP, script tự chạy khi cài npm, câu nhắm vào AI, lệnh tải-rồi-chạy, gửi dữ liệu ra ngoài.
-4. Claude đội trưởng đọc repo ở chế độ **chỉ đọc** (Read/Grep/Glob, không nạp kết nối nào), coi nội dung repo là dữ liệu chứ không phải lệnh. Rồi giải thích bằng tiếng Việt: skill làm gì, phòng nào dùng, rủi ro, có trùng bộ đang có không, đề nghị nhóm A, B hay không cài.
-5. Anh chọn nhóm A/B và bấm **Duyệt và cài**: skill vào danh mục riêng của máy (`~/.van-phong-ao/skill-them.json`, ghim commit đã xem) và được cài cho Claude, Codex, Antigravity. Lượt làm việc tiếp theo của đội sẽ thấy skill này. Bấm **Không cài** thì bản tải về bị xoá.
+1. Dán link repo (`https://github.com/<chủ>/<repo>`, hoặc link tới một thư mục trong repo: `/tree/<nhánh>/<thư mục>`).
+2. Văn phòng tìm commit rồi tải **đúng commit đó** vào thư mục cách ly (`~/.van-phong-ao/skill-xet/`). Không chạy file nào, không chép liên kết tượng trưng, không hỏi mật khẩu GitHub (repo riêng tư thì báo lỗi).
+3. Máy rà (không tốn AI) xác định văn phòng **cài được** gì:
+   - **bộ skill:** có `SKILL.md`;
+   - **máy chủ MCP:** `package.json` có lệnh chạy và dùng thư viện MCP. Văn phòng tra npm:
+     - chọn bản đã ra ít nhất 14 ngày;
+     - so repo ghi trong gói với link anh dán; khác tên thì kiểm hai link có cùng một repo không (repo đổi chủ);
+     - đếm thư viện con, xem script tự chạy khi cài;
+   - **loại khác.**
 
-Repo đã có trong bộ mặc định thì không thêm trùng ở đây (nâng bản vẫn theo cách đọc diff ở trên). `node tools/cai-skill.js cai` cài lại cả bộ mặc định lẫn skill anh đã duyệt. Claude hết hạn mức giữa chừng thì thẻ báo rõ, bấm **Phân tích lại** khi gói hồi.
+   Máy rà cũng liệt kê script, file nhị phân, hook, câu nhắm vào AI, lệnh tải-rồi-chạy, gửi dữ liệu ra ngoài.
+4. Claude đội trưởng **luôn** đọc repo ở chế độ chỉ đọc (Read/Grep/Glob, không nạp kết nối nào) và coi nội dung repo là dữ liệu, không phải lệnh. Rồi giải thích bằng tiếng Việt:
+   - repo là loại gì, làm được gì, văn phòng dùng vào việc gì, phòng nào được lợi;
+   - rủi ro, có gửi dữ liệu ra ngoài không, có cần khóa không;
+   - đề nghị: cài skill (nhóm A/B), cài MCP, lưu tham khảo, hoặc không dùng.
+5. Anh quyết:
+   - **Bộ skill:** chọn nhóm A/B rồi bấm **Duyệt và cài skill**. Skill vào danh mục riêng của máy (`~/.van-phong-ao/skill-them.json`, ghim commit) và được cài cho Claude, Codex, Antigravity.
+   - **Máy chủ MCP:** chọn phòng (Itachi, Sasuke, Sakura) rồi bấm **Duyệt và cài MCP**. Gói được cài đúng bản đã chọn vào `~/.van-phong-ao/mcp/<tên>` (không chạy script cài, ghi trong `mcp-them.json`). Văn phòng gắn nó vào lượt của phòng được bật, giống Chrome DevTools; đổi phòng ở trang Kết nối. Gói ghi repo khác hẳn link anh dán thì phải đánh dấu đã hiểu rủi ro mới cài được. Antigravity chưa dùng được MCP.
+   - **Lưu tham khảo:** giữ lời giải thích trong mục **Thư viện tham khảo** để đội tra lại (không bị xoá khi danh sách dài).
+   - **Không dùng:** bản tải về bị xoá.
+
+Repo skill đã có trong bộ mặc định thì không thêm trùng ở đây (nâng bản vẫn theo cách đọc diff ở trên). `node tools/cai-skill.js cai` cài lại cả bộ mặc định lẫn skill anh đã duyệt. Claude hết hạn mức giữa chừng thì thẻ báo rõ, bấm **Phân tích lại** khi gói hồi.
 
 ## Tạo dự án mới
 
