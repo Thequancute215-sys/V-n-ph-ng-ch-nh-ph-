@@ -207,6 +207,8 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     ["POST", "/ket-noi/add", async (p, qs, b) => ({ ketNoi: await connectors.add(String(b.id || ""), String(b.ai || "")) })],
     ["POST", "/ket-noi/login", async (p, qs, b) => ({ ketNoi: await connectors.login(String(b.id || "")) })],
   ["POST", "/ket-noi/phong", async (p, qs, b) => ({ ketNoi: await connectors.setPhong(String(b.room || ""), b.ids) })],
+    // Cài MCP chạy trên máy (Chrome DevTools) đúng phiên bản đã ghim; tải từ npm nên chỉ khi CEO bấm.
+    ["POST", "/ket-noi/cai-may", async (p, qs, b) => ({ ketNoi: await connectors.caiMay(String(b.id || "")) })],
     ["GET", "/dieu-phoi", () => ({ dieuPhoi: runner.dieuPhoi.status() })],
     ["GET", "/agy-tai-khoan", () => ({ taiKhoan: agyTk.trangThai() })],
     // Cất xong thì đọc luôn danh sách model của tài khoản vừa cất (mỗi tài khoản thấy model khác nhau).

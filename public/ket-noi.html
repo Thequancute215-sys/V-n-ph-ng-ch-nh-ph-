@@ -84,9 +84,9 @@ button.act:disabled { opacity: .5; cursor: wait; }
   const AI_NAME = { claude: "Claude", codex: "Codex", agy: "Antigravity" };
   const NPC = { hinata: ["Hinata", "H", "#9333ea"], itachi: ["Itachi", "I", "#059669"], sasuke: ["Sasuke", "S", "#2563eb"], kakashi: ["Kakashi", "K", "#71717a"], sakura: ["Sakura", "S", "#db2777"] };
   const ICON = { notion: "📝", figma: "🎨", canva: "🖌️", webflow: "🌐", gitbook: "📘", supabase: "🗄️", cloudflare: "☁️", "google-drive": "📁", "google-docs": "📄", "google-sheets": "📊", "google-slides": "📽️", "blaze-sql": "🧮", "claude-docs": "📚",
-    gmail: "✉️", "google-calendar": "📅", zoom: "🎥", composio: "🧩", vercel: "▲", appdeploy: "🚀", capcut: "🎬" };
-  const GROUP = { "tai-lieu": "Tài liệu", "thiet-ke": "Thiết kế", "du-lieu": "Dữ liệu", gui: "Gửi đi", "trien-khai": "Triển khai", "sang-tao": "Sáng tạo" };
-  const ST = { "da-ket-noi": ["✓ Đã kết nối", "ok"], "da-cau-hinh": ["✓ Đã thêm", "ok"], "can-dang-nhap": ["⚠ Cần đăng nhập", "warn"], loi: ["⚠ Lỗi", "warn"], tat: ["Đang tắt", "none"], "chua-co": ["— Chưa có", "none"], "khong-ho-tro": ["·", "none"] };
+    "chrome-devtools": "🧪", gmail: "✉️", "google-calendar": "📅", zoom: "🎥", composio: "🧩", vercel: "▲", appdeploy: "🚀", capcut: "🎬" };
+  const GROUP = { "tai-lieu": "Tài liệu", "thiet-ke": "Thiết kế", "du-lieu": "Dữ liệu", gui: "Gửi đi", "trien-khai": "Triển khai", "sang-tao": "Sáng tạo", "kiem-thu": "Kiểm thử" };
+  const ST = { "da-ket-noi": ["✓ Đã kết nối", "ok"], "da-cau-hinh": ["✓ Đã thêm", "ok"], "can-dang-nhap": ["⚠ Cần đăng nhập", "warn"], loi: ["⚠ Lỗi", "warn"], tat: ["Đang tắt", "none"], "chua-co": ["— Chưa có", "none"], cu: ["↻ Bản cũ", "warn"], "khong-ho-tro": ["·", "none"] };
   let data = null, filter = "all", busy = false;
   const ten = (id) => (data && data.rows.find((r) => r.id === id)?.name) || id;
   async function req(path, body) {
@@ -114,12 +114,14 @@ button.act:disabled { opacity: .5; cursor: wait; }
       return `<div><b><span class="av" style="background:${NPC[k][2]};width:20px;height:20px;font-size:10px;box-shadow:none;border:0">${NPC[k][1]}</span>${esc(NPC[k][0])} · ${AI_NAME[ai]}</b>${ids.length ? ids.map((id) => cho.includes(id) ? `<span class="w" title="Chưa đăng nhập">${esc(ten(id))}⚠</span>` : esc(ten(id))).join(", ") : '<span class="st none">Chưa giao kết nối nào</span>'}</div>`; }).join("");
     $("table").innerHTML = `<div class="row head"><span></span><span>KẾT NỐI</span><span>NHÓM</span><span>CLAUDE</span><span>CODEX</span><span>ANTIGRAVITY</span><span>PHÒNG DÙNG</span><span></span></div>` + (rows.map((r) => {
       let acts = "";
+      if (r.may && (r.ai.claude === "chua-co" || r.ai.claude === "cu")) acts += `<button class="act" data-cai-may="${r.id}">${r.ai.claude === "cu" ? "Nâng lên " + esc(r.canBan) : "Cài trên máy"}</button>`;
       if (r.url && !r.chan) {
         if (r.ai.codex === "chua-co") acts += `<button class="act" data-add="${r.id}" data-ai="codex">+ Codex</button>`;
         else acts += `<button class="act" data-login="${r.id}">Đăng nhập Codex</button>`;
         if (r.ai.agy === "chua-co") acts += `<button class="act" data-add="${r.id}" data-ai="agy">+ Antigravity</button>`;
       }
       let sub = r.note || "";
+      if (r.may) sub = (r.phienBan ? "Bản " + r.phienBan + " · " : "") + (r.note || "");
       if (r.nhom === "sang-tao" && !r.web) sub = (r.app ? "Đã cài app trên máy — chờ nối MCP" : "Chưa cài app") + (r.note ? " · " + r.note : "");
       return `<div class="row"><span class="ico" aria-hidden="true">${ICON[r.id] || "🔌"}</span><span class="name">${esc(r.name)}${sub ? `<small>${esc(sub)}</small>` : ""}</span>` +
         `<span><span class="tag">${esc(GROUP[r.nhom] || r.nhom)}</span></span><span><span class="cap">Claude</span>${st(r, "claude")}</span><span><span class="cap">Codex</span>${st(r, "codex")}</span><span><span class="cap">Antigravity</span>${st(r, "agy")}</span>` +
@@ -152,6 +154,14 @@ button.act:disabled { opacity: .5; cursor: wait; }
       return;
     }
     const b = e.target.closest("button.act"); if (!b || busy) return;
+    if (b.dataset.caiMay) {
+      if (!confirm("Cài Chrome DevTools MCP (gói chrome-devtools-mcp của Google, bản đã ghim) vào thư mục dữ liệu văn phòng? Tải từ npm, không chạy script cài.")) return;
+      busy = true; render(); msg("Đang cài Chrome DevTools MCP (có thể mất 1–2 phút)…");
+      try { data = await req("/ket-noi/cai-may", { id: b.dataset.caiMay }); msg("Đã cài Chrome DevTools MCP. Phòng nào được bật sẽ dùng được từ lượt chạy kế tiếp."); }
+      catch (err) { msg(err.message, true); }
+      finally { busy = false; render(); }
+      return;
+    }
     const name = data.rows.find((r) => r.id === (b.dataset.add || b.dataset.login))?.name || "";
     if (b.dataset.add) { if (!confirm(`Thêm ${name} cho ${b.dataset.ai === "codex" ? "Codex (Itachi, Sasuke)" : "Antigravity (Hinata)"}?`)) return; }
     else if (!confirm(`Đăng nhập ${name} cho Codex: trình duyệt sẽ mở trang cho phép của ${name}, anh tự bấm đồng ý. Tiếp tục?`)) return;
