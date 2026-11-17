@@ -289,7 +289,10 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     const book = nhanh.agentMdLocal(run.workspace)
       ? "agent.md của repo này bị git bỏ qua (repo công khai, .git/info/exclude): sổ CHỈ nằm trên máy, bộ điều phối KHÔNG commit và không bao giờ push nó; bạn vẫn ghi sổ bình thường, bộ điều phối chuyển lượt sau khi kiểm bàn giao"
       : "Bộ điều phối sẽ commit agent.md (cục bộ, trên nhánh của luồng) và chuyển lượt sau khi kiểm bàn giao";
-    const where = run.git ? ` Luồng chạy trên nhánh riêng ${run.git.branch}; file bạn đổi được bộ điều phối commit lên nhánh này sau lượt, CEO duyệt xong mới đẩy lên GitHub.` : "";
+    // Nhánh của luồng chỉ có trên máy (chưa có upstream): bước "git pull --ff-only" đầu phiên của giao thức [2] luôn lỗi ở đây, AI
+    // làm đúng luật sẽ dừng ngay mà không làm gì (thử thật speak-coach 17/11/2026: Sol dừng 2 lần). Nói rõ để AI bỏ qua bước đó.
+    const where = run.git ? ` Luồng chạy trên nhánh riêng ${run.git.branch}; file bạn đổi được bộ điều phối commit lên nhánh này sau lượt, CEO duyệt xong mới đẩy lên GitHub.` +
+      ` ĐỒNG BỘ: nhánh này (và worktree khi chạy song song) chỉ có trên máy, chưa có upstream, nên BỎ QUA bước git pull --ff-only đầu phiên — không phải lỗi, bộ điều phối đã đồng bộ trước khi giao việc; làm việc luôn trên thư mục hiện tại.` : "";
     const task = "ĐẶC CÁCH CEO cho luồng " + run.id + ": tự chạy và duyệt bàn giao NỘI BỘ cho việc này, CEO chỉ nhận báo cáo cuối của Claude để duyệt. Giữ đúng quyền theo vai, không push/merge/release, không xóa dữ liệu người dùng." + where + " " + book + ": bạn không tự commit hoặc đổi NEXT_OWNER. Không làm việc ngoài yêu cầu. Nếu là Claude: còn lỗi cần sửa thì next_owner CODEX_ASTRA_DEV (backend, API) hoặc FRONTEND_UIUX_DEV (giao diện); kiến trúc đã duyệt nhưng chưa code thì chuyển CODEX_ASTRA_DEV (Phase chỉ có giao diện thì FRONTEND_UIUX_DEV); khi nghiệm thu xong thì next_owner SPEC_ARCHITECT để kết thúc; thấy AI khác đi sai hướng thì hỏi CEO bằng ask_ceo, không tự ra lệnh sửa." +
       (decisions ? "\nQUYẾT ĐỊNH CỦA CEO TRONG LUỒNG NÀY (làm theo):\n" + decisions : "") + "\nVIỆC CEO GIAO:\n" + run.task +
       (role === "CLAUDE_AUDITOR" ? explainForClaude(run) + deletesForClaude(run) : "") +
@@ -341,7 +344,7 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
       `\n3. contract/api.json là chuẩn DUY NHẤT giữa hai bên: dùng đúng đường dẫn, phương thức, operationId, tên trường, kiểu dữ liệu, mã lỗi và tên sự kiện trong đó; không thêm/bớt/đổi tên.` +
       ` Thấy hợp đồng thiếu hay mâu thuẫn thì KHÔNG tự đoán: làm phần còn lại, ghi rõ điểm cần Sol chốt vào giai_thich.` +
       (vai === "FRONTEND_UIUX_DEV" ? ` Backend đang được viết song song: gọi API qua một lớp client duy nhất theo hợp đồng; dữ liệu mẫu (nếu cần để chạy thử) lấy đúng schema/example của hợp đồng và chỉ nằm trong lớp đó.` : ` Frontend đang được viết song song và sẽ gọi đúng hợp đồng: trả lỗi theo mã lỗi trong hợp đồng; có thêm smoke test kiểm phản hồi bằng \`node tools/kiem-hop-dong.js --kiem-mau <Tên> <file>\` nếu repo có.`) +
-      `\n4. Xong thì chạy \`node tools/kiem-hop-dong.js\` (nếu có) để chắc phần của bạn khớp hợp đồng. Dòng JSON bàn giao: next_owner là SOL_ARCHITECT_ADVISOR; files chỉ gồm file trong phần của bạn.`;
+      `\n4. Xong thì kiểm phần của bạn khớp hợp đồng. ${require("./runner").KIEM_HD} Dòng JSON bàn giao: next_owner là SOL_ARCHITECT_ADVISOR; files chỉ gồm file trong phần của bạn.`;
   }
   function batDauSongSong(run, dk, { effort, returned, task }) {
     // Một lượt song song dùng ít nhất 2 bước: không đủ chỗ trong giới hạn lượt thì chạy lần lượt (giới hạn sẽ báo CEO như cũ).
