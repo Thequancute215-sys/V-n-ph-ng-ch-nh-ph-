@@ -187,8 +187,8 @@
       "complexity": "simple",
       "filePath": "server.js",
       "lineRange": [
-        830,
-        830
+        766,
+        766
       ]
     },
     {
@@ -595,7 +595,7 @@
       "id": "flow:xem-dien-thoai",
       "type": "flow",
       "name": "Xem văn phòng trên điện thoại",
-      "summary": "Mở đường hầm Cloudflare tới văn phòng để xem trên điện thoại; truy cập từ xa chỉ xem được, bắt buộc khóa xem, OS Controller bị chặn và nhắn tin cần PIN.",
+      "summary": "Mở đường hầm Cloudflare tới văn phòng để xem trên điện thoại; bắt buộc khóa xem, cầu /ctl bị chặn khi truy cập từ xa. Muốn điều khiển từ điện thoại thì ghép thiết bị (khóa xem + khóa thiết bị + danh sách lệnh, đi qua /dkx).",
       "tags": [
         "tu-xa",
         "cloudflared",
@@ -619,8 +619,8 @@
       "complexity": "simple",
       "filePath": "scripts/xem-tren-dien-thoai.ps1",
       "lineRange": [
-        1,
-        15
+        2,
+        16
       ]
     },
     {
@@ -636,7 +636,7 @@
       "filePath": "scripts/xem-tren-dien-thoai.sh",
       "lineRange": [
         1,
-        15
+        16
       ]
     },
     {
@@ -667,24 +667,8 @@
       "complexity": "simple",
       "filePath": "lib/ctlbridge.js",
       "lineRange": [
-        38,
-        56
-      ]
-    },
-    {
-      "id": "step:xem-dien-thoai:pin-nhan-tin",
-      "type": "step",
-      "name": "Nhắn tin từ xa cần PIN",
-      "summary": "lib/chat.authorized: từ xa phải gửi x-pin đúng; sai 5 lần trong 10 phút theo IP thì bị khóa.",
-      "tags": [
-        "tu-xa",
-        "cai-dat"
-      ],
-      "complexity": "simple",
-      "filePath": "lib/chat.js",
-      "lineRange": [
-        28,
-        37
+        40,
+        58
       ]
     },
     {
@@ -715,8 +699,8 @@
       "complexity": "simple",
       "filePath": "server.js",
       "lineRange": [
-        607,
-        701
+        603,
+        698
       ]
     },
     {
@@ -747,8 +731,8 @@
       "complexity": "simple",
       "filePath": "lib/keys.js",
       "lineRange": [
-        16,
-        27
+        17,
+        28
       ]
     },
     {
@@ -779,8 +763,8 @@
       "complexity": "simple",
       "filePath": "server.js",
       "lineRange": [
-        821,
-        828
+        757,
+        764
       ]
     },
     {
@@ -847,8 +831,8 @@
       "complexity": "simple",
       "filePath": "server.js",
       "lineRange": [
-        142,
-        178
+        143,
+        179
       ]
     },
     {
@@ -863,8 +847,8 @@
       "complexity": "simple",
       "filePath": "server.js",
       "lineRange": [
-        111,
-        122
+        112,
+        123
       ]
     },
     {
@@ -879,8 +863,8 @@
       "complexity": "complex",
       "filePath": "server.js",
       "lineRange": [
-        297,
-        318
+        298,
+        319
       ]
     },
     {
@@ -895,8 +879,8 @@
       "complexity": "simple",
       "filePath": "server.js",
       "lineRange": [
-        375,
-        409
+        376,
+        410
       ]
     },
     {
@@ -911,8 +895,8 @@
       "complexity": "simple",
       "filePath": "server.js",
       "lineRange": [
-        449,
-        464
+        450,
+        465
       ]
     },
     {
@@ -927,8 +911,8 @@
       "complexity": "moderate",
       "filePath": "server.js",
       "lineRange": [
-        491,
-        537
+        492,
+        538
       ]
     },
     {
@@ -943,8 +927,8 @@
       "complexity": "simple",
       "filePath": "server.js",
       "lineRange": [
-        829,
-        829
+        765,
+        765
       ]
     },
     {
@@ -959,8 +943,8 @@
       "complexity": "complex",
       "filePath": "public/vanphong3d.js",
       "lineRange": [
-        41,
-        1661
+        48,
+        1726
       ]
     },
     {
@@ -1136,7 +1120,7 @@
       "filePath": "lib/hopthu.js",
       "lineRange": [
         37,
-        57
+        56
       ]
     },
     {
@@ -1167,8 +1151,8 @@
       "complexity": "simple",
       "filePath": "server.js",
       "lineRange": [
-        557,
-        563
+        558,
+        564
       ]
     },
     {
@@ -1247,8 +1231,8 @@
       "complexity": "simple",
       "filePath": "ctl/workspaces.js",
       "lineRange": [
-        149,
-        189
+        150,
+        190
       ]
     },
     {
@@ -1264,7 +1248,7 @@
       "filePath": "ctl/workspaces.js",
       "lineRange": [
         11,
-        43
+        44
       ]
     },
     {
@@ -1279,8 +1263,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        124,
-        145
+        134,
+        155
       ]
     },
     {
@@ -1327,8 +1311,8 @@
       "complexity": "simple",
       "filePath": "ctl/quotas.js",
       "lineRange": [
-        142,
-        176
+        167,
+        252
       ]
     },
     {
@@ -1343,8 +1327,8 @@
       "complexity": "moderate",
       "filePath": "ctl/quotas.js",
       "lineRange": [
-        82,
-        140
+        102,
+        163
       ]
     },
     {
@@ -1375,8 +1359,8 @@
       "complexity": "simple",
       "filePath": "ctl/quotas.js",
       "lineRange": [
-        142,
-        176
+        167,
+        252
       ]
     },
     {
@@ -1470,39 +1454,38 @@
       "complexity": "simple",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        205,
-        238
+        427,
+        461
       ]
     },
     {
       "id": "domain:giao-tiep-ceo-doi",
       "type": "domain",
       "name": "Giao tiếp CEO với đội AI",
-      "summary": "Các kênh Giám đốc nói chuyện với đội AI mà không phá khóa lượt: chat chỉ đọc với từng nhân vật qua OS Controller, nhắn tin vào hòm thư của agent (PIN khi truy cập từ xa), và Phát loa gợi ý người nhận kèm danh sách việc đang chạy có nút dừng.",
+      "summary": "Các kênh Giám đốc nói chuyện với đội AI mà không phá khóa lượt: chat chỉ đọc với từng nhân vật qua OS Controller (trên máy này hoặc điện thoại đã ghép), và nút 📢 giao việc cho cả đội đi thẳng vào luồng tự động, kèm danh sách việc đang chạy có nút dừng.",
       "tags": [
         "giao-tiep",
         "chat",
-        "hom-thu",
-        "phat-loa"
+        "giao-viec"
       ],
       "complexity": "moderate",
       "domainMeta": {
         "entities": [
           "nhân vật (Pain, Hinata, Itachi, Sasuke, Sakura)",
           "tin chat (chat.json)",
-          "tin hòm thư ht-…",
-          "mã PIN",
-          "việc phát loa (activeTasks)"
+          "luồng tự động (run auto-…)",
+          "việc đang chạy của ctl"
         ],
         "businessRules": [
           "Chat luôn chỉ đọc kể cả khi bật toàn quyền và không chặn lượt làm việc chính",
           "Mỗi người tối đa 40 tin, chỉ một câu đang chờ trả lời",
-          "Từ xa phải có PIN; sai 5 lần trong 10 phút thì khóa",
-          "Phát loa chỉ gợi ý người nhận, không gọi AI; việc giao chỉ lưu trong bộ nhớ"
+          "Từ xa chỉ qua điện thoại đã ghép (khóa xem + khóa thiết bị + danh sách lệnh)",
+          "Giao việc cả đội luôn đi qua luồng tự động thật; không có việc giả trong bộ nhớ",
+          "Phanh chỉ báo đã dừng khi ctl xác nhận PID đã mất"
         ],
         "crossDomainInteractions": [
           "Chat chạy CLI như job “cmd” của OS Controller; dừng việc chuyển lệnh kill sang ctl",
-          "Tin của Giám đốc ghi vào hòm thư data/hop-thu của Sổ điều phối"
+          "Giao việc cả đội bật luồng tự động của Chu trình AI"
         ]
       }
     },
@@ -1533,8 +1516,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        204,
-        204
+        236,
+        236
       ]
     },
     {
@@ -1549,8 +1532,8 @@
       "complexity": "simple",
       "filePath": "ctl/chat.js",
       "lineRange": [
-        83,
-        105
+        85,
+        107
       ]
     },
     {
@@ -1565,8 +1548,8 @@
       "complexity": "simple",
       "filePath": "ctl/chat.js",
       "lineRange": [
-        30,
-        51
+        32,
+        53
       ]
     },
     {
@@ -1581,8 +1564,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        357,
-        363
+        534,
+        543
       ]
     },
     {
@@ -1597,8 +1580,8 @@
       "complexity": "moderate",
       "filePath": "ctl/chat.js",
       "lineRange": [
-        107,
-        127
+        109,
+        129
       ]
     },
     {
@@ -1613,199 +1596,8 @@
       "complexity": "simple",
       "filePath": "ctl/chat.js",
       "lineRange": [
-        70,
-        138
-      ]
-    },
-    {
-      "id": "flow:nhan-tin-hom-thu",
-      "type": "flow",
-      "name": "Giám đốc nhắn tin vào hòm thư agent",
-      "summary": "Giám đốc gửi tin cho một vai, tin rơi vào hòm thư data/hop-thu để agent đọc bằng vp; truy cập từ xa cần PIN. Ghi chú: widget public/chat-ui.js hiện chưa được trang HTML nào nạp (cần kiểm chứng trước khi dùng).",
-      "tags": [
-        "hom-thu",
-        "pin"
-      ],
-      "complexity": "moderate",
-      "domainMeta": {
-        "entryPoint": "Ô nhắn tin (public/chat-ui.js) → GET /chat/status, POST /chat/send",
-        "entryType": "http"
-      }
-    },
-    {
-      "id": "step:nhan-tin-hom-thu:mo-o-nhan",
-      "type": "step",
-      "name": "Mở ô nhắn tin cho agent",
-      "summary": "ChatBox.mount/build dựng hàng nhập PIN, textarea (Ctrl+Enter gửi) và lịch sử; hiện chưa trang nào trong public/ nạp tệp này.",
-      "tags": [
-        "hom-thu",
-        "giao-tiep"
-      ],
-      "complexity": "simple",
-      "filePath": "public/chat-ui.js",
-      "lineRange": [
-        36,
-        63
-      ]
-    },
-    {
-      "id": "step:nhan-tin-hom-thu:xac-thuc",
-      "type": "step",
-      "name": "Xác thực máy này hay từ xa",
-      "summary": "GET /chat/status; authorized: máy này luôn được phép, từ xa phải gửi x-pin đúng (PIN ở ~/.van-phong-ao/pin.txt), sai nhiều lần bị khóa.",
-      "tags": [
-        "hom-thu",
-        "giao-tiep"
-      ],
-      "complexity": "simple",
-      "filePath": "lib/chat.js",
-      "lineRange": [
-        28,
-        37
-      ]
-    },
-    {
-      "id": "step:nhan-tin-hom-thu:ghi-tin",
-      "type": "step",
-      "name": "Ghi sự kiện “tin” vào hòm thư vai nhận",
-      "summary": "POST /chat/send ghi sự kiện kênh van-phong vào data/hop-thu/<vai>.jsonl qua mailbox.append, trả mã ht-… trạng thái chờ đọc.",
-      "tags": [
-        "hom-thu",
-        "giao-tiep"
-      ],
-      "complexity": "simple",
-      "filePath": "lib/chat.js",
-      "lineRange": [
-        58,
-        68
-      ]
-    },
-    {
-      "id": "step:nhan-tin-hom-thu:agent-doc",
-      "type": "step",
-      "name": "Agent đọc và đóng tin",
-      "summary": "Agent chạy vp tiep (ghi “go”) rồi vp xong (ghi “xong” kèm kết quả).",
-      "tags": [
-        "hom-thu",
-        "giao-tiep"
-      ],
-      "complexity": "simple",
-      "filePath": "tools/vp.js",
-      "lineRange": [
-        82,
-        88
-      ]
-    },
-    {
-      "id": "step:nhan-tin-hom-thu:hien-trang-thai",
-      "type": "step",
-      "name": "Hiện chờ đọc / đã đọc / đã xong",
-      "summary": "outbox + hopthu.statusById liệt kê 60 tin gần nhất kèm trạng thái và ghi chú khi xong.",
-      "tags": [
-        "hom-thu",
-        "giao-tiep"
-      ],
-      "complexity": "simple",
-      "filePath": "lib/chat.js",
-      "lineRange": [
-        42,
-        46
-      ]
-    },
-    {
-      "id": "flow:phat-loa-giao-viec",
-      "type": "flow",
-      "name": "Phát loa giao việc & dừng việc đang chạy",
-      "summary": "Giám đốc phát loa một việc: văn phòng gợi ý người nhận theo từ khóa, ghi nhận việc vào danh sách đang chạy (gộp với job thật của OS Controller) và cho phép dừng từng việc hoặc tất cả.",
-      "tags": [
-        "phat-loa",
-        "viec-dang-chay",
-        "kill"
-      ],
-      "complexity": "moderate",
-      "domainMeta": {
-        "entryPoint": "Thanh Phát loa trên index.html → POST /api/broadcast",
-        "entryType": "http"
-      }
-    },
-    {
-      "id": "step:phat-loa-giao-viec:goi-y",
-      "type": "step",
-      "name": "Gợi ý người nhận theo từ khóa",
-      "summary": "POST /api/broadcast: UI/UX, kiến trúc, kiểm duyệt bảo mật, mặc định Codex; chưa hỏi AI nào, peerReview rỗng.",
-      "tags": [
-        "phat-loa",
-        "giao-tiep"
-      ],
-      "complexity": "simple",
-      "filePath": "server.js",
-      "lineRange": [
-        733,
-        755
-      ]
-    },
-    {
-      "id": "step:phat-loa-giao-viec:ghi-nhan",
-      "type": "step",
-      "name": "Ghi nhận việc giao",
-      "summary": "POST /api/accept-broadcast thêm vào activeTasks trong bộ nhớ (tối đa 200, pid null, mất khi khởi động lại).",
-      "tags": [
-        "phat-loa",
-        "giao-tiep"
-      ],
-      "complexity": "simple",
-      "filePath": "server.js",
-      "lineRange": [
-        758,
-        777
-      ]
-    },
-    {
-      "id": "step:phat-loa-giao-viec:liet-ke",
-      "type": "step",
-      "name": "Liệt kê việc đang chạy",
-      "summary": "GET /api/running-tasks gộp job thật của ctl (GET /jobs?status=running qua ctlbridge, chỉ từ máy này) với việc phát loa, gắn cờ cảnh báo quá 10 phút.",
-      "tags": [
-        "phat-loa",
-        "giao-tiep"
-      ],
-      "complexity": "simple",
-      "filePath": "server.js",
-      "lineRange": [
-        714,
-        729
-      ]
-    },
-    {
-      "id": "step:phat-loa-giao-viec:hien-canh-bao",
-      "type": "step",
-      "name": "Hiện danh sách và cảnh báo chạy lâu",
-      "summary": "refreshRunningTasks đếm việc running, đổi màu nút cảnh báo, dựng danh sách có nút dừng.",
-      "tags": [
-        "phat-loa",
-        "giao-tiep"
-      ],
-      "complexity": "simple",
-      "filePath": "public/index.html",
-      "lineRange": [
-        918,
-        973
-      ]
-    },
-    {
-      "id": "step:phat-loa-giao-viec:dung-viec",
-      "type": "step",
-      "name": "Dừng một việc hoặc tất cả",
-      "summary": "POST /api/kill-task: việc ctl:… hoặc dừng tất cả thì chuyển sang OS Controller; có pid thì proc.killTree; không pid chỉ đánh dấu dừng; còn tiến trình sống thì trả 500.",
-      "tags": [
-        "phat-loa",
-        "giao-tiep"
-      ],
-      "complexity": "moderate",
-      "filePath": "server.js",
-      "lineRange": [
-        780,
-        813
+        72,
+        140
       ]
     },
     {
@@ -2028,8 +1820,8 @@
       "complexity": "simple",
       "filePath": "server.js",
       "lineRange": [
-        324,
-        360
+        325,
+        361
       ]
     },
     {
@@ -2075,8 +1867,8 @@
       "complexity": "simple",
       "filePath": "server.js",
       "lineRange": [
-        428,
-        440
+        429,
+        441
       ]
     },
     {
@@ -2091,8 +1883,8 @@
       "complexity": "simple",
       "filePath": "server.js",
       "lineRange": [
-        449,
-        464
+        450,
+        465
       ]
     },
     {
@@ -2203,8 +1995,8 @@
       "complexity": "simple",
       "filePath": "server.js",
       "lineRange": [
-        375,
-        409
+        376,
+        410
       ]
     },
     {
@@ -2421,8 +2213,8 @@
       "complexity": "simple",
       "filePath": "ctl/handoff.js",
       "lineRange": [
-        26,
-        32
+        27,
+        33
       ]
     },
     {
@@ -2453,8 +2245,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        344,
-        360
+        506,
+        522
       ]
     },
     {
@@ -2485,8 +2277,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        241,
-        241
+        273,
+        273
       ]
     },
     {
@@ -2501,8 +2293,8 @@
       "complexity": "moderate",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        344,
-        360
+        506,
+        522
       ]
     },
     {
@@ -2565,8 +2357,8 @@
       "complexity": "complex",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        271,
-        304
+        281,
+        466
       ]
     },
     {
@@ -2597,8 +2389,8 @@
       "complexity": "complex",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        396,
-        411
+        562,
+        580
       ]
     },
     {
@@ -2613,8 +2405,8 @@
       "complexity": "moderate",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        254,
-        278
+        403,
+        430
       ]
     },
     {
@@ -2629,8 +2421,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        422,
-        425
+        592,
+        594
       ]
     },
     {
@@ -2661,8 +2453,8 @@
       "complexity": "moderate",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        184,
-        196
+        267,
+        279
       ]
     },
     {
@@ -2677,8 +2469,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        197,
-        206
+        280,
+        318
       ]
     },
     {
@@ -2693,8 +2485,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        161,
-        173
+        239,
+        251
       ]
     },
     {
@@ -2725,8 +2517,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        225,
-        236
+        364,
+        385
       ]
     },
     {
@@ -2741,8 +2533,8 @@
       "complexity": "simple",
       "filePath": "ctl/handoff.js",
       "lineRange": [
-        123,
-        146
+        126,
+        149
       ]
     },
     {
@@ -2757,8 +2549,8 @@
       "complexity": "complex",
       "filePath": "ctl/handoff.js",
       "lineRange": [
-        35,
-        57
+        38,
+        60
       ]
     },
     {
@@ -2773,8 +2565,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        219,
-        236
+        331,
+        385
       ]
     },
     {
@@ -2820,8 +2612,8 @@
       "complexity": "simple",
       "filePath": "ctl/handoff.js",
       "lineRange": [
-        103,
-        119
+        106,
+        122
       ]
     },
     {
@@ -2836,8 +2628,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        415,
-        421
+        584,
+        590
       ]
     },
     {
@@ -2852,8 +2644,8 @@
       "complexity": "simple",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        101,
-        125
+        154,
+        178
       ]
     },
     {
@@ -2868,8 +2660,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        243,
-        243
+        275,
+        275
       ]
     },
     {
@@ -2884,8 +2676,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        282,
-        294
+        434,
+        446
       ]
     },
     {
@@ -2900,8 +2692,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        441,
-        453
+        656,
+        669
       ]
     },
     {
@@ -2932,8 +2724,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        392,
-        394
+        558,
+        560
       ]
     },
     {
@@ -2948,8 +2740,8 @@
       "complexity": "moderate",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        166,
-        177
+        175,
+        186
       ]
     },
     {
@@ -2964,8 +2756,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        179,
-        185
+        188,
+        194
       ]
     },
     {
@@ -2980,8 +2772,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        225,
-        240
+        235,
+        250
       ]
     },
     {
@@ -2996,8 +2788,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        188,
-        207
+        197,
+        217
       ]
     },
     {
@@ -3012,8 +2804,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        251,
-        269
+        261,
+        279
       ]
     },
     {
@@ -3028,8 +2820,8 @@
       "complexity": "moderate",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        505,
-        534
+        728,
+        757
       ]
     },
     {
@@ -3044,8 +2836,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        536,
-        547
+        759,
+        770
       ]
     },
     {
@@ -3076,8 +2868,8 @@
       "complexity": "complex",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        362,
-        437
+        524,
+        607
       ]
     },
     {
@@ -3092,8 +2884,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        332,
-        342
+        494,
+        504
       ]
     },
     {
@@ -3108,8 +2900,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        304,
-        311
+        476,
+        487
       ]
     },
     {
@@ -3124,8 +2916,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        51,
-        62
+        58,
+        69
       ]
     },
     {
@@ -3156,8 +2948,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        455,
-        464
+        671,
+        681
       ]
     },
     {
@@ -3220,8 +3012,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        466,
-        480
+        683,
+        697
       ]
     },
     {
@@ -3269,7 +3061,7 @@
       "filePath": "ctl/khung/kiem-chu-trinh.yml",
       "lineRange": [
         1,
-        58
+        68
       ]
     },
     {
@@ -3300,8 +3092,8 @@
       "complexity": "simple",
       "filePath": "ctl/handoff.js",
       "lineRange": [
-        60,
-        70
+        63,
+        73
       ]
     },
     {
@@ -3348,8 +3140,8 @@
       "complexity": "moderate",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        109,
-        144
+        117,
+        152
       ]
     },
     {
@@ -3364,8 +3156,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        314,
-        319
+        476,
+        481
       ]
     },
     {
@@ -3412,8 +3204,8 @@
       "complexity": "simple",
       "filePath": "ctl/ket-noi.js",
       "lineRange": [
-        42,
-        77
+        43,
+        86
       ]
     },
     {
@@ -3429,7 +3221,7 @@
       "filePath": "ctl/ket-noi-danh-muc.js",
       "lineRange": [
         1,
-        33
+        36
       ]
     },
     {
@@ -3444,8 +3236,8 @@
       "complexity": "simple",
       "filePath": "ctl/mcp-phong.js",
       "lineRange": [
-        39,
-        48
+        41,
+        50
       ]
     },
     {
@@ -3460,8 +3252,8 @@
       "complexity": "simple",
       "filePath": "ctl/ket-noi.js",
       "lineRange": [
-        78,
-        115
+        87,
+        136
       ]
     },
     {
@@ -3476,8 +3268,8 @@
       "complexity": "moderate",
       "filePath": "ctl/mcp-phong.js",
       "lineRange": [
-        55,
-        75
+        57,
+        77
       ]
     },
     {
@@ -3492,8 +3284,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        125,
-        137
+        183,
+        196
       ]
     },
     {
@@ -3578,8 +3370,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        271,
-        276
+        303,
+        308
       ]
     },
     {
@@ -3610,8 +3402,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        164,
-        164
+        174,
+        174
       ]
     },
     {
@@ -3689,8 +3481,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        179,
-        179
+        189,
+        189
       ]
     },
     {
@@ -3705,8 +3497,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        553,
-        556
+        776,
+        780
       ]
     },
     {
@@ -3753,8 +3545,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        179,
-        179
+        189,
+        189
       ]
     },
     {
@@ -3769,8 +3561,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        310,
-        324
+        342,
+        356
       ]
     },
     {
@@ -3865,8 +3657,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        70,
-        87
+        78,
+        95
       ]
     },
     {
@@ -3913,8 +3705,8 @@
       "complexity": "simple",
       "filePath": "ctl/workspaces.js",
       "lineRange": [
-        78,
-        96
+        79,
+        97
       ]
     },
     {
@@ -3929,8 +3721,8 @@
       "complexity": "moderate",
       "filePath": "ctl/workspaces.js",
       "lineRange": [
-        98,
-        106
+        99,
+        107
       ]
     },
     {
@@ -3961,8 +3753,8 @@
       "complexity": "simple",
       "filePath": "ctl/workspaces.js",
       "lineRange": [
-        134,
-        147
+        135,
+        148
       ]
     },
     {
@@ -3978,7 +3770,7 @@
       "filePath": "ctl/workspaces.js",
       "lineRange": [
         11,
-        43
+        44
       ]
     },
     {
@@ -3993,8 +3785,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        254,
-        278
+        403,
+        430
       ]
     },
     {
@@ -4041,8 +3833,8 @@
       "complexity": "simple",
       "filePath": "ctl/workspaces.js",
       "lineRange": [
-        193,
-        212
+        194,
+        213
       ]
     },
     {
@@ -4121,8 +3913,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        146,
-        151
+        224,
+        228
       ]
     },
     {
@@ -4217,8 +4009,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        207,
-        207
+        239,
+        239
       ]
     },
     {
@@ -4284,8 +4076,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        208,
-        216
+        320,
+        328
       ]
     },
     {
@@ -4300,8 +4092,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        217,
-        223
+        329,
+        362
       ]
     },
     {
@@ -4316,8 +4108,8 @@
       "complexity": "complex",
       "filePath": "lib/kiem-agent.js",
       "lineRange": [
-        88,
-        110
+        89,
+        111
       ]
     },
     {
@@ -4332,8 +4124,8 @@
       "complexity": "simple",
       "filePath": "lib/kiem-agent.js",
       "lineRange": [
-        59,
-        82
+        60,
+        83
       ]
     },
     {
@@ -4348,8 +4140,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        396,
-        411
+        562,
+        580
       ]
     },
     {
@@ -4364,8 +4156,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        254,
-        278
+        403,
+        430
       ]
     },
     {
@@ -4428,8 +4220,8 @@
       "complexity": "simple",
       "filePath": "lib/kiem-agent.js",
       "lineRange": [
-        152,
-        181
+        153,
+        182
       ]
     },
     {
@@ -4444,8 +4236,8 @@
       "complexity": "complex",
       "filePath": "lib/kiem-agent.js",
       "lineRange": [
-        120,
-        141
+        121,
+        142
       ]
     },
     {
@@ -4460,8 +4252,8 @@
       "complexity": "simple",
       "filePath": "lib/kiem-agent.js",
       "lineRange": [
-        113,
-        116
+        114,
+        117
       ]
     },
     {
@@ -4508,8 +4300,8 @@
       "complexity": "simple",
       "filePath": "ctl/bo-kiem.js",
       "lineRange": [
-        30,
-        44
+        31,
+        45
       ]
     },
     {
@@ -4524,8 +4316,8 @@
       "complexity": "simple",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        294,
-        300
+        608,
+        614
       ]
     },
     {
@@ -4540,8 +4332,8 @@
       "complexity": "moderate",
       "filePath": "ctl/bo-kiem.js",
       "lineRange": [
-        45,
-        53
+        46,
+        54
       ]
     },
     {
@@ -4556,8 +4348,8 @@
       "complexity": "simple",
       "filePath": "ctl/bo-kiem.js",
       "lineRange": [
-        54,
-        64
+        55,
+        65
       ]
     },
     {
@@ -4572,8 +4364,8 @@
       "complexity": "simple",
       "filePath": "ctl/bo-kiem.js",
       "lineRange": [
-        65,
-        66
+        66,
+        67
       ]
     },
     {
@@ -4588,8 +4380,8 @@
       "complexity": "simple",
       "filePath": "ctl/bo-kiem.js",
       "lineRange": [
-        67,
-        73
+        68,
+        74
       ]
     },
     {
@@ -4604,8 +4396,8 @@
       "complexity": "simple",
       "filePath": "ctl/bo-kiem.js",
       "lineRange": [
-        74,
-        82
+        75,
+        83
       ]
     },
     {
@@ -4620,8 +4412,8 @@
       "complexity": "simple",
       "filePath": "ctl/bo-kiem.js",
       "lineRange": [
-        83,
-        89
+        84,
+        90
       ]
     },
     {
@@ -4652,8 +4444,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        201,
-        201
+        233,
+        233
       ]
     },
     {
@@ -4878,6 +4670,97 @@
       "lineRange": [
         28,
         31
+      ]
+    },
+    {
+      "id": "flow:giao-viec-ca-doi",
+      "type": "flow",
+      "name": "Giao việc cả đội & dừng việc đang chạy",
+      "summary": "Giám đốc giao một việc cho cả đội từ thanh trên của văn phòng 3D: nút 📢 mở mục giao việc thật của bàn làm việc (luồng tự động /ctl/autopilot); văn phòng liệt kê việc OS Controller đang chạy và cho dừng từng việc hoặc tất cả.",
+      "tags": [
+        "giao-viec",
+        "autopilot",
+        "phanh"
+      ],
+      "complexity": "simple",
+      "domainMeta": {
+        "entryPoint": "Nút 📢 Giao việc cả đội trên index.html → mục Giao việc của bàn làm việc → POST /ctl/autopilot",
+        "entryType": "http"
+      }
+    },
+    {
+      "id": "step:giao-viec-ca-doi:mo-ban-giao-viec",
+      "type": "step",
+      "name": "Nút 📢 mở mục Giao việc cho cả đội",
+      "summary": "Bấm 📢 \"Giao việc cả đội\" trên thanh trên: mở thẳng mục giao việc của bàn làm việc (nút data-desk=\"assign\"), không còn hộp gợi ý theo từ khóa.",
+      "tags": [
+        "giao-viec-ca-doi"
+      ],
+      "complexity": "simple",
+      "filePath": "public/index.html",
+      "lineRange": [
+        837,
+        840
+      ]
+    },
+    {
+      "id": "step:giao-viec-ca-doi:bat-luong-tu-dong",
+      "type": "step",
+      "name": "Gửi việc vào luồng tự động thật",
+      "summary": "Bàn làm việc gọi POST /ctl/autopilot {workspace, task}: đội Hinata → Sol → Astra → Claude làm trên nhánh riêng, Claude báo cáo cho CEO duyệt (xem workflow \"Luồng tự động\").",
+      "tags": [
+        "giao-viec-ca-doi"
+      ],
+      "complexity": "simple",
+      "filePath": "public/office-desk.js",
+      "lineRange": [
+        574,
+        574
+      ]
+    },
+    {
+      "id": "step:giao-viec-ca-doi:liet-ke",
+      "type": "step",
+      "name": "Liệt kê việc đang chạy thật",
+      "summary": "GET /api/running-tasks: chỉ các việc OS Controller đang chạy (lượt AI, lệnh), có pid; gắn cờ cảnh báo quá 10 phút.",
+      "tags": [
+        "giao-viec-ca-doi"
+      ],
+      "complexity": "simple",
+      "filePath": "server.js",
+      "lineRange": [
+        714,
+        728
+      ]
+    },
+    {
+      "id": "step:giao-viec-ca-doi:hien-canh-bao",
+      "type": "step",
+      "name": "Hiện danh sách và cảnh báo chạy lâu",
+      "summary": "refreshRunningTasks đếm việc đang chạy, đổi màu nút cảnh báo, dựng danh sách có nút dừng từng việc.",
+      "tags": [
+        "giao-viec-ca-doi"
+      ],
+      "complexity": "simple",
+      "filePath": "public/index.html",
+      "lineRange": [
+        852,
+        907
+      ]
+    },
+    {
+      "id": "step:giao-viec-ca-doi:dung-viec",
+      "type": "step",
+      "name": "Dừng một việc hoặc tất cả",
+      "summary": "POST /api/kill-task: chuyển sang OS Controller dừng cả cây tiến trình; ctl không chạy thì báo 503, không giả vờ đã dừng.",
+      "tags": [
+        "giao-viec-ca-doi"
+      ],
+      "complexity": "simple",
+      "filePath": "server.js",
+      "lineRange": [
+        731,
+        749
       ]
     }
   ],
@@ -5125,35 +5008,28 @@
       "target": "step:xem-dien-thoai:kiem-dieu-kien",
       "type": "flow_step",
       "direction": "forward",
-      "weight": 0.2
+      "weight": 0.1
     },
     {
       "source": "flow:xem-dien-thoai",
       "target": "step:xem-dien-thoai:mo-duong-ham",
       "type": "flow_step",
       "direction": "forward",
-      "weight": 0.4
+      "weight": 0.2
     },
     {
       "source": "flow:xem-dien-thoai",
       "target": "step:xem-dien-thoai:kiem-host",
       "type": "flow_step",
       "direction": "forward",
-      "weight": 0.6
+      "weight": 0.3
     },
     {
       "source": "flow:xem-dien-thoai",
       "target": "step:xem-dien-thoai:chan-ctl",
       "type": "flow_step",
       "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "flow:xem-dien-thoai",
-      "target": "step:xem-dien-thoai:pin-nhan-tin",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 1
+      "weight": 0.4
     },
     {
       "source": "domain:cai-dat-van-hanh",
@@ -5529,90 +5405,6 @@
     {
       "source": "flow:chat-nhan-vat",
       "target": "step:chat-nhan-vat:luu-lich-su",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "domain:giao-tiep-ceo-doi",
-      "target": "flow:nhan-tin-hom-thu",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "flow:nhan-tin-hom-thu",
-      "target": "step:nhan-tin-hom-thu:mo-o-nhan",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.2
-    },
-    {
-      "source": "flow:nhan-tin-hom-thu",
-      "target": "step:nhan-tin-hom-thu:xac-thuc",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.4
-    },
-    {
-      "source": "flow:nhan-tin-hom-thu",
-      "target": "step:nhan-tin-hom-thu:ghi-tin",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.6
-    },
-    {
-      "source": "flow:nhan-tin-hom-thu",
-      "target": "step:nhan-tin-hom-thu:agent-doc",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "flow:nhan-tin-hom-thu",
-      "target": "step:nhan-tin-hom-thu:hien-trang-thai",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "domain:giao-tiep-ceo-doi",
-      "target": "flow:phat-loa-giao-viec",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "flow:phat-loa-giao-viec",
-      "target": "step:phat-loa-giao-viec:goi-y",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.2
-    },
-    {
-      "source": "flow:phat-loa-giao-viec",
-      "target": "step:phat-loa-giao-viec:ghi-nhan",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.4
-    },
-    {
-      "source": "flow:phat-loa-giao-viec",
-      "target": "step:phat-loa-giao-viec:liet-ke",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.6
-    },
-    {
-      "source": "flow:phat-loa-giao-viec",
-      "target": "step:phat-loa-giao-viec:hien-canh-bao",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "flow:phat-loa-giao-viec",
-      "target": "step:phat-loa-giao-viec:dung-viec",
       "type": "flow_step",
       "direction": "forward",
       "weight": 1
@@ -6993,6 +6785,48 @@
       "direction": "forward",
       "description": "xuất bản và cài bộ kiểm chạy lệnh qua jobs, đọc repo qua workspace và GitHub của ctl",
       "weight": 0.6
+    },
+    {
+      "source": "domain:giao-tiep-ceo-doi",
+      "target": "flow:giao-viec-ca-doi",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "flow:giao-viec-ca-doi",
+      "target": "step:giao-viec-ca-doi:mo-ban-giao-viec",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.1
+    },
+    {
+      "source": "flow:giao-viec-ca-doi",
+      "target": "step:giao-viec-ca-doi:bat-luong-tu-dong",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.2
+    },
+    {
+      "source": "flow:giao-viec-ca-doi",
+      "target": "step:giao-viec-ca-doi:liet-ke",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.3
+    },
+    {
+      "source": "flow:giao-viec-ca-doi",
+      "target": "step:giao-viec-ca-doi:hien-canh-bao",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.4
+    },
+    {
+      "source": "flow:giao-viec-ca-doi",
+      "target": "step:giao-viec-ca-doi:dung-viec",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.5
     }
   ],
   "layers": [],
