@@ -14,7 +14,8 @@ const { maskSecrets, looksLikeKey } = require("../lib/mask");
 const { writeAtomic } = require("../lib/ghi-file");
 const { readTurn } = require("./handoff");
 const nhanh = require("./nhanh");
-const songSong = require("./song-song");   // Astra + Kakashi chạy song song theo hợp đồng (giao thức [8], CEO duyệt 16/11/2026)
+const songSong = require("./song-song");
+const { createMienHopDong, dongDeNghi } = require("./mien-hop-dong");   // Astra + Kakashi chạy song song theo hợp đồng (giao thức [8], CEO duyệt 16/11/2026)
 const ACTIVE = new Set(["running", "reporting", "awaiting_approval", "awaiting_answer", "attention", "waiting_quota", "awaiting_scan"]);
 // Trạng thái cần CEO: báo ra máy (thông báo Windows) một lần mỗi khi luồng chuyển vào.
 const NOTIFY = { awaiting_answer: "Claude hỏi anh, cần chọn phương án", awaiting_approval: "Claude đã gửi báo cáo, chờ anh duyệt", attention: "Luồng gặp lỗi, cần anh xem", waiting_quota: "AI hết hạn mức, luồng đang chờ", awaiting_scan: "File .md có điểm bất thường mới, luồng tạm dừng chờ anh duyệt" };
@@ -23,7 +24,8 @@ const PROVIDER = { CODEX_ASTRA_DEV: "codex", SOL_ARCHITECT_PLANNER: "codex", SOL
 // Hai vai viết code: Claude trả việc về một trong hai là còn sửa tiếp, không phải báo cáo cuối.
 const DEVS = ["CODEX_ASTRA_DEV", "FRONTEND_UIUX_DEV"];
 // Lỗi bàn giao AI tự sửa được nếu được trả lại: mọi lỗi trừ lượt chết giữa chừng (failed/killed/timeout).
-const sauDuoc = (x) => !/^Lượt AI kết thúc với trạng thái/.test(String(x));
+// Đề nghị miễn hợp đồng (hop-dong-mien) không trả lại tự động: CEO quyết (hoiMienHopDong).
+const sauDuoc = (x) => !/^(Lượt AI kết thúc với trạng thái|hop-dong-mien:)/.test(String(x));
 const PROVIDER_NAME = { codex: "Codex", claude: "Claude", antigravity: "Antigravity" };
 const WRITER_NAME = { claude: "Claude (đội trưởng)", codex: "Codex (Sol/Astra)", antigravity: "Antigravity (Hinata)" };
 const WRITER_ORDER = ["claude", "codex", "antigravity"];
@@ -67,6 +69,7 @@ function responseText(log) {
 }
 
 function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quotaSnapshot = () => ({ providers: [] }), notify = () => {}, scanner = null, choAgyMs = 20000 }) {
+  const mien = createMienHopDong({ dir });   // miễn hợp đồng giao tiếp: chỉ CEO duyệt
   // Chạy toàn quyền thì file .md của dự án phải không còn điểm bất thường chưa duyệt (ctl/ra-soat.js).
   const scanGate = (root) => { if (scanner && runner.fullOn && runner.fullOn()) scanner.require(root); };
   const folder = path.join(dir, "autopilot");
@@ -558,6 +561,8 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
           if (!handoff) { report(run, "Công việc " + job.id + " kết thúc mà không có bàn giao."); continue; }
           const stepNow = run.steps[run.steps.length - 1];
           if (handoff.payload && Array.isArray(handoff.payload.giai_thich)) stepNow.explain = maskExplain(handoff.payload.giai_thich);
+          // Sol đề nghị miễn hợp đồng giao tiếp ("Không có API"): ngoại lệ nào cũng do CEO quyết — dừng lại hỏi CEO kèm giải thích.
+          if (!handoff.decided && handoff.problems.some((x) => /^hop-dong-mien:/.test(x))) { hoiMienHopDong(run, job, handoff); continue; }
           // Bàn giao chưa đạt mà AI sửa được trong lượt (giải thích, khai skill, luật agent.md, thiếu hoặc sai mẫu dòng JSON, next_owner
           // trùng vai, claim_fixed sai dạng…): trả lại đúng vai đó một lần để sửa, không dừng cả luồng; lần hai vẫn sai thì báo CEO.
           // Lượt chết giữa chừng thì báo CEO như cũ. CEO yêu cầu 16/11/2026 (luồng speak-coach dừng vì Sol ghi next_owner trùng vai).
@@ -601,11 +606,57 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     } finally { ticking = false; }
   }
 
+  // ================= MIỄN HỢP ĐỒNG: CHỈ CEO QUYẾT (CEO yêu cầu 16/11/2026: "cứ ngoại lệ thì sẽ hỏi tôi và giải thích") =================
+  function hoiMienHopDong(run, job, handoff) {
+    let md = "";
+    try { md = fs.readFileSync(path.join(run.workspace, "agent.md"), "utf8"); } catch {}
+    const dong = dongDeNghi(md) || "(Sol không ghi lý do)";
+    const giaiThich = ((handoff.payload && handoff.payload.giai_thich) || []).filter((x) => x && /api|hợp đồng|contract|máy chủ|server|mạng/i.test(`${x.van_de} ${x.vi_sao}`)).slice(0, 2)
+      .map((x) => `- ${cut(x.van_de, 300)} → ${cut(x.vi_sao, 400)}`).join("\n");
+    const question = `Sol đề nghị MIỄN hợp đồng giao tiếp (contract/api.json) cho dự án ${path.basename(run.workspace)}.\n` +
+      `Lý do Sol ghi ở Vùng [3]: «${cut(dong, 400)}»` + (giaiThich ? `\nSol giải thích thêm:\n${giaiThich}` : "") +
+      `\n\nHợp đồng giao tiếp là bản quy định chung giữa backend và frontend: đường dẫn API, tên trường, kiểu dữ liệu, mã lỗi, sự kiện mạng. ` +
+      `Có hợp đồng thì văn phòng tự kiểm hai bên khớp nhau sau mỗi lượt, CI chặn chỗ lệch, và Astra + Kakashi được chạy song song. ` +
+      `Miễn thì mất cả ba thứ đó; chỉ hợp lý khi dự án thật sự không có máy chủ/API hay sự kiện mạng (công cụ dòng lệnh, game chơi offline, trang tĩnh). ` +
+      `Sau này dự án có API thì Sol phải tạo hợp đồng lại.\nAnh có đồng ý miễn không?`;
+    run.status = "awaiting_answer";
+    run.question = { jobId: job.id, kind: "mien-hop-dong", question, options: [
+      { id: "A", label: "Đồng ý miễn: dự án không có API hay sự kiện mạng" },
+      { id: "B", label: "Không miễn: bắt Sol tạo contract/api.json" },
+    ] };
+    run.report = ""; save(run);
+    audit.log("autopilot", "mien_hop_dong.hoi", run.id, { job: job.id, dong: cut(dong, 300) });
+    try { notify("Văn phòng AI · " + path.basename(run.workspace), "Sol đề nghị miễn hợp đồng giao tiếp: cần anh quyết."); } catch {}
+  }
+  function traLoiMien(run, option) {
+    const q = run.question, h = runner.get(q.jobId);
+    if (!["A", "B"].includes(option)) throw err("BAD_OPTION", "Không có phương án " + option);
+    const label = q.options.find((o) => o.id === option).label;
+    run.decisions = [...(run.decisions || []), { at: Date.now(), option, label, next: option === "A" ? null : "SOL_ARCHITECT_PLANNER", text: `Miễn hợp đồng giao tiếp: CEO chọn ${option} — ${label}.` }];
+    Object.assign(run, { question: null, report: "", status: "running", problem: "", deadline: Date.now() + (run.timeoutMs || 90 * 60000) });
+    if (option === "A") {
+      mien.ghi(run.workspace, { lyDo: q.question.slice(0, 500), jobId: q.jobId });
+      // Bỏ đúng lỗi "chờ CEO duyệt miễn" khỏi bàn giao; vòng lặp xử lý bàn giao như thường (đạt thì chuyển lượt, lỗi khác thì trả lại).
+      if (h && !h.decided) runner.boLoi(q.jobId, /^hop-dong-mien:/);
+      save(run);
+      audit.log("ceo", "mien_hop_dong.dong_y", run.id, { job: q.jobId }, "approved");
+      return run;
+    }
+    // Không miễn: trả lại lượt Sol để tạo hợp đồng.
+    if (h && !h.decided) runner.reject(q.jobId, "ceo");
+    run.retryNote = { role: "SOL_ARCHITECT_PLANNER", problems: "CEO KHÔNG đồng ý miễn hợp đồng giao tiếp: tạo contract/api.json theo giao thức [8] (bỏ dòng 'Không có API' ở Vùng [3]).", explainRetried: false };
+    save(run);
+    audit.log("ceo", "mien_hop_dong.tu_choi", run.id, { job: q.jobId }, "rejected");
+    try { launch(run); } catch (e) { report(run, e.message); }
+    return run;
+  }
+
   // CEO trả lời câu hỏi của Claude: duyệt bàn giao theo phương án (lượt sang vai của phương án), ghi quyết định vào luồng
   // để các lượt sau làm theo, rồi chạy tiếp. Lượt và thời gian tính lại từ lúc CEO quyết.
   function answer(id, option) {
     const run = get(id);
     if (run.status !== "awaiting_answer" || !run.question) throw err("NOT_PENDING", "Luồng này không chờ câu trả lời của CEO.");
+    if (run.question.kind === "mien-hop-dong") return traLoiMien(run, String(option));
     const r = runner.answer(run.question.jobId, option, "ceo");
     const asked = runner.get(run.question.jobId);
     if (asked?.payload?.effort) setEffort(run, r.next, asked.payload.effort, run.question.jobId);

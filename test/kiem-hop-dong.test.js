@@ -174,3 +174,32 @@ test("văn phòng kiểm hợp đồng ngay sau lượt Astra: lượt làm mấ
     assert.doesNotMatch(loi, /sự kiện "cham.xong"/, "lỗi có sẵn từ trước lượt không tính cho Astra");
   } finally { await ctl.close(); }
 });
+
+test("dự án chưa có hợp đồng: lượt Sol lập kế hoạch bị trả lại để tạo contract/api.json, trừ khi Vùng [3] ghi 'Không có API'", async (t) => {
+  const { createCtl } = require("../ctl/main");
+  const { execFileSync } = require("node:child_process");
+  const chay = async (vung3, coHopDong) => {
+    const root = repo(t, {}, coHopDong ? HOP_DONG() : null);
+    fs.writeFileSync(path.join(root, "agent.md"), `# Agent\n## [1] HIẾN PHÁP\n- Tên: thử\n## [2] ĐẶC TẢ\n- F1\n## [3] KIẾN TRÚC\n${vung3}\n## [4] KHÓA LƯỢT\n- CURRENT_PHASE: Phase 1 - Thử\n- LAST_UPDATED_BY: SPEC_ARCHITECT\n- NEXT_OWNER (MUTEX LOCK): SOL_ARCHITECT_PLANNER\n## [5] CHỐT CHẶN\n- AUDIT_STATUS: PENDING\n`);
+    const git = (...a) => execFileSync("git", a, { cwd: root, stdio: "ignore" });
+    git("init", "-q"); git("config", "user.email", "t@t"); git("config", "user.name", "t"); git("add", "-A"); git("commit", "-qm", "init");
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), "vp-hopdong-sol-"));
+    t.after(() => fs.rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
+    const fake = path.join(home, "sol.cjs");
+    fs.writeFileSync(fake, `console.log(JSON.stringify({result:'Xong.'+String.fromCharCode(10)+JSON.stringify({role:'SOL_ARCHITECT_PLANNER',next_owner:'CLAUDE_AUDITOR',files:[],claim_fixed:[],giai_thich:[{van_de:'Vấn đề thử nghiệm của lượt',da_lam:'Đã làm phần việc thử nghiệm',vi_sao:'Vì đây là CLI giả dùng cho test',phuong_an_khac:[]}]})}));`);
+    fs.writeFileSync(path.join(home, "ctl-agents.json"), JSON.stringify({ SOL_ARCHITECT_PLANNER: [process.execPath, fake, "{prompt}"] }));
+    fs.writeFileSync(path.join(home, "quyen.json"), JSON.stringify({ toanQuyen: false }));
+    const ctl = createCtl({ dir: home });
+    try {
+      ctl.ws.add(root);
+      const job = ctl.runner.run({ workspace: root, role: "SOL_ARCHITECT_PLANNER", task: "Lập kế hoạch" });
+      for (let i = 0; i < 100 && ctl.jobs.get(job.id).status === "running"; i++) await new Promise((r) => setTimeout(r, 50));
+      return ctl.runner.get(job.id).problems.join("\n");
+    } finally { await ctl.close(); }
+  };
+  assert.match(await chay("- API Contract & Giao thức streaming: [Chưa cập nhật]", false), /hop-dong: chưa có contract\/api.json — Sol tạo hợp đồng/);
+  // "Không có API" chỉ là đề nghị: chưa được CEO duyệt thì bàn giao chờ CEO (luồng tự chạy hỏi CEO, không tự miễn)
+  const deNghi = await chay("- API Contract: Không có API (công cụ dòng lệnh)", false);
+  assert.match(deNghi, /hop-dong-mien: Sol đề nghị miễn hợp đồng/); assert.doesNotMatch(deNghi, /hop-dong: chưa có/);
+  assert.doesNotMatch(await chay("- API Contract: contract/api.json", true), /hop-dong/);
+});
