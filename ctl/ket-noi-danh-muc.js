@@ -1,6 +1,7 @@
 // Danh mục kết nối (MCP) của văn phòng: dùng chung cho trang Kết nối (ket-noi.js), chia theo phòng (mcp-phong.js) và chặn gửi (runner.js).
 "use strict";
-// nhom: tai-lieu | thiet-ke | du-lieu | gui | trien-khai | sang-tao. url: có thì thêm được cho Codex/Antigravity (OAuth).
+// nhom: tai-lieu | thiet-ke | du-lieu | gui | trien-khai | sang-tao | kiem-thu. url: có thì thêm được cho Codex/Antigravity (OAuth).
+// may: máy chủ MCP chạy ngay trên máy (cài vào thư mục dữ liệu văn phòng), văn phòng chỉ gắn vào lượt của phòng được bật.
 // claude: tên kết nối trong `claude mcp list` (tài khoản claude.ai). chan: bị chặn khi chạy toàn quyền.
 const CATALOG = [
   { id: "notion", name: "Notion", nhom: "tai-lieu", claude: "claude.ai Notion", url: "https://mcp.notion.com/mcp" },
@@ -24,6 +25,8 @@ const CATALOG = [
   { id: "appdeploy", name: "AppDeploy", nhom: "trien-khai", claude: "claude.ai AppDeploy", chan: ["mcp__claude_ai_AppDeploy"] },
   // App sáng tạo (CEO 07/11/2026: văn phòng làm app và công cụ là chính, chỉ giữ CapCut): cài app trước, nối MCP sau.
   { id: "capcut", name: "CapCut", nhom: "sang-tao", app: ["D:/Apps/CapCut", "%LOCALAPPDATA%/CapCut"] },
+  // Kiểm giao diện bằng Chrome thật (CEO 17/11/2026): ctl/chrome-devtools.js. Antigravity chạy nền chưa nạp MCP nên chỉ Claude/Codex.
+  { id: "chrome-devtools", name: "Chrome DevTools", nhom: "kiem-thu", may: true, note: "Chạy trên máy: Chrome ẩn, hồ sơ tạm, không gửi thống kê" },
 ];
 // Notion có công cụ tạo/sửa/huỷ sự kiện lịch (gửi lời mời cho người khác): cũng chặn.
 const CHAN_THEM = ["mcp__claude_ai_Notion__notion-calendar-create-events", "mcp__claude_ai_Notion__notion-calendar-update-events", "mcp__claude_ai_Notion__notion-calendar-cancel-events"];

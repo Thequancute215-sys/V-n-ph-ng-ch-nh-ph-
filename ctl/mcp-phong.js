@@ -17,7 +17,7 @@ const MAC_DINH = {
   itachi: ["notion", "gitbook", "supabase", "cloudflare"],   // kiến trúc: tài liệu, schema DB, hạ tầng
   sasuke: ["supabase", "cloudflare", "gitbook"],              // lập trình backend: DB, hạ tầng, tài liệu API
   kakashi: ["figma", "canva", "webflow"],                     // frontend & UI/UX: dựng giao diện theo bản thiết kế
-  sakura: ["notion", "gitbook", "supabase", "google-docs", "google-drive"], // kiểm duyệt: đối chiếu tài liệu, cấu hình DB
+  sakura: ["notion", "gitbook", "supabase", "google-docs", "google-drive", "chrome-devtools"], // kiểm duyệt: đối chiếu tài liệu, cấu hình DB, kiểm giao diện thật
 };
 
 // Kết nối dùng được cho AI của phòng: Claude cần tên kết nối claude.ai, Codex/Antigravity cần URL MCP; nhóm gửi/triển khai thì không.
@@ -26,6 +26,7 @@ function hopLe(id, room) {
   const ai = PHONG[room];
   if (!c || !ai || c.chan) return false;
   if (c.nhom === "sang-tao") return true;
+  if (c.may) return ai === "claude" || ai === "codex";   // MCP chạy trên máy: văn phòng tự gắn vào lượt Claude/Codex (Antigravity chạy nền chưa nạp MCP)
   return ai === "claude" ? Boolean(c.claude) : Boolean(c.url);
 }
 
@@ -79,8 +80,12 @@ function argsFor(kind, role, dir, known = {}) {
 function note(role, dir) {
   const room = ROLE_PHONG(role);
   if (!room) return "";
-  const names = read(dir)[room].map((id) => (CATALOG.find((c) => c.id === id) || {}).name).filter(Boolean);
-  return "\nKết nối (MCP) dành cho phòng bạn: " + (names.length ? names.join(", ") : "không có") + ". Kết nối khác đã tắt cho lượt này; cần thì ghi vào giai_thich để CEO bật trên trang Kết nối.";
+  const ids = read(dir)[room];
+  const names = ids.map((id) => (CATALOG.find((c) => c.id === id) || {}).name).filter(Boolean);
+  // Chrome DevTools chạy trên máy: chỉ nhắc cách dùng khi máy đã cài (chưa cài thì lượt không có công cụ này).
+  const cdt = require("./chrome-devtools");
+  const them = ids.includes(cdt.ID) && cdt.trangThai(dir).daCai ? "\n" + cdt.HUONG_DAN : "";
+  return "\nKết nối (MCP) dành cho phòng bạn: " + (names.length ? names.join(", ") : "không có") + ". Kết nối khác đã tắt cho lượt này; cần thì ghi vào giai_thich để CEO bật trên trang Kết nối." + them;
 }
 
 module.exports = { PHONG, MAC_DINH, ROLE_PHONG, hopLe, read, save, argsFor, note, claudeTool };

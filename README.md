@@ -216,6 +216,22 @@ Việc đơn giản (tra lỗi, cách dùng thư viện, changelog) giao cho Gem
 
 Tắt bằng `~/.van-phong-ao/tra-cuu.json` với nội dung `{"bat": false}`. Antigravity không cần công cụ này (vốn là Gemini, có tìm kiếm Google).
 
+**Chrome DevTools: AI mở Chrome thật để kiểm giao diện** (`ctl/chrome-devtools.js`, CEO yêu cầu 17/11/2026). Đây là máy chủ MCP mà bộ skill chrome-devtools cần. Với nó AI làm được:
+- bấm, gõ, chụp ảnh và chụp cấu trúc trang;
+- đọc lỗi console và yêu cầu mạng;
+- đo tốc độ tải (LCP, Lighthouse);
+- giả lập điện thoại 375px.
+
+Cách cài và bật:
+- **Cài:** trang **Kết nối** → dòng Chrome DevTools → **Cài trên máy**, hoặc chạy `node tools/cai-chrome-devtools.js cai`. Gói `chrome-devtools-mcp` của Google được cài đúng bản đã ghim (bản đã ra ít nhất 2 tuần, không dùng `@latest`) vào `~/.van-phong-ao/mcp/chrome-devtools`, không chạy script cài, không kéo thư viện con.
+- **Bật theo phòng:** mặc định Sakura (kiểm duyệt); bật thêm Sasuke hay Itachi trên trang Kết nối. Văn phòng chỉ gắn máy chủ vào lượt của phòng được bật, không đăng ký chung vào Claude/Codex của máy. Kakashi và Hinata (Antigravity) chưa dùng được vì Antigravity chạy nền chưa nạp MCP.
+
+Mỗi lượt chạy an toàn như sau:
+- Chrome ẩn, hồ sơ tạm xoá khi đóng: không thấy tài khoản anh đã đăng nhập, không bật cửa sổ đè lên màn hình;
+- không gửi thống kê sử dụng hay link trang lên Google (CrUX);
+- không mở `file:` trên máy, che header nhạy cảm;
+- ảnh chụp JPEG rộng tối đa 1280px để đỡ token.
+
 Đo thực tế 11/11/2026: một lượt Codex chỉ trả lời "ok" đã tốn khoảng 23.000 token, gần như toàn bộ là phần khởi động (lời dặn hệ thống + mô tả công cụ MCP). Vì vậy kết nối MCP theo phòng, mục lục và mức suy nghĩ đúng việc là ba chỗ tiết kiệm chính.
 
 ## Bộ skill mặc định của đội

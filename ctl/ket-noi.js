@@ -9,7 +9,8 @@ const { execFile } = require("child_process");
 
 const err = (code, message) => Object.assign(new Error(message), { code });
 const { CATALOG, CHAN_CLAUDE } = require("./ket-noi-danh-muc");
-const phong = require("./mcp-phong");   // mỗi phòng chỉ bật vài kết nối đúng phần việc
+const phong = require("./mcp-phong");
+const cdt = require("./chrome-devtools");   // MCP chạy trên máy   // mỗi phòng chỉ bật vài kết nối đúng phần việc
 
 // Đọc `claude mcp list` / `agy mcp list` (chữ) và `codex mcp list --json`.
 function parseClaude(text) {
@@ -52,6 +53,14 @@ function createConnectors({ runner, audit, dir, run = execFile }) {
     const s = cache;
     const giao = phong.read(dir);
     const rows = CATALOG.map((c) => {
+      // MCP chạy trên máy (Chrome DevTools): không đăng ký vào CLI, văn phòng gắn vào lượt; trạng thái = đã cài đúng bản chưa.
+      if (c.may) {
+        const t = cdt.trangThai(dir), st = t.daCai ? (t.dungBan ? "da-cau-hinh" : "cu") : "chua-co";
+        const ai = { claude: st, codex: st, agy: "khong-ho-tro" };
+        const rooms = Object.keys(phong.PHONG).filter((k) => giao[k].includes(c.id));
+        return { id: c.id, name: c.name, nhom: c.nhom, url: null, chan: false, note: c.note || null, web: false, app: null, may: true,
+          phienBan: t.phienBan, canBan: t.canBan, ai, rooms, ready: Object.fromEntries(rooms.map((k) => [k, t.daCai])), coTheGiao: Object.keys(phong.PHONG).filter((k) => phong.hopLe(c.id, k)) };
+      }
       const ai = {
         // App sáng tạo: MCP chạy trên máy (vd. capcut) nối cho AI nào thì hiện ở cột AI đó.
         claude: s.claude[c.claude || c.id] || (c.claude || c.nhom === "sang-tao" ? "chua-co" : "khong-ho-tro"),
@@ -101,6 +110,18 @@ function createConnectors({ runner, audit, dir, run = execFile }) {
     return status();
   }
 
+  // Cài MCP chạy trên máy (CEO bấm Cài trên trang Kết nối): tải đúng phiên bản đã ghim, không chạy script cài.
+  let dangCai = null;
+  async function caiMay(id) {
+    if (id !== cdt.ID) throw err("BAD_REQUEST", "Không có kết nối chạy trên máy: " + id);
+    if (dangCai) throw err("TOO_MANY", "Đang cài, chờ xong đã");
+    dangCai = cdt.cai(dir);
+    try { const t = await dangCai; audit.log("ceo", "mcp.cai_may", id, { phienBan: t.phienBan, ok: true }); }
+    catch (e) { audit.log("ceo", "mcp.cai_may", id, { ok: false }); throw e; }
+    finally { dangCai = null; }
+    return status();
+  }
+
   // CEO chọn kết nối cho một phòng trên trang Kết nối.
   async function setPhong(room, ids) {
     phong.save(dir, room, ids);
@@ -111,7 +132,7 @@ function createConnectors({ runner, audit, dir, run = execFile }) {
   // Tên kết nối đã đọc được của Claude và Codex: runner dùng để tắt kết nối không thuộc phòng khi chạy lượt.
   const known = () => (last ? { claude: Object.keys(last.claude), codex: Object.keys(last.codex) } : {});
 
-  return { status, add, login, setPhong, known, CATALOG };
+  return { status, add, login, setPhong, caiMay, known, CATALOG };
 }
 
 module.exports = { createConnectors, CATALOG, CHAN_CLAUDE, parseClaude, parseCodex, parseAgy };

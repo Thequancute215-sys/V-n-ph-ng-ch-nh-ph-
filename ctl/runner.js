@@ -19,6 +19,7 @@ const { createSkill } = require("./skill");
 const mucLuc = require("./muc-luc");                 // mục lục từ bản đồ hệ thống (.ua) đưa vào prompt
 const { createDieuPhoi, kindOf } = require("./dieu-phoi");   // chọn model + mức suy nghĩ theo độ khó của lượt
 const { traCuuBat } = require("./tra-cuu");          // tra cứu Gemini miễn phí cho việc đơn giản
+const cdt = require("./chrome-devtools");             // Chrome DevTools MCP chạy trên máy (phòng được bật)
 const { writeAtomic } = require("../lib/ghi-file");
 
 const MIN = 60 * 1000;
@@ -140,20 +141,41 @@ function fullAccessArgs(argv) {
 // CEO đã lưu khóa Gemini. Antigravity chạy nền chưa nạp MCP và vốn là Gemini có tìm kiếm Google nên không cần.
 const TRA_CUU_JS = path.join(__dirname, "tra-cuu-mcp.js").replace(/\\/g, "/");
 const TRA_CUU_TOOLS = ["mcp__tra-cuu__tim_kiem", "mcp__tra-cuu__doc_tai_lieu"];
-function withTraCuu(argv, kind, dir) {
-  if (!traCuuBat(dir) || (kind !== "claude" && kind !== "codex")) return argv;
-  const node = process.execPath.replace(/\\/g, "/"), home = dir.replace(/\\/g, "/");
+// MCP chạy trên máy cho lượt này: tra cứu Gemini (khi có khóa) + Chrome DevTools (khi phòng được bật trên trang Kết nối và
+// máy đã cài, ctl/chrome-devtools.js). Claude nhận MỘT file --mcp-config gộp; Codex nhận cờ -c cho từng máy chủ.
+function mcpMay(role, dir) {
+  const node = process.execPath.replace(/\\/g, "/"), home = dir.replace(/\\/g, "/"), out = {};
+  if (traCuuBat(dir)) out["tra-cuu"] = { command: node, args: [TRA_CUU_JS, home], tools: TRA_CUU_TOOLS };
+  const room = phong.ROLE_PHONG(role);
+  if (room && phong.hopLe(cdt.ID, room) && phong.read(dir)[room].includes(cdt.ID)) {
+    const l = cdt.lenh(dir);
+    // Đo hiệu năng / chờ trang tải có thể quá 60 giây mặc định của Codex.
+    if (l) out[cdt.ID] = { ...l, tools: ["mcp__" + cdt.ID], codex: { tool_timeout_sec: 180 } };
+  }
+  return out;
+}
+function withTraCuu(argv, kind, dir, role = "") {
+  if (kind !== "claude" && kind !== "codex") return argv;
+  const may = mcpMay(role, dir);
+  if (!Object.keys(may).length) return argv;
   if (kind === "codex") {
     const at = argv.indexOf("exec");
     if (at < 0) return argv;
-    const add = ["-c", "mcp_servers.tra_cuu.command=" + JSON.stringify(node), "-c", "mcp_servers.tra_cuu.args=" + JSON.stringify([TRA_CUU_JS, home])];
+    const add = Object.entries(may).flatMap(([ten, s]) => {
+      const k = "mcp_servers." + ten.replace(/-/g, "_");
+      return ["-c", k + ".command=" + JSON.stringify(s.command), "-c", k + ".args=" + JSON.stringify(s.args),
+        ...Object.entries(s.codex || {}).flatMap(([x, v]) => ["-c", k + "." + x + "=" + JSON.stringify(v)])];
+    });
     return [...argv.slice(0, at + 1), ...add, ...argv.slice(at + 1)];
   }
-  const f = path.join(dir, "tra-cuu-mcp.json");
-  try { writeAtomic(f, JSON.stringify({ mcpServers: { "tra-cuu": { command: node, args: [TRA_CUU_JS, home] } } }, null, 2)); } catch { return argv; }
+  // File riêng theo phòng khi có Chrome DevTools (phòng khác nhau thì máy chủ khác nhau); chỉ tra cứu thì dùng file chung như cũ.
+  const f = path.join(dir, may[cdt.ID] ? "mcp-may-" + phong.ROLE_PHONG(role) + ".json" : "tra-cuu-mcp.json");
+  const cfg = { mcpServers: Object.fromEntries(Object.entries(may).map(([ten, s]) => [ten, { command: s.command, args: s.args }])) };
+  try { writeAtomic(f, JSON.stringify(cfg, null, 2)); } catch { return argv; }
   const out = [...argv, "--mcp-config", f];
   const i = out.indexOf("--allowedTools");
-  return i >= 0 ? [...out.slice(0, i + 1), ...TRA_CUU_TOOLS, ...out.slice(i + 1)] : out;
+  const tools = Object.values(may).flatMap((s) => s.tools);
+  return i >= 0 ? [...out.slice(0, i + 1), ...tools, ...out.slice(i + 1)] : out;
 }
 const TRA_CUU_NOTE = "\nCông cụ tra cứu miễn phí (MCP tra-cuu, Gemini): việc đơn giản cần tìm trên web hoặc đọc tài liệu công khai (docs thư viện, changelog, lỗi thường gặp) thì gọi tim_kiem / doc_tai_lieu thay vì tự đọc dài, để đỡ token. " +
   "Chỉ gửi câu hỏi ngắn và link công khai; KHÔNG gửi mã nguồn, nội dung file dự án, khóa, token, dữ liệu cá nhân. Kết quả là gợi ý: đối chiếu nguồn trước khi dựa vào. Giới hạn 200 lần/ngày cho cả văn phòng.";
@@ -162,7 +184,7 @@ function withMcp(argv, role, dir, known = {}) {
   const prog = argv.findIndex((x) => /^(claude|codex|agy)(\.(exe|cmd|js))?$/.test(base(x)));
   if (prog < 0) return argv;
   const kind = base(argv[prog]).replace(/\..*$/, "");
-  argv = withTraCuu(argv, kind, dir);
+  argv = withTraCuu(argv, kind, dir, role);
   const { args } = phong.argsFor(kind, role, dir, known);
   if (!args.length) return argv;
   if (kind === "claude") {
