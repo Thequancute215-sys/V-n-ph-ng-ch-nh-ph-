@@ -74,6 +74,10 @@ export function createDesk(getOffice) {
       show("quotas");
       const ten = doi.dataset.tkNhan || "";
       mutate("Đổi Antigravity sang tài khoản " + ten, () => request("/agy-tai-khoan/" + encodeURIComponent(doi.dataset.tkChuyen) + "/chuyen", {}, 60000));
+    } else if (e.target.closest("[data-gpt-tk]") && !e.target.closest("[data-gpt-tk]").disabled) {
+      const g = e.target.closest("[data-gpt-tk]");
+      show("quotas");
+      mutate("Đổi Codex sang tài khoản GPT " + (g.dataset.tkNhan || ""), () => request("/codex-tai-khoan/" + encodeURIComponent(g.dataset.gptTk) + "/chuyen", {}, 30000));
     } else if (e.target.closest("[data-tk-quanly]")) show("quotas");
     else if (e.target.closest("[data-tk-ai]")) document.getElementById("openAccountsBtn")?.click();
   });
@@ -247,6 +251,39 @@ export function createDesk(getOffice) {
     catch (e) { notice(e.message, true); }
     renderQuotas();
   }
+  // Tài khoản GPT cho Codex (ctl/codex-tai-khoan.js, CEO yêu cầu 20/11/2026): mỗi tài khoản một thư mục CODEX_HOME,
+  // xem hạn mức song song, đổi tay hoặc tự chuyển khi cạn. Đăng nhập: văn phòng mở `codex login`, anh bấm trên trình duyệt.
+  let gptTimer = null;
+  function codexTkHtml(tk) {
+    if (!tk) return "";
+    const pct = (v) => v === null || v === undefined ? "chưa đọc" : "còn " + Math.round(v) + "%";
+    const dangDN = (tk.ds || []).some((a) => a.dangNhap && !a.dangNhap.loi);
+    clearTimeout(gptTimer);
+    if (dangDN) gptTimer = setTimeout(async () => { try { quotas = await request("/quotas"); renderQuotas(); } catch {} }, 4000);   // chờ anh đăng nhập xong
+    const rows = (tk.ds || []).map((a) => {
+      const dn = a.dangNhap;
+      return `<li><strong>${esc(a.nhan)}</strong>${a.email ? " · " + esc(a.email) : ""}${a.plan ? " · gói " + esc(a.plan) : ""}${a.dangDung ? " · <b>đang dùng</b>" : ""}<br>` +
+        (a.loi ? `<span class="error">${esc(a.loi)}</span>` : `GPT ${esc(pct(a.conLai))}${a.hanMuc && a.hanMuc.luc ? " · đọc lúc " + esc(time(a.hanMuc.luc)) : ""}`) + "<br>" +
+        (dn && dn.url ? `<span>Đang chờ anh đăng nhập: <a href="${esc(dn.url)}" target="_blank" rel="noopener noreferrer">mở trang đăng nhập</a> (nếu trình duyệt đang đăng nhập tài khoản GPT khác, chép link mở trong cửa sổ ẩn danh Ctrl+Shift+N). Làm trên máy tính này.</span><br>`
+          : dn && !dn.loi ? "<span>Đang mở trang đăng nhập…</span><br>" : dn && dn.loi ? `<span class="error">${esc(dn.loi)}</span><br>` : "") +
+        (a.dangDung || !a.daDangNhap ? "" : `<button type="button" class="btn ghost" data-gpt-chuyen="${esc(a.id)}" data-write>Dùng tài khoản này</button> `) +
+        `<button type="button" class="btn ghost" data-gpt-dn="${esc(a.id)}" data-write>${a.daDangNhap ? "Đăng nhập lại" : "Đăng nhập"}</button> ` +
+        (a.macDinh ? "" : `<button type="button" class="btn ghost" data-gpt-bo="${esc(a.id)}" data-write>Bỏ</button>`) + "</li>";
+    }).join("");
+    return `<div class="agy-tk"><strong>Tài khoản GPT (Codex: Itachi, Sasuke)</strong>` +
+      (tk.trung ? `<p class="error">Hai tài khoản đang cùng một email: bấm Đăng nhập lại ở tài khoản thêm và chọn đúng tài khoản GPT kia.</p>` : "") +
+      `<ul>${rows}</ul>` +
+      `<p><label><input type="checkbox" data-gpt-tu data-write ${tk.tuChuyen ? "checked" : ""}> Tự chuyển khi tài khoản đang dùng còn ≤ </label><input type="number" min="1" max="50" value="${esc(tk.nguong)}" data-gpt-nguong data-write style="width:4em">% ` +
+      `(và đổi ngay khi lượt Codex báo hết hạn mức)</p>` +
+      `<p><label>Thêm tài khoản GPT, đặt tên <input data-gpt-nhan maxlength="40" placeholder="vd. GPT Pro 2" style="width:9em"></label> <button type="button" class="btn ghost" data-gpt-them data-write>Thêm và đăng nhập</button>` +
+      ` <button type="button" class="btn ghost" data-gpt-doc data-write>Đọc hạn mức mọi tài khoản</button></p>` +
+      `<p class="muted">Mỗi tài khoản GPT có thư mục riêng; tài khoản 1 là ~/.codex mà app Codex của anh đang dùng. Đổi tài khoản áp dụng từ lượt Codex kế tiếp, lượt đang chạy không bị ảnh hưởng.</p></div>`;
+  }
+  async function gptGoi(path, body, label) {
+    try { await request(path, body, 60000); notice(label); quotas = await request("/quotas"); }
+    catch (e) { notice(e.message, true); }
+    renderQuotas();
+  }
   // Khối tài khoản trong menu điện thoại: danh sách tài khoản Antigravity (đang dùng + % còn lại), đổi bằng một chạm.
   function renderTkMenu() {
     const tk = quotas?.providers?.find((p) => p.id === "antigravity")?.taiKhoan;
@@ -257,9 +294,18 @@ export function createDesk(getOffice) {
         : !quotas ? '<p class="muted">Đang tải tài khoản…</p>' : errors.quotas ? `<p class="error">${esc(errors.quotas)}</p>` : tk && !tk.hoTro ? '<p class="muted">Đổi tài khoản Antigravity chỉ làm được khi văn phòng chạy trên Windows.</p>' : '<p class="muted">Chưa cất tài khoản Antigravity nào.</p>') +
       (tk && tk.loi ? `<p class="error">${esc(tk.loi)}</p>` : "") +
       (tk && tk.dangTrao ? '<p class="muted">Đang đổi tài khoản để đọc hạn mức…</p>' : "") +
-      '<button type="button" class="btn ghost" data-tk-quanly>Quản lý tài khoản Antigravity</button>' +
+      gptMenuHtml(pct) +
+      '<button type="button" class="btn ghost" data-tk-quanly>Quản lý tài khoản Antigravity / GPT</button>' +
       '<button type="button" class="btn ghost" data-tk-ai>Tài khoản AI (Claude, GPT, Gemini)</button>';
     tkMenu.querySelectorAll("[data-tk-chuyen]").forEach((b) => { b.disabled = mutating || b.classList.contains("on") || !!(tk && tk.dangTrao); });
+    tkMenu.querySelectorAll("[data-gpt-tk]").forEach((b) => { b.disabled = mutating || b.classList.contains("on"); });
+  }
+  // Tài khoản GPT (Codex) đã đăng nhập: đổi bằng một chạm trên điện thoại (chỉ hiện khi có từ 2 tài khoản).
+  function gptMenuHtml(pct) {
+    const gtk = quotas?.providers?.find((p) => p.id === "codex")?.taiKhoan;
+    const ds = gtk ? (gtk.ds || []).filter((a) => a.daDangNhap) : [];
+    if (ds.length < 2) return "";
+    return '<strong>GPT (Codex)</strong><div class="desk-tk-ds">' + ds.map((a) => `<button type="button" class="btn ghost${a.dangDung ? " on" : ""}" data-gpt-tk="${esc(a.id)}" data-tk-nhan="${esc(a.nhan)}"${a.dangDung ? ' aria-current="true"' : ""} title="${a.dangDung ? "Đang dùng" : "Đổi Codex sang tài khoản GPT này"}">${a.dangDung ? "✓ " : ""}${esc(a.nhan)}${esc(pct(a.conLai))}</button>`).join("") + "</div>";
   }
   // Model của từng phòng hiện trên nhãn tên nhân vật trong 3D; chạm vào thì mở mục Hạn mức ở đúng dòng chọn model của phòng đó.
   function veModelNhan() {
@@ -351,7 +397,7 @@ export function createDesk(getOffice) {
     renderTkMenu(); veModelNhan();
     $("deskQuotas").innerHTML = errors.quotas ? `<p class="error">${esc(errors.quotas)}</p>` : !quotas ? '<p>Đang tải hạn mức…</p>' : !quotas.providers?.length ? '<p>Chưa có dữ liệu hạn mức từ các AI.</p>' : quotas.providers.map((p) => {
       const stale = p.status !== "ready" || (p.lastSuccessAt && Date.now() - new Date(p.lastSuccessAt).getTime() > 3 * (quotas.intervalMs || 120000));
-      return `<article class="desk-entry"><strong>${esc(p.name)}</strong>${p.refreshing ? "<p>Đang cập nhật hạn mức…</p>" : ""}${p.error ? `<p class="error">${esc(p.error)}</p>` : ""}${stale ? "<p>Bản đọc chưa được xác nhận; chưa thể kết luận AI còn lượt.</p>" : ""}${(p.buckets || []).map((b) => `<p>${esc([b.group, b.label].filter(Boolean).join(" · "))}: ${Number.isFinite(b.remainingPercent) ? "còn " + esc(b.remainingPercent) + "%" : "Chưa có số liệu"}<br>Mở lại: ${esc(b.resetAt ? time(b.resetAt) : b.resetLabel || "Chưa rõ")}${b.resetAt && new Date(b.resetAt).getTime() <= Date.now() ? " · Đã qua mốc, chờ số liệu mới" : ""}</p>`).join("") || "<p>Chưa có số liệu hạn mức.</p>"}${p.id === "antigravity" ? agyTkHtml(p.taiKhoan) : ""}</article>`;
+      return `<article class="desk-entry"><strong>${esc(p.name)}</strong>${p.refreshing ? "<p>Đang cập nhật hạn mức…</p>" : ""}${p.error ? `<p class="error">${esc(p.error)}</p>` : ""}${stale ? "<p>Bản đọc chưa được xác nhận; chưa thể kết luận AI còn lượt.</p>" : ""}${(p.buckets || []).map((b) => `<p>${esc([b.group, b.label].filter(Boolean).join(" · "))}: ${Number.isFinite(b.remainingPercent) ? "còn " + esc(b.remainingPercent) + "%" : "Chưa có số liệu"}<br>Mở lại: ${esc(b.resetAt ? time(b.resetAt) : b.resetLabel || "Chưa rõ")}${b.resetAt && new Date(b.resetAt).getTime() <= Date.now() ? " · Đã qua mốc, chờ số liệu mới" : ""}</p>`).join("") || "<p>Chưa có số liệu hạn mức.</p>"}${p.id === "antigravity" ? agyTkHtml(p.taiKhoan) : ""}${p.id === "codex" ? codexTkHtml(p.taiKhoan) : ""}</article>`;
     }).join("") + dieuPhoiHtml();
     const p = quotas?.providers?.find((x) => x.id === "claude"), buckets = !errors.quotas && p?.status === "ready" && (!p.lastSuccessAt || Date.now() - new Date(p.lastSuccessAt).getTime() <= 3 * (quotas.intervalMs || 120000)) ? (p.buckets || []).filter((b) => Number.isFinite(b.remainingPercent) && (!b.resetAt || new Date(b.resetAt).getTime() > Date.now())) : [];
     const left = buckets.length ? Math.min(...buckets.map((b) => b.remainingPercent)) : null;
@@ -585,6 +631,9 @@ export function createDesk(getOffice) {
   dialog.addEventListener("change", (e) => {
     const auto = e.target.closest("[data-dp-auto]");
     if (auto) { saveDieuPhoi({ tuDong: auto.checked }, auto.checked ? "Đã bật điều phối tự động." : "Đã tắt điều phối tự động: các AI dùng mặc định của CLI."); return; }
+    const gptTu = e.target.closest("[data-gpt-tu]"), gptNg = e.target.closest("[data-gpt-nguong]");
+    if (gptTu) { gptGoi("/codex-tai-khoan/sua", { tuChuyen: gptTu.checked }, gptTu.checked ? "Đã bật tự chuyển tài khoản GPT." : "Đã tắt tự chuyển tài khoản GPT."); return; }
+    if (gptNg) { gptGoi("/codex-tai-khoan/sua", { nguong: Number(gptNg.value) }, "Đã đặt ngưỡng tự chuyển tài khoản GPT " + gptNg.value + "%."); return; }
     const agyTu = e.target.closest("[data-agy-tu]"), agyNg = e.target.closest("[data-agy-nguong]");
     if (agyTu) { agyTkGoi("/agy-tai-khoan/sua", { tuChuyen: agyTu.checked }, agyTu.checked ? "Đã bật tự chuyển tài khoản Antigravity." : "Đã tắt tự chuyển tài khoản Antigravity."); return; }
     if (agyNg) { agyTkGoi("/agy-tai-khoan/sua", { nguong: Number(agyNg.value) }, "Đã đặt ngưỡng tự chuyển " + agyNg.value + "%."); return; }
@@ -605,6 +654,27 @@ export function createDesk(getOffice) {
     if (agyChuyen) { agyTkGoi("/agy-tai-khoan/" + encodeURIComponent(agyChuyen.dataset.agyChuyen) + "/chuyen", {}, "Đã đổi tài khoản Antigravity. Lượt Hinata/Kakashi kế tiếp dùng tài khoản này."); return; }
     if (agyXoa) { if (confirm("Bỏ tài khoản này khỏi văn phòng? (Không đăng xuất tài khoản đang dùng trong Antigravity.)")) agyTkGoi("/agy-tai-khoan/" + encodeURIComponent(agyXoa.dataset.agyXoa) + "/xoa", {}, "Đã bỏ tài khoản."); return; }
     if (e.target.closest("[data-agy-doc]")) { agyTkGoi("/agy-tai-khoan/doc-nghi", {}, "Đang đọc hạn mức tài khoản đang nghỉ (khi máy rảnh Antigravity). Bấm Hạn mức lại sau ít giây."); return; }
+    // Tài khoản GPT (Codex)
+    const gptThem = e.target.closest("[data-gpt-them]"), gptDn = e.target.closest("[data-gpt-dn]"), gptChuyen = e.target.closest("[data-gpt-chuyen]"), gptBo = e.target.closest("[data-gpt-bo]");
+    if (gptThem) {
+      const nhan = (dialog.querySelector("[data-gpt-nhan]")?.value || "").trim();
+      if (!nhan) { notice("Đặt tên cho tài khoản GPT trước (vd. GPT Pro 2).", true); return; }
+      (async () => {
+        try {
+          const { taiKhoan } = await request("/codex-tai-khoan/them", { nhan }, 60000);
+          const moi = (taiKhoan.ds || []).find((a) => a.nhan === nhan);
+          if (moi) await request("/codex-tai-khoan/" + encodeURIComponent(moi.id) + "/dang-nhap", {}, 60000);
+          notice("Đã thêm " + nhan + ". Trình duyệt sẽ mở trang đăng nhập ChatGPT: chọn đúng tài khoản GPT này (dùng cửa sổ ẩn danh nếu trình duyệt đang đăng nhập tài khoản khác).");
+          quotas = await request("/quotas");
+        } catch (err) { notice(err.message, true); }
+        renderQuotas();
+      })();
+      return;
+    }
+    if (gptDn) { gptGoi("/codex-tai-khoan/" + encodeURIComponent(gptDn.dataset.gptDn) + "/dang-nhap", {}, "Đang mở trang đăng nhập ChatGPT trên máy tính này. Đăng nhập xong văn phòng tự đọc hạn mức."); return; }
+    if (gptChuyen) { gptGoi("/codex-tai-khoan/" + encodeURIComponent(gptChuyen.dataset.gptChuyen) + "/chuyen", {}, "Đã đổi tài khoản GPT. Lượt Itachi/Sasuke kế tiếp dùng tài khoản này."); return; }
+    if (gptBo) { if (confirm("Bỏ tài khoản GPT này khỏi văn phòng? (Thư mục đăng nhập vẫn giữ trên máy.)")) gptGoi("/codex-tai-khoan/" + encodeURIComponent(gptBo.dataset.gptBo) + "/bo", {}, "Đã bỏ tài khoản GPT."); return; }
+    if (e.target.closest("[data-gpt-doc]")) { gptGoi("/codex-tai-khoan/doc", {}, "Đã đọc hạn mức mọi tài khoản GPT."); return; }
     const bk = e.target.closest("[data-bo-kiem]");
     if (bk && !bk.disabled) {
       const workspace = active;

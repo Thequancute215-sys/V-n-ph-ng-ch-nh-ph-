@@ -19,7 +19,8 @@ const row = (r) => {
 };
 const err = (code, msg) => Object.assign(new Error(msg), { code });
 
-function createJobs(db, audit, logDir) {
+// envFor(job): biến môi trường thêm cho tiến trình lúc khởi chạy (vd. CODEX_HOME của tài khoản GPT đang chọn, ctl/codex-tai-khoan.js).
+function createJobs(db, audit, logDir, { envFor = null } = {}) {
   const q = {
     insert: db.prepare("INSERT INTO jobs (id, kind, agent, workspace, argv, pid, status, started_at, timeout_ms, log_path) VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?)"),
     launch: db.prepare("UPDATE jobs SET status = 'running', pid = ?, started_at = ? WHERE id = ? AND status IN ('pending_approval', 'running')"),
@@ -83,7 +84,7 @@ function createJobs(db, audit, logDir) {
     try {
       // shell: false: đối số đi thẳng tới chương trình, không qua cmd/PowerShell nên không chèn lệnh được.
       const prog = resolveProgram(argv[0]);
-      child = spawn(prog[0], [...prog.slice(1), ...argv.slice(1)], { cwd: j.workspace || undefined, env: cleanEnv(), shell: false, windowsHide: true, detached: process.platform !== "win32", stdio: ["ignore", fd, fd] });
+      child = spawn(prog[0], [...prog.slice(1), ...argv.slice(1)], { cwd: j.workspace || undefined, env: { ...cleanEnv(), ...(envFor ? (() => { try { return Object.fromEntries(Object.entries(envFor(j) || {}).filter(([, v]) => typeof v === "string" && v)); } catch { return {}; } })() : {}) }, shell: false, windowsHide: true, detached: process.platform !== "win32", stdio: ["ignore", fd, fd] });
     } catch (e) { resolveError = e; } finally { fs.closeSync(fd); }
     q.launch.run(child ? child.pid || null : null, Date.now(), id);
     if (resolveError) {
