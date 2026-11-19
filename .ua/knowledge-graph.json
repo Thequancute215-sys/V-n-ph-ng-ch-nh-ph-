@@ -44,8 +44,8 @@
       "name": "createAutopilot",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        64,
-        582
+        71,
+        806
       ],
       "summary": "Factory tạo bộ autopilot: nạp lại các luồng đã lưu (luồng đang chạy khi khởi động lại chuyển sang 'attention'), dựng vòng tick định kỳ và trả về API start/stop/answer/decide/resumeNow/resumeScan/webPrompt/applyWeb/pushBranch/stepDiff/preflight.",
       "tags": [
@@ -62,8 +62,8 @@
       "name": "responseText",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        51,
-        62
+        58,
+        69
       ],
       "summary": "Lấy câu trả lời cuối của AI từ log CLI: duyệt ngược từng dòng JSON tìm trường result/response hoặc item agent_message (codex exec --json), không có thì trả 40000 ký tự cuối.",
       "tags": [
@@ -79,8 +79,8 @@
       "name": "waitFromMessage",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        31,
-        40
+        38,
+        47
       ],
       "summary": "Đọc câu kiểu 'try again in 2 hours 15 minutes' trong thông báo của CLI để tính mốc thời gian hạn mức mở lại; không đọc được thì trả null.",
       "tags": [
@@ -96,8 +96,8 @@
       "name": "saveStep",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        98,
-        106
+        106,
+        114
       ],
       "summary": "Commit các file AI vừa đổi trong lượt cuối lên nhánh của luồng qua nhanh.save; nếu diff có chuỗi giống khóa API thì không commit và gọi report để dừng cho CEO kiểm tra.",
       "tags": [
@@ -113,8 +113,8 @@
       "name": "checkDeletes",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        109,
-        144
+        117,
+        152
       ],
       "summary": "Sau mỗi lượt so git với mốc đầu lượt: vai khác Claude tự xoá file đang theo dõi thì khôi phục và chuyển thành đề nghị xoá chờ Claude; xoá file ngoài git thì ghi vi phạm và thông báo; Claude xoá thì phải giải thích trong da_xoa.",
       "tags": [
@@ -131,8 +131,8 @@
       "name": "waitQuota",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        166,
-        177
+        175,
+        186
       ],
       "summary": "Chuyển luồng sang trạng thái 'waiting_quota' khi AI của lượt hết hạn mức gói, tính giờ chạy lại (ưu tiên bộ theo dõi hạn mức, rồi thông báo CLI, mặc định 30 phút) và ghi nhật ký kiểm toán.",
       "tags": [
@@ -148,8 +148,8 @@
       "name": "templatePrompt",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        188,
-        207
+        197,
+        217
       ],
       "summary": "Soạn master prompt mẫu từ agent.md (đã che khóa), việc CEO giao và quyết định của CEO, kèm chuẩn đầu ra riêng cho từng vai, dùng khi không AI nào còn hạn mức để soạn.",
       "tags": [
@@ -165,8 +165,8 @@
       "name": "webPrompt",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        210,
-        221
+        220,
+        231
       ],
       "summary": "Xử lý yêu cầu của CEO soạn master prompt cho ChatGPT web khi luồng đang chờ hạn mức: chụp hạn mức các AI rồi giao cho nextWriter chọn người soạn.",
       "tags": [
@@ -182,8 +182,8 @@
       "name": "nextWriter",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        225,
-        240
+        235,
+        250
       ],
       "summary": "Chọn AI còn nhiều hạn mức nhất (trừ AI vừa hết và AI đã thử hỏng) để chạy runner.webPrompt; không còn ai thì dùng templatePrompt.",
       "tags": [
@@ -199,8 +199,8 @@
       "name": "finishWeb",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        251,
-        269
+        261,
+        279
       ],
       "summary": "Khi job soạn master prompt kết thúc: tách đoạn ===MASTER_PROMPT=== / ===CHUAN_DAU_RA===, đạt thì đánh dấu sẵn sàng và thông báo, không đạt thì chuyển AI kế tiếp; cảnh báo nếu có chuỗi giống khóa API.",
       "tags": [
@@ -216,8 +216,8 @@
       "name": "launch",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        271,
-        304
+        281,
+        466
       ],
       "summary": "Chạy lượt kế tiếp theo NEXT_OWNER: dựng lời giao việc (đặc cách CEO, quyết định CEO, giải thích các lượt và đề nghị xoá cho Claude, ghi chú trả lại), chụp mốc git, gọi runner.run; gặp NEEDS_SCAN_APPROVAL thì tạm dừng 'awaiting_scan'.",
       "tags": [
@@ -233,8 +233,8 @@
       "name": "report",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        332,
-        342
+        494,
+        504
       ],
       "summary": "Ngắt mạch luồng: gom giải thích các lượt và đuôi log làm bằng chứng rồi gọi runner.report để Claude viết báo cáo cho CEO; lỗi thì chuyển 'attention'.",
       "tags": [
@@ -250,8 +250,8 @@
       "name": "start",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        344,
-        360
+        506,
+        522
       ],
       "summary": "Bắt đầu luồng tự động: kiểm việc giao (≤3000 ký tự), giới hạn 1–12 lượt/≤120 phút, dự án rảnh và agent.md đọc được, cổng rà soát .md khi chạy toàn quyền, tạo nhánh riêng qua nhanh.prepare rồi launch.",
       "tags": [
@@ -267,8 +267,8 @@
       "name": "tick",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        362,
-        437
+        524,
+        607
       ],
       "summary": "Vòng lặp chính chạy định kỳ: theo dõi job từng luồng, xử lý hết thời gian, nhận báo cáo, kiểm xoá/commit lượt, chờ hạn mức, trả lại lượt thiếu giải thích, phát hiện khóa/xung đột git, chờ CEO trả lời ask_ceo, dừng ở báo cáo cuối của Claude hoặc duyệt bàn giao và chạy lượt tiếp.",
       "tags": [
@@ -285,8 +285,8 @@
       "name": "answer",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        441,
-        453
+        656,
+        669
       ],
       "summary": "CEO chọn phương án cho câu hỏi ask_ceo của Claude: duyệt bàn giao theo phương án qua runner.answer, ghi quyết định vào luồng, đặt lại mốc lượt/thời gian rồi chạy tiếp.",
       "tags": [
@@ -302,8 +302,8 @@
       "name": "stop",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        455,
-        464
+        671,
+        681
       ],
       "summary": "CEO dừng luồng: đặt 'stopped', kill job đang chạy, từ chối các bàn giao còn chờ và commit dở dang lượt cuối nếu chưa lưu.",
       "tags": [
@@ -319,8 +319,8 @@
       "name": "decide",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        466,
-        480
+        683,
+        697
       ],
       "summary": "CEO duyệt hoặc từ chối báo cáo cuối: duyệt/từ chối bàn giao cuối của Claude qua runner và chuyển luồng sang approved/acknowledged/rejected.",
       "tags": [
@@ -336,8 +336,8 @@
       "name": "pushBranch",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        483,
-        490
+        700,
+        707
       ],
       "summary": "Sau khi CEO duyệt, đẩy nhánh riêng của luồng lên remote qua nhanh.push (không --force) và lưu thông tin để tạo PR.",
       "tags": [
@@ -353,8 +353,8 @@
       "name": "stepDiff",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        493,
-        501
+        710,
+        724
       ],
       "summary": "Trả danh sách file đổi và diff của lượt thứ n giữa mốc base và head của lượt (qua nhanh.diff), từ chối khi lượt đang chạy hoặc không có mốc git.",
       "tags": [
@@ -370,8 +370,8 @@
       "name": "applyWeb",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        505,
-        534
+        728,
+        757
       ],
       "summary": "Nhận kết quả CEO dán từ ChatGPT web cho lượt đang chờ hạn mức: kiểm độ dài và chuỗi giống khóa, lưu vào .git/van-phong-ai, giao AI còn hạn mức (Claude hoặc Codex) kiểm và áp qua runner.applyWeb như một lượt của vai đó.",
       "tags": [
@@ -388,8 +388,8 @@
       "name": "webRejected",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        536,
-        547
+        759,
+        770
       ],
       "summary": "Lượt áp kết quả GPT web không đạt: lấy lý do WEB_RESULT_REJECTED hoặc lỗi bàn giao, từ chối bàn giao và đưa luồng về 'waiting_quota' kèm lỗi để CEO sửa và dán lại.",
       "tags": [
@@ -405,8 +405,8 @@
       "name": "resumeScan",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        568,
-        580
+        792,
+        804
       ],
       "summary": "Sau khi CEO duyệt điểm bất thường của dự án, chạy tiếp các luồng đang 'awaiting_scan' của workspace đó (cộng thời gian chờ vào hạn chót) bằng launch.",
       "tags": [
@@ -437,8 +437,8 @@
       "name": "createChat",
       "filePath": "ctl/chat.js",
       "lineRange": [
-        70,
-        138
+        72,
+        140
       ],
       "summary": "Factory tạo dịch vụ chat: nạp chat.json (tin đang chờ khi app tắt chuyển thành lỗi), cung cấp get/send/clear, giữ tối đa 40 tin mỗi người và chỉ một câu đang chờ trả lời mỗi người.",
       "tags": [
@@ -454,8 +454,8 @@
       "name": "promptFor",
       "filePath": "ctl/chat.js",
       "lineRange": [
-        30,
-        51
+        32,
+        53
       ],
       "summary": "Dựng lời nhắn cho AI của một phòng: vai, phạm vi, danh sách các phòng, luật chỉ đọc, ba cách trả lời và dòng JSON kết thúc bắt buộc, kèm 6 tin gần nhất làm ngữ cảnh.",
       "tags": [
@@ -471,8 +471,8 @@
       "name": "parseReply",
       "filePath": "ctl/chat.js",
       "lineRange": [
-        54,
-        68
+        56,
+        70
       ],
       "summary": "Tách dòng JSON cuối (chuyen_phong/ly_do/prompt) khỏi câu trả lời hiển thị; bỏ qua phòng lạ hoặc chuyển cho chính mình, phân biệt chuyển phòng với prompt giao việc.",
       "tags": [
@@ -488,8 +488,8 @@
       "name": "send",
       "filePath": "ctl/chat.js",
       "lineRange": [
-        83,
-        105
+        85,
+        107
       ],
       "summary": "Gửi tin của CEO cho một nhân vật: kiểm tin (≤4000 ký tự) và trạng thái bận, thay {prompt} trong argv từ runner.chatArgv bằng promptFor rồi chạy jobs.start với onExit gọi finish.",
       "tags": [
@@ -505,8 +505,8 @@
       "name": "finish",
       "filePath": "ctl/chat.js",
       "lineRange": [
-        107,
-        127
+        109,
+        129
       ],
       "summary": "Xử lý khi job chat kết thúc: báo lỗi hạn mức/timeout/lỗi CLI kèm đuôi log đã che khóa, hoặc tách câu trả lời bằng responseText + parseReply rồi che khóa và lưu.",
       "tags": [
@@ -586,7 +586,7 @@
       "filePath": "ctl/github.js",
       "lineRange": [
         35,
-        151
+        176
       ],
       "summary": "Factory dịch vụ GitHub với các phụ thuộc tiêm được (getCredential, fetcher, runGit): api, list, local, perform, open, visibility (nhớ 10 phút), dispatch, get, close.",
       "tags": [
@@ -787,8 +787,8 @@
       "name": "createCtl",
       "filePath": "ctl/main.js",
       "lineRange": [
-        49,
-        324
+        55,
+        356
       ],
       "summary": "Composition root: mở DB, tạo audit/jobs/workspaces/files/notifier/scanner/runner/autopilot/ideas/publisher/chat/connectors/journal/boKiem/updater/github/quotas/monitor, khai báo route REST, server HTTP kiểm Host loopback + token + guard.checkWrite, ánh xạ mã lỗi sang HTTP và hàm close dọn dẹp.",
       "tags": [
@@ -805,8 +805,8 @@
       "name": "projects",
       "filePath": "ctl/main.js",
       "lineRange": [
-        124,
-        145
+        134,
+        155
       ],
       "summary": "Tổng hợp bảng dự án cho /projects: với mỗi workspace đọc lượt, AUDIT_STATUS, số blocker OPEN ở Vùng [5], bàn giao chờ, job đang chạy/gần nhất/đếm theo trạng thái và các luồng autopilot; mọi chuỗi đều che khóa.",
       "tags": [
@@ -1471,8 +1471,8 @@
       "name": "fixture",
       "filePath": "test/autopilot.test.js",
       "lineRange": [
-        13,
-        39
+        14,
+        41
       ],
       "summary": "Dựng repo git tạm có agent.md, CLI giả theo chế độ, ctl thật nghe cổng ngẫu nhiên, hàm call HTTP có token và hàm wait chờ trạng thái luồng.",
       "tags": [
@@ -1797,8 +1797,8 @@
       "name": "createBoKiem",
       "filePath": "ctl/bo-kiem.js",
       "lineRange": [
-        24,
-        95
+        25,
+        96
       ],
       "summary": "Factory trả về { status, install }: status so hai file trong repo với bản của văn phòng (trạng thái da-cai/cu/chua-cai/khong-phai-git, hoặc van-phong cho chính repo Văn phòng AI); install kiểm điều kiện (git, có commit, có remote origin, không đang bận), chọn tên nhánh không trùng (thêm -2, -3…), ghi file vào worktree tạm, commit, gọi nhanh.push, ghi trạng thái nguyên tử bằng writeAtomic và ghi audit bo_kiem.install.",
       "tags": [
@@ -2273,8 +2273,8 @@
       "name": "createQueries",
       "filePath": "ctl/quotas.js",
       "lineRange": [
-        82,
-        140
+        102,
+        163
       ],
       "summary": "Tạo bộ đọc hạn mức thật: chọn chương trình (có thể ghi đè theo ctl-agents.json của vai), spawn CLI với env đã lọc khóa, timeout 25s, giới hạn 2MB đầu ra; Codex dùng giao thức JSON-RPC initialize → account/rateLimits/read; close() dừng cả cây mọi tiến trình con còn chạy.",
       "tags": [
@@ -2291,8 +2291,8 @@
       "name": "createQuotas",
       "filePath": "ctl/quotas.js",
       "lineRange": [
-        142,
-        176
+        167,
+        252
       ],
       "summary": "Factory bộ theo dõi: giữ trạng thái từng nhà cung cấp (loading/ready/stale/error), refresh chỉ đọc nhà nào đến hạn, gộp yêu cầu đồng thời, lỗi thì giữ số liệu cũ và lùi 5 phút; trả { get, refresh, snapshot, close }.",
       "tags": [
@@ -2506,8 +2506,8 @@
       "name": "fixture",
       "filePath": "test/bo-kiem.test.js",
       "lineRange": [
-        48,
-        58
+        52,
+        62
       ],
       "summary": "Dựng môi trường git thử: repo trần origin.git làm remote, bản clone du-an có cấu hình user và một commit đầu đã đẩy lên main; trả các hàm chạy git trong repo.",
       "tags": [
@@ -2705,8 +2705,8 @@
       "name": "readTurn",
       "filePath": "ctl/handoff.js",
       "lineRange": [
-        18,
-        24
+        19,
+        25
       ],
       "summary": "Đọc agent.md trong workspace và trả { phase, lastUpdatedBy, nextOwner } bằng regex; ném lỗi NO_AGENT_MD khi thiếu file, BAD_AGENT_MD khi không có dòng NEXT_OWNER.",
       "tags": [
@@ -2722,8 +2722,8 @@
       "name": "setTurn",
       "filePath": "ctl/handoff.js",
       "lineRange": [
-        26,
-        32
+        27,
+        33
       ],
       "summary": "Ghi đè đúng hai dòng LAST_UPDATED_BY và NEXT_OWNER trong agent.md (giữ nguyên phần còn lại); ném BAD_AGENT_MD nếu thiếu dòng LAST_UPDATED_BY.",
       "tags": [
@@ -2739,8 +2739,8 @@
       "name": "checkHandoff",
       "filePath": "ctl/handoff.js",
       "lineRange": [
-        35,
-        57
+        38,
+        60
       ],
       "summary": "Kiểm dòng JSON bàn giao của một lượt và trả danh sách lỗi: role khớp vai đang chạy, next_owner thuộc ROLES và khác vai hiện tại, files/claim_fixed đúng kiểu (ID dạng P2-C01), chỉ CLAUDE_AUDITOR được đặt effort, ask_ceo và da_xoa; giai_thich bắt buộc với Hinata/Sol/Astra.",
       "tags": [
@@ -2757,8 +2757,8 @@
       "name": "checkList",
       "filePath": "ctl/handoff.js",
       "lineRange": [
-        60,
-        70
+        63,
+        73
       ],
       "summary": "Kiểm danh sách đề nghị xoá / đã xoá: mảng tối đa 50 mục, mỗi trường là chuỗi đủ độ dài tối thiểu, tối đa 1000 ký tự và không phải chữ viết cho có.",
       "tags": [
@@ -2774,8 +2774,8 @@
       "name": "checkExplain",
       "filePath": "ctl/handoff.js",
       "lineRange": [
-        79,
-        99
+        82,
+        102
       ],
       "summary": "Kiểm mảng giai_thich (1–20 mục): mỗi mục có van_de, da_lam, vi_sao dài 15–2000 ký tự, không phải chữ mẫu hay câu cho có, và phuong_an_khac là mảng 0–5 phương án {cach, vi_sao_khong}.",
       "tags": [
@@ -2791,8 +2791,8 @@
       "name": "checkAsk",
       "filePath": "ctl/handoff.js",
       "lineRange": [
-        103,
-        119
+        106,
+        122
       ],
       "summary": "Kiểm trường ask_ceo: chỉ CLAUDE_AUDITOR được hỏi CEO, question 1–2000 ký tự, 2–4 phương án có id ngắn không trùng, label, next_owner hợp lệ và task tối đa 4000 ký tự.",
       "tags": [
@@ -2808,8 +2808,8 @@
       "name": "findHandoff",
       "filePath": "ctl/handoff.js",
       "lineRange": [
-        123,
-        146
+        126,
+        149
       ],
       "summary": "Tìm object {\"role\": ...} cuối cùng trong log AI, quét cả văn bản thường lẫn các chuỗi lồng trong JSON/JSONL của claude --output-format json và codex exec --json; trả null nếu không có.",
       "tags": [
@@ -2855,8 +2855,8 @@
       "name": "parseClaude",
       "filePath": "ctl/ket-noi.js",
       "lineRange": [
-        15,
-        22
+        16,
+        23
       ],
       "summary": "Phân tích văn bản `claude mcp list` thành map tên kết nối → da-ket-noi / can-dang-nhap / loi.",
       "tags": [
@@ -2872,8 +2872,8 @@
       "name": "parseCodex",
       "filePath": "ctl/ket-noi.js",
       "lineRange": [
-        23,
-        27
+        24,
+        28
       ],
       "summary": "Phân tích JSON của `codex mcp list --json` thành map tên server → tat / can-dang-nhap / da-cau-hinh; JSON hỏng thì trả object rỗng.",
       "tags": [
@@ -2889,8 +2889,8 @@
       "name": "parseAgy",
       "filePath": "ctl/ket-noi.js",
       "lineRange": [
-        28,
-        32
+        29,
+        33
       ],
       "summary": "Phân tích văn bản `agy mcp list` của Antigravity, nhận các dòng có URL/stdio là kết nối đã cấu hình.",
       "tags": [
@@ -2906,8 +2906,8 @@
       "name": "createConnectors",
       "filePath": "ctl/ket-noi.js",
       "lineRange": [
-        35,
-        115
+        36,
+        136
       ],
       "summary": "Factory dịch vụ kết nối: chạy ba lệnh `mcp list` song song qua runner.cliOf (cache 5 phút), trả status() gồm từng hàng danh mục với trạng thái từng AI, app cài trên máy, phòng được giao/sẵn sàng/có thể giao; add() thêm MCP cho codex/agy (chặn nhóm gửi), login() đăng nhập OAuth Codex, setPhong() lưu kết nối theo phòng, known() trả tên kết nối đã đọc.",
       "tags": [
@@ -2940,7 +2940,7 @@
       "name": "ROLE_PHONG",
       "filePath": "ctl/mcp-phong.js",
       "lineRange": [
-        12,
+        13,
         13
       ],
       "summary": "Ánh xạ vai agent.md sang phòng chạy lượt: SPEC_ARCHITECT/AGY_* → hinata, SOL_* → itachi, CODEX_* → sasuke, CLAUDE_* → sakura, còn lại null.",
@@ -2957,8 +2957,8 @@
       "name": "hopLe",
       "filePath": "ctl/mcp-phong.js",
       "lineRange": [
-        23,
-        29
+        24,
+        31
       ],
       "summary": "Cho biết một kết nối có dùng được cho phòng không: phải có trong danh mục, không thuộc nhóm bị chặn; Claude cần tên claude.ai, Codex/Antigravity cần URL MCP, nhóm sáng tạo luôn hợp lệ.",
       "tags": [
@@ -2974,8 +2974,8 @@
       "name": "read",
       "filePath": "ctl/mcp-phong.js",
       "lineRange": [
-        31,
-        37
+        33,
+        39
       ],
       "summary": "Đọc mcp-phong.json (lỗi thì dùng MAC_DINH) và trả kết nối của từng phòng sau khi lọc qua hopLe.",
       "tags": [
@@ -2991,8 +2991,8 @@
       "name": "save",
       "filePath": "ctl/mcp-phong.js",
       "lineRange": [
-        39,
-        48
+        41,
+        50
       ],
       "summary": "Lưu danh sách kết nối cho một phòng: kiểm phòng chạy lượt, ids là mảng và mọi id hợp lệ, bỏ trùng rồi ghi nguyên tử mcp-phong.json bằng writeAtomic.",
       "tags": [
@@ -3008,8 +3008,8 @@
       "name": "claudeTool",
       "filePath": "ctl/mcp-phong.js",
       "lineRange": [
-        51,
-        51
+        53,
+        53
       ],
       "summary": "Đổi tên kết nối Claude (vd. \"claude.ai Google Drive\") thành tiền tố công cụ mcp__claude_ai_Google_Drive.",
       "tags": [
@@ -3025,8 +3025,8 @@
       "name": "argsFor",
       "filePath": "ctl/mcp-phong.js",
       "lineRange": [
-        55,
-        75
+        57,
+        77
       ],
       "summary": "Sinh cờ CLI cho lượt của một vai: Claude nhận --disallowedTools tắt mọi kết nối không thuộc phòng (kể cả ngoài danh mục); Codex nhận -c features.apps=false và tắt server đã cấu hình không thuộc phòng; Antigravity không có cờ.",
       "tags": [
@@ -3042,8 +3042,8 @@
       "name": "note",
       "filePath": "ctl/mcp-phong.js",
       "lineRange": [
-        78,
-        83
+        80,
+        89
       ],
       "summary": "Tạo câu nhắc trong lời giao việc liệt kê kết nối MCP mà phòng của vai được dùng.",
       "tags": [
@@ -3126,8 +3126,8 @@
       "name": "fullAccessArgs",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        100,
-        122
+        115,
+        137
       ],
       "summary": "Đổi lệnh CLI đã cấu hình sang chế độ toàn quyền: bỏ cờ giới hạn (--permission-mode, --allowedTools, --sandbox, --settings…), thêm --dangerously-skip-permissions / --dangerously-bypass-approvals-and-sandbox, chuyển Claude sang stream-json + --verbose và luôn chặn CHAN_CLAUDE.",
       "tags": [
@@ -3143,8 +3143,8 @@
       "name": "withMcp",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        125,
-        137
+        183,
+        196
       ],
       "summary": "Chèn cờ MCP theo phòng (từ mcp-phong.argsFor) vào lệnh: Claude gộp vào cùng một --disallowedTools, Codex chèn -c ngay sau \"exec\"; chương trình lạ giữ nguyên.",
       "tags": [
@@ -3160,8 +3160,8 @@
       "name": "createRunner",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        146,
-        371
+        217,
+        551
       ],
       "summary": "Factory runner: chuẩn bị câu lệnh SQLite bảng handoffs, trả API run, report, webPrompt, applyWeb, chatArgv, cliOf, status, approve, answer, reject, conflicts, get, pending; đọc quyen.json để bật toàn quyền và bắt rà soát (scanner.require) trước khi chạy.",
       "tags": [
@@ -3178,8 +3178,8 @@
       "name": "argvFor",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        161,
-        173
+        239,
+        251
       ],
       "summary": "Lấy lệnh CLI của vai: ưu tiên ctl-agents.json, vai phụ mượn phần chương trình của vai chính đã cấu hình; ném BAD_CONFIG nếu lệnh không phải mảng chuỗi có \"{prompt}\".",
       "tags": [
@@ -3194,8 +3194,8 @@
       "name": "run",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        184,
-        206
+        267,
+        318
       ],
       "summary": "Chạy một lượt AI: kiểm vai hợp lệ, đúng NEXT_OWNER, workspace không bận và không còn bàn giao chờ duyệt, rà soát toàn quyền; ghép prompt (vai, ghi chú quyền, MCP phòng, việc giao, END, CAPTAIN), dựng argv qua codexArgs/fullAccessArgs/withMcp rồi jobs.start với onExit gọi done.",
       "tags": [
@@ -3211,8 +3211,8 @@
       "name": "done",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        225,
-        236
+        364,
+        385
       ],
       "summary": "Xử lý khi job AI kết thúc: lỗi tạm thời (rate limit, mạng) thì hẹn chạy lại sau 1 phút một lần; ngược lại tìm và kiểm dòng bàn giao, cộng lỗi chu trình agent.md (kiemAgent.checkChange) rồi lưu bàn giao vào SQLite và ghi kiểm toán.",
       "tags": [
@@ -3228,8 +3228,8 @@
       "name": "approve",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        254,
-        278
+        403,
+        430
       ],
       "summary": "CEO duyệt chuyển lượt: chặn bàn giao không có, đã quyết, có lỗi hoặc đang hỏi CEO; ghi agent.md bằng setTurn khi cần, commit cục bộ `chore(agent-sync): VAI -> NEXT: VAI` nếu là repo git, đánh dấu approved.",
       "tags": [
@@ -3245,8 +3245,8 @@
       "name": "answer",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        282,
-        294
+        434,
+        446
       ],
       "summary": "CEO chọn một phương án cho câu hỏi ask_ceo của Claude: duyệt bàn giao với next_owner của phương án, ghi kiểm toán và trả kèm câu quyết định để luồng tự động chạy tiếp.",
       "tags": [
@@ -3262,8 +3262,8 @@
       "name": "webPrompt",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        313,
-        328
+        489,
+        505
       ],
       "summary": "Giao một AI chỉ đọc soạn MASTER PROMPT và chuẩn đầu ra để CEO tự làm lượt của vai hết hạn mức trên ChatGPT web.",
       "tags": [
@@ -3279,8 +3279,8 @@
       "name": "applyWeb",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        332,
-        353
+        509,
+        530
       ],
       "summary": "Giao Claude hoặc Codex kiểm và áp kết quả ChatGPT web (đọc từ file) vào repo thay cho vai đang hết hạn mức; kiểm lượt, workspace bận, bàn giao chờ, rà soát toàn quyền, rồi chạy job có onExit gọi done.",
       "tags": [
@@ -3311,8 +3311,8 @@
       "name": "request",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        12,
-        21
+        35,
+        47
       ],
       "summary": "Gọi API Controller qua /ctl với timeout (GET hoặc POST JSON), báo lỗi tiếng Việt khi mất kết nối, JSON hỏng hoặc phản hồi ok=false (kèm code).",
       "tags": [
@@ -3328,8 +3328,8 @@
       "name": "createDesk",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        23,
-        335
+        49,
+        649
       ],
       "summary": "Dựng bàn điều phối: tạo toolbar và dialog, quản lý trạng thái (runs, jobs, handoffs, quotas, scan, publish, journal…), các hàm render từng mục, đồng bộ NPC, xử lý sự kiện duyệt/trả lời/đẩy nhánh/xuất bản/rà soát/mở repo GitHub; trả { syncTurn }.",
       "tags": [
@@ -3346,8 +3346,8 @@
       "name": "renderApprovals",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        101,
-        125
+        154,
+        178
       ],
       "summary": "Hiển thị Việc chờ anh duyệt: khung rà soát, luồng tự động cần CEO (câu hỏi Claude, báo cáo, hết hạn mức, đẩy nhánh), bàn giao tay chưa quyết và bản build sẵn sàng xuất bản; cập nhật huy hiệu đếm và tiêu đề trang.",
       "tags": [
@@ -3363,8 +3363,8 @@
       "name": "syncWork",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        181,
-        203
+        403,
+        425
       ],
       "summary": "Đồng bộ cảnh 3D: đặt NPC đang làm/chờ duyệt theo job và luồng của dự án, xoá trạng thái cũ, hiện dòng ai đang giữ lượt agent.md.",
       "tags": [
@@ -3380,8 +3380,8 @@
       "name": "syncTurn",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        205,
-        238
+        427,
+        461
       ],
       "summary": "Một nhịp đồng bộ: đọc /workspaces rồi song song /autopilot, /jobs, /handoffs, /quotas, /scan, /publish, /nhat-ky, /ai/status, /ideas, /workspaces/overview; ghi lỗi theo từng mục, render và syncWork; không chồng yêu cầu khi đang chạy.",
       "tags": [
@@ -3784,7 +3784,7 @@
       "filePath": "ctl/workspaces.js",
       "lineRange": [
         11,
-        43
+        44
       ],
       "summary": "Phân tích văn bản agent.md theo các vùng [n]: lấy CURRENT_PHASE, NEXT_OWNER, LAST_UPDATED_BY ở Vùng [4], AUDIT_STATUS và blocker [ ] OPEN chỉ ở Vùng [5], 25 dòng cuối của [4.1], các mục [1]-[3] còn nội dung mẫu, rồi sinh câu nextStep theo vai giữ lượt; che secret bằng maskSecrets trước.",
       "tags": [
@@ -3801,8 +3801,8 @@
       "name": "createWorkspaces",
       "filePath": "ctl/workspaces.js",
       "lineRange": [
-        67,
-        215
+        68,
+        216
       ],
       "summary": "Factory nhận db và audit, trả về list/add/remove/find/switchTo/current/resolve/overview/excludeAgentMd: add chặn cả ổ đĩa, thư mục người dùng và thư mục ẩn (.ssh, .claude…); initAgentMd tạo agent.md bằng cờ \"wx\" không ghi đè; resolve đổi đường dẫn tương đối thành đường dẫn thật trong workspace và cấm ghi vào .git; overview đọc git/README/agent.md (giới hạn 2 MB) và che secret.",
       "tags": [
@@ -4556,126 +4556,6 @@
       "complexity": "simple"
     },
     {
-      "id": "file:lib/chat.js",
-      "type": "file",
-      "name": "chat.js",
-      "filePath": "lib/chat.js",
-      "summary": "Kênh nhắn tin từ văn phòng tới agent: xử lý các route /chat/status và /chat/send, ghi tin vào hòm thư data/hop-thu qua lib/mailbox.js và đọc trạng thái chờ đọc/đã đọc/đã xong qua lib/hopthu.js. Truy cập từ máy này được gửi thẳng, truy cập từ xa (đường hầm Cloudflare, máy khác) cần mã PIN 6 số lưu ở ~/.van-phong-ao/pin.txt, sai 5 lần trong 10 phút thì bị khóa.",
-      "tags": [
-        "api-handler",
-        "nhắn-tin",
-        "xác-thực-pin",
-        "hòm-thư",
-        "bảo-mật"
-      ],
-      "complexity": "moderate",
-      "languageNotes": "So khớp PIN bằng crypto.timingSafeEqual để tránh tấn công đo thời gian; nhận diện truy cập từ xa qua header cf-ray / cf-connecting-ip của Cloudflare."
-    },
-    {
-      "id": "function:lib/chat.js:authorized",
-      "type": "function",
-      "name": "authorized",
-      "filePath": "lib/chat.js",
-      "lineRange": [
-        28,
-        37
-      ],
-      "summary": "Quyết định yêu cầu có được nhắn tin không: máy này luôn được phép; từ xa phải gửi header x-pin đúng, đếm lần sai (chỉ khi có x-pin-try) theo IP và trả 429 khi sai từ 5 lần trong 10 phút, 401 khi thiếu hoặc sai PIN.",
-      "tags": [
-        "xác-thực",
-        "pin",
-        "rate-limit",
-        "bảo-mật"
-      ],
-      "complexity": "moderate"
-    },
-    {
-      "id": "function:lib/chat.js:outbox",
-      "type": "function",
-      "name": "outbox",
-      "filePath": "lib/chat.js",
-      "lineRange": [
-        42,
-        46
-      ],
-      "summary": "Liệt kê các tin văn phòng đã gửi (kênh \"van-phong\") từ trạng thái hòm thư, kèm trạng thái chờ đọc / đã đọc / đã xong và ghi chú khi xong, sắp theo thời gian.",
-      "tags": [
-        "hòm-thư",
-        "truy-vấn",
-        "trạng-thái-tin"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "function:lib/chat.js:handle",
-      "type": "function",
-      "name": "handle",
-      "filePath": "lib/chat.js",
-      "lineRange": [
-        48,
-        70
-      ],
-      "summary": "Bộ định tuyến cho tiền tố /chat/: GET /chat/status trả trạng thái xác thực, PIN (chỉ trên máy này) và 60 tin gần nhất; POST /chat/send kiểm tra quyền, đọc thân JSON tối đa 20000 ký tự, kiểm người nhận và độ dài tin (≤ 4000), ghi sự kiện \"tin\" vào hòm thư và phát sự kiện ceo lên dòng tin. Trả false khi không khớp route.",
-      "tags": [
-        "api-handler",
-        "router",
-        "nhắn-tin",
-        "hòm-thư"
-      ],
-      "complexity": "moderate"
-    },
-    {
-      "id": "function:lib/chat.js:currentPin",
-      "type": "function",
-      "name": "currentPin",
-      "filePath": "lib/chat.js",
-      "lineRange": [
-        74,
-        74
-      ],
-      "summary": "Trả mã PIN hiện tại, đọc lại từ ~/.van-phong-ao/pin.txt tối đa mỗi 10 giây; server.js dùng để che PIN trong mọi chữ hiển thị.",
-      "tags": [
-        "pin",
-        "cache",
-        "che-dữ-liệu"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "endpoint:lib/chat.js:GET /chat/status",
-      "type": "endpoint",
-      "name": "GET /chat/status",
-      "filePath": "lib/chat.js",
-      "lineRange": [
-        51,
-        57
-      ],
-      "summary": "Trả về máy này hay từ xa, đã được phép chưa, mã PIN (chỉ khi truy cập từ chính máy này) và hộp tin đã gửi (60 tin mới nhất) khi đã được phép.",
-      "tags": [
-        "api-endpoint",
-        "nhắn-tin",
-        "trạng-thái"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "endpoint:lib/chat.js:POST /chat/send",
-      "type": "endpoint",
-      "name": "POST /chat/send",
-      "filePath": "lib/chat.js",
-      "lineRange": [
-        58,
-        68
-      ],
-      "summary": "Gửi tin của Giám đốc tới một agent: yêu cầu xác thực PIN khi từ xa, ghi sự kiện \"tin\" kênh van-phong vào data/hop-thu/<vai>.jsonl và trả mã tin ht-… với trạng thái chờ đọc.",
-      "tags": [
-        "api-endpoint",
-        "nhắn-tin",
-        "ghi-hòm-thư"
-      ],
-      "complexity": "simple"
-    },
-    {
       "id": "file:lib/ctlbridge.js",
       "type": "file",
       "name": "ctlbridge.js",
@@ -4713,8 +4593,8 @@
       "name": "call",
       "filePath": "lib/ctlbridge.js",
       "lineRange": [
-        22,
-        35
+        24,
+        37
       ],
       "summary": "Gọi API của ctl từ mã máy chủ với token Bearer và thân JSON tùy chọn; trả {status, json} hoặc null khi chưa có token hay ctl không chạy, có thời gian chờ mặc định 5 giây.",
       "tags": [
@@ -4730,8 +4610,8 @@
       "name": "proxy",
       "filePath": "lib/ctlbridge.js",
       "lineRange": [
-        38,
-        56
+        40,
+        58
       ],
       "summary": "Chuyển tiếp /ctl/<đường dẫn> của văn phòng sang ctl: chặn 403 nếu không phải máy này hoặc Host không phải loopback, trả 503 khi ctl chưa chạy, chỉ chép một số header được phép và nối luồng hai chiều.",
       "tags": [
@@ -4932,31 +4812,15 @@
       "filePath": "lib/hopthu.js",
       "lineRange": [
         37,
-        57
+        56
       ],
-      "summary": "Tổng hợp tin chưa xong theo vai nhận: số tin mở, quá 1 giờ, bị nhắc ≥ 2 lần, chưa đọc và tin cũ nhất (dòng đầu đã che khóa); sắp vai theo mức nghẽn và trả tổng. Trường pending luôn trả giá trị rỗng cố định.",
+      "summary": "Tổng hợp tin chưa xong theo vai nhận: số tin mở, quá 1 giờ, bị nhắc ≥ 2 lần, chưa đọc và tin cũ nhất (dòng đầu đã che khóa); sắp vai theo mức nghẽn và trả tổng.",
       "tags": [
         "hòm-thư",
         "aggregation",
         "builder"
       ],
       "complexity": "moderate"
-    },
-    {
-      "id": "function:lib/hopthu.js:statusById",
-      "type": "function",
-      "name": "statusById",
-      "filePath": "lib/hopthu.js",
-      "lineRange": [
-        59,
-        59
-      ],
-      "summary": "Trả bảng mã tin → {da_toi, xong} từ trạng thái hòm thư, dùng cho ô nhắn tin của văn phòng.",
-      "tags": [
-        "hòm-thư",
-        "truy-vấn"
-      ],
-      "complexity": "simple"
     },
     {
       "id": "file:lib/keys.js",
@@ -4979,8 +4843,8 @@
       "name": "file",
       "filePath": "lib/keys.js",
       "lineRange": [
-        12,
-        12
+        13,
+        13
       ],
       "summary": "Trả đường dẫn keys.json trong thư mục .van-phong-ao của home được truyền vào (mặc định thư mục home của người dùng).",
       "tags": [
@@ -4995,8 +4859,8 @@
       "name": "has",
       "filePath": "lib/keys.js",
       "lineRange": [
-        14,
-        14
+        15,
+        15
       ],
       "summary": "Cho biết đã lưu khóa cho nhà cung cấp (claude hoặc gpt) hay chưa, không trả giá trị khóa.",
       "tags": [
@@ -5011,8 +4875,8 @@
       "name": "save",
       "filePath": "lib/keys.js",
       "lineRange": [
-        16,
-        27
+        17,
+        28
       ],
       "summary": "Kiểm nhà cung cấp và định dạng khóa (sk-ant-… cho claude, sk-… cho gpt), tạo thư mục quyền 700 rồi ghi nguyên tử keys.json; trả {ok} hoặc {ok:false, error} thay vì nuốt lỗi.",
       "tags": [
@@ -5027,7 +4891,7 @@
       "type": "file",
       "name": "mailbox.js",
       "filePath": "lib/mailbox.js",
-      "summary": "Phần ghi của hòm thư đội: đặt tên tệp data/hop-thu/<vai>.jsonl theo vai đã bỏ dấu, sinh mã tin ht-…, nối thêm sự kiện JSON kèm thời điểm và tìm tệp đang chứa một mã tin. Dùng chung cho tools/vp.js và ô nhắn tin của văn phòng.",
+      "summary": "Phần ghi của hòm thư đội: đặt tên tệp data/hop-thu/<vai>.jsonl theo vai đã bỏ dấu, sinh mã tin ht-…, nối thêm sự kiện JSON kèm thời điểm và tìm tệp đang chứa một mã tin. Dùng bởi tools/vp.js.",
       "tags": [
         "utility",
         "hòm-thư",
@@ -5323,7 +5187,7 @@
       "type": "file",
       "name": "server.js",
       "filePath": "server.js",
-      "summary": "Máy chủ HTTP chính của Văn phòng ảo 3D (không dùng thư viện ngoài): phát hiện và đọc tăng dần nhật ký phiên Claude Code (~/.claude) và Codex (~/.codex) của các dự án được theo dõi, đọc sổ điều phối data/ (lượt DEV, việc ưu tiên, gói việc, Cần anh), dựng snapshot trạng thái và đẩy qua SSE mỗi giây, phục vụ API sổ sách / hiệu suất / hòm thư / tổng quan / tài khoản AI, chuyển /ctl tới OS Controller và phục vụ tệp tĩnh trong public/. Mọi chữ hiển thị đi qua hàm che khóa và PIN; khóa xem accessKey tùy chọn.",
+      "summary": "Máy chủ HTTP chính của Văn phòng ảo 3D (không dùng thư viện ngoài): phát hiện và đọc tăng dần nhật ký phiên Claude Code (~/.claude) và Codex (~/.codex) của các dự án được theo dõi, đọc sổ điều phối data/ (lượt DEV, việc ưu tiên, gói việc, Cần anh), dựng snapshot trạng thái và đẩy qua SSE mỗi giây, phục vụ API sổ sách / hiệu suất / hòm thư / tổng quan / tài khoản AI / việc đang chạy, chuyển /ctl tới OS Controller, /dkx cho điện thoại đã ghép, và phục vụ tệp tĩnh trong public/. Chỉ ghi vài file trạng thái của chính nó (data/.task-seen.json, keys.json, dieu-khien-xa.*). Mọi chữ hiển thị đi qua hàm che khóa; khóa xem accessKey tùy chọn.",
       "tags": [
         "entry-point",
         "http-server",
@@ -5340,10 +5204,10 @@
       "name": "mask",
       "filePath": "server.js",
       "lineRange": [
-        34,
-        45
+        37,
+        47
       ],
-      "summary": "Che dữ liệu nhạy cảm trong chuỗi hiển thị một dòng: thay mã PIN nhắn tin, đường dẫn thư mục secrets, cặp key/token/password=…, tiền tố khóa phổ biến (sk, ghp, AKIA, AIza…) và chuỗi dài giống khóa; bỏ ký hiệu Markdown và gộp khoảng trắng.",
+      "summary": "Che dữ liệu nhạy cảm trong chuỗi hiển thị một dòng: đường dẫn thư mục secrets, cặp key/token/password=…, tiền tố khóa phổ biến (sk, ghp, AKIA, AIza…) và chuỗi dài giống khóa; bỏ ký hiệu Markdown và gộp khoảng trắng.",
       "tags": [
         "bảo-mật",
         "che-dữ-liệu",
@@ -5358,10 +5222,10 @@
       "name": "maskDoc",
       "filePath": "server.js",
       "lineRange": [
-        47,
-        55
+        49,
+        56
       ],
-      "summary": "Che khóa và PIN trong sổ sách Markdown nhưng giữ xuống dòng và định dạng, dùng cho nội quy, cấp bậc, việc làm sau.",
+      "summary": "Che khóa trong sổ sách Markdown nhưng giữ xuống dòng và định dạng, dùng cho nội quy, cấp bậc, việc làm sau.",
       "tags": [
         "bảo-mật",
         "che-dữ-liệu",
@@ -5375,8 +5239,8 @@
       "name": "addAgent",
       "filePath": "server.js",
       "lineRange": [
-        93,
-        101
+        94,
+        102
       ],
       "summary": "Tạo nhân viên mới cho một phiên Claude/Codex: khóa c-/x- + 8 ký tự mã phiên, áp tên/vai/phòng từ CFG.staff nếu khớp, đặt phòng theo tên (quản lý, điều phối, kiểm tra) và thêm vào danh sách agents.",
       "tags": [
@@ -5392,8 +5256,8 @@
       "name": "readLive",
       "filePath": "server.js",
       "lineRange": [
-        111,
-        122
+        112,
+        123
       ],
       "summary": "Đọc sổ đăng ký phiên Claude đang mở (~/.claude/sessions/<pid>.json), chỉ giữ tiến trình còn sống thuộc dự án theo dõi, lưu tên phiên, trạng thái busy và ánh xạ mã giao diện local_… sang mã nhật ký.",
       "tags": [
@@ -5409,8 +5273,8 @@
       "name": "discover",
       "filePath": "server.js",
       "lineRange": [
-        142,
-        178
+        143,
+        179
       ],
       "summary": "Quét thư mục nhật ký Claude (~/.claude/projects) và Codex (~/.codex/sessions, cả cây ngày) để thêm phiên mới trong thời hạn KEEP thuộc dự án theo dõi, cập nhật tên phiên đổi giữa chừng và cho nghỉ phiên im quá lâu.",
       "tags": [
@@ -5426,8 +5290,8 @@
       "name": "agentFromLabel",
       "filePath": "server.js",
       "lineRange": [
-        187,
-        196
+        188,
+        197
       ],
       "summary": "Tìm khóa nhân viên từ một nhãn tự do: ưu tiên mã hex phiên, sau đó so tên/bí danh (cả dạng bỏ dấu), cuối cùng nhận diện Giám đốc/CEO.",
       "tags": [
@@ -5443,8 +5307,8 @@
       "name": "parseClaude",
       "filePath": "server.js",
       "lineRange": [
-        225,
-        267
+        226,
+        268
       ],
       "summary": "Phân tích một dòng nhật ký Claude Code: đánh dấu phút hoạt động, lượt kết thúc (end_turn), câu trả lời mới nhất, tin SendMessage giữa phiên, hộp hỏi AskUserQuestion/ExitPlanMode đang chờ, kết quả công cụ (lỗi hay không), tin cross-session-message và lời Giám đốc gõ trực tiếp.",
       "tags": [
@@ -5460,8 +5324,8 @@
       "name": "parseCodex",
       "filePath": "server.js",
       "lineRange": [
-        269,
-        296
+        270,
+        297
       ],
       "summary": "Phân tích một dòng nhật ký Codex: câu trả lời của assistant, tin [PEER MESSAGE] hoặc gắn thẻ [VIỆC]/[GẤP]/[CẦN ANH]… từ phiên khác, lời Giám đốc, kết quả function_call_output (nhận lỗi qua exit code) và task_started/task_complete.",
       "tags": [
@@ -5477,8 +5341,8 @@
       "name": "pollAgent",
       "filePath": "server.js",
       "lineRange": [
-        297,
-        318
+        298,
+        319
       ],
       "summary": "Đọc phần mới của nhật ký một nhân viên từ offset đã lưu (lần đầu 8 MB cuối, tối đa 16 MB), chuyển từng dòng cho parseClaude hoặc parseCodex và đếm phiên subagent Claude hoạt động trong 2 phút qua.",
       "tags": [
@@ -5494,8 +5358,8 @@
       "name": "readDev",
       "filePath": "server.js",
       "lineRange": [
-        324,
-        360
+        325,
+        361
       ],
       "summary": "Đọc lượt DEV: người giữ từ data/DEV.lock và sự kiện cho/huy_cho/lay/nha từ data/DEV-LUOT.jsonl để dựng hàng chờ, các lượt (ghép lay với nha kế tiếp, nhận hỏng/đạt, USD tự khai) và mốc DEV trống.",
       "tags": [
@@ -5511,8 +5375,8 @@
       "name": "readTasks",
       "filePath": "server.js",
       "lineRange": [
-        375,
-        409
+        376,
+        410
       ],
       "summary": "Ghép việc ưu tiên trong UU-TIEN.json với mục trong data/goi/<gói>/viec.json để tính trạng thái todo/doing/done, số lần sửa, bằng chứng, người giữ và mốc đổi trạng thái; tự ghi mốc thấy đổi vào data/.task-seen.json.",
       "tags": [
@@ -5528,8 +5392,8 @@
       "name": "readCanAnh",
       "filePath": "server.js",
       "lineRange": [
-        428,
-        440
+        429,
+        441
       ],
       "summary": "Đọc bảng data/CAN-ANH.md (chỉ khi tệp đổi) thành danh sách việc cần Giám đốc quyết: mã, lúc, người hỏi (ghép nhân viên), nội dung, lựa chọn, còn chờ hay không.",
       "tags": [
@@ -5545,8 +5409,8 @@
       "name": "ceoAsks",
       "filePath": "server.js",
       "lineRange": [
-        449,
-        464
+        450,
+        465
       ],
       "summary": "Gom tối đa 14 việc đang chờ Giám đốc từ bốn nguồn: sổ Cần anh còn chờ, hộp hỏi đang mở trong phiên, tin gắn thẻ [CẦN ANH] trong 24 giờ, và phiên có vẻ dừng chờ trả lời (đoán bằng regex, xếp sau).",
       "tags": [
@@ -5562,8 +5426,8 @@
       "name": "moneyOf",
       "filePath": "server.js",
       "lineRange": [
-        469,
-        481
+        470,
+        482
       ],
       "summary": "Tính tiền AI 7 ngày: ước tính token × giá API qua perf.costDays cộng tiền USD các lượt DEV tự khai khi nhả lượt, đếm lượt chưa khai và liệt kê lượt hôm nay.",
       "tags": [
@@ -5579,8 +5443,8 @@
       "name": "snapshot",
       "filePath": "server.js",
       "lineRange": [
-        491,
-        537
+        492,
+        538
       ],
       "summary": "Dựng ảnh chụp trạng thái toàn văn phòng gửi trình duyệt: nhân viên (trạng thái, phòng, cờ bị chặn/chờ DEV, lịch sử 60 phút), cảnh báo (DEV trống, giữ lượt lâu, ổ đĩa, container Docker, hòm thư), biểu đồ đội 180 phút, lượt DEV hôm nay, độ khớp lượt lấy/nhả, việc, tin nhắn 24 giờ, việc cần Giám đốc và tiền AI.",
       "tags": [
@@ -5596,8 +5460,8 @@
       "name": "hopthuNow",
       "filePath": "server.js",
       "lineRange": [
-        552,
-        555
+        553,
+        556
       ],
       "summary": "Trả dữ liệu hòm thư đã tổng hợp qua hopthu.build, lưu cache 10 giây và trả cấu trúc rỗng kèm lỗi khi đọc hỏng.",
       "tags": [
@@ -5612,8 +5476,8 @@
       "name": "tongquanNow",
       "filePath": "server.js",
       "lineRange": [
-        557,
-        563
+        558,
+        564
       ],
       "summary": "Trả JSON màn Tổng quan qua tongquan.build từ việc ưu tiên, snapshot và hòm thư, lưu cache 3 giây; lỗi thì trả JSON lỗi đã che khóa.",
       "tags": [
@@ -5628,8 +5492,8 @@
       "name": "docsNow",
       "filePath": "server.js",
       "lineRange": [
-        565,
-        571
+        566,
+        572
       ],
       "summary": "Trả JSON sổ sách qua docs.build kèm việc, việc cần Giám đốc, lượt DEV và danh sách nhân viên rút gọn lấy từ snapshot, lưu cache 1,5 giây.",
       "tags": [
@@ -5644,8 +5508,8 @@
       "name": "getAccountsStatus",
       "filePath": "server.js",
       "lineRange": [
-        607,
-        701
+        603,
+        698
       ],
       "summary": "Báo trạng thái kết nối tài khoản AI mà không trả khóa: Claude (có ~/.claude/.credentials.json dạng OAuth hoặc ANTHROPIC_API_KEY / keys.json, số phiên), GPT/Codex (~/.codex/auth.json hoặc OPENAI_API_KEY / keys.json, lần làm mới, số phiên jsonl), Gemini để null vì máy chủ không đọc được phiên Antigravity.",
       "tags": [
@@ -5661,8 +5525,8 @@
       "name": "/ctl/*",
       "filePath": "server.js",
       "lineRange": [
-        711,
-        711
+        710,
+        710
       ],
       "summary": "Chuyển mọi yêu cầu /ctl và /ctl/* sang OS Controller qua ctlbridge.proxy (chỉ trên chính máy này).",
       "tags": [
@@ -5679,47 +5543,13 @@
       "filePath": "server.js",
       "lineRange": [
         714,
-        729
+        728
       ],
-      "summary": "Liệt kê việc đang chạy: gộp tiến trình thật của OS Controller (GET /jobs?status=running, chỉ khi truy cập từ máy này) với việc giao qua Phát loa trong bộ nhớ, kèm thời lượng và cờ cảnh báo quá 10 phút.",
+      "summary": "Liệt kê việc đang chạy thật trên máy: các việc OS Controller đang chạy (GET /jobs?status=running qua cầu nối, chỉ khi truy cập từ máy này), mỗi việc có pid, kèm thời lượng và cờ cảnh báo quá 10 phút; ctlOnline cho biết ctl có chạy không.",
       "tags": [
         "api-endpoint",
         "tiến-trình",
         "os-controller"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "endpoint:server.js:POST /api/broadcast",
-      "type": "endpoint",
-      "name": "POST /api/broadcast",
-      "filePath": "server.js",
-      "lineRange": [
-        733,
-        755
-      ],
-      "summary": "Phát loa: chỉ gợi ý người nhận theo từ khóa trong nội dung (UI/UX, kiến trúc, kiểm duyệt bảo mật, mặc định Codex), chưa hỏi AI nào và trả peerReview rỗng.",
-      "tags": [
-        "api-endpoint",
-        "phát-loa",
-        "heuristic"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "endpoint:server.js:POST /api/accept-broadcast",
-      "type": "endpoint",
-      "name": "POST /api/accept-broadcast",
-      "filePath": "server.js",
-      "lineRange": [
-        758,
-        777
-      ],
-      "summary": "Ghi nhận việc giao sau Phát loa vào danh sách activeTasks trong bộ nhớ (tối đa 200, pid null, mất khi khởi động lại).",
-      "tags": [
-        "api-endpoint",
-        "phát-loa",
-        "in-memory"
       ],
       "complexity": "simple"
     },
@@ -5729,10 +5559,10 @@
       "name": "POST /api/kill-task",
       "filePath": "server.js",
       "lineRange": [
-        780,
-        813
+        731,
+        749
       ],
-      "summary": "Dừng việc: việc ctl:… hoặc dừng tất cả thì chuyển lệnh kill sang OS Controller; việc có pid thì dừng cả cây tiến trình qua proc.killTree; việc không có pid chỉ đánh dấu dừng và báo rõ. Trả 500 khi có tiến trình không dừng được.",
+      "summary": "Dừng việc (Kill Switch): chỉ nhận việc ctl:… hoặc dừng tất cả, chuyển lệnh sang OS Controller để dừng cả cây tiến trình và xác nhận PID đã mất. Không phải từ máy này → 403; ctl không chạy → 503 nói rõ không dừng được; còn tiến trình sống → 500.",
       "tags": [
         "api-endpoint",
         "kill-switch",
@@ -5746,8 +5576,8 @@
       "name": "GET /api/accounts",
       "filePath": "server.js",
       "lineRange": [
-        816,
-        818
+        752,
+        754
       ],
       "summary": "Trả trạng thái tài khoản AI (Claude, GPT/Codex, Gemini) từ getAccountsStatus.",
       "tags": [
@@ -5762,8 +5592,8 @@
       "name": "POST /api/accounts/save",
       "filePath": "server.js",
       "lineRange": [
-        821,
-        828
+        757,
+        764
       ],
       "summary": "Lưu khóa API vào ~/.van-phong-ao/keys.json qua keys.save (không vào config.json, không trả khóa về) rồi trả trạng thái tài khoản mới.",
       "tags": [
@@ -5779,8 +5609,8 @@
       "name": "GET /events",
       "filePath": "server.js",
       "lineRange": [
-        829,
-        829
+        765,
+        765
       ],
       "summary": "Luồng SSE đẩy snapshot trạng thái văn phòng mỗi giây cho trình duyệt.",
       "tags": [
@@ -5796,8 +5626,8 @@
       "name": "GET /state",
       "filePath": "server.js",
       "lineRange": [
-        830,
-        830
+        766,
+        766
       ],
       "summary": "Trả một snapshot trạng thái văn phòng dạng JSON.",
       "tags": [
@@ -5812,8 +5642,8 @@
       "name": "GET /perf-events",
       "filePath": "server.js",
       "lineRange": [
-        831,
-        831
+        767,
+        767
       ],
       "summary": "Luồng SSE đẩy bảng đánh giá nhân sự AI (perf.compute, cache 1,5 giây) mỗi 2 giây.",
       "tags": [
@@ -5829,8 +5659,8 @@
       "name": "GET /perf",
       "filePath": "server.js",
       "lineRange": [
-        832,
-        832
+        768,
+        768
       ],
       "summary": "Trả bảng đánh giá nhân sự AI hiện tại dạng JSON.",
       "tags": [
@@ -5845,8 +5675,8 @@
       "name": "GET /hopthu",
       "filePath": "server.js",
       "lineRange": [
-        833,
-        833
+        769,
+        769
       ],
       "summary": "Trả tổng hợp hòm thư theo vai dạng JSON.",
       "tags": [
@@ -5861,8 +5691,8 @@
       "name": "GET /tongquan",
       "filePath": "server.js",
       "lineRange": [
-        834,
-        834
+        770,
+        770
       ],
       "summary": "Trả dữ liệu màn Tổng quan cho Giám đốc dạng JSON.",
       "tags": [
@@ -5877,8 +5707,8 @@
       "name": "GET /docs",
       "filePath": "server.js",
       "lineRange": [
-        835,
-        835
+        771,
+        771
       ],
       "summary": "Trả dữ liệu sổ sách điều phối (công việc, nội quy, đội ngũ…) dạng JSON.",
       "tags": [
@@ -5888,30 +5718,13 @@
       "complexity": "simple"
     },
     {
-      "id": "endpoint:server.js:/chat/*",
-      "type": "endpoint",
-      "name": "/chat/*",
-      "filePath": "server.js",
-      "lineRange": [
-        836,
-        839
-      ],
-      "summary": "Giao các route /chat/ cho chat.handle (kèm cấu hình, thư mục data, tra nhân viên theo khóa và pushEvent); 404 khi không khớp, 500 khi lỗi.",
-      "tags": [
-        "api-endpoint",
-        "nhắn-tin",
-        "router"
-      ],
-      "complexity": "simple"
-    },
-    {
       "id": "endpoint:server.js:GET /* (tệp tĩnh public/)",
       "type": "endpoint",
       "name": "GET /* (tệp tĩnh public/)",
       "filePath": "server.js",
       "lineRange": [
-        840,
-        851
+        772,
+        783
       ],
       "summary": "Phục vụ tệp tĩnh trong public/ (mặc định index.html) với MIME theo đuôi, chặn đường dẫn thoát ra ngoài public/ và tắt cache.",
       "tags": [
@@ -6173,8 +5986,8 @@
       "name": "parse",
       "filePath": "lib/kiem-agent.js",
       "lineRange": [
-        30,
-        54
+        31,
+        55
       ],
       "summary": "Tách văn bản agent.md thành các vùng theo tiêu đề \"## [N]\" và \"### [4.1]\"/\"### [4.2]\" (tiêu đề con khác thuộc vùng cha), rồi rút CURRENT_PHASE, số Phase, LAST_UPDATED_BY, NEXT_OWNER, AUDIT_STATUS, REVIEW_ROUND và danh sách blocker/OPEN ở Vùng [5].",
       "tags": [
@@ -6190,8 +6003,8 @@
       "name": "checkText",
       "filePath": "lib/kiem-agent.js",
       "lineRange": [
-        59,
-        82
+        60,
+        83
       ],
       "summary": "Kiểm các luật đọc được từ một bản agent.md: đủ 7 vùng, dòng CURRENT_PHASE dạng \"Phase <số>\", vai hợp lệ ở LAST_UPDATED_BY/NEXT_OWNER, AUDIT_STATUS và REVIEW_ROUND đúng mẫu, Vùng [4.1] ≤25 và [4.2] ≤5 dòng, blocker đúng mẫu \"[ ] OPEN <ID>\"/\"[x] RESOLVED\", không có chuỗi giống khóa API; trả về danh sách lỗi tiếng Việt (rỗng là đạt).",
       "tags": [
@@ -6207,8 +6020,8 @@
       "name": "checkChange",
       "filePath": "lib/kiem-agent.js",
       "lineRange": [
-        88,
-        110
+        89,
+        111
       ],
       "summary": "Kiểm một lần sửa agent.md từ bản before sang after theo vai role: đúng lượt NEXT_OWNER (Luật 1), chỉ sửa vùng vai đó được ghi theo bảng OWNER, CLAUDE_AUDITOR không tự sửa CURRENT_PHASE, cấm tăng Phase khi Vùng [5] còn OPEN (Luật 3), và tùy chọn kiểm LAST_UPDATED_BY/NEXT_OWNER khớp message commit; FORCE_OVERRIDE biến lỗi quyền thành cảnh báo, onlyNew bỏ qua lỗi đã có sẵn ở bản cũ. Trả về { loi, canhBao }.",
       "tags": [
@@ -6224,8 +6037,8 @@
       "name": "parseSync",
       "filePath": "lib/kiem-agent.js",
       "lineRange": [
-        113,
-        116
+        114,
+        117
       ],
       "summary": "Phân tích message commit chuẩn \"chore(agent-sync): VAI -> NEXT: VAI_TIẾP\" thành { role, next, force }, trong đó force bật khi message có FORCE_OVERRIDE hoặc vai là CEO; trả null nếu không đúng mẫu.",
       "tags": [
@@ -6241,8 +6054,8 @@
       "name": "checkHistory",
       "filePath": "lib/kiem-agent.js",
       "lineRange": [
-        120,
-        141
+        121,
+        142
       ],
       "summary": "Kiểm mọi commit (không tính merge) sửa agent.md từ điểm rẽ nhánh với `from` tới HEAD: báo commit xoá agent.md, thiếu message chore(agent-sync), kèm file khác, rồi gọi checkChange giữa bản cha và bản của commit theo vai trong message; trả danh sách { commit, subject, loi, canhBao }.",
       "tags": [
@@ -6259,8 +6072,8 @@
       "name": "main",
       "filePath": "lib/kiem-agent.js",
       "lineRange": [
-        152,
-        181
+        153,
+        182
       ],
       "summary": "Điểm vào dòng lệnh: đọc file agent.md (mặc định ở thư mục đang đứng), chạy checkText và in kết quả ✓/✗; với --tu <nhánh> kiểm thêm lịch sử commit qua checkHistory; --neu-co bỏ qua khi không có file. Trả mã thoát 0 đạt, 1 có lỗi, 2 không đọc được file hoặc git.",
       "tags": [
@@ -6680,7 +6493,7 @@
       "type": "file",
       "name": "index.html",
       "filePath": "public/index.html",
-      "summary": "Màn hình chính \"Văn phòng AI 3D\" (phục vụ ở \"/\"): cảnh 3D đi WASD dựng bằng module vanphong3d.js, office-desk.js và thoitiet.js (three@0.160.0 qua importmap jsDelivr), kèm thanh trên, hai sidebar, phát loa giao việc, danh sách task đang chạy, khung chat với nhân vật và thẻ tài khoản AI. Gọi /api/broadcast, /api/accept-broadcast, /api/running-tasks, /api/kill-task, /api/accounts, /api/accounts/save của server.js, /ctl/chat và /ctl/chat/clear qua cầu /ctl, và nghe SSE \"events\".",
+      "summary": "Màn hình chính \"Văn phòng AI 3D\" (phục vụ ở \"/\"): cảnh 3D đi WASD dựng bằng module vanphong3d.js, office-desk.js và thoitiet.js (three@0.160.0 qua importmap jsDelivr), kèm thanh trên, hai sidebar, nút 📢 \"Giao việc cả đội\" mở mục giao việc thật của bàn làm việc (luồng tự động /ctl/autopilot), danh sách task đang chạy có phanh, khung chat với nhân vật và thẻ tài khoản AI. Gọi /api/running-tasks, /api/kill-task, /api/accounts, /api/accounts/save của server.js, /ctl/chat và /ctl/chat/clear qua cầu /ctl, và nghe SSE \"events\".",
       "tags": [
         "entry-point",
         "giao-dien-3d",
@@ -6698,8 +6511,8 @@
       "name": "refreshRunningTasks",
       "filePath": "public/index.html",
       "lineRange": [
-        918,
-        973
+        852,
+        907
       ],
       "summary": "Đọc GET /api/running-tasks, đếm task trạng thái running, đổi màu nút cảnh báo khi có task chạy lâu (isWarning) và dựng danh sách task kèm nút dừng.",
       "tags": [
@@ -6715,8 +6528,8 @@
       "name": "renderChat",
       "filePath": "public/index.html",
       "lineRange": [
-        1052,
-        1071
+        989,
+        1008
       ],
       "summary": "Vẽ khung chat với nhân vật đang chọn từ chatState (tin nhắn, trạng thái bận, lỗi).",
       "tags": [
@@ -6939,7 +6752,7 @@
       "filePath": "public/ket-noi.html",
       "lineRange": [
         104,
-        133
+        135
       ],
       "summary": "Vẽ chip lọc theo phòng NPC, khối giao kết nối theo phòng và bảng từng kết nối với trạng thái mỗi AI, nút thêm/đăng nhập và nút bật phòng.",
       "tags": [
@@ -7505,55 +7318,6 @@
       "complexity": "simple"
     },
     {
-      "id": "file:public/chat-ui.js",
-      "type": "file",
-      "name": "chat-ui.js",
-      "filePath": "public/chat-ui.js",
-      "summary": "Widget ô nhắn tin cho agent (window.ChatBox.mount): tự chèn CSS, mở khoá bằng mã PIN lưu localStorage (vp-pin), gửi tin POST chat/send và đọc chat/status để hiện lịch sử hộp thư đi; hiện không trang HTML nào trong public/ nạp tệp này.",
-      "tags": [
-        "component",
-        "chat",
-        "ui-widget",
-        "unused"
-      ],
-      "complexity": "moderate",
-      "languageNotes": "Giữ nguyên phần tử .chat khi thẻ vẽ lại mỗi giây để không mất chữ đang gõ; chặn lan sự kiện phím để không kích hoạt điều khiển WASD của cảnh 3D."
-    },
-    {
-      "id": "function:public/chat-ui.js:build",
-      "type": "function",
-      "name": "build",
-      "filePath": "public/chat-ui.js",
-      "lineRange": [
-        36,
-        63
-      ],
-      "summary": "Dựng ô nhắn tin cho một agent: hàng nhập PIN, textarea (Ctrl+Enter gửi), nút Gửi gọi POST chat/send kèm header x-pin, ghi chú về hòm thư và danh sách lịch sử.",
-      "tags": [
-        "component",
-        "dom-builder",
-        "chat"
-      ],
-      "complexity": "moderate"
-    },
-    {
-      "id": "function:public/chat-ui.js:refresh",
-      "type": "function",
-      "name": "refresh",
-      "filePath": "public/chat-ui.js",
-      "lineRange": [
-        64,
-        76
-      ],
-      "summary": "Cập nhật ô nhắn tin theo kết quả chat/status: ẩn/hiện khoá PIN, nút hiện mã PIN khi xem tại máy, và 4 tin gần nhất gửi tới agent đó.",
-      "tags": [
-        "ui-state",
-        "chat",
-        "render"
-      ],
-      "complexity": "simple"
-    },
-    {
       "id": "file:public/manifest.webmanifest",
       "type": "file",
       "name": "manifest.webmanifest",
@@ -8011,8 +7775,8 @@
       "name": "createOffice",
       "filePath": "public/vanphong3d.js",
       "lineRange": [
-        41,
-        1661
+        48,
+        1726
       ],
       "summary": "Hàm xuất duy nhất: tự gắn CSS vp-, dựng toàn bộ cảnh, nhân vật và vòng lặp setAnimationLoop, trả API điều khiển (camera, controls, ZONES, npcIds, setHour, setWeather, goToRoom, goHome, cameraBehind, jump, setDistance, say, setBusy, setLine).",
       "tags": [
@@ -8029,8 +7793,8 @@
       "name": "collide",
       "filePath": "public/vanphong3d.js",
       "lineRange": [
-        132,
-        151
+        154,
+        173
       ],
       "summary": "Đẩy vị trí nhân vật ra khỏi các hộp chữ nhật và hình tròn va chạm (tường, bàn, cây, người) trên mặt phẳng XZ.",
       "tags": [
@@ -8046,8 +7810,8 @@
       "name": "addTree",
       "filePath": "public/vanphong3d.js",
       "lineRange": [
-        372,
-        393
+        394,
+        415
       ],
       "summary": "Thêm một cây (tròn hoặc thông, có cây lá thu) vào danh sách phần instancing với kích thước/màu ngẫu nhiên có hạt giống và đăng ký va chạm thân cây.",
       "tags": [
@@ -8063,8 +7827,8 @@
       "name": "boardTex",
       "filePath": "public/vanphong3d.js",
       "lineRange": [
-        615,
-        648
+        637,
+        681
       ],
       "summary": "Vẽ texture canvas cho bảng trắng của từng phòng theo chức năng (đặc tả, kiến trúc, code, kiểm duyệt...).",
       "tags": [
@@ -8080,8 +7844,8 @@
       "name": "makeChar",
       "filePath": "public/vanphong3d.js",
       "lineRange": [
-        856,
-        877
+        895,
+        916
       ],
       "summary": "Tạo nhân vật chibi (thân, chân, tay, đầu, kiểu tóc, áo choàng) từ mô tả ngoại hình và trả các bộ phận để hoạt ảnh.",
       "tags": [
@@ -8097,8 +7861,8 @@
       "name": "updatePlayer",
       "filePath": "public/vanphong3d.js",
       "lineRange": [
-        1297,
-        1326
+        1327,
+        1356
       ],
       "summary": "Cập nhật nhân vật người chơi mỗi khung: hướng di chuyển theo phím/cần điều khiển và góc camera, nhảy, trọng lực, va chạm và hoạt ảnh bước đi.",
       "tags": [
@@ -8114,8 +7878,8 @@
       "name": "applySky",
       "filePath": "public/vanphong3d.js",
       "lineRange": [
-        1394,
-        1435
+        1442,
+        1483
       ],
       "summary": "Tính màu trời, vị trí mặt trời/trăng, cường độ đèn, sao và đèn đường theo giờ hiện tại.",
       "tags": [
@@ -8131,8 +7895,8 @@
       "name": "updateWeather",
       "filePath": "public/vanphong3d.js",
       "lineRange": [
-        1464,
-        1478
+        1512,
+        1526
       ],
       "summary": "Nội suy dần thông số thời tiết hiện tại về đích (mây, mưa, sương, giông, gió) mỗi khung hình.",
       "tags": [
@@ -8148,8 +7912,8 @@
       "name": "mergeStatic",
       "filePath": "public/vanphong3d.js",
       "lineRange": [
-        1498,
-        1522
+        1546,
+        1570
       ],
       "summary": "Gộp các khối tĩnh cùng vật liệu thành ít mesh hơn bằng mergeGeometries để giảm draw call.",
       "tags": [
@@ -8165,8 +7929,8 @@
       "name": "goToRoom",
       "filePath": "public/vanphong3d.js",
       "lineRange": [
-        1628,
-        1637
+        1685,
+        1694
       ],
       "summary": "Đưa nhân vật và camera tới trước cửa phòng theo id (dùng khi bấm NPC hoặc chọn phòng từ trang chủ).",
       "tags": [
@@ -8281,6 +8045,23 @@
         "weather",
         "unit-test",
         "mocking"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:test/van-phong-sach.test.js",
+      "type": "file",
+      "name": "van-phong-sach.test.js",
+      "filePath": "test/van-phong-sach.test.js",
+      "lineRange": [
+        1,
+        104
+      ],
+      "summary": "Kiểm thử giữ văn phòng sạch: dựng máy chủ văn phòng thật từ bản chép với HOME tạm, kiểm /chat/* và /api/broadcast, /api/accept-broadcast đã bỏ (404), việc đang chạy và phanh chỉ còn việc thật của ctl (ctl tắt → 503 nói rõ), /hopthu không còn mục pending; mọi fetch(\"/api/…\") của giao diện đều có trên máy chủ, nút 📢 mở mục giao việc thật; không còn chữ tiếng Việt hỏng mã hoá trong repo.",
+      "tags": [
+        "kiem-thu",
+        "node-test",
+        "hoi-quy"
       ],
       "complexity": "moderate"
     }
@@ -14010,125 +13791,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:lib/chat.js",
-      "target": "function:lib/chat.js:authorized",
-      "type": "contains",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "file:lib/chat.js",
-      "target": "function:lib/chat.js:outbox",
-      "type": "contains",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "file:lib/chat.js",
-      "target": "function:lib/chat.js:handle",
-      "type": "contains",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "file:lib/chat.js",
-      "target": "function:lib/chat.js:handle",
-      "type": "exports",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "file:lib/chat.js",
-      "target": "function:lib/chat.js:currentPin",
-      "type": "contains",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "file:lib/chat.js",
-      "target": "function:lib/chat.js:currentPin",
-      "type": "exports",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "file:lib/chat.js",
-      "target": "endpoint:lib/chat.js:GET /chat/status",
-      "type": "contains",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "file:lib/chat.js",
-      "target": "endpoint:lib/chat.js:POST /chat/send",
-      "type": "contains",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "function:lib/chat.js:handle",
-      "target": "function:lib/chat.js:authorized",
-      "type": "calls",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "function:lib/chat.js:handle",
-      "target": "function:lib/chat.js:outbox",
-      "type": "calls",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "function:lib/chat.js:handle",
-      "target": "function:lib/mailbox.js:newId",
-      "type": "calls",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "function:lib/chat.js:handle",
-      "target": "function:lib/mailbox.js:append",
-      "type": "calls",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "function:lib/chat.js:outbox",
-      "target": "function:lib/hopthu.js:state",
-      "type": "calls",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "endpoint:lib/chat.js:GET /chat/status",
-      "target": "function:lib/chat.js:authorized",
-      "type": "calls",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "endpoint:lib/chat.js:GET /chat/status",
-      "target": "function:lib/chat.js:outbox",
-      "type": "calls",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "endpoint:lib/chat.js:POST /chat/send",
-      "target": "function:lib/chat.js:authorized",
-      "type": "calls",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "endpoint:lib/chat.js:POST /chat/send",
-      "target": "function:lib/mailbox.js:append",
-      "type": "calls",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
       "source": "file:lib/ctlbridge.js",
       "target": "function:lib/ctlbridge.js:isLocal",
       "type": "contains",
@@ -14297,20 +13959,6 @@
       "weight": 0.5
     },
     {
-      "source": "file:lib/chat.js",
-      "target": "file:lib/hopthu.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:lib/chat.js",
-      "target": "file:lib/mailbox.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:lib/ctlbridge.js",
       "target": "file:lib/guard.js",
       "type": "imports",
@@ -14346,28 +13994,7 @@
       "weight": 0.8
     },
     {
-      "source": "file:lib/hopthu.js",
-      "target": "function:lib/hopthu.js:statusById",
-      "type": "contains",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "file:lib/hopthu.js",
-      "target": "function:lib/hopthu.js:statusById",
-      "type": "exports",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
       "source": "function:lib/hopthu.js:build",
-      "target": "function:lib/hopthu.js:state",
-      "type": "calls",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "function:lib/hopthu.js:statusById",
       "target": "function:lib/hopthu.js:state",
       "type": "calls",
       "direction": "forward",
@@ -14816,20 +14443,6 @@
     },
     {
       "source": "file:server.js",
-      "target": "endpoint:server.js:POST /api/broadcast",
-      "type": "contains",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "file:server.js",
-      "target": "endpoint:server.js:POST /api/accept-broadcast",
-      "type": "contains",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "file:server.js",
       "target": "endpoint:server.js:POST /api/kill-task",
       "type": "contains",
       "direction": "forward",
@@ -14900,31 +14513,10 @@
     },
     {
       "source": "file:server.js",
-      "target": "endpoint:server.js:/chat/*",
-      "type": "contains",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "file:server.js",
       "target": "endpoint:server.js:GET /* (tệp tĩnh public/)",
       "type": "contains",
       "direction": "forward",
       "weight": 1
-    },
-    {
-      "source": "function:server.js:mask",
-      "target": "function:lib/chat.js:currentPin",
-      "type": "calls",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "function:server.js:maskDoc",
-      "target": "function:lib/chat.js:currentPin",
-      "type": "calls",
-      "direction": "forward",
-      "weight": 0.8
     },
     {
       "source": "function:server.js:addAgent",
@@ -15186,20 +14778,6 @@
       "weight": 0.8
     },
     {
-      "source": "endpoint:server.js:POST /api/broadcast",
-      "target": "function:lib/guard.js:readJson",
-      "type": "calls",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "endpoint:server.js:POST /api/accept-broadcast",
-      "target": "function:lib/guard.js:readJson",
-      "type": "calls",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
       "source": "endpoint:server.js:POST /api/kill-task",
       "target": "function:lib/guard.js:readJson",
       "type": "calls",
@@ -15305,20 +14883,6 @@
       "weight": 0.8
     },
     {
-      "source": "endpoint:server.js:/chat/*",
-      "target": "function:lib/chat.js:handle",
-      "type": "calls",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "endpoint:server.js:/chat/*",
-      "target": "function:server.js:hopthuNow",
-      "type": "calls",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
       "source": "file:test/guard.test.js",
       "target": "function:lib/guard.js:checkWrite",
       "type": "calls",
@@ -15352,13 +14916,6 @@
       "type": "calls",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:server.js",
-      "target": "file:lib/chat.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:server.js",
@@ -15405,13 +14962,6 @@
     {
       "source": "file:server.js",
       "target": "file:lib/perf.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:server.js",
-      "target": "file:lib/proc.js",
       "type": "imports",
       "direction": "forward",
       "weight": 0.7
@@ -17944,27 +17494,6 @@
       "weight": 0.5
     },
     {
-      "source": "file:public/chat-ui.js",
-      "target": "file:lib/chat.js",
-      "type": "depends_on",
-      "direction": "forward",
-      "weight": 0.6
-    },
-    {
-      "source": "file:public/chat-ui.js",
-      "target": "function:public/chat-ui.js:build",
-      "type": "contains",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "file:public/chat-ui.js",
-      "target": "function:public/chat-ui.js:refresh",
-      "type": "contains",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "file:public/manifest.webmanifest",
       "target": "file:test/app.test.js",
       "type": "tested_by",
@@ -18460,14 +17989,6 @@
       "direction": "forward",
       "weight": 0.7,
       "description": "nạp <script src=\"app.js\">"
-    },
-    {
-      "source": "file:public/chat-ui.js",
-      "target": "file:server.js",
-      "type": "depends_on",
-      "direction": "forward",
-      "weight": 0.6,
-      "description": "gọi API của văn phòng (server.js): chat/status, chat/send"
     },
     {
       "source": "file:public/congviec.html",
@@ -19008,13 +18529,6 @@
       "weight": 0.8
     },
     {
-      "source": "endpoint:server.js:POST /api/kill-task",
-      "target": "function:lib/proc.js:killTree",
-      "type": "calls",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
       "source": "file:server.js",
       "target": "function:lib/config.js:loadConfig",
       "type": "calls",
@@ -19069,6 +18583,27 @@
       "type": "depends_on",
       "direction": "forward",
       "weight": 0.6
+    },
+    {
+      "source": "file:server.js",
+      "target": "file:test/van-phong-sach.test.js",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:public/index.html",
+      "target": "file:test/van-phong-sach.test.js",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:lib/hopthu.js",
+      "target": "file:test/van-phong-sach.test.js",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
     }
   ],
   "layers": [
@@ -19099,7 +18634,6 @@
         "file:public/characters.html",
         "file:public/anime-studio.html",
         "file:public/app.js",
-        "file:public/chat-ui.js",
         "file:public/manifest.webmanifest",
         "file:public/md.js",
         "file:public/prototype.js",
@@ -19114,9 +18648,6 @@
       "description": "Máy chủ HTTP/SSE server.js chỉ đọc nhật ký phiên Claude/Codex và sổ data/, dựng trạng thái mỗi giây, che khóa, chặn CSRF/DNS rebinding, phục vụ /state, /events, /tongquan, /hopthu, /docs, chat và cầu nối /ctl/* sang OS Controller.",
       "nodeIds": [
         "file:lib/config.js",
-        "file:lib/chat.js",
-        "endpoint:lib/chat.js:GET /chat/status",
-        "endpoint:lib/chat.js:POST /chat/send",
         "file:lib/ctlbridge.js",
         "file:lib/docs.js",
         "file:lib/guard.js",
@@ -19127,8 +18658,6 @@
         "file:server.js",
         "endpoint:server.js:/ctl/*",
         "endpoint:server.js:GET /api/running-tasks",
-        "endpoint:server.js:POST /api/broadcast",
-        "endpoint:server.js:POST /api/accept-broadcast",
         "endpoint:server.js:POST /api/kill-task",
         "endpoint:server.js:GET /api/accounts",
         "endpoint:server.js:POST /api/accounts/save",
@@ -19139,7 +18668,6 @@
         "endpoint:server.js:GET /hopthu",
         "endpoint:server.js:GET /tongquan",
         "endpoint:server.js:GET /docs",
-        "endpoint:server.js:/chat/*",
         "endpoint:server.js:GET /* (tệp tĩnh public/)"
       ]
     },
@@ -19317,7 +18845,8 @@
         "file:test/keys.test.js",
         "file:test/kiem-agent.test.js",
         "file:test/html.test.js",
-        "file:test/thoitiet.test.js"
+        "file:test/thoitiet.test.js",
+        "file:test/van-phong-sach.test.js"
       ]
     }
   ],

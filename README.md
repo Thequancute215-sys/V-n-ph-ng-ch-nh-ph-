@@ -8,7 +8,7 @@ Mỗi phiên là một nhân viên robot có bàn riêng:
 - bạn giao việc thì cả nhóm ra phòng họp;
 - ai đang giữ môi trường DEV thì đứng giữa Phòng DEV, ai đang chờ thì xếp hàng.
 
-> **Văn phòng chỉ đọc, chạy tại máy bạn.** Văn phòng (`npm start`) chỉ đọc nhật ký mà Claude Code và Codex vốn tự ghi (`~/.claude`, `~/.codex`) và sổ của đội trong thư mục `data/`. Nó không gửi dữ liệu đi đâu và không cần khóa API. Mọi chuỗi giống khóa đều được che trước khi hiện. Kho không dùng thư viện ngoài nào, nên không cần `npm install`.
+> **Văn phòng chỉ đọc, chạy tại máy bạn.** Văn phòng (`npm start`) chỉ đọc nhật ký mà Claude Code và Codex vốn tự ghi (`~/.claude`, `~/.codex`) và sổ của đội trong thư mục `data/`; không sửa nhật ký hay sổ nào. Ngoại lệ: nó ghi đúng vài file nhỏ của chính nó: `data/.task-seen.json` và `data/.noiquy-seen.json` (mốc giờ việc/nội quy đổi để gắn nhãn MỚI), `~/.van-phong-ao/keys.json` (chỉ khi anh lưu khóa API ở màn Tài khoản AI) và `~/.van-phong-ao/dieu-khien-xa.json` + `.log` (thiết bị điện thoại đã ghép, nhật ký lệnh từ xa). Nó không gửi dữ liệu đi đâu và không cần khóa API. Mọi chuỗi giống khóa đều được che trước khi hiện. Kho không dùng thư viện ngoài nào, nên không cần `npm install`.
 >
 > **Điều khiển máy là phần riêng, phải tự bật.** OS Controller (`npm run ctl`) chạy lệnh, dừng tiến trình, đọc/ghi file và chạy lượt AI, nhưng chỉ trong thư mục dự án bạn đã đăng ký và chỉ từ trình duyệt trên chính máy này. Xem mục [Điều khiển máy](#điều-khiển-máy-os-controller).
 
@@ -125,7 +125,7 @@ Có thể đặt `"appStartPath": "/prototype.html#board"` trong `config.json` �
 | **Sơ đồ 2D** | Bản nhẹ cho điện thoại yếu: mặt bằng, người, tin bay, cảnh báo, dòng thời gian |
 | **App trên máy** | Lối tắt Desktop / Start Menu, cửa sổ riêng, tự bật ngầm khi đăng nhập Windows (xem mục "Dùng như app trên máy") |
 | **Điều khiển máy** | CPU/RAM trực tiếp, phanh khẩn cấp, workspace, chạy lệnh (chờ duyệt nếu ngoài danh sách), lượt AI theo `agent.md` + duyệt chuyển lượt, sửa file, nhật ký kiểm toán. Chỉ mở được trên chính máy này |
-| **Nhắn tin cho agent** | Bấm vào một người trên văn phòng hoặc bảng điều hành, gõ tin. Tin vào hòm thư của người đó; từ xa phải nhập **PIN 6 số**, mã chỉ hiện trên chính máy bạn |
+| **Hỏi một AI trong đội** | Bấm vào một nhân vật trên văn phòng 3D và gõ câu hỏi. AI đọc repo để trả lời (chỉ đọc, không sửa file, không chuyển lượt); việc cần sửa thì AI soạn sẵn lời giao việc. Chạy qua OS Controller (`/ctl/chat`), trên chính máy này hoặc trên điện thoại đã ghép. Muốn để lại việc trong hòm thư của một vai thì dùng `vp gui` |
 
 ## Điều khiển máy (OS Controller)
 
@@ -436,7 +436,7 @@ Muốn thêm một lớp đăng nhập bằng email trước cả khóa xem: dù
 
 ```
 server.js              máy chủ: tìm phiên, đọc nhật ký + sổ, đẩy trạng thái mỗi giây
-lib/                   perf (token, điểm, tiền) · docs (sổ sách) · hopthu · tongquan · chat (PIN) · mailbox · config
+lib/                   perf (token, điểm, tiền) · docs (sổ sách) · hopthu · tongquan · mailbox · config · dieu-khien-xa (điện thoại đã ghép)
                        guard (chặn CSRF/DNS rebinding) · proc (dừng cây tiến trình) · keys · mask · ctlbridge (cầu nối tới ctl) · app (mở app, lối tắt)
 ctl/                   OS Controller: main (HTTP) · jobs · policy · workspaces · files · runner (lượt AI) · autopilot (giao việc tự động) · handoff · monitor · audit · db (tự nâng cấp sổ) · cap-nhat (nút Cập nhật) · dieu-phoi (chọn model/mức) · muc-luc (mục lục từ bản đồ)
 test/                  node --test (npm test)
@@ -450,6 +450,6 @@ HUONG-DAN-CHO-AGENT.md hướng dẫn để agent tự cài từ link này
 docs/BAN-DO-HE-THONG.md bản đồ workflow → kiến trúc → mã (sinh bằng tools/ve-ban-do.js từ đồ thị Understand Anything trong .ua/)
 ```
 
-Bản đồ toàn hệ thống (7 miền nghiệp vụ, 40 workflow, từng bước trỏ tới file:dòng): [docs/BAN-DO-HE-THONG.md](docs/BAN-DO-HE-THONG.md). Mã đổi nhiều thì vẽ lại đồ thị bằng `/understand` và `/understand-domain` (plugin Understand Anything), rồi chạy `node tools/ve-ban-do.js`.
+Bản đồ toàn hệ thống (7 miền nghiệp vụ, 39 workflow, từng bước trỏ tới file:dòng): [docs/BAN-DO-HE-THONG.md](docs/BAN-DO-HE-THONG.md). Mã đổi nhiều thì vẽ lại đồ thị bằng `/understand` và `/understand-domain` (plugin Understand Anything), rồi chạy `node tools/ve-ban-do.js`.
 
 Giấy phép MIT.
