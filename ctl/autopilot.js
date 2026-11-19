@@ -68,7 +68,7 @@ function responseText(log) {
   return String(log).slice(-40000);
 }
 
-function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quotaSnapshot = () => ({ providers: [] }), notify = () => {}, scanner = null, choAgyMs = 20000 }) {
+function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quotaSnapshot = () => ({ providers: [] }), notify = () => {}, scanner = null, choAgyMs = 20000, codexTk = null }) {
   const mien = createMienHopDong({ dir });   // miễn hợp đồng giao tiếp: chỉ CEO duyệt
   // Chạy toàn quyền thì file .md của dự án phải không còn điểm bất thường chưa duyệt (ctl/ra-soat.js).
   const scanGate = (root) => { if (scanner && runner.fullOn && runner.fullOn()) scanner.require(root); };
@@ -180,6 +180,11 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     const line = String(text).split(/\r?\n/).reverse().find((l) => QUOTA_HIT.test(l)) || "";
     run.status = "waiting_quota";
     run.wait = { role: step.role, provider, providerName: PROVIDER_NAME[provider], since: now, until: at, source, message: maskSecrets(line).slice(0, 400) };
+    // Codex hết hạn mức mà còn tài khoản GPT khác có hạn mức (ctl/codex-tai-khoan.js): đổi ngay và chạy lại lượt ở nhịp kế tiếp.
+    if (provider === "codex" && codexTk) {
+      let doi = null; try { doi = codexTk.baoCan(); } catch {}
+      if (doi && doi.toi) { run.wait.until = now; run.wait.source = "đổi sang tài khoản GPT khác: " + doi.lyDo; }
+    }
     run.web = null;
     save(run);
     audit.log("autopilot", "quota.wait", run.id, { role: step.role, provider, until: new Date(at).toISOString(), source });
