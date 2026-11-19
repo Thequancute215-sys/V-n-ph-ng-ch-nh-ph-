@@ -1,10 +1,10 @@
 # Bản đồ hệ thống Văn phòng AI — từ workflow tới mã nguồn
 
-> Sinh tự động bằng `node tools/ve-ban-do.js` từ `.ua/domain-graph.json` (workflow nghiệp vụ) và `.ua/knowledge-graph.json` (bản đồ hệ thống) do Understand Anything vẽ tại commit `8a6654f`. Mã đổi nhiều thì vẽ lại đồ thị (`/understand`, `/understand-domain`) rồi chạy lại lệnh trên; đừng sửa tay trang này.
+> Sinh tự động bằng `node tools/ve-ban-do.js` từ `.ua/domain-graph.json` (workflow nghiệp vụ) và `.ua/knowledge-graph.json` (bản đồ hệ thống) do Understand Anything vẽ tại commit `662681d`. Mã đổi nhiều thì vẽ lại đồ thị (`/understand`, `/understand-domain`) rồi chạy lại lệnh trên; đừng sửa tay trang này.
 
 **Bản tương tác** (bấm vào từng node, xem quan hệ, đi theo lộ trình): trong repo chạy `/understand-dashboard` của plugin Understand Anything (Claude Code), hoặc lệnh `npx` trong README của dự án Understand Anything. Lệnh đó tải và chạy mã của bên thứ ba: chỉ chạy khi anh tin nguồn; đọc các sơ đồ dưới đây trên GitHub thì không cần.
 
-Quy mô: 8 miền nghiệp vụ, 52 workflow, 336 bước · 665 node (151 file, 438 hàm, 46 route API, 30 tài liệu/cấu hình/CI) · 2107 quan hệ (679 lời gọi, 282 import, 135 liên kết test) · 10 lớp kiến trúc · lộ trình 20 bước.
+Quy mô: 8 miền nghiệp vụ, 52 workflow, 338 bước · 666 node (151 file, 439 hàm, 46 route API, 30 tài liệu/cấu hình/CI) · 2110 quan hệ (680 lời gọi, 282 import, 135 liên kết test) · 10 lớp kiến trúc · lộ trình 20 bước.
 
 Mục lục: [1. Miền nghiệp vụ](#1-các-miền-nghiệp-vụ) · [2. Workflow trung tâm](#2-workflow-trung-tâm-ceo-giao-việc--đội-ai--ceo-duyệt) · [3. Từng workflow](#3-từng-workflow-từng-bước-trỏ-tới-mã) · [4. Lớp kiến trúc](#4-bản-đồ-hệ-thống-các-lớp-kiến-trúc) · [5. Lộ trình đọc mã](#5-lộ-trình-đọc-mã) · [6. Điểm cần anh rà](#6-điểm-phát-hiện-khi-vẽ--cần-anh-rà)
 
@@ -288,11 +288,11 @@ Mở đường hầm Cloudflare tới văn phòng để xem trên điện thoạ
 Mở đường vào cho điện thoại (Tailscale hoặc Cloudflare), rồi ghép điện thoại một lần bằng mã 6 số tạo trên chính máy tính; điện thoại nhận khóa thiết bị (cookie HttpOnly), máy tính xem và thu hồi được từng máy. — *Kích hoạt:* `Trang dien-thoai.html trên máy tính → POST /dkx/ma; điện thoại mở /dieu-khien.html → POST /dkx/ghep` (http).
 
 1. **Mở đường vào bằng Tailscale** — Script kiểm accessKey và Tailscale rồi tailscale serve cổng văn phòng qua HTTPS *.ts.net trong mạng riêng; Cloudflare (xem-tren-dien-thoai) là cách thay thế. [`scripts/dien-thoai-tailscale.ps1:1`](../scripts/dien-thoai-tailscale.ps1#L1-L25)
-2. **Bắt buộc khóa xem** — Từ xa mà văn phòng chưa đặt accessKey thì /dkx không nhận gì, kể cả ghép. [`lib/dieu-khien-xa.js:131`](../lib/dieu-khien-xa.js#L131-L132)
+2. **Bắt buộc khóa xem** — Từ xa mà văn phòng chưa đặt accessKey thì /dkx không nhận gì, kể cả ghép. [`lib/dieu-khien-xa.js:146`](../lib/dieu-khien-xa.js#L146-L147)
 3. **Máy tính tạo mã ghép** — Trang Điện thoại trên chính máy tính gọi POST /dkx/ma: mã 6 số sống 5 phút, chỉ trong bộ nhớ. [`lib/dieu-khien-xa.js:69`](../lib/dieu-khien-xa.js#L69-L73)
 4. **Điện thoại nhập mã** — App điều khiển chưa ghép thì hiện màn nhập mã và tên máy. [`public/dieu-khien.html:116`](../public/dieu-khien.html#L116-L129)
 5. **Ghép và cấp khóa thiết bị** — Kiểm mã bằng timingSafeEqual, khóa ghép 15 phút sau 5 lần sai, tối đa 5 máy; khóa 256 bit chỉ lưu bản băm. [`lib/dieu-khien-xa.js:75`](../lib/dieu-khien-xa.js#L75-L89)
-6. **Đặt cookie vpd** — Cookie HttpOnly, SameSite=Strict, Path=/dkx, sống 90 ngày; thêm Secure khi đi qua HTTPS. [`lib/dieu-khien-xa.js:144`](../lib/dieu-khien-xa.js#L144-L148)
+6. **Đặt cookie vpd** — Cookie HttpOnly, SameSite=Strict, Path=/dkx, sống 90 ngày; thêm Secure khi đi qua HTTPS. [`lib/dieu-khien-xa.js:159`](../lib/dieu-khien-xa.js#L159-L163)
 7. **Xem và thu hồi máy đã ghép** — Máy tính liệt kê máy đã ghép, giờ dùng, IP, nhật ký lệnh và thu hồi máy mất. [`public/dien-thoai.html:46`](../public/dien-thoai.html#L46-L62)
 
 #### Lưu khóa API tài khoản AI
@@ -491,17 +491,21 @@ Các kênh Giám đốc nói chuyện với đội AI mà không phá khóa lư�
 flowchart TD
   subgraph flow_chat_nhan_vat["Chat với nhân vật AI"]
     direction LR
-    step_chat_nhan_vat_gui_tin["1. CEO gửi tin cho một nhân vật"]
-    step_chat_nhan_vat_kiem_tin["2. Kiểm tin và trạng thái bận"]
-    step_chat_nhan_vat_dung_prompt["3. Dựng prompt theo phạm vi phòng"]
-    step_chat_nhan_vat_chay_cli["4. Chạy CLI chỉ đọc như job “cmd”"]
-    step_chat_nhan_vat_xu_ly_tra_loi["5. Xử lý câu trả lời hoặc lỗi"]
-    step_chat_nhan_vat_luu_lich_su["6. Lưu lịch sử chat.json"]
+    step_chat_nhan_vat_giao_rieng["1. Giao việc riêng cho một AI"]
+    step_chat_nhan_vat_gui_tin["2. CEO gửi tin cho một nhân vật"]
+    step_chat_nhan_vat_kiem_tin["3. Kiểm tin và trạng thái bận"]
+    step_chat_nhan_vat_dung_prompt["4. Dựng prompt theo phạm vi phòng"]
+    step_chat_nhan_vat_chay_cli["5. Chạy CLI chỉ đọc như job “cmd”"]
+    step_chat_nhan_vat_xu_ly_tra_loi["6. Xử lý câu trả lời hoặc lỗi"]
+    step_chat_nhan_vat_giao_ca_doi["7. Việc cần sửa file: giao cả đội"]
+    step_chat_nhan_vat_luu_lich_su["8. Lưu lịch sử chat.json"]
+    step_chat_nhan_vat_giao_rieng --> step_chat_nhan_vat_gui_tin
     step_chat_nhan_vat_gui_tin --> step_chat_nhan_vat_kiem_tin
     step_chat_nhan_vat_kiem_tin --> step_chat_nhan_vat_dung_prompt
     step_chat_nhan_vat_dung_prompt --> step_chat_nhan_vat_chay_cli
     step_chat_nhan_vat_chay_cli --> step_chat_nhan_vat_xu_ly_tra_loi
-    step_chat_nhan_vat_xu_ly_tra_loi --> step_chat_nhan_vat_luu_lich_su
+    step_chat_nhan_vat_xu_ly_tra_loi --> step_chat_nhan_vat_giao_ca_doi
+    step_chat_nhan_vat_giao_ca_doi --> step_chat_nhan_vat_luu_lich_su
   end
   subgraph flow_giao_viec_ca_doi["Giao việc cả đội & dừng việc đang chạy"]
     direction LR
@@ -541,21 +545,23 @@ flowchart TD
 
 CEO bấm một nhân vật trong văn phòng 3D để hỏi; câu hỏi chạy CLI chỉ đọc theo phạm vi phòng, có thể gợi ý chuyển phòng hoặc soạn prompt giao việc. — *Kích hoạt:* `Bấm nhân vật trong văn phòng 3D → POST /ctl/chat` (http).
 
-1. **CEO gửi tin cho một nhân vật** — index.html renderChat → POST /ctl/chat qua cầu /ctl (chỉ từ chính máy); trả 202. [`ctl/main.js:237`](../ctl/main.js#L237-L237)
-2. **Kiểm tin và trạng thái bận** — chat.send: tin ≤ 4000 ký tự, mỗi người chỉ một câu đang chờ. [`ctl/chat.js:85`](../ctl/chat.js#L85-L107)
-3. **Dựng prompt theo phạm vi phòng** — promptFor: vai, phạm vi, danh sách phòng, luật chỉ đọc, ba cách trả lời, dòng JSON kết thúc bắt buộc, 6 tin gần nhất làm ngữ cảnh. [`ctl/chat.js:32`](../ctl/chat.js#L32-L53)
-4. **Chạy CLI chỉ đọc như job “cmd”** — runner.chatArgv thay {prompt}; job không chặn lượt AI chính của workspace. [`ctl/runner.js:539`](../ctl/runner.js#L539-L548)
-5. **Xử lý câu trả lời hoặc lỗi** — finish: hết hạn mức/timeout/lỗi CLI thì báo kèm đuôi log đã che; ngược lại responseText + parseReply tách dòng JSON chuyen_phong/prompt (bỏ phòng lạ hoặc chuyển cho chính mình). [`ctl/chat.js:109`](../ctl/chat.js#L109-L129)
-6. **Lưu lịch sử chat.json** — Giữ tối đa 40 tin mỗi người; tin đang chờ khi app tắt thành lỗi lúc khởi động lại. [`ctl/chat.js:72`](../ctl/chat.js#L72-L140)
+1. **Giao việc riêng cho một AI** — Nút ⚡ trên thanh trên: chọn AI và gõ việc; văn phòng mở chat của phòng đó và gửi thật qua /ctl/chat (thay hộp “Đặc cách” giả). [`public/index.html:801`](../public/index.html#L801-L814)
+2. **CEO gửi tin cho một nhân vật** — index.html renderChat → POST /ctl/chat qua cầu /ctl (chỉ từ chính máy); trả 202. [`ctl/main.js:237`](../ctl/main.js#L237-L237)
+3. **Kiểm tin và trạng thái bận** — chat.send: tin ≤ 4000 ký tự, mỗi người chỉ một câu đang chờ. [`ctl/chat.js:85`](../ctl/chat.js#L85-L107)
+4. **Dựng prompt theo phạm vi phòng** — promptFor: vai, phạm vi, danh sách phòng, luật chỉ đọc, ba cách trả lời, dòng JSON kết thúc bắt buộc, 6 tin gần nhất làm ngữ cảnh. [`ctl/chat.js:32`](../ctl/chat.js#L32-L53)
+5. **Chạy CLI chỉ đọc như job “cmd”** — runner.chatArgv thay {prompt}; job không chặn lượt AI chính của workspace. [`ctl/runner.js:539`](../ctl/runner.js#L539-L548)
+6. **Xử lý câu trả lời hoặc lỗi** — finish: hết hạn mức/timeout/lỗi CLI thì báo kèm đuôi log đã che; ngược lại responseText + parseReply tách dòng JSON chuyen_phong/prompt (bỏ phòng lạ hoặc chuyển cho chính mình). [`ctl/chat.js:109`](../ctl/chat.js#L109-L129)
+7. **Việc cần sửa file: giao cả đội** — AI soạn prompt giao việc; nút “Giao cả đội” mở mục giao việc của bàn làm việc và điền sẵn để CEO tự bấm giao (luồng tự động). [`public/index.html:1020`](../public/index.html#L1020-L1028)
+8. **Lưu lịch sử chat.json** — Giữ tối đa 40 tin mỗi người; tin đang chờ khi app tắt thành lỗi lúc khởi động lại. [`ctl/chat.js:72`](../ctl/chat.js#L72-L140)
 
 #### Giao việc cả đội & dừng việc đang chạy
 
 Giám đốc giao một việc cho cả đội từ thanh trên của văn phòng 3D: nút 📢 mở mục giao việc thật của bàn làm việc (luồng tự động /ctl/autopilot); văn phòng liệt kê việc OS Controller đang chạy và cho dừng từng việc hoặc tất cả. — *Kích hoạt:* `Nút 📢 Giao việc cả đội trên index.html → mục Giao việc của bàn làm việc → POST /ctl/autopilot` (http).
 
-1. **Nút 📢 mở mục Giao việc cho cả đội** — Bấm 📢 "Giao việc cả đội" trên thanh trên: mở thẳng mục giao việc của bàn làm việc (nút data-desk="assign"), không còn hộp gợi ý theo từ khóa. [`public/index.html:837`](../public/index.html#L837-L840)
+1. **Nút 📢 mở mục Giao việc cho cả đội** — Bấm 📢 "Giao việc cả đội" trên thanh trên: mở thẳng mục giao việc của bàn làm việc (nút data-desk="assign"), không còn hộp gợi ý theo từ khóa. [`public/index.html:820`](../public/index.html#L820-L823)
 2. **Gửi việc vào luồng tự động thật** — Bàn làm việc gọi POST /ctl/autopilot {workspace, task}: đội Hinata → Sol → Astra → Claude làm trên nhánh riêng, Claude báo cáo cho CEO duyệt (xem workflow "Luồng tự động"). [`public/office-desk.js:574`](../public/office-desk.js#L574-L574)
 3. **Liệt kê việc đang chạy thật** — GET /api/running-tasks: chỉ các việc OS Controller đang chạy (lượt AI, lệnh), có pid; gắn cờ cảnh báo quá 10 phút. [`server.js:714`](../server.js#L714-L728)
-4. **Hiện danh sách và cảnh báo chạy lâu** — refreshRunningTasks đếm việc đang chạy, đổi màu nút cảnh báo, dựng danh sách có nút dừng từng việc. [`public/index.html:852`](../public/index.html#L852-L907)
+4. **Hiện danh sách và cảnh báo chạy lâu** — refreshRunningTasks đếm việc đang chạy, đổi màu nút cảnh báo, dựng danh sách có nút dừng từng việc. [`public/index.html:835`](../public/index.html#L835-L890)
 5. **Dừng một việc hoặc tất cả** — POST /api/kill-task: chuyển sang OS Controller dừng cả cây tiến trình; ctl không chạy thì báo 503, không giả vờ đã dừng. [`server.js:731`](../server.js#L731-L749)
 
 #### Điều khiển văn phòng từ điện thoại đã ghép
@@ -567,7 +573,7 @@ Giám đốc giao một việc cho cả đội từ thanh trên của văn phòn
 3. **Nhận diện chính máy hay từ xa** — Loopback + Host loopback + không có tiêu đề proxy; đường hầm nối từ 127.0.0.1 vẫn là từ xa. [`lib/guard.js:52`](../lib/guard.js#L52-L55)
 4. **Xác thực khóa thiết bị** — So bản băm khóa trong cookie vpd; không khớp thì 401 NOT_PAIRED. [`lib/dieu-khien-xa.js:92`](../lib/dieu-khien-xa.js#L92-L102)
 5. **Kiểm danh sách lệnh** — Chỉ mở xem, giao việc, duyệt/trả bàn giao, trả lời, phanh, ý tưởng, dự án mới, đổi tài khoản/model; không mở /jobs, /fs, rà soát, xuất bản, đẩy nhánh. [`lib/dieu-khien-xa.js:22`](../lib/dieu-khien-xa.js#L22-L42)
-6. **Ép tham số an toàn** — Repo tạo từ điện thoại luôn riêng tư; điều phối chỉ nhận model cố định theo phòng; thời gian chờ riêng cho lệnh chậm. [`lib/dieu-khien-xa.js:160`](../lib/dieu-khien-xa.js#L160-L166)
+6. **Ép tham số an toàn** — Repo tạo từ điện thoại luôn riêng tư; điều phối chỉ nhận model cố định theo phòng; thời gian chờ riêng cho lệnh chậm. [`lib/dieu-khien-xa.js:175`](../lib/dieu-khien-xa.js#L175-L181)
 7. **Chuyển sang OS Controller** — Gọi ctl bằng token trên máy qua ctlbridge.call; ctl tắt thì 503 CTL_OFFLINE. [`lib/ctlbridge.js:24`](../lib/ctlbridge.js#L24-L37)
 8. **Ghi nhật ký lệnh** — Mỗi lệnh ghi (và lệnh bị chặn) ghi kèm thiết bị, tên máy, IP và kết quả vào dieu-khien-xa.log. [`lib/dieu-khien-xa.js:64`](../lib/dieu-khien-xa.js#L64-L66)
 
@@ -1742,7 +1748,7 @@ Máy chủ HTTP/SSE server.js chỉ đọc nhật ký phiên Claude/Codex và s�
 
 - [`lib/config.js`](../lib/config.js) — Đọc config.json ở thư mục gốc và trộn với giá trị mặc định (cổng 7788, host 127.0.0.1, thư mục Claude/Codex, dataDir, giá token, trần tiền AI, Docker, updateChannel); dù… *Hàm chính:* `loadConfig`.
 - [`lib/ctlbridge.js`](../lib/ctlbridge.js) — Cầu nối từ máy chủ văn phòng tới OS Controller (127.0.0.1:7790): đọc token từ ~/.van-phong-ao/ctl-token mỗi lần gọi, mở kết nối mới mỗi yêu cầu (không keep-alive, tránh… *Hàm chính:* `call`, `proxy`.
-- [`lib/dieu-khien-xa.js`](../lib/dieu-khien-xa.js) — Điều khiển văn phòng từ điện thoại (kênh /dkx): ghép điện thoại một lần bằng mã 6 số hiện trên chính máy tính (sống 5 phút, dùng một lần, sai 5 lần khóa 15 phút), cấp kh… *Hàm chính:* `allowed`, `createDieuKhienXa`, `taoMa`, `ghep`, `xacThuc`, `thuHoi`, `handle`.
+- [`lib/dieu-khien-xa.js`](../lib/dieu-khien-xa.js) — Điều khiển văn phòng từ điện thoại (kênh /dkx): ghép điện thoại một lần bằng mã 6 số hiện trên chính máy tính (sống 5 phút, dùng một lần, sai 5 lần khóa 15 phút), cấp kh… *Hàm chính:* `allowed`, `createDieuKhienXa`, `taoMa`, `ghep`, `xacThuc`, `thuHoi`, `handle`, `ipOf`.
 - [`lib/docs.js`](../lib/docs.js) — Đọc sổ sách điều phối trong data/ (chỉ đọc nội dung) để dựng dữ liệu cho hai màn tường "Công việc & tiến độ" và "Nội quy & đội ngũ": UU-TIEN.json, QUYET-DINH.md, goi/<gó… *Hàm chính:* `table`, `sections`, `rulesWithAge`, `build`.
 - [`lib/guard.js`](../lib/guard.js) — Lớp chặn CSRF và DNS rebinding cho máy chủ localhost: kiểm Host, với yêu cầu ghi bắt Content-Type JSON, Origin khớp Host, Sec-Fetch-Site same-origin/none; đọc thân JSON… *Hàm chính:* `checkHost`, `checkWrite`, `readJson`, `isLocal`.
 - [`lib/hopthu.js`](../lib/hopthu.js) — Đọc hòm thư của đội (chỉ đọc) từ data/hop-thu/<vai>.jsonl, nơi mỗi dòng là một sự kiện tin / go / nhac / xong theo mã ht-…; dựng trạng thái từng tin và tổng hợp theo vai… *Hàm chính:* `state`, `build`.
@@ -1750,9 +1756,9 @@ Máy chủ HTTP/SSE server.js chỉ đọc nhật ký phiên Claude/Codex và s�
 - [`lib/perf.js`](../lib/perf.js) — Đánh giá nhân sự AI từ nhật ký thật (chỉ đọc, cửa sổ 7 ngày): đếm token Codex (token_count tổng dồn theo phiên, kèm quỹ dùng tuần) và Claude (message.usage bỏ trùng theo… *Hàm chính:* `seekTime`, `lineCodex`, `step`, `scanAll`, `compute`, `costDays`.
 - [`lib/tongquan.js`](../lib/tongquan.js) — Dựng màn Tổng quan cho Giám đốc (chỉ đọc): ghép thứ tự việc trong UU-TIEN.json với trạng thái gói việc đã có ở snapshot.tasks, dòng tiến độ mới nhất của data/goi/<gói>/t… *Hàm chính:* `matchAgent`, `tailLines`, `lastProgress`, `build`.
 - [`server.js`](../server.js) — Máy chủ HTTP chính của Văn phòng AI (không thư viện ngoài): đọc tăng dần nhật ký phiên Claude Code (~/.claude) và Codex (~/.codex) của các dự án theo dõi, đọc sổ data/,… *Hàm chính:* `mask`, `maskDoc`, `addAgent`, `readLive`, `discover`, `agentFromLabel`, `parseClaude`, `parseCodex` (+11).
-- Route `POST /dkx/ma` ([`lib/dieu-khien-xa.js:139`](../lib/dieu-khien-xa.js#L139-L139)) — Chỉ trên chính máy tính: tạo mã ghép 6 số sống 5 phút.
-- Route `POST /dkx/ghep` ([`lib/dieu-khien-xa.js:144`](../lib/dieu-khien-xa.js#L144-L144)) — Điện thoại nhập mã: ghép, nhận cookie vpd HttpOnly chứa khóa thiết bị.
-- Route `/dkx/api/*` ([`lib/dieu-khien-xa.js:154`](../lib/dieu-khien-xa.js#L154-L154)) — Lệnh từ điện thoại đã ghép: chỉ các lệnh trong danh sách được chuyển sang ctl, lệnh ghi được ghi nhật ký.
+- Route `POST /dkx/ma` ([`lib/dieu-khien-xa.js:154`](../lib/dieu-khien-xa.js#L154-L154)) — Chỉ trên chính máy tính: tạo mã ghép 6 số sống 5 phút.
+- Route `POST /dkx/ghep` ([`lib/dieu-khien-xa.js:159`](../lib/dieu-khien-xa.js#L159-L159)) — Điện thoại nhập mã: ghép, nhận cookie vpd HttpOnly chứa khóa thiết bị.
+- Route `/dkx/api/*` ([`lib/dieu-khien-xa.js:169`](../lib/dieu-khien-xa.js#L169-L169)) — Lệnh từ điện thoại đã ghép: chỉ các lệnh trong danh sách được chuyển sang ctl, lệnh ghi được ghi nhật ký.
 - Route `/ctl/*` ([`server.js:709`](../server.js#L709-L709)) — Chuyển mọi yêu cầu /ctl và /ctl/* sang OS Controller qua ctlbridge.proxy (chỉ trên chính máy này).
 - Route `GET /api/running-tasks` ([`server.js:713`](../server.js#L713-L713)) — Liệt kê việc đang chạy thật trên máy: các việc OS Controller đang chạy (GET /jobs?status=running qua cầu nối, chỉ khi truy cập từ máy này), mỗi việc có pid, kèm thời lượ…
 - Route `POST /api/kill-task` ([`server.js:730`](../server.js#L730-L730)) — Dừng việc (Kill Switch): chỉ nhận việc ctl:… hoặc dừng tất cả, chuyển lệnh sang OS Controller để dừng cả cây tiến trình và xác nhận PID đã mất.
@@ -2001,12 +2007,16 @@ Bộ node --test (48 tệp) chạy trong CI mỗi PR và trước khi phát hàn
 
 ## 6. Điểm phát hiện khi vẽ — cần anh rà
 
-Vẽ lại toàn bộ ngày 19/11/2026 (thêm miền "Năng lực & tài nguyên của đội AI" và 13 workflow mới: ghép và điều khiển từ điện thoại, dự án mới, hợp đồng giao tiếp, miễn hợp đồng, chạy song song Astra + Kakashi, điều phối model, tài khoản Antigravity, bộ skill, duyệt repo skill, Chrome DevTools, tra cứu Gemini, vẽ lại bản đồ). Các điểm dưới đây đã đối chiếu với mã; chưa sửa gì, chờ anh quyết.
+Vẽ lại toàn bộ ngày 19/11/2026 (thêm miền "Năng lực & tài nguyên của đội AI" và 13 workflow mới: ghép và điều khiển từ điện thoại, dự án mới, hợp đồng giao tiếp, miễn hợp đồng, chạy song song Astra + Kakashi, điều phối model, tài khoản Antigravity, bộ skill, duyệt repo skill, Chrome DevTools, tra cứu Gemini, vẽ lại bản đồ). Bốn điểm phát hiện lần này đã sửa cùng ngày:
 
-1. **Nút "Phân việc ngoài lề (Đặc cách)" vẫn là thao tác giả.** `submitOverrideDirective` trong `public/index.html` (khoảng dòng 807–831) hiện bong bóng trên nhân vật, đổi thẻ bên phải thành "OVERRIDE CODE ACTIVE" và báo "ĐÃ BAN HÀNH CHỈ THỊ THÀNH CÔNG … đã được ghi nhận vào sổ điều phối và hòm thư", nhưng không gọi máy chủ hay ctl nào: không AI nào nhận việc, không ghi sổ. Cùng loại với "Phát loa" giả đã bỏ ngày 17/11. Cần quyết: nối vào lượt AI thật (`POST /ctl/ai/run` cho đúng vai) hay bỏ nút.
-2. **Luật "không gửi dữ liệu ra ngoài" trong CLAUDE.md/AGENTS.md chỉ ghi một ngoại lệ (tra cứu Gemini), nhưng mã còn các đường mạng khác do CEO bấm:** `ctl/du-an-moi.js` gửi ý tưởng cho Claude Haiku để gợi ý tên và gửi tên + mô tả repo lên GitHub (`ctl/github.js` `createRepo`); `ctl/skill-duyet.js` chạy `git ls-remote`/`git fetch` tới GitHub và `npm view`; `ctl/mcp-may.js` chạy `npm install` (Chrome DevTools, MCP duyệt thêm). Tất cả chỉ chạy khi CEO bấm và không gửi mã nguồn, nhưng agent sửa mã đọc CLAUDE.md có thể hiểu là vi phạm luật hoặc ngược lại tự thêm đường mạng mới. Nên ghi rõ danh sách này vào CLAUDE.md/AGENTS.md.
-3. **IP trong nhật ký điện thoại lấy từ tiêu đề proxy.** `ipOf` trong `lib/dieu-khien-xa.js` đọc `cf-connecting-ip`, rồi `x-forwarded-for`, rồi `tailscale-user-login`, cuối cùng mới tới địa chỉ socket. Chỉ dùng để ghi nhật ký và hiện "IP lần dùng cuối" (không dùng để xác thực), nhưng các tiêu đề này do phía trước máy chủ đặt: đi đường không qua proxy viết lại tiêu đề thì giá trị có thể do điện thoại tự gửi. Khi điều tra sự cố, đừng coi cột IP là bằng chứng chắc chắn.
-4. **README mục "Cấu trúc mã" chưa liệt kê các module mới.** Dòng `ctl/` thiếu skill, skill-duyet, mcp-may, chrome-devtools, tra-cuu, song-song, mien-hop-dong, du-an-moi, agy-tai-khoan; dòng `tools/` thiếu kiem-hop-dong, cai-skill, cai-chrome-devtools, ve-ban-do; dòng `public/` thiếu dieu-khien, dien-thoai, skill, ket-noi. Các mục hướng dẫn phía trên của README đã có đủ tính năng; chỉ bảng cấu trúc bị cũ.
-5. **4 trang chuyển hướng** (`2d.html`, `board.html`, `congviec.html`, `tongquan.html`) giữ lại cho dấu trang cũ — đúng chủ đích, chỉ ghi nhận.
+1. **Nút "Phân việc ngoài lề (Đặc cách)" là thao tác giả — đã thay.** Trước đây nó chỉ hiện bong bóng và báo "đã ghi nhận vào sổ điều phối và hòm thư" mà không gửi gì. Nay là nút **"Giao việc riêng cho một AI"** (`public/index.html`): chọn AI, gõ việc, văn phòng mở chat của phòng đó và gửi thật qua `/ctl/chat` (chỉ đọc, đúng vai). Việc cần sửa file thì AI soạn prompt và nút **"Giao cả đội"** điền sẵn vào mục giao việc của bàn làm việc để anh tự bấm giao (luồng tự động). Không có quyền "đặc cách" vượt giao thức agent.md, vì runner và CI vẫn chặn lượt sai vai.
+2. **CLAUDE.md/AGENTS.md nay liệt kê đủ đường mạng ra ngoài** (hai file giống hệt nhau): tra cứu Gemini (`ctl/tra-cuu.js`); GitHub API và `git push` lên repo của CEO (`ctl/github.js`, `ctl/nhanh.js`, `ctl/bo-kiem.js`, `ctl/xuat-ban.js`); Claude CLI gợi ý tên repo (`ctl/du-an-moi.js`); `git fetch`/`npm view` khi duyệt skill (`ctl/skill-duyet.js`, `ctl/skill.js`); `npm install` MCP ghim bản (`ctl/mcp-may.js`). Thêm đường mới phải được CEO duyệt và ghi vào đó.
+3. **IP trong nhật ký điện thoại không còn tin tiêu đề do máy khác tự gửi.** `ipOf` (`lib/dieu-khien-xa.js`) chỉ đọc tiêu đề proxy khi yêu cầu nối từ chính máy (đường hầm chạy trên máy). Qua Tailscale nó lấy phần tử cuối của X-Forwarded-For (do `tailscale serve` thêm) và bỏ qua `cf-*`; qua Cloudflare nó lấy `cf-connecting-ip`; nối thẳng từ máy khác trong mạng thì lấy địa chỉ socket. Có test trong `test/dieu-khien-xa.test.js`. IP vẫn chỉ để xem lại, không dùng để xác thực.
+4. **README mục "Cấu trúc mã" đã liệt kê đủ module** của `lib/`, `ctl/` (chia nhóm), `tools/`, `public/` và `scripts/`.
 
-Bốn điểm của lần vẽ trước (đường nhắn tin PIN cũ, ngoại lệ "văn phòng chỉ đọc", "Phát loa" giả, chữ hỏng mã hoá trong `test/tat-ctl.test.js`) đã xử lý ngày 17/11/2026; `test/van-phong-sach.test.js` giữ cho chúng không quay lại. Node `isLocal` trước đây trỏ `lib/ctlbridge.js` nay trỏ đúng `lib/guard.js` (hàm đã chuyển sang đó, `ctlbridge` chỉ dùng lại).
+Còn cần anh rà:
+
+5. **Bảng "Các màn hình" trong README còn dòng cũ.** Dòng "Sơ đồ 2D — bản nhẹ cho điện thoại yếu" trỏ tới `2d.html`, nay chỉ là trang chuyển hướng về văn phòng 3D. Dòng "Văn phòng 3D — 8 phòng… Robot đi lại" cũng chưa khớp toà nhà hiện tại (các phòng vai AI, có phòng Kakashi). Nên viết lại bảng theo các trang đang có: văn phòng 3D + bàn làm việc, Điều khiển, Kết nối, Repo & Skill, app điện thoại.
+6. **4 trang chuyển hướng** (`2d.html`, `board.html`, `congviec.html`, `tongquan.html`) giữ lại cho dấu trang cũ — đúng chủ đích, chỉ ghi nhận.
+
+Bốn điểm của lần vẽ trước (đường nhắn tin PIN cũ, ngoại lệ "văn phòng chỉ đọc", "Phát loa" giả, chữ hỏng mã hoá trong `test/tat-ctl.test.js`) đã xử lý ngày 17/11/2026; `test/van-phong-sach.test.js` giữ cho chúng không quay lại. Node `isLocal` trước đây trỏ `lib/ctlbridge.js` nay trỏ đúng `lib/guard.js`.

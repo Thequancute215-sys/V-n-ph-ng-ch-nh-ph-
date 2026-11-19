@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "gitCommitHash": "8a6654fdd5e255be33486168b5051de790ad6f12",
-  "generatedAt": "2026-11-19T20:05:41.360Z",
+  "gitCommitHash": "662681d2d34d292b987f4532a52cd4bd5af9a5f5",
+  "generatedAt": "2026-11-19T20:16:08.472Z",
   "files": {
     ".gitattributes": {
       "filePath": ".gitattributes",
@@ -35,22 +35,22 @@
     },
     "AGENTS.md": {
       "filePath": "AGENTS.md",
-      "contentHash": "de6dfc1fcefec2dddd63976f4e91133be0cd754a71c7c1c9d48490d45e4fca62",
+      "contentHash": "ba9c6f291426667f1d639eb08ee97fc8311e2e943f08a17ba996dce1c6796920",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 5,
+      "totalLines": 14,
       "hasStructuralAnalysis": false
     },
     "CLAUDE.md": {
       "filePath": "CLAUDE.md",
-      "contentHash": "38d97bddf269007f0048dfad6223139a8cf599c6f57b32f3156797b8bfd248f4",
+      "contentHash": "ba9c6f291426667f1d639eb08ee97fc8311e2e943f08a17ba996dce1c6796920",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 5,
+      "totalLines": 14,
       "hasStructuralAnalysis": false
     },
     "HUONG-DAN-CHO-AGENT.md": {
@@ -75,12 +75,12 @@
     },
     "README.md": {
       "filePath": "README.md",
-      "contentHash": "2932e9a8ec1c077fa29df63475e5afc15a1613e14122c47b7f1f198793edfa88",
+      "contentHash": "c1761e21746bfffa12f344a6cb6b31d1700a8bb45da01d87f04efe8ac1625aa8",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 456,
+      "totalLines": 470,
       "hasStructuralAnalysis": false
     },
     "YEU-CAU-SUA-LOI-CLAUDE.md": {
@@ -3040,7 +3040,7 @@
     },
     "lib/dieu-khien-xa.js": {
       "filePath": "lib/dieu-khien-xa.js",
-      "contentHash": "99b2bbb71aff0def8330cbdc0bc175a31dad438b892d1119e1862cd522b4661f",
+      "contentHash": "7486330ecee2ca58fcedca6748f59a127c21ad49f3bf0e7ae5d78b8df1835829",
       "functions": [
         {
           "name": "HOME",
@@ -3093,12 +3093,20 @@
           "lineCount": 1
         },
         {
-          "name": "ipOf",
+          "name": "lastXff",
           "params": [
             "req"
           ],
           "exported": false,
           "lineCount": 1
+        },
+        {
+          "name": "ipOf",
+          "params": [
+            "req"
+          ],
+          "exported": true,
+          "lineCount": 9
         },
         {
           "name": "https",
@@ -3125,7 +3133,7 @@
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 177,
+      "totalLines": 192,
       "hasStructuralAnalysis": true
     },
     "lib/docs.js": {
@@ -4371,12 +4379,12 @@
     },
     "public/index.html": {
       "filePath": "public/index.html",
-      "contentHash": "c873882ce990b9a0bbc3a133b3ebef367d40af6ad7799f8a0eb217acd9ff16dd",
+      "contentHash": "2e7628e74e3679fce89757a89f196dd35cbb65719ae8fcaa2c8bafb756b29c8e",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 1186,
+      "totalLines": 1178,
       "hasStructuralAnalysis": false
     },
     "public/ket-noi.html": {
@@ -6269,7 +6277,7 @@
     },
     "test/dieu-khien-xa.test.js": {
       "filePath": "test/dieu-khien-xa.test.js",
-      "contentHash": "c6881ab4cf0b27404c2f20f1b3e0951f4fd02d06c7f45ebd62a43336488f9473",
+      "contentHash": "5c524ddeb09e1734a47fd633fe29790aaa97858021b26cc9b35004bcf78af307",
       "functions": [
         {
           "name": "tmp",
@@ -6304,12 +6312,22 @@
           ],
           "exported": false,
           "lineCount": 1
+        },
+        {
+          "name": "req",
+          "params": [
+            "addr",
+            "host",
+            "headers"
+          ],
+          "exported": false,
+          "lineCount": 1
         }
       ],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 159,
+      "totalLines": 172,
       "hasStructuralAnalysis": true
     },
     "test/dieu-phoi.test.js": {
@@ -7649,7 +7667,7 @@
     },
     "tools/ve-ban-do.js": {
       "filePath": "tools/ve-ban-do.js",
-      "contentHash": "ddd7a7b5cd94504e21cbd0ded38538c9247ca39c57e10aa20f2d7eb006266910",
+      "contentHash": "1cfa490aabd183a63b383c98b22f153ef34a05ef65f89f40b590d1700ddaed19",
       "functions": [
         {
           "name": "read",
@@ -7703,7 +7721,7 @@
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 200,
+      "totalLines": 204,
       "hasStructuralAnalysis": true
     },
     "tools/vp.js": {

@@ -285,10 +285,10 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
 
 
 
-  <!-- Nút Phân Việc Ngoài Lề Đặc Cách -->
+  <!-- Giao việc riêng cho một AI: gửi thật qua chat của phòng đó (/ctl/chat); việc cần sửa file thì đưa sang "Giao việc cho cả đội" -->
   <button class="btn" id="openOverrideBtn" style="background:linear-gradient(135deg, #ecc970, #f59e0b);color:#000;font-weight:800;box-shadow:0 6px 22px rgba(245,158,11,0.35)">
     <span style="font-size:14px">⚡</span>
-    <span>Phân Việc Ngoài Lề (Đặc Cách)</span>
+    <span>Giao việc riêng cho một AI</span>
   </button>
 
   <!-- Các nút ít dùng: gom vào menu để thanh trên không tràn viền -->
@@ -360,15 +360,15 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
   </div>
 </div>
 
-<!-- ================= MODAL: PHÂN VIỆC NGOÀI LỀ (ĐẶC CÁCH CODE CHO SOL) ================= -->
+<!-- ================= MODAL: GIAO VIỆC RIÊNG CHO MỘT AI (gửi qua chat của phòng đó) ================= -->
 <div class="modal-overlay" id="overrideModal">
   <div class="modal-card">
     <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:12px">
       <div style="display:flex;align-items:center;gap:10px">
         <div style="width:34px;height:34px;border-radius:10px;background:rgba(236,201,112,0.2);color:var(--gold);display:grid;place-items:center;font-size:18px">⚡</div>
         <div>
-          <h3 style="margin:0;font-size:15px;font-weight:800;color:#fff;font-family:'Quicksand',sans-serif">CHỈ ĐỊNH PHÂN VIỆC NGOÀI LỀ (CEO OVERRIDE)</h3>
-          <p style="margin:2px 0 0;font-size:11px;color:var(--mute)">Cấp quyền đặc cách vượt ngoài vai trò mặc định của Protocol v2.2</p>
+          <h3 style="margin:0;font-size:15px;font-weight:800;color:#fff;font-family:'Quicksand',sans-serif">GIAO VIỆC RIÊNG CHO MỘT AI</h3>
+          <p style="margin:2px 0 0;font-size:11px;color:var(--mute)">Gửi thật tới AI của phòng đó, trong đúng vai của họ theo giao thức agent.md</p>
         </div>
       </div>
       <button class="btn ghost" style="padding:4px 8px;font-size:12px" id="closeOverrideBtn">✕</button>
@@ -376,43 +376,35 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
 
     <!-- Chọn AI -->
     <div>
-      <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--mute);margin-bottom:6px">Chọn AI nhận chỉ thị đặc biệt:</label>
+      <label for="overrideAgentSelect" style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--mute);margin-bottom:6px">Chọn AI nhận việc:</label>
       <select id="overrideAgentSelect" style="width:100%;padding:10px 12px;background:#090d16;border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:#fff;font-size:12.5px;font-family:inherit;outline:none">
-        <option value="sol" selected>👁️ Itachi Uchiha (GPT 6.1 Sol: Cho phép Code trực tiếp)</option>
-        <option value="pain">⚡ Pain Thiên Đạo (Quản lý Akatsuki - Tiếp quản điều phối)</option>
-        <option value="antigravity">🌸 Hinata Hyuga (Antigravity - Đặc tả & Thiết kế UI/UX)</option>
-        <option value="claude">🛡️ Sakura Haruno (Claude Captain - Kiểm toán & Y thuật QA)</option>
-        <option value="codex">💻 Sasuke Uchiha (Codex Astra - Kỹ sư trưởng Dev)</option>
+        <option value="pain">⚡ Pain (Điều phối chung)</option>
+        <option value="antigravity">🌸 Hinata (Đặc tả & Design System)</option>
+        <option value="sol" selected>👁️ Itachi (Kiến trúc & kế hoạch)</option>
+        <option value="codex">💻 Sasuke (Backend, API, CSDL)</option>
+        <option value="kakashi">🎨 Kakashi (Frontend & UI/UX)</option>
+        <option value="claude">🛡️ Sakura (Kiểm duyệt & QA)</option>
       </select>
     </div>
 
-    <!-- Checkboxes đặc quyền -->
-    <div style="background:rgba(236,201,112,0.06);border:1px solid rgba(236,201,112,0.25);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px">
-      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#f8fafc;cursor:pointer">
-        <input type="checkbox" id="permCode" checked style="accent-color:var(--gold);width:16px;height:16px">
-        <b>Cho phép Lập Trình Mã Nguồn Trực Tiếp (Bypass Codex)</b>
-      </label>
-      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#f8fafc;cursor:pointer">
-        <input type="checkbox" id="permSync" checked style="accent-color:var(--gold);width:16px;height:16px">
-        <span>Ghi nhận chỉ thị vào <b>agent.md</b> Vùng [4.1] & Sổ <b>CAN-ANH.md</b></span>
-      </label>
-      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#f8fafc;cursor:pointer">
-        <input type="checkbox" id="permMail" checked style="accent-color:var(--gold);width:16px;height:16px">
-        <span>Gửi thông báo hỏa tốc vào hòm thư <b>hop-thu/sol.jsonl</b></span>
-      </label>
+    <!-- Nói rõ điều sẽ xảy ra: không có quyền đặc cách vượt giao thức -->
+    <div style="background:rgba(236,201,112,0.06);border:1px solid rgba(236,201,112,0.25);border-radius:14px;padding:12px;font-size:12px;color:#f8fafc;line-height:1.55">
+      AI đọc repo đang chọn và trả lời trong khung chat bên phải (chỉ đọc, không sửa file). Việc cần sửa file thật thì AI soạn sẵn prompt;
+      bấm <b>Giao cả đội</b> dưới câu trả lời để đưa sang luồng tự động, nơi từng lượt chạy đúng vai và có Claude kiểm duyệt.
     </div>
 
     <!-- Nội dung công việc -->
     <div>
-      <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--mute);margin-bottom:6px">Nội dung chỉ đạo của Giám Đốc:</label>
-      <textarea id="overrideTaskText" rows="3" style="width:100%;padding:10px 12px;background:#090d16;border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:#fff;font-size:12px;font-family:inherit;outline:none;resize:none">Sol hãy trực tiếp lập trình mã nguồn module đọc SQLite native và API Streaming trong server.js thay vì chờ Codex.</textarea>
+      <label for="overrideTaskText" style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--mute);margin-bottom:6px">Việc anh giao:</label>
+      <textarea id="overrideTaskText" rows="3" maxlength="3000" style="width:100%;padding:10px 12px;background:#090d16;border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:#fff;font-size:12px;font-family:inherit;outline:none;resize:vertical" placeholder="Ví dụ: Rà giúp tôi màn đăng nhập còn thiếu trạng thái lỗi nào"></textarea>
+      <p id="overrideErr" style="margin:6px 0 0;font-size:12px;color:#f87171" hidden></p>
     </div>
 
     <!-- Nút hành động -->
     <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:6px">
       <button class="btn ghost" style="padding:10px 16px" id="cancelOverrideBtn">Hủy bỏ</button>
-      <button class="btn" style="padding:10px 18px;background:linear-gradient(135deg, #ecc970, #f59e0b)" onclick="submitOverrideDirective()">
-        🚀 Ban Hành Chỉ Thị Đặc Cách
+      <button class="btn" id="submitOverrideBtn" style="padding:10px 18px;background:linear-gradient(135deg, #ecc970, #f59e0b)">
+        🚀 Gửi cho AI này
       </button>
     </div>
   </div>
@@ -798,38 +790,29 @@ $("zoomInBtn").addEventListener("click", (e) => { office?.setDistance(office.get
 $("zoomOutBtn").addEventListener("click", (e) => { office?.setDistance(office.getDistance() + 3); e.currentTarget.blur(); });
 office?.controls.addEventListener("change", () => { zoomRange.value = office.getDistance(); });
 
-// ================= AD-HOC TASK ASSIGNMENT (PHÂN VIỆC NGOÀI LỀ) =================
+// ================= GIAO VIỆC RIÊNG CHO MỘT AI =================
+// Trước đây là hộp "Phân việc ngoài lề (Đặc cách)": chỉ hiện bong bóng và báo "đã ghi vào sổ điều phối và hòm thư" nhưng không
+// gửi gì (sửa 19/11/2026, mục 6 của docs/BAN-DO-HE-THONG.md). Nay gửi thật qua chat của phòng đó (/ctl/chat, chỉ đọc); việc cần
+// sửa file thì AI soạn prompt và anh bấm "Giao cả đội" để đưa sang luồng tự động. Không có quyền vượt giao thức agent.md.
 const overrideModal = $("overrideModal");
-$("openOverrideBtn").addEventListener("click", () => overrideModal.classList.add("open"));
+$("openOverrideBtn").addEventListener("click", () => { $("overrideErr").hidden = true; overrideModal.classList.add("open"); $("overrideTaskText").focus(); });
 $("closeOverrideBtn").addEventListener("click", () => overrideModal.classList.remove("open"));
 $("cancelOverrideBtn").addEventListener("click", () => overrideModal.classList.remove("open"));
-
-window.submitOverrideDirective = () => {
+$("submitOverrideBtn").addEventListener("click", () => {
   const agentKey = $("overrideAgentSelect").value;
   const taskText = $("overrideTaskText").value.trim();
-  const permCode = $("permCode").checked;
-
+  if (!taskText) { $("overrideErr").textContent = "Gõ việc anh muốn giao trước đã."; $("overrideErr").hidden = false; return; }
+  const a = defaultAgents.find((x) => x.key === agentKey);
+  if (!a) return;
   overrideModal.classList.remove("open");
-
-  // Bong bóng việc trên đầu AI được giao, rồi đưa bạn tới phòng của AI đó
-  if (office) {
-    office.say(NPC_OF[agentKey], { tag: "👑 Đặc cách từ Giám đốc" + (permCode ? " (được phép code)" : ""), text: taskText, color: 0xecc970 });
-    office.setBusy(NPC_OF[agentKey], true);
-    focusOnAgent(agentKey);
-  }
-
-  // Update Right Sidebar
-  const agentObj = defaultAgents.find(a => a.key === agentKey) || { name: agentKey, role: "Agent" };
-  $("agentNameTxt").textContent = agentObj.name;
-  $("agentRoleTxt").textContent = permCode ? "ĐƯỢC PHÉP CODE TRỰC TIẾP (CEO Override)" : agentObj.role;
-  $("agentStatusBadge").textContent = "OVERRIDE CODE ACTIVE";
-  $("agentStatusBadge").style.color = "var(--gold)";
-  $("agentLastTextTxt").textContent = `“${taskText}”`;
-
+  $("overrideTaskText").value = "";
+  focusOnAgent(agentKey);
+  selected = a.key;
+  updateSidebarAgentInfo(a);
   openRightSidebar();
-
-  alert(`ĐÃ BAN HÀNH CHỈ THỊ THÀNH CÔNG!\n\n• Phiên: ${agentObj.name}\n• Quyền hạn: ${permCode ? 'Cho phép Code trực tiếp (Bypass Codex)' : 'Nhiệm vụ ngoài lề'}\n• Chỉ thị: "${taskText}"\n\nNội dung đã được ghi nhận vào sổ điều phối và hòm thư của ${agentObj.name}!`);
-};
+  chatState.who = NPC_OF[agentKey]; chatState.data = null;
+  loadChat().then(() => sendChat(taskText));
+});
 
 // ================= GIAO VIỆC CHO CẢ ĐỘI =================
 // Trước đây là hộp "Phát loa" chỉ gợi ý người nhận theo từ khóa và ghi việc giả trong bộ nhớ (không AI nào chạy).
@@ -1000,7 +983,7 @@ function renderChat(err) {
       (m.route.prompt ? `<pre>${escChat(m.route.prompt)}</pre>` : "") +
       `<div class="chat-acts">${m.route.prompt ? `<button data-copy="${m.id}">Chép prompt</button>` : ""}<button data-go="${escChat(m.route.to)}">Đi tới ${escChat(m.route.room)}</button>` +
       (m.route.prompt ? `<button class="go" data-ask="${m.id}">Hỏi ${escChat(m.route.name)} luôn</button>` : "") + "</div></div>";
-    else if (m.task) h += `<div class="chat-route">📝 Việc này cần sửa file thật${m.task.why ? ": " + escChat(m.task.why) : ""}. Prompt giao việc:<pre>${escChat(m.task.prompt)}</pre><div class="chat-acts"><button data-copy="${m.id}">Chép prompt giao việc</button></div></div>`;
+    else if (m.task) h += `<div class="chat-route">📝 Việc này cần sửa file thật${m.task.why ? ": " + escChat(m.task.why) : ""}. Prompt giao việc:<pre>${escChat(m.task.prompt)}</pre><div class="chat-acts"><button data-copy="${m.id}">Chép prompt giao việc</button><button class="go" data-assign="${m.id}">Giao cả đội</button></div></div>`;
     return `<div class="chat-msg ${m.from} ${m.status}">${h}</div>`;
   }).join("") : `<div class="chat-note">Chưa có tin nào. Hỏi ${escChat(d ? d.name : "")} về đúng việc của phòng này nhé.</div>`) +
     (err ? `<div class="chat-msg ai loi">${escChat(err)}</div>` : "");
@@ -1033,7 +1016,16 @@ $("chatClearBtn").addEventListener("click", async () => {
 });
 $("chatLog").addEventListener("click", async (e) => {
   const b = e.target.closest("button"); if (!b || !chatState.data) return;
-  const m = chatState.data.messages.find((x) => x.id === (b.dataset.copy || b.dataset.ask));
+  const m = chatState.data.messages.find((x) => x.id === (b.dataset.copy || b.dataset.ask || b.dataset.assign));
+  if (b.dataset.assign && m && m.task) {
+    // Mở mục "Giao việc cho cả đội" của bàn làm việc và điền sẵn prompt; anh đọc lại rồi tự bấm giao (luồng tự động thật).
+    const t = document.querySelector('.desk-tools [data-desk="assign"]');
+    if (!t) return alert("Chưa mở được bàn làm việc. Tải lại trang rồi thử lại.");
+    t.click();
+    const box = $("deskTask");
+    if (box) { box.value = m.task.prompt; box.focus(); }
+    return;
+  }
   if (b.dataset.copy && m) {
     const text = (m.route || m.task).prompt;
     try { await navigator.clipboard.writeText(text); b.textContent = "Đã chép ✓"; } catch { prompt("Chép prompt:", text); }

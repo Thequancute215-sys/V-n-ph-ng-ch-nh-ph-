@@ -21,8 +21,8 @@
       "GitHub Actions"
     ],
     "description": "Quy trình nghiệp vụ của Văn phòng AI: cài đặt và vận hành app (kể cả ghép điện thoại), theo dõi đội AI chỉ đọc, giao tiếp CEO với đội (kể cả điều khiển từ điện thoại), sổ điều phối, chu trình giao việc tự động đa AI theo agent.md (dự án mới, hợp đồng giao tiếp, chạy song song), năng lực của đội (model, tài khoản, skill, MCP, tra cứu), điều khiển máy an toàn (OS Controller), chất lượng và phát hành.",
-    "analyzedAt": "2026-11-19T20:05:41.360Z",
-    "gitCommitHash": "8a6654fdd5e255be33486168b5051de790ad6f12"
+    "analyzedAt": "2026-11-19T20:16:08.472Z",
+    "gitCommitHash": "662681d2d34d292b987f4532a52cd4bd5af9a5f5"
   },
   "nodes": [
     {
@@ -4742,8 +4742,8 @@
       "complexity": "simple",
       "filePath": "public/index.html",
       "lineRange": [
-        837,
-        840
+        820,
+        823
       ]
     },
     {
@@ -4787,8 +4787,8 @@
       "complexity": "simple",
       "filePath": "public/index.html",
       "lineRange": [
-        852,
-        907
+        835,
+        890
       ]
     },
     {
@@ -4850,8 +4850,8 @@
       "complexity": "simple",
       "filePath": "lib/dieu-khien-xa.js",
       "lineRange": [
-        131,
-        132
+        146,
+        147
       ]
     },
     {
@@ -4914,8 +4914,8 @@
       "complexity": "simple",
       "filePath": "lib/dieu-khien-xa.js",
       "lineRange": [
-        144,
-        148
+        159,
+        163
       ]
     },
     {
@@ -5042,8 +5042,8 @@
       "complexity": "simple",
       "filePath": "lib/dieu-khien-xa.js",
       "lineRange": [
-        160,
-        166
+        175,
+        181
       ]
     },
     {
@@ -6517,6 +6517,38 @@
         18,
         18
       ]
+    },
+    {
+      "id": "step:chat-nhan-vat:giao-rieng",
+      "type": "step",
+      "name": "Giao việc riêng cho một AI",
+      "summary": "Nút ⚡ trên thanh trên: chọn AI và gõ việc; văn phòng mở chat của phòng đó và gửi thật qua /ctl/chat (thay hộp “Đặc cách” giả).",
+      "tags": [
+        "chat",
+        "chi-doc"
+      ],
+      "complexity": "simple",
+      "filePath": "public/index.html",
+      "lineRange": [
+        801,
+        814
+      ]
+    },
+    {
+      "id": "step:chat-nhan-vat:giao-ca-doi",
+      "type": "step",
+      "name": "Việc cần sửa file: giao cả đội",
+      "summary": "AI soạn prompt giao việc; nút “Giao cả đội” mở mục giao việc của bàn làm việc và điền sẵn để CEO tự bấm giao (luồng tự động).",
+      "tags": [
+        "chat",
+        "chi-doc"
+      ],
+      "complexity": "simple",
+      "filePath": "public/index.html",
+      "lineRange": [
+        1020,
+        1028
+      ]
     }
   ],
   "edges": [
@@ -6559,55 +6591,6 @@
       "source": "domain:cai-dat-van-hanh",
       "target": "flow:ghep-dien-thoai",
       "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "flow:ghep-dien-thoai",
-      "target": "step:ghep-dien-thoai:duong-vao",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.14
-    },
-    {
-      "source": "flow:ghep-dien-thoai",
-      "target": "step:ghep-dien-thoai:can-khoa-xem",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.29
-    },
-    {
-      "source": "flow:ghep-dien-thoai",
-      "target": "step:ghep-dien-thoai:tao-ma",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.43
-    },
-    {
-      "source": "flow:ghep-dien-thoai",
-      "target": "step:ghep-dien-thoai:nhap-ma",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.57
-    },
-    {
-      "source": "flow:ghep-dien-thoai",
-      "target": "step:ghep-dien-thoai:ghep",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.71
-    },
-    {
-      "source": "flow:ghep-dien-thoai",
-      "target": "step:ghep-dien-thoai:cookie",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.86
-    },
-    {
-      "source": "flow:ghep-dien-thoai",
-      "target": "step:ghep-dien-thoai:quan-ly",
-      "type": "flow_step",
       "direction": "forward",
       "weight": 1
     },
@@ -6717,55 +6700,6 @@
       "weight": 1
     },
     {
-      "source": "flow:tao-du-an-moi",
-      "target": "step:tao-du-an-moi:nhap-y-tuong",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.14
-    },
-    {
-      "source": "flow:tao-du-an-moi",
-      "target": "step:tao-du-an-moi:goi-y",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.29
-    },
-    {
-      "source": "flow:tao-du-an-moi",
-      "target": "step:tao-du-an-moi:kiem-ten",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.43
-    },
-    {
-      "source": "flow:tao-du-an-moi",
-      "target": "step:tao-du-an-moi:duyet",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.57
-    },
-    {
-      "source": "flow:tao-du-an-moi",
-      "target": "step:tao-du-an-moi:tao-repo",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.71
-    },
-    {
-      "source": "flow:tao-du-an-moi",
-      "target": "step:tao-du-an-moi:khoi-dong",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.86
-    },
-    {
-      "source": "flow:tao-du-an-moi",
-      "target": "step:tao-du-an-moi:theo-doi",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "domain:chu-trinh-ai",
       "target": "flow:luong-tu-dong",
       "type": "contains_flow",
@@ -6787,48 +6721,6 @@
       "weight": 1
     },
     {
-      "source": "flow:hop-dong-giao-tiep",
-      "target": "step:hop-dong-giao-tiep:luat",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.17
-    },
-    {
-      "source": "flow:hop-dong-giao-tiep",
-      "target": "step:hop-dong-giao-tiep:kiem-cau-truc",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.33
-    },
-    {
-      "source": "flow:hop-dong-giao-tiep",
-      "target": "step:hop-dong-giao-tiep:sau-luot",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "flow:hop-dong-giao-tiep",
-      "target": "step:hop-dong-giao-tiep:kiem-lech",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.67
-    },
-    {
-      "source": "flow:hop-dong-giao-tiep",
-      "target": "step:hop-dong-giao-tiep:ci",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.83
-    },
-    {
-      "source": "flow:hop-dong-giao-tiep",
-      "target": "step:hop-dong-giao-tiep:smoke",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "domain:chu-trinh-ai",
       "target": "flow:mien-hop-dong",
       "type": "contains_flow",
@@ -6836,107 +6728,9 @@
       "weight": 1
     },
     {
-      "source": "flow:mien-hop-dong",
-      "target": "step:mien-hop-dong:de-nghi",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.17
-    },
-    {
-      "source": "flow:mien-hop-dong",
-      "target": "step:mien-hop-dong:hoi",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.33
-    },
-    {
-      "source": "flow:mien-hop-dong",
-      "target": "step:mien-hop-dong:nguyen-van",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "flow:mien-hop-dong",
-      "target": "step:mien-hop-dong:tra-loi",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.67
-    },
-    {
-      "source": "flow:mien-hop-dong",
-      "target": "step:mien-hop-dong:ghi-so",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.83
-    },
-    {
-      "source": "flow:mien-hop-dong",
-      "target": "step:mien-hop-dong:bo-loi",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "domain:chu-trinh-ai",
       "target": "flow:song-song-astra-kakashi",
       "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "flow:song-song-astra-kakashi",
-      "target": "step:song-song-astra-kakashi:dieu-kien",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.13
-    },
-    {
-      "source": "flow:song-song-astra-kakashi",
-      "target": "step:song-song-astra-kakashi:bat-dau",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.25
-    },
-    {
-      "source": "flow:song-song-astra-kakashi",
-      "target": "step:song-song-astra-kakashi:worktree",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.38
-    },
-    {
-      "source": "flow:song-song-astra-kakashi",
-      "target": "step:song-song-astra-kakashi:chay-ben",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "flow:song-song-astra-kakashi",
-      "target": "step:song-song-astra-kakashi:pham-vi",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.63
-    },
-    {
-      "source": "flow:song-song-astra-kakashi",
-      "target": "step:song-song-astra-kakashi:theo-doi",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.75
-    },
-    {
-      "source": "flow:song-song-astra-kakashi",
-      "target": "step:song-song-astra-kakashi:gop",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.88
-    },
-    {
-      "source": "flow:song-song-astra-kakashi",
-      "target": "step:song-song-astra-kakashi:don",
-      "type": "flow_step",
       "direction": "forward",
       "weight": 1
     },
@@ -7067,6 +6861,300 @@
       "weight": 1
     },
     {
+      "source": "domain:giao-tiep-ceo-doi",
+      "target": "flow:giao-viec-ca-doi",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:giao-tiep-ceo-doi",
+      "target": "flow:dieu-khien-tu-dien-thoai",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:nang-luc-doi",
+      "target": "flow:dieu-phoi-model",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:nang-luc-doi",
+      "target": "flow:doi-tai-khoan-agy",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:nang-luc-doi",
+      "target": "flow:bo-skill-mac-dinh",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:nang-luc-doi",
+      "target": "flow:duyet-repo-skill",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:nang-luc-doi",
+      "target": "flow:chrome-devtools-mcp",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:nang-luc-doi",
+      "target": "flow:tra-cuu-gemini",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "flow:ghep-dien-thoai",
+      "target": "step:ghep-dien-thoai:duong-vao",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.14
+    },
+    {
+      "source": "flow:ghep-dien-thoai",
+      "target": "step:ghep-dien-thoai:can-khoa-xem",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.29
+    },
+    {
+      "source": "flow:ghep-dien-thoai",
+      "target": "step:ghep-dien-thoai:tao-ma",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.43
+    },
+    {
+      "source": "flow:ghep-dien-thoai",
+      "target": "step:ghep-dien-thoai:nhap-ma",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.57
+    },
+    {
+      "source": "flow:ghep-dien-thoai",
+      "target": "step:ghep-dien-thoai:ghep",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.71
+    },
+    {
+      "source": "flow:ghep-dien-thoai",
+      "target": "step:ghep-dien-thoai:cookie",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.86
+    },
+    {
+      "source": "flow:ghep-dien-thoai",
+      "target": "step:ghep-dien-thoai:quan-ly",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "flow:tao-du-an-moi",
+      "target": "step:tao-du-an-moi:nhap-y-tuong",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.14
+    },
+    {
+      "source": "flow:tao-du-an-moi",
+      "target": "step:tao-du-an-moi:goi-y",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.29
+    },
+    {
+      "source": "flow:tao-du-an-moi",
+      "target": "step:tao-du-an-moi:kiem-ten",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.43
+    },
+    {
+      "source": "flow:tao-du-an-moi",
+      "target": "step:tao-du-an-moi:duyet",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.57
+    },
+    {
+      "source": "flow:tao-du-an-moi",
+      "target": "step:tao-du-an-moi:tao-repo",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.71
+    },
+    {
+      "source": "flow:tao-du-an-moi",
+      "target": "step:tao-du-an-moi:khoi-dong",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.86
+    },
+    {
+      "source": "flow:tao-du-an-moi",
+      "target": "step:tao-du-an-moi:theo-doi",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "flow:hop-dong-giao-tiep",
+      "target": "step:hop-dong-giao-tiep:luat",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.17
+    },
+    {
+      "source": "flow:hop-dong-giao-tiep",
+      "target": "step:hop-dong-giao-tiep:kiem-cau-truc",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.33
+    },
+    {
+      "source": "flow:hop-dong-giao-tiep",
+      "target": "step:hop-dong-giao-tiep:sau-luot",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "flow:hop-dong-giao-tiep",
+      "target": "step:hop-dong-giao-tiep:kiem-lech",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.67
+    },
+    {
+      "source": "flow:hop-dong-giao-tiep",
+      "target": "step:hop-dong-giao-tiep:ci",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.83
+    },
+    {
+      "source": "flow:hop-dong-giao-tiep",
+      "target": "step:hop-dong-giao-tiep:smoke",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "flow:mien-hop-dong",
+      "target": "step:mien-hop-dong:de-nghi",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.17
+    },
+    {
+      "source": "flow:mien-hop-dong",
+      "target": "step:mien-hop-dong:hoi",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.33
+    },
+    {
+      "source": "flow:mien-hop-dong",
+      "target": "step:mien-hop-dong:nguyen-van",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "flow:mien-hop-dong",
+      "target": "step:mien-hop-dong:tra-loi",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.67
+    },
+    {
+      "source": "flow:mien-hop-dong",
+      "target": "step:mien-hop-dong:ghi-so",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.83
+    },
+    {
+      "source": "flow:mien-hop-dong",
+      "target": "step:mien-hop-dong:bo-loi",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "flow:song-song-astra-kakashi",
+      "target": "step:song-song-astra-kakashi:dieu-kien",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.13
+    },
+    {
+      "source": "flow:song-song-astra-kakashi",
+      "target": "step:song-song-astra-kakashi:bat-dau",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.25
+    },
+    {
+      "source": "flow:song-song-astra-kakashi",
+      "target": "step:song-song-astra-kakashi:worktree",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.38
+    },
+    {
+      "source": "flow:song-song-astra-kakashi",
+      "target": "step:song-song-astra-kakashi:chay-ben",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "flow:song-song-astra-kakashi",
+      "target": "step:song-song-astra-kakashi:pham-vi",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.63
+    },
+    {
+      "source": "flow:song-song-astra-kakashi",
+      "target": "step:song-song-astra-kakashi:theo-doi",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.75
+    },
+    {
+      "source": "flow:song-song-astra-kakashi",
+      "target": "step:song-song-astra-kakashi:gop",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.88
+    },
+    {
+      "source": "flow:song-song-astra-kakashi",
+      "target": "step:song-song-astra-kakashi:don",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
       "source": "flow:ve-ban-do",
       "target": "step:ve-ban-do:bo-qua",
       "type": "flow_step",
@@ -7091,20 +7179,6 @@
       "source": "flow:ve-ban-do",
       "target": "step:ve-ban-do:muc-luc",
       "type": "flow_step",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "domain:giao-tiep-ceo-doi",
-      "target": "flow:giao-viec-ca-doi",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "domain:giao-tiep-ceo-doi",
-      "target": "flow:dieu-khien-tu-dien-thoai",
-      "type": "contains_flow",
       "direction": "forward",
       "weight": 1
     },
@@ -7165,13 +7239,6 @@
       "weight": 1
     },
     {
-      "source": "domain:nang-luc-doi",
-      "target": "flow:dieu-phoi-model",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "flow:dieu-phoi-model",
       "target": "step:dieu-phoi-model:cham",
       "type": "flow_step",
@@ -7217,13 +7284,6 @@
       "source": "flow:dieu-phoi-model",
       "target": "step:dieu-phoi-model:ceo-chon",
       "type": "flow_step",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "domain:nang-luc-doi",
-      "target": "flow:doi-tai-khoan-agy",
-      "type": "contains_flow",
       "direction": "forward",
       "weight": 1
     },
@@ -7277,13 +7337,6 @@
       "weight": 1
     },
     {
-      "source": "domain:nang-luc-doi",
-      "target": "flow:bo-skill-mac-dinh",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "flow:bo-skill-mac-dinh",
       "target": "step:bo-skill-mac-dinh:danh-muc",
       "type": "flow_step",
@@ -7322,13 +7375,6 @@
       "source": "flow:bo-skill-mac-dinh",
       "target": "step:bo-skill-mac-dinh:khai",
       "type": "flow_step",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "domain:nang-luc-doi",
-      "target": "flow:duyet-repo-skill",
-      "type": "contains_flow",
       "direction": "forward",
       "weight": 1
     },
@@ -7403,13 +7449,6 @@
       "weight": 1
     },
     {
-      "source": "domain:nang-luc-doi",
-      "target": "flow:chrome-devtools-mcp",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "flow:chrome-devtools-mcp",
       "target": "step:chrome-devtools-mcp:ghim",
       "type": "flow_step",
@@ -7448,13 +7487,6 @@
       "source": "flow:chrome-devtools-mcp",
       "target": "step:chrome-devtools-mcp:cau-hinh",
       "type": "flow_step",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "domain:nang-luc-doi",
-      "target": "flow:tra-cuu-gemini",
-      "type": "contains_flow",
       "direction": "forward",
       "weight": 1
     },
@@ -9235,6 +9267,20 @@
       "type": "flow_step",
       "direction": "forward",
       "weight": 0.85
+    },
+    {
+      "source": "flow:chat-nhan-vat",
+      "target": "step:chat-nhan-vat:giao-rieng",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.1
+    },
+    {
+      "source": "flow:chat-nhan-vat",
+      "target": "step:chat-nhan-vat:giao-ca-doi",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.9
     },
     {
       "source": "domain:cai-dat-van-hanh",

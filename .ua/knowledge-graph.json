@@ -17,8 +17,8 @@
       "GitHub Actions"
     ],
     "description": "Văn phòng AI 3D chạy tại chỗ, chỉ đọc, giúp theo dõi phiên làm việc của đội AI (Claude Code, Codex, Antigravity) cùng sổ điều phối data/, kèm OS Controller riêng chạy lệnh, lượt AI và luồng tự động theo giao thức agent.md (hợp đồng giao tiếp, chạy song song backend/frontend, điều phối model, bộ skill, MCP trên máy, tra cứu Gemini) trong các workspace đã đăng ký, và điều khiển từ điện thoại đã ghép; không cần thư viện npm bên ngoài.",
-    "analyzedAt": "2026-11-19T20:05:41.360Z",
-    "gitCommitHash": "8a6654fdd5e255be33486168b5051de790ad6f12"
+    "analyzedAt": "2026-11-19T20:16:08.472Z",
+    "gitCommitHash": "662681d2d34d292b987f4532a52cd4bd5af9a5f5"
   },
   "nodes": [
     {
@@ -6206,7 +6206,7 @@
       "type": "document",
       "name": "AGENTS.md",
       "filePath": "AGENTS.md",
-      "summary": "Lời dặn cho agent AI (Codex đọc file này), trùng từng chữ với CLAUDE.md: cài văn phòng theo HUONG-DAN-CHO-AGENT.md; sửa mã thì giữ ranh giới chỉ đọc, ghi sổ bằng tools/vp.js, không thư viện ngoài, không gửi dữ liệu ra ngoài trừ ngoại lệ tra cứu Gemini (ctl/tra-cuu.js) CEO đã duyệt.",
+      "summary": "Lời dặn cho agent AI (Codex đọc file này), trùng từng chữ với CLAUDE.md: cài văn phòng theo HUONG-DAN-CHO-AGENT.md; sửa mã thì giữ ranh giới chỉ đọc, ghi sổ bằng tools/vp.js, không thư viện ngoài, không gửi dữ liệu ra ngoài ngoài danh sách đường mạng đã có trong ctl/ (tra cứu Gemini, GitHub, gợi ý tên repo, duyệt skill, cài MCP), mỗi đường mới phải được CEO duyệt.",
       "tags": [
         "documentation",
         "agent-instructions",
@@ -6221,7 +6221,7 @@
       "type": "document",
       "name": "CLAUDE.md",
       "filePath": "CLAUDE.md",
-      "summary": "Chỉ dẫn cho Claude Code, giống hệt AGENTS.md: agent cài văn phòng làm theo HUONG-DAN-CHO-AGENT.md; agent sửa mã giữ ranh giới (server.js + lib/ chỉ đọc nhật ký và sổ data/, chỉ ghi vài file trạng thái của chính nó; tools/vp.js ghi sổ; public/ là giao diện; không thư viện ngoài, không gửi dữ liệu ra ngoài) với ngoại lệ duy nhất CEO duyệt là ctl/tra-cuu.js gửi câu hỏi ngắn tới Gemini qua bộ chặn.",
+      "summary": "Chỉ dẫn cho Claude Code, giống hệt AGENTS.md: agent cài văn phòng làm theo HUONG-DAN-CHO-AGENT.md; agent sửa mã giữ ranh giới (server.js + lib/ chỉ đọc nhật ký và sổ data/, chỉ ghi vài file trạng thái của chính nó; tools/vp.js ghi sổ; public/ là giao diện; không thư viện ngoài, không gửi dữ liệu ra ngoài) và danh sách đường mạng ra ngoài đã có trong ctl/ (tra cứu Gemini qua bộ chặn, GitHub API và git push lên repo của CEO, Claude CLI gợi ý tên repo, git fetch/npm view khi duyệt skill, npm install MCP ghim bản); đường mới phải được CEO duyệt và ghi thêm.",
       "tags": [
         "documentation",
         "agent-instructions",
@@ -6548,7 +6548,7 @@
       "type": "file",
       "name": "index.html",
       "filePath": "public/index.html",
-      "summary": "Màn hình chính “Văn phòng AI 3D” (phục vụ ở “/”): cảnh 3D đi WASD dựng bằng vanphong3d.js, office-desk.js và thoitiet.js (three@0.160.0 qua importmap), thanh trên, sidebar, nút 📢 “Giao việc cả đội” mở mục giao việc thật (/ctl/autopilot), task đang chạy có phanh, chat với nhân vật (qua /ctl hoặc /dkx tùy máy), thẻ tài khoản AI kèm ô khóa Gemini cho tra cứu, và hộp “Phân việc ngoài lề (Đặc cách)” chỉ hiển thị bong bóng. Chạy toàn màn hình khi mở từ biểu tượng iPhone.",
+      "summary": "Màn hình chính “Văn phòng AI 3D” (phục vụ ở “/”): cảnh 3D đi WASD dựng bằng vanphong3d.js, office-desk.js và thoitiet.js (three@0.160.0 qua importmap), thanh trên, sidebar, nút 📢 “Giao việc cả đội” mở mục giao việc thật (/ctl/autopilot), task đang chạy có phanh, chat với nhân vật (qua /ctl hoặc /dkx tùy máy), thẻ tài khoản AI kèm ô khóa Gemini cho tra cứu, và nút “Giao việc riêng cho một AI” gửi việc thật qua chat của phòng đó (việc cần sửa file thì nút “Giao cả đội” điền prompt vào mục giao việc của bàn làm việc). Chạy toàn màn hình khi mở từ biểu tượng iPhone.",
       "tags": [
         "entry-point",
         "giao-dien-3d",
@@ -6566,8 +6566,8 @@
       "name": "refreshRunningTasks",
       "filePath": "public/index.html",
       "lineRange": [
-        852,
-        907
+        835,
+        890
       ],
       "summary": "Đọc GET /api/running-tasks, đếm task trạng thái running, đổi màu nút cảnh báo khi có task chạy lâu (isWarning) và dựng danh sách task kèm nút dừng.",
       "tags": [
@@ -6583,8 +6583,8 @@
       "name": "renderChat",
       "filePath": "public/index.html",
       "lineRange": [
-        989,
-        1008
+        972,
+        991
       ],
       "summary": "Vẽ khung chat với nhân vật đang chọn từ chatState (tin nhắn, trạng thái bận, lỗi).",
       "tags": [
@@ -8763,8 +8763,8 @@
       "name": "handle",
       "filePath": "lib/dieu-khien-xa.js",
       "lineRange": [
-        127,
-        174
+        142,
+        189
       ],
       "summary": "Xử lý mọi yêu cầu /dkx: chặn từ xa khi chưa có khóa xem, các lệnh chỉ máy tính (/ma, /thiet-bi, /thu-hoi, /nhat-ky), ghép/thoát đặt cookie vpd, và /api/* chuyển sang ctl khi lệnh nằm trong danh sách (ép repo riêng tư, chỉ cho đặt model theo phòng, thời gian chờ riêng từng lệnh).",
       "tags": [
@@ -10506,8 +10506,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        139,
-        139
+        154,
+        154
       ]
     },
     {
@@ -10522,8 +10522,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        144,
-        144
+        159,
+        159
       ]
     },
     {
@@ -10539,8 +10539,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        154,
-        154
+        169,
+        169
       ]
     },
     {
@@ -10725,6 +10725,22 @@
         211,
         211
       ]
+    },
+    {
+      "id": "function:lib/dieu-khien-xa.js:ipOf",
+      "type": "function",
+      "name": "ipOf",
+      "filePath": "lib/dieu-khien-xa.js",
+      "lineRange": [
+        130,
+        138
+      ],
+      "summary": "IP ghi nhật ký (không dùng để xác thực): nối thẳng từ máy khác thì lấy địa chỉ socket; qua đường hầm trên chính máy thì Tailscale lấy phần tử cuối X-Forwarded-For, Cloudflare lấy cf-connecting-ip.",
+      "tags": [
+        "logging",
+        "network"
+      ],
+      "complexity": "simple"
     }
   ],
   "edges": [
@@ -15445,6 +15461,20 @@
       "type": "contains",
       "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "file:lib/dieu-khien-xa.js",
+      "target": "function:lib/dieu-khien-xa.js:ipOf",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:lib/dieu-khien-xa.js",
+      "target": "function:lib/dieu-khien-xa.js:ipOf",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
     },
     {
       "source": "file:ctl/agy-tai-khoan.js",
@@ -20322,6 +20352,13 @@
     {
       "source": "function:lib/dieu-khien-xa.js:handle",
       "target": "function:lib/dieu-khien-xa.js:allowed",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:lib/dieu-khien-xa.js:handle",
+      "target": "function:lib/dieu-khien-xa.js:ipOf",
       "type": "calls",
       "direction": "forward",
       "weight": 0.8

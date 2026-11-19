@@ -437,15 +437,29 @@ Muốn thêm một lớp đăng nhập bằng email trước cả khóa xem: dù
 ```
 server.js              máy chủ: tìm phiên, đọc nhật ký + sổ, đẩy trạng thái mỗi giây
 lib/                   perf (token, điểm, tiền) · docs (sổ sách) · hopthu · tongquan · mailbox · config · dieu-khien-xa (điện thoại đã ghép)
-                       guard (chặn CSRF/DNS rebinding) · proc (dừng cây tiến trình) · keys · mask · ctlbridge (cầu nối tới ctl) · app (mở app, lối tắt)
-ctl/                   OS Controller: main (HTTP) · jobs · policy · workspaces · files · runner (lượt AI) · autopilot (giao việc tự động) · handoff · monitor · audit · db (tự nâng cấp sổ) · cap-nhat (nút Cập nhật) · dieu-phoi (chọn model/mức) · muc-luc (mục lục từ bản đồ)
+                       guard (chặn CSRF/DNS rebinding, nhận diện chính máy) · proc (dừng cây tiến trình) · keys · mask · ghi-file (ghi nguyên tử)
+                       ctlbridge (cầu nối tới ctl) · app (mở app, lối tắt) · cap-nhat · kiem-agent (bộ kiểm agent.md) · kiem-hop-dong (bộ kiểm hợp đồng)
+ctl/                   OS Controller: main (HTTP) · jobs · policy · workspaces · files · monitor · audit · db (tự nâng cấp sổ) · cap-nhat (nút Cập nhật)
+                       lượt AI: runner · handoff · autopilot (giao việc tự động) · nhanh (nhánh riêng) · ideas · du-an-moi (tạo dự án mới) · chat · nhat-ky · thongbao
+                       hợp đồng: song-song (Astra + Kakashi) · mien-hop-dong (CEO quyết miễn) · ra-soat (rà file trước khi toàn quyền)
+                       model & hạn mức: dieu-phoi (chọn model/mức) · muc-luc (mục lục từ bản đồ) · quotas · agy-tai-khoan (+ agy-dang-nhap.ps1)
+                       skill & kết nối: skill (+ skill-mac-dinh.json) · skill-duyet (duyệt repo từ link) · ket-noi · ket-noi-danh-muc · mcp-phong
+                                        mcp-may (MCP chạy trên máy) · chrome-devtools · tra-cuu + tra-cuu-mcp (Gemini)
+                       GitHub & phát hành: github · xuat-ban · bo-kiem (cài bộ kiểm vào repo dự án, mẫu trong khung/) · agent-template.md
 test/                  node --test (npm test)
 tools/vp.js            công cụ ghi sổ cho agent
 tools/kiem-agent.js    bộ kiểm chu trình agent.md (lib/kiem-agent.js), CI chạy trên mỗi PR
+tools/kiem-hop-dong.js bộ kiểm hợp đồng giao tiếp contract/api.json (lib/kiem-hop-dong.js)
+tools/cai-skill.js     cài / kiểm bộ skill mặc định cho Claude, Codex, Antigravity
+tools/cai-chrome-devtools.js  cài / kiểm Chrome DevTools MCP
+tools/ve-ban-do.js     sinh docs/BAN-DO-HE-THONG.md từ đồ thị trong .ua/
 setup.js               cài đặt (hỏi–đáp hoặc --yes cho agent)
 mau/                   khung mẫu sổ điều phối + đoạn luật đội cho AGENTS.md / CLAUDE.md
-public/                giao diện: index (3D), board, congviec, noiquy, tongquan, hopthu, hieusuat, tinnhan, 2d, dieukhien
-scripts/               mở đường hầm xem trên điện thoại · chay-tat-ca.js (npm run all) · mo-app / tat-app / cai-app (app trên máy) · cap-nhat.js (bộ cập nhật, lib/cap-nhat.js)
+public/                giao diện: index (3D) + office-desk (bàn làm việc) · dieukhien · ket-noi · skill (Repo & Skill) · cap-nhat · noiquy · hopthu
+                       hieusuat · tinnhan · prototype · characters · anime-studio · vanphong3d · offline
+                       điện thoại: dieu-khien (app điều khiển) · dien-thoai (ghép máy, trên máy tính) · trang chuyển hướng cũ: 2d, board, congviec, tongquan
+scripts/               mở đường vào cho điện thoại (xem-tren-dien-thoai: Cloudflare · dien-thoai-tailscale.ps1: Tailscale) · chay-tat-ca.js (npm run all)
+                       mo-app / tat-app / cai-app (app trên máy) · cap-nhat.js (bộ cập nhật, lib/cap-nhat.js)
 HUONG-DAN-CHO-AGENT.md hướng dẫn để agent tự cài từ link này
 docs/BAN-DO-HE-THONG.md bản đồ workflow → kiến trúc → mã (sinh bằng tools/ve-ban-do.js từ đồ thị Understand Anything trong .ua/)
 ```
