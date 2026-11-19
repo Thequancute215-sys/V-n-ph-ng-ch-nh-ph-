@@ -4,6 +4,8 @@
 //    nút 📢 mở mục "Giao việc cho cả đội" thật của bàn làm việc (/ctl/autopilot);
 //  - "Task đang chạy" và phanh khẩn cấp chỉ còn việc thật của OS Controller, ctl tắt thì báo rõ;
 //  - mọi /api/… mà giao diện gọi phải có trên máy chủ; không còn chữ tiếng Việt hỏng mã hoá trong repo.
+//  - nút ⚡ "Phân việc ngoài lề (Đặc cách)" giả (19/11/2026: chỉ hiện bong bóng, báo "đã ghi nhận vào sổ điều phối và hòm thư"
+//    mà không ghi gì, ô "Bypass Codex" không tác dụng) nay chạy đúng một lượt AI thật qua /ctl/ai/run cho vai giữ NEXT_OWNER.
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert");
@@ -85,6 +87,30 @@ test("giao diện: mọi /api/… trang gọi đều có trên máy chủ; khôn
   assert.ok(!/broadcastModal|currentConsensus|peerReview/.test(idx), "index.html còn hộp phát loa giả");
   assert.match(idx, /data-desk="assign"/, "nút 📢 phải mở mục Giao việc cho cả đội của bàn làm việc");
   assert.match(read("public/office-desk.js"), /request\("\/autopilot", \{ workspace, task \}\)/, "mục Giao việc cho cả đội phải gọi luồng tự động thật");
+});
+
+test("nút ⚡ Giao việc một vai: chạy lượt AI thật qua /ai/run, không báo \"đã ghi nhận\" khi chưa ghi gì, không tự cấp quyền vượt agent.md", () => {
+  const idx = read("public/index.html"), desk = read("public/office-desk.js");
+  // Hộp giả cũ: hàm, ô quyền và lời báo thành công không có thật
+  const code = idx.replace(/^\s*\/\/.*$/gm, "");   // bỏ dòng chú thích (chú thích có kể lại hộp cũ)
+  assert.ok(!/submitOverrideDirective|id="permCode"|id="permSync"|id="permMail"|Bypass Codex|OVERRIDE CODE ACTIVE|ĐÃ BAN HÀNH CHỈ THỊ/.test(code), "index.html còn hộp Phân việc ngoài lề giả");
+  assert.ok(!/ghi nhận vào sổ điều phối và hòm thư/i.test(code), "index.html còn lời báo \"đã ghi nhận\" giả");
+  // Nút vẫn có và mở hộp thoại; hộp thoại đọc lượt và chạy lượt qua bàn làm việc
+  assert.match(idx, /id="openOverrideBtn"/); assert.match(idx, /id="overrideModal"/);
+  const i = idx.indexOf('$("overrideRunBtn").addEventListener'), h = idx.slice(i, idx.indexOf("\n});", i));
+  assert.ok(i > 0, "thiếu xử lý nút Chạy lượt AI");
+  const run = h.indexOf("await desk.runTurn("), ok = h.indexOf("Đã bắt đầu lượt");
+  assert.ok(run > 0 && ok > run, "chỉ được báo đã bắt đầu sau khi /ai/run trả về");
+  assert.ok(!/alert\(/.test(h), "không dùng alert báo thành công");
+  assert.match(h, /catch \(e\) \{ overrideSay\("Chưa chạy: "/, "lỗi của ctl (NOT_YOUR_TURN, AI_BUSY…) phải hiện ra");
+  assert.match(idx, /overrideTurn = await desk\.turnNow\(\)/, "hộp thoại phải đọc lượt thật từ ctl");
+  assert.match(idx, /o\.disabled = o\.value !== owner/, "chỉ vai đang giữ NEXT_OWNER chọn được");
+  // Bàn làm việc gọi đúng đường của ctl; ctl chặn vai không giữ lượt
+  assert.match(desk, /request\("\/ai\/run", \{ workspace, role, task \}\)/, "runTurn phải gọi POST /ai/run của ctl");
+  assert.match(desk, /return \{ syncTurn, turnNow, runTurn, roomOf \}/);
+  assert.match(read("ctl/runner.js"), /turn\.nextOwner !== role\) throw err\("NOT_YOUR_TURN"/, "ctl phải chặn vai không giữ lượt");
+  // Quyền viết mã vượt vai (Sol thay Codex) không do nút cấp: hộp thoại chỉ dẫn CEO ghi đặc cách vào Vùng [4.1] của agent.md
+  assert.match(idx, /Vùng \[4\.1\]<\/b> của agent\.md/);
 });
 
 test("không còn chữ tiếng Việt hỏng mã hoá (UTF-8 bị đọc nhầm thành cp1252) trong mã, test và tài liệu", () => {

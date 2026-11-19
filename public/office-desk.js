@@ -644,6 +644,19 @@ export function createDesk(getOffice) {
       }
     });
   });
+  // Nút ⚡ "Giao việc cho một vai" (index.html): đọc lượt hiện tại của dự án đang chọn và chạy đúng một lượt AI qua /ai/run,
+  // như trang Điều khiển. Ctl tự chặn khi vai không giữ NEXT_OWNER, đang có lượt chạy hay bàn giao chờ duyệt: lỗi đưa nguyên lên CEO.
+  async function turnNow() {
+    await syncTurn();
+    return { active, name: workspaces.find((w) => w.path === active)?.name || active, status: turn, error: errors.workspace || errors.turn || "" };
+  }
+  async function runTurn(role, task) {
+    const workspace = active;
+    if (!workspace) throw new Error("Chưa chọn dự án. Mở Dự án để chọn repo.");
+    const d = await request("/ai/run", { workspace, role, task });
+    refreshNow().catch(() => {});   // không bắt CEO chờ cả nhịp đọc (tổng quan dự án có thể tới 35 giây) mới thấy lượt đã chạy
+    return d.job;
+  }
   render();
-  return { syncTurn };
+  return { syncTurn, turnNow, runTurn, roomOf };
 }

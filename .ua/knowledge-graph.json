@@ -3295,7 +3295,7 @@
       "type": "file",
       "name": "office-desk.js",
       "filePath": "public/office-desk.js",
-      "summary": "Bàn điều phối trong văn phòng 3D (ES module): thanh công cụ và hộp thoại gồm Việc đang làm, Việc chờ duyệt, Giao việc, Ý tưởng, Dự án/GitHub, Hạn mức, Tiến độ, Xuất bản, Nhật ký; đọc API /ctl theo nhịp, cập nhật NPC đang làm và gửi thao tác duyệt/giao việc/xuất bản sau khi CEO xác nhận.",
+      "summary": "Bàn điều phối trong văn phòng 3D (ES module): thanh công cụ và hộp thoại gồm Việc đang làm, Việc chờ duyệt, Giao việc, Ý tưởng, Dự án/GitHub, Hạn mức, Tiến độ, Xuất bản, Nhật ký; đọc API /ctl theo nhịp, cập nhật NPC đang làm và gửi thao tác duyệt/giao việc/xuất bản sau khi CEO xác nhận; cấp cho index.html turnNow/runTurn để nút ⚡ chạy một lượt AI qua /ai/run.",
       "tags": [
         "component",
         "ui",
@@ -3329,7 +3329,7 @@
       "filePath": "public/office-desk.js",
       "lineRange": [
         49,
-        649
+        662
       ],
       "summary": "Dựng bàn điều phối: tạo toolbar và dialog, quản lý trạng thái (runs, jobs, handoffs, quotas, scan, publish, journal…), các hàm render từng mục, đồng bộ NPC, xử lý sự kiện duyệt/trả lời/đẩy nhánh/xuất bản/rà soát/mở repo GitHub; trả { syncTurn }.",
       "tags": [
@@ -6493,7 +6493,7 @@
       "type": "file",
       "name": "index.html",
       "filePath": "public/index.html",
-      "summary": "Màn hình chính \"Văn phòng AI 3D\" (phục vụ ở \"/\"): cảnh 3D đi WASD dựng bằng module vanphong3d.js, office-desk.js và thoitiet.js (three@0.160.0 qua importmap jsDelivr), kèm thanh trên, hai sidebar, nút 📢 \"Giao việc cả đội\" mở mục giao việc thật của bàn làm việc (luồng tự động /ctl/autopilot), danh sách task đang chạy có phanh, khung chat với nhân vật và thẻ tài khoản AI. Gọi /api/running-tasks, /api/kill-task, /api/accounts, /api/accounts/save của server.js, /ctl/chat và /ctl/chat/clear qua cầu /ctl, và nghe SSE \"events\".",
+      "summary": "Màn hình chính \"Văn phòng AI 3D\" (phục vụ ở \"/\"): cảnh 3D đi WASD dựng bằng module vanphong3d.js, office-desk.js và thoitiet.js (three@0.160.0 qua importmap jsDelivr), kèm thanh trên, hai sidebar, nút 📢 \"Giao việc cả đội\" mở mục giao việc thật của bàn làm việc (luồng tự động /ctl/autopilot), nút ⚡ \"Giao việc một vai\" chạy đúng một lượt AI cho vai đang giữ NEXT_OWNER (/ctl/ai/run qua bàn làm việc), danh sách task đang chạy có phanh, khung chat với nhân vật và thẻ tài khoản AI. Gọi /api/running-tasks, /api/kill-task, /api/accounts, /api/accounts/save của server.js, /ctl/chat và /ctl/chat/clear qua cầu /ctl, và nghe SSE \"events\".",
       "tags": [
         "entry-point",
         "giao-dien-3d",
@@ -6511,8 +6511,8 @@
       "name": "refreshRunningTasks",
       "filePath": "public/index.html",
       "lineRange": [
-        852,
-        907
+        860,
+        915
       ],
       "summary": "Đọc GET /api/running-tasks, đếm task trạng thái running, đổi màu nút cảnh báo khi có task chạy lâu (isWarning) và dựng danh sách task kèm nút dừng.",
       "tags": [
@@ -6528,8 +6528,8 @@
       "name": "renderChat",
       "filePath": "public/index.html",
       "lineRange": [
-        989,
-        1008
+        997,
+        1016
       ],
       "summary": "Vẽ khung chat với nhân vật đang chọn từ chatState (tin nhắn, trạng thái bận, lỗi).",
       "tags": [

@@ -4675,8 +4675,8 @@
     {
       "id": "flow:giao-viec-ca-doi",
       "type": "flow",
-      "name": "Giao việc cả đội & dừng việc đang chạy",
-      "summary": "Giám đốc giao một việc cho cả đội từ thanh trên của văn phòng 3D: nút 📢 mở mục giao việc thật của bàn làm việc (luồng tự động /ctl/autopilot); văn phòng liệt kê việc OS Controller đang chạy và cho dừng từng việc hoặc tất cả.",
+      "name": "Giao việc cả đội hoặc một vai & dừng việc đang chạy",
+      "summary": "Giám đốc giao việc từ thanh trên của văn phòng 3D: nút 📢 mở mục giao việc thật của bàn làm việc (luồng tự động /ctl/autopilot); nút ⚡ chạy đúng một lượt AI cho vai đang giữ NEXT_OWNER (/ctl/ai/run); văn phòng liệt kê việc OS Controller đang chạy và cho dừng từng việc hoặc tất cả.",
       "tags": [
         "giao-viec",
         "autopilot",
@@ -4684,7 +4684,7 @@
       ],
       "complexity": "simple",
       "domainMeta": {
-        "entryPoint": "Nút 📢 Giao việc cả đội trên index.html → mục Giao việc của bàn làm việc → POST /ctl/autopilot",
+        "entryPoint": "Nút 📢 Giao việc cả đội → POST /ctl/autopilot; nút ⚡ Giao việc một vai → POST /ctl/ai/run (index.html)",
         "entryType": "http"
       }
     },
@@ -4699,8 +4699,8 @@
       "complexity": "simple",
       "filePath": "public/index.html",
       "lineRange": [
-        837,
-        840
+        845,
+        848
       ]
     },
     {
@@ -4716,6 +4716,36 @@
       "lineRange": [
         574,
         574
+      ]
+    },
+    {
+      "id": "step:giao-viec-ca-doi:mot-vai-doc-luot",
+      "type": "step",
+      "name": "Nút ⚡ đọc lượt hiện tại",
+      "summary": "Bấm ⚡ \"Giao việc một vai\": hộp thoại gọi desk.turnNow() (GET /ctl/workspaces, /ctl/ai/status) để hiện dự án, vai đang giữ NEXT_OWNER và lý do chưa chạy được (đang có lượt chạy, bàn giao chờ duyệt, vai chưa có CLI); chỉ vai giữ lượt chọn được. Không còn ô \"Bypass Codex\": quyền viết mã vượt vai theo đặc cách CEO ghi ở Vùng [4.1] của agent.md.",
+      "tags": [
+        "giao-viec-ca-doi"
+      ],
+      "complexity": "simple",
+      "filePath": "public/index.html",
+      "lineRange": [
+        819,
+        823
+      ]
+    },
+    {
+      "id": "step:giao-viec-ca-doi:mot-vai-chay",
+      "type": "step",
+      "name": "Chạy một lượt AI của vai giữ lượt",
+      "summary": "desk.runTurn(role, task) gọi POST /ctl/ai/run {workspace, role, task}; runner chặn NOT_YOUR_TURN, AI_BUSY, HANDOFF_PENDING, NO_CLI và lỗi được đưa nguyên lên hộp thoại, không báo thành công giả.",
+      "tags": [
+        "giao-viec-ca-doi"
+      ],
+      "complexity": "simple",
+      "filePath": "public/office-desk.js",
+      "lineRange": [
+        653,
+        659
       ]
     },
     {
@@ -4744,8 +4774,8 @@
       "complexity": "simple",
       "filePath": "public/index.html",
       "lineRange": [
-        852,
-        907
+        860,
+        915
       ]
     },
     {
@@ -6806,6 +6836,20 @@
       "type": "flow_step",
       "direction": "forward",
       "weight": 0.2
+    },
+    {
+      "source": "flow:giao-viec-ca-doi",
+      "target": "step:giao-viec-ca-doi:mot-vai-doc-luot",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.21
+    },
+    {
+      "source": "flow:giao-viec-ca-doi",
+      "target": "step:giao-viec-ca-doi:mot-vai-chay",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.22
     },
     {
       "source": "flow:giao-viec-ca-doi",
