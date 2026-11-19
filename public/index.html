@@ -268,10 +268,10 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
 
   <div class="sp"></div>
 
-  <!-- Nút Phát Loa Toàn Thể Nhân Viên -->
-  <button class="btn" id="openBroadcastBtn" style="background:linear-gradient(135deg, #0ea5e9, #2563eb);color:#fff;font-weight:800;box-shadow:0 6px 20px rgba(37,99,235,0.35);gap:6px">
+  <!-- Giao việc cho cả đội: mở mục giao việc thật của bàn làm việc (luồng tự động /ctl/autopilot) -->
+  <button class="btn" id="openBroadcastBtn" title="Giao một việc cho cả đội AI: Hinata → Sol → Astra → Claude, Claude báo cáo cho anh duyệt" style="background:linear-gradient(135deg, #0ea5e9, #2563eb);color:#fff;font-weight:800;box-shadow:0 6px 20px rgba(37,99,235,0.35);gap:6px">
     <span style="font-size:14px">📢</span>
-    <span>Phát Loa Toàn Thể</span>
+    <span>Giao việc cả đội</span>
   </button>
 
   <!-- Nút Nhắc Task Đang Chạy & Phanh Khẩn Cấp -->
@@ -414,60 +414,6 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
       <button class="btn" style="padding:10px 18px;background:linear-gradient(135deg, #ecc970, #f59e0b)" onclick="submitOverrideDirective()">
         🚀 Ban Hành Chỉ Thị Đặc Cách
       </button>
-    </div>
-  </div>
-</div>
-
-<!-- ================= MODAL 2: PHÁT LOA TOÀN THỂ NHÂN VIÊN (TỰ ĐẤU THẦU & CHECK CHÉO) ================= -->
-<div class="modal-overlay" id="broadcastModal">
-  <div class="modal-card" style="max-width:620px">
-    <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:12px">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:36px;height:36px;border-radius:12px;background:rgba(14,165,233,0.2);color:#38bdf8;display:grid;place-items:center;font-size:20px">📢</div>
-        <div>
-          <h3 style="margin:0;font-size:15px;font-weight:800;color:#fff;font-family:'Quicksand',sans-serif">PHÁT LOA TOÀN THỂ (TỰ ĐẤU THẦU & CHECK CHÉO)</h3>
-          <p style="margin:2px 0 0;font-size:11px;color:var(--mute)">Task chưa biết giao ai? Toàn thể AI sẽ tự rà soát ai rảnh và phù hợp nhất rồi báo CEO!</p>
-        </div>
-      </div>
-      <button class="btn ghost" style="padding:4px 8px;font-size:12px" id="closeBroadcastBtn">✕</button>
-    </div>
-
-    <!-- Nhập nội dung task -->
-    <div style="display:flex;flex-direction:column;gap:6px">
-      <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--mute)">Nội dung Task cần phân việc:</label>
-      <textarea id="broadcastInput" rows="3" placeholder="Ví dụ: Cần tối ưu truy vấn SQLite trong server.js và làm giao diện thông báo..." style="width:100%;padding:10px 12px;background:#090d16;border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:#fff;font-size:12px;font-family:inherit;outline:none;resize:none"></textarea>
-      <div style="display:flex;justify-content:flex-end">
-        <button class="btn" id="sendBroadcastBtn" style="padding:8px 16px;background:linear-gradient(135deg, #0ea5e9, #2563eb);color:#fff;font-weight:800;box-shadow:0 4px 14px rgba(37,99,235,0.3)">
-          ⚡ Gửi Phát Loa Toàn Đội
-        </button>
-      </div>
-    </div>
-
-    <!-- Hộp Kết Quả Tự Thảo Luận & Check Chéo -->
-    <div id="broadcastResultArea" style="display:none;flex-direction:column;gap:12px;margin-top:6px;border-top:1px dashed rgba(255,255,255,0.15);padding-top:12px">
-      <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#38bdf8;display:flex;align-items:center;gap:6px">
-        <span>✓ KẾT QUẢ ĐỒNG THUẬN TỰ PHÂN VIỆC CỦA ĐỘI NGŨ</span>
-      </div>
-
-      <!-- Đề xuất Người Nhận Việc -->
-      <div id="proposedAssigneeCard" style="background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.3);border-radius:14px;padding:12px;display:flex;align-items:center;justify-content:space-between">
-        <div style="display:flex;align-items:center;gap:12px">
-          <div style="width:40px;height:40px;border-radius:12px;background:rgba(56,189,248,0.2);display:grid;place-items:center;font-size:22px" id="bPropIcon">💻</div>
-          <div>
-            <div style="font-size:13px;font-weight:800;color:#fff" id="bPropName">Codex Astra (Sasuke)</div>
-            <div style="font-size:11px;color:#38bdf8" id="bPropBeast">Đồng hành: Thất Vĩ Chomei (7-Tails)</div>
-            <div style="font-size:10.5px;color:var(--mute);margin-top:2px" id="bPropReason">Đang rảnh 100% · Chuyên gia Lập trình Fullstack</div>
-          </div>
-        </div>
-        <button class="btn" id="confirmAssignBtn" style="padding:10px 18px;background:linear-gradient(135deg, #10b981, #059669);color:#fff;font-weight:800;box-shadow:0 4px 14px rgba(16,185,129,0.3)">
-          🚀 Duyệt Giao Việc Ngay
-        </button>
-      </div>
-
-      <!-- Ý kiến thảo luận chéo (Peer Review) -->
-      <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px" id="peerReviewContainer">
-        <!-- Filled by JS -->
-      </div>
     </div>
   </div>
 </div>
@@ -748,7 +694,7 @@ import { connectLive, vietnamHour } from "./thoitiet.js";
 
 const $ = (id) => document.getElementById(id);
 
-// Đội AI hiển thị ở thanh bên và hộp phân việc; key giữ nguyên để khớp /api/broadcast.
+// Đội AI hiển thị ở thanh bên; key khớp với assigneeKey của việc đang chạy (/api/running-tasks).
 const defaultAgents = [
   { key: "ceo", name: "Thế Quân CEO", role: "Chủ Tịch Tối Cao (Naruto Uzumaki)", platform: "human", ninja: "naruto", lastText: "", status: "active" },
   { key: "pain", name: "Pain (Thiên Đạo)", role: "Tổng Quản Lý Điều Hành (Yahiko Akatsuki)", platform: "claude", ninja: "pain", lastText: "", status: "active" },
@@ -885,95 +831,15 @@ window.submitOverrideDirective = () => {
   alert(`ĐÃ BAN HÀNH CHỈ THỊ THÀNH CÔNG!\n\n• Phiên: ${agentObj.name}\n• Quyền hạn: ${permCode ? 'Cho phép Code trực tiếp (Bypass Codex)' : 'Nhiệm vụ ngoài lề'}\n• Chỉ thị: "${taskText}"\n\nNội dung đã được ghi nhận vào sổ điều phối và hòm thư của ${agentObj.name}!`);
 };
 
-// ================= PHÁT LOA TOÀN THỂ (BROADCAST & SELF-ASSIGNMENT) =================
-const broadcastModal = $("broadcastModal");
+// ================= GIAO VIỆC CHO CẢ ĐỘI =================
+// Trước đây là hộp "Phát loa" chỉ gợi ý người nhận theo từ khóa và ghi việc giả trong bộ nhớ (không AI nào chạy).
+// Nay mở thẳng mục "Giao việc cho cả đội" của bàn làm việc: luồng tự động thật qua OS Controller (POST /ctl/autopilot).
 $("openBroadcastBtn").addEventListener("click", () => {
-  broadcastModal.classList.add("open");
-  $("broadcastResultArea").style.display = "none";
+  const b = document.querySelector('.desk-tools [data-desk="assign"]');
+  if (b) b.click(); else alert("Chưa mở được bàn làm việc. Tải lại trang rồi thử lại.");
 });
-$("closeBroadcastBtn").addEventListener("click", () => broadcastModal.classList.remove("open"));
-
-let currentConsensus = null;
-// Tiêu đề task, tên người nhận, lệnh từ OS Controller… đều là dữ liệu: thoát HTML trước khi chèn bằng innerHTML.
+// Tiêu đề việc, tên người nhận, lệnh từ OS Controller… đều là dữ liệu: thoát HTML trước khi chèn bằng innerHTML.
 const escH = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-
-$("sendBroadcastBtn").addEventListener("click", async () => {
-  const text = $("broadcastInput").value.trim();
-  if (!text) return alert("Vui lòng nhập nội dung task cần phát loa!");
-
-  $("sendBroadcastBtn").disabled = true;
-  $("sendBroadcastBtn").innerHTML = `⏳ Toàn thể AI đang rà soát & check chéo...`;
-
-  try {
-    const res = await fetch("/api/broadcast", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text })
-    });
-    const d = await res.json();
-    if (d.ok && d.consensus) {
-      currentConsensus = d.consensus;
-      const c = d.consensus;
-
-      $("broadcastResultArea").style.display = "flex";
-      $("bPropName").textContent = c.proposedAssignee.name;
-      $("bPropBeast").textContent = `Linh vật: ${c.proposedAssignee.beast}`;
-      $("bPropReason").textContent = `${c.proposedAssignee.reason} · Đang giữ ${c.proposedAssignee.activeTaskCount} task`;
-      
-      const iconMap = { codex: "💻", kakashi: "🎨", antigravity: "🤖", sol: "📐", claude: "🛡️" };
-      $("bPropIcon").textContent = iconMap[c.proposedAssignee.key] || "🍥";
-
-      // Render Peer Reviews
-      $("peerReviewContainer").innerHTML = !c.peerReview.length
-        ? `<div style="font-size:11.5px;color:var(--mute)">Gợi ý theo từ khóa — chưa có AI nào được hỏi ý kiến thật.</div>`
-        : c.peerReview.map(pr => `
-        <div style="font-size:11.5px;display:flex;gap:8px;align-items:flex-start">
-          <b style="color:var(--gold);white-space:nowrap">${escH(pr.who)}:</b>
-          <span style="color:#cbd5e1">“${escH(pr.comment)}”</span>
-        </div>
-      `).join("");
-    }
-  } catch (err) {
-    alert("Lỗi kết nối phát loa: " + err.message);
-  } finally {
-    $("sendBroadcastBtn").disabled = false;
-    $("sendBroadcastBtn").innerHTML = `⚡ Gửi Phát Loa Toàn Đội`;
-  }
-});
-
-$("confirmAssignBtn").addEventListener("click", async () => {
-  if (!currentConsensus) return;
-  const p = currentConsensus.proposedAssignee;
-  try {
-    const res = await fetch("/api/accept-broadcast", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: currentConsensus.taskTitle,
-        assigneeKey: p.key,
-        assigneeName: p.name,
-        beast: p.beast
-      })
-    });
-    const d = await res.json();
-    if (d.ok) {
-      broadcastModal.classList.remove("open");
-      $("broadcastInput").value = "";
-
-      // Bong bóng việc trên đầu AI nhận task
-      if (office && NPC_OF[p.key]) {
-        office.say(NPC_OF[p.key], { tag: "📢 Nhận task từ phát loa toàn thể", text: currentConsensus.taskTitle, color: 0x38bdf8 });
-        office.setBusy(NPC_OF[p.key], true);
-        focusOnAgent(p.key);
-      }
-
-      refreshRunningTasks();
-      alert(`ĐÃ DUYỆT GIAO VIỆC THÀNH CÔNG!\n\n• Nhẫn giả nhận việc: ${p.name}\n• Linh vật đồng hành: ${p.beast}\n• Task: "${currentConsensus.taskTitle}"\n\nTask đã được thêm vào danh sách quản lý task đang chạy!`);
-    }
-  } catch (err) {
-    alert("Lỗi giao việc: " + err.message);
-  }
-});
 
 // ================= QUẢN LÝ TASK ĐANG CHẠY & KILL SWITCH =================
 const runningTasksModal = $("runningTasksModal");
