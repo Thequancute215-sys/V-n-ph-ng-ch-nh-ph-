@@ -432,6 +432,23 @@ Bộ kiểm `lib/phim.js` (lệnh `node tools/phim.js kiem`, trong lượt AI l�
 
 `node tools/phim.js dong-bo` chốt thời lượng từng cảnh theo `media/giong/voice.json`, nên tổng luôn khớp giọng đọc.
 
+### Máy quay và trạm Google Flow (P2)
+
+Trang **🎬 Xưởng phim** (nút trên thanh chức năng) là nơi anh bấm mọi việc tốn tiền. Chọn phim, đặt ngân sách, đánh dấu người thật đã đồng ý, rồi với từng cảnh:
+
+- **Máy quay Gemini** (`ctl/may-quay.js`, cảnh `may_quay: "omni-flash"`):
+  - **Tạo khung** bằng `gemini-nano-banana-2.1` (~$0,034/ảnh 1K, kèm ảnh tham chiếu nhân vật). Anh chọn một khung.
+  - **Quay video** bằng `gemini-omni-1.2-flash` (~$0,07/giây 720p, 3–15 giây, có tiếng). Khung anh chọn là ảnh đầu.
+  - Trước khi bấm, trang hiện số tiền, đã chi và còn lại. Vượt ngân sách thì dừng cứng.
+  - Mỗi lần quay ghi vào sổ chi `media/so-chi.json` của phim và nhật ký kiểm toán. Bộ đệm `media/bo-dem/` chặn trả tiền hai lần cho cùng một lần quay.
+  - Cần khóa Gemini API bậc trả phí ở màn Tài khoản AI. Khóa chỉ mô-đun máy quay đọc; AI không thấy.
+- **Trạm Google Flow** (`ctl/tram-flow.js`, cảnh `may_quay: "flow"`):
+  - Mỗi tài khoản Google (chính, phụ) một hồ sơ Chrome riêng ở `<thư mục xưởng phim>/flow/<id>`. Bấm **Mở trình duyệt** rồi tự đăng nhập Google một lần; văn phòng không gõ mật khẩu.
+  - Mỗi cảnh ba nhịp, anh bấm từng nhịp: **1. Chuẩn bị** (Opus tải ảnh, dán prompt, dừng trước nút tạo), **2. Tạo** (bấm tạo đúng một lần), **3. Tải về** (văn phòng gắn clip vào cảnh).
+  - Opus chỉ có công cụ điều khiển đúng cửa sổ Chrome đó, thao tác từng bước như người. Gặp CAPTCHA, xác minh, đăng nhập lại, cảnh báo tài khoản hay hết credit thì dừng và báo anh, không tự vượt.
+  - Mỗi cảnh không tạo quá `so_take_toi_da` lượt.
+- Ảnh khung và clip xem ngay trên trang (đường `/phim/media`, chỉ đọc file trong `media/` của dự án phim đã đăng ký).
+
 ## Xem trên điện thoại
 
 - **Cùng Wi-Fi:** đặt `"host": "0.0.0.0"` và `accessKey` trong `config.json`, rồi mở `http://<IP máy>:7788`.
@@ -514,6 +531,8 @@ tools/cai-skill.js     cài / kiểm bộ skill mặc định cho Claude, Codex,
 tools/cai-chrome-devtools.js  cài / kiểm Chrome DevTools MCP
 tools/xuong-phim/       tts_sync.py (đọc lời dẫn + phụ đề) và requirements.txt (thư viện ghim)
 tools/phim.js           kiểm hồ sơ phim / chốt thời lượng cảnh theo giọng đọc (lib/phim.js); khuôn ở ctl/khung/phim/
+ctl/may-quay.js         máy quay Gemini (khung + video), sổ chi, bộ đệm, trần ngân sách; ctl/tram-flow.js trạm Google Flow
+public/xuong-phim.html  trang Xưởng phim: ngân sách, đồng ý dùng hình, khung, take, nhịp Flow
 tools/ve-ban-do.js     sinh docs/BAN-DO-HE-THONG.md từ đồ thị trong .ua/
 setup.js               cài đặt (hỏi–đáp hoặc --yes cho agent)
 mau/                   khung mẫu sổ điều phối + đoạn luật đội cho AGENTS.md / CLAUDE.md
