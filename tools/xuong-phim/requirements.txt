@@ -1,0 +1,5 @@
+# Thư viện Python chung của xưởng phim (venv ở ~/.van-phong-ao/xuong-phim/venv). Ghim đúng bản đã chạy thử 20/11/2026.
+# Cài bằng nút "Cài xưởng phim" ở trang Kết nối: pip chỉ nhận gói đóng sẵn (--only-binary), không chạy script cài.
+edge-tts==7.3.1
+kokoro-onnx==0.6.1
+soundfile==0.14.0
