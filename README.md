@@ -416,6 +416,22 @@ Mỗi lượt AI nhận biến `XUONG_PHIM_PYTHON`, `XUONG_PHIM_TTS`, `XUONG_PHI
 
 Trang **Kết nối** hiện khối **🎬 Xưởng phim**: FFmpeg, giọng Việt, giọng Anh offline, script đã sẵn sàng hay còn thiếu, kèm cách sửa.
 
+### Hồ sơ phim (P1)
+
+**Dự án mới** có thêm loại **🎬 Phim AI**. Văn phòng tạo repo như dự án phần mềm, rồi đặt khuôn hồ sơ phim (không ghi đè file có sẵn):
+
+- `phim.json`: hợp đồng duy nhất giữa các phòng. Gồm tên, tỉ lệ khung, ngôn ngữ, ngân sách, người thật (kèm đồng ý dùng hình), nhân vật, và danh sách cảnh (lời dẫn, khung hình, máy quay, số câu giọng đọc, take). Hướng dẫn chi tiết cho AI ở `PHIM.md` trong repo phim.
+- `kich-ban.md`: bản đọc cho người. `.gitignore` loại `media/` (giọng, ảnh, clip không vào git).
+- Việc giao Hinata là viết kịch bản và chia cảnh, không phải đặc tả phần mềm.
+
+Bộ kiểm `lib/phim.js` (lệnh `node tools/phim.js kiem`, trong lượt AI là `node $env:XUONG_PHIM_CONG_CU kiem`) chặn ba lỗi đắt nhất trước khi tốn tiền quay:
+
+1. tổng thời lượng cảnh lệch giọng đọc quá 0,5 giây;
+2. cảnh dùng người thật chưa được đồng ý;
+3. chi phí tối đa ước tính (mọi cảnh quay đủ số take) vượt ngân sách.
+
+`node tools/phim.js dong-bo` chốt thời lượng từng cảnh theo `media/giong/voice.json`, nên tổng luôn khớp giọng đọc.
+
 ## Xem trên điện thoại
 
 - **Cùng Wi-Fi:** đặt `"host": "0.0.0.0"` và `accessKey` trong `config.json`, rồi mở `http://<IP máy>:7788`.
@@ -497,6 +513,7 @@ tools/kiem-hop-dong.js bộ kiểm hợp đồng giao tiếp contract/api.json (
 tools/cai-skill.js     cài / kiểm bộ skill mặc định cho Claude, Codex, Antigravity
 tools/cai-chrome-devtools.js  cài / kiểm Chrome DevTools MCP
 tools/xuong-phim/       tts_sync.py (đọc lời dẫn + phụ đề) và requirements.txt (thư viện ghim)
+tools/phim.js           kiểm hồ sơ phim / chốt thời lượng cảnh theo giọng đọc (lib/phim.js); khuôn ở ctl/khung/phim/
 tools/ve-ban-do.js     sinh docs/BAN-DO-HE-THONG.md từ đồ thị trong .ua/
 setup.js               cài đặt (hỏi–đáp hoặc --yes cho agent)
 mau/                   khung mẫu sổ điều phối + đoạn luật đội cho AGENTS.md / CLAUDE.md

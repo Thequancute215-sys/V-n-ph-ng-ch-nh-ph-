@@ -538,6 +538,9 @@ export function createDesk(getOffice) {
       d.goiY.map((g, i) => `<p><label style="display:flex;gap:8px;align-items:flex-start"><input type="radio" name="damChon" value="${i}" style="width:auto" ${g === first ? "checked" : ""}><span><b>${esc(g.ten)}</b> ${g.conTrong === false ? '<span class="error">· đã có repo trùng tên</span>' : g.conTrong ? "· còn trống" : ""}<br><small>${esc(g.moTa)}</small></span></label></p>`).join("") +
       `<label for="damTenRepo">Tên repo (sửa được)</label><input id="damTenRepo" maxlength="40" value="${esc(first.ten)}">` +
       `<label for="damMoTa">Mô tả repo</label><input id="damMoTa" maxlength="350" value="${esc(first.moTa)}">` +
+      `<fieldset style="border:0;padding:0;margin:8px 0"><legend>Loại dự án</legend>` +
+      `<label style="display:inline-flex;gap:6px;margin-right:14px"><input type="radio" name="damLoai" value="phan-mem" style="width:auto" checked> Phần mềm</label>` +
+      `<label style="display:inline-flex;gap:6px"><input type="radio" name="damLoai" value="phim" style="width:auto"> 🎬 Phim AI (hồ sơ phim, Hinata viết kịch bản)</label></fieldset>` +
       `<p><label><input type="checkbox" id="damBoKiem" style="width:auto" checked> Cài bộ kiểm chu trình CI (mở nhánh, anh merge sau)</label></p>` +
       `<p><label><input type="checkbox" id="damHinata" style="width:auto" checked> Giao Hinata viết đặc tả ngay sau khi tạo</label></p>` +
       `<p class="muted">Repo tạo ở chế độ riêng tư, tải về thư mục dự án trên máy. Văn phòng chỉ tạo khi anh bấm Duyệt.</p>` +
@@ -609,7 +612,7 @@ export function createDesk(getOffice) {
     if (!confirm("Tạo repo riêng tư \"" + ten + "\" trên GitHub và khởi động dự án?")) return;
     damGui = true; damKhoa();
     try {
-      damOp = (await request("/du-an-moi", { ten, moTa: $("damMoTa").value, yTuong: $("damYTuong").value.trim(), caiBoKiem: $("damBoKiem").checked, giaoHinata: $("damHinata").checked }, 30000)).duAnMoi;
+      damOp = (await request("/du-an-moi", { ten, moTa: $("damMoTa").value, yTuong: $("damYTuong").value.trim(), caiBoKiem: $("damBoKiem").checked, giaoHinata: $("damHinata").checked, loai: (document.querySelector('input[name="damLoai"]:checked') || {}).value || "phan-mem" }, 30000)).duAnMoi;
       damGoiYData = null; damLoi = 0; renderDam(); damTheoDoi();
     } catch (err) { notice(err.message, true); }
     damGui = false; damKhoa();
