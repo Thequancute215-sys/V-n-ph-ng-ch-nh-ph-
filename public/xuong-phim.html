@@ -75,7 +75,9 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
   const creditText = (c) => {
     if (!c) return "";
     const luc = c.lucDoc ? new Date(c.lucDoc).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }) : "";
-    return (c.conLai === null ? "Credit: chưa đọc (chạy một nhịp Chuẩn bị)" : `Credit còn <b class="${c.conLai === 0 ? "bad" : "tien"}">${esc(c.conLai)}</b> · đọc lúc ${esc(luc)}`) + ` · tháng này đã tạo ${esc(c.luotTaoThang)} lượt`;
+    return (c.conLai === null ? "Số dư credit: Flow không hiện" : `Credit còn <b class="${c.conLai === 0 ? "bad" : "tien"}">${esc(c.conLai)}</b> · đọc lúc ${esc(luc)}`) +
+      ` · tháng này đã tạo ${esc(c.luotTaoThang)} lượt, dùng ~<b class="tien">${esc(c.creditDungThang || 0)}</b> credit` +
+      (c.creditLanTao !== null && c.creditLanTao !== undefined ? ` · lần tạo gần nhất báo ${esc(c.creditLanTao)} credit` : "");
   };
 
   function render() {
