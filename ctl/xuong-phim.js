@@ -132,7 +132,7 @@ function createXuongPhim({ dir, audit = null, appDir = APP, run = execFile, env 
   // Biến môi trường cho mỗi lượt AI. Chỉ đường dẫn, không có khóa nào.
   function envAi() {
     const ff = timFf();
-    const out = { XUONG_PHIM_TTS: p.tts, XUONG_PHIM_MODELS: p.models };
+    const out = { XUONG_PHIM_TTS: p.tts, XUONG_PHIM_MODELS: p.models, XUONG_PHIM_CONG_CU: path.join(appDir, "tools", "phim.js") };
     if (coFile(p.python)) out.XUONG_PHIM_PYTHON = p.python;
     if (ff) { out.XUONG_PHIM_FFMPEG = ff; out.XUONG_PHIM_FFPROBE = path.join(path.dirname(ff), WIN ? "ffprobe.exe" : "ffprobe"); }
     return out;
