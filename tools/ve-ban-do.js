@@ -183,16 +183,17 @@ flowchart TD
   M --> T["CEO phát hành: tag vX.Y.Z<br/>CI kiểm tag khớp package.json"] --> U["Máy người dùng: nút Cập nhật<br/>fast-forward, lỗi thì quay lại"]
 \`\`\``;
 
-const FINDINGS = `## 6. Điểm phát hiện khi vẽ — đã xử lý (17/11/2026)
+const FINDINGS = `## 6. Điểm phát hiện khi vẽ — đã xử lý (17–19/11/2026)
 
-Bốn điểm lần vẽ trước nêu đã được CEO giao sửa; test \`test/van-phong-sach.test.js\` giữ cho chúng không quay lại.
+Các điểm lần vẽ trước nêu đã được CEO giao sửa; test \`test/van-phong-sach.test.js\` giữ cho chúng không quay lại.
 
 1. **Đường nhắn tin PIN cũ đã bỏ.** \`public/chat-ui.js\` (không trang nào nạp) và \`lib/chat.js\` (\`/chat/status\`, \`/chat/send\`, mã PIN ở \`~/.van-phong-ao/pin.txt\`) đã xoá, cùng phần che PIN trong \`server.js\`. Hỏi một AI trong đội đi qua \`/ctl/chat\` (\`ctl/chat.js\`), trên chính máy này hoặc điện thoại đã ghép (\`/dkx\`); để lại việc trong hòm thư của một vai thì dùng \`vp gui\`. README và hướng dẫn cho agent đã sửa theo.
 2. **"Văn phòng chỉ đọc" nay ghi rõ ngoại lệ.** Máy chủ chỉ ghi vài file trạng thái của chính nó: \`data/.task-seen.json\`, \`data/.noiquy-seen.json\`, \`~/.van-phong-ao/keys.json\` (khi CEO lưu khóa) và \`~/.van-phong-ao/dieu-khien-xa.json\` + \`.log\` (điện thoại đã ghép). Đã ghi vào README, HUONG-DAN-CHO-AGENT.md, CLAUDE.md/AGENTS.md và chú thích đầu \`server.js\`.
 3. **"Phát loa" giả đã thay bằng luồng thật.** Bỏ \`/api/broadcast\` (gợi ý theo từ khóa), \`/api/accept-broadcast\` (việc ghi trong bộ nhớ, không AI nào chạy) và mục \`pending\` luôn rỗng của \`lib/hopthu.js\`. Nút 📢 "Giao việc cả đội" mở mục **Giao việc cho cả đội** của bàn làm việc (\`POST /ctl/autopilot\`). "Task đang chạy" và phanh chỉ còn việc thật của OS Controller; ctl tắt thì phanh báo rõ là không dừng được.
 4. **\`test/tat-ctl.test.js\` đã sửa chữ hỏng mã hoá** (12 dòng: chú thích, tên test, thông báo lỗi).
-5. **4 trang chuyển hướng** (\`2d.html\`, \`board.html\`, \`congviec.html\`, \`tongquan.html\`) giữ lại cho dấu trang cũ — đúng chủ đích, chỉ ghi nhận.
+5. **Nút "Phân việc ngoài lề (Đặc cách)" giả đã làm thật (19/11/2026).** Trước đây nút chỉ hiện bong bóng và báo "đã ghi nhận vào sổ điều phối và hòm thư" mà không ghi gì; ô "Bypass Codex" không có tác dụng. Nay nút ⚡ "Giao việc một vai" chạy đúng một lượt AI qua \`POST /ctl/ai/run\` cho vai đang giữ NEXT_OWNER (ctl chặn vai khác, lượt đang chạy, bàn giao chờ duyệt) và báo đúng kết quả hoặc lỗi. Quyền Sol viết mã thay Codex chỉ theo đặc cách CEO ghi ở Vùng [4.1] của agent.md.
+6. **4 trang chuyển hướng** (\`2d.html\`, \`board.html\`, \`congviec.html\`, \`tongquan.html\`) giữ lại cho dấu trang cũ — đúng chủ đích, chỉ ghi nhận.
 
-Đồ thị \`.ua/\` được vá đúng phần này (bỏ node của mã đã xoá, viết lại workflow "Giao việc cả đội", neo lại số dòng theo nội dung). Các tính năng thêm vào sau lần vẽ (điều khiển từ điện thoại, skill, Chrome DevTools…) chưa có trên bản đồ: chạy lại \`/understand\` và \`/understand-domain\` để vẽ đủ.`;
+Đồ thị \`.ua/\` được vá đúng phần này (bỏ node của mã đã xoá, viết lại workflow "Giao việc cả đội", thêm bước nút ⚡ một vai, neo lại số dòng theo nội dung). Các tính năng thêm vào sau lần vẽ (điều khiển từ điện thoại, skill, Chrome DevTools…) chưa có trên bản đồ: chạy lại \`/understand\` và \`/understand-domain\` để vẽ đủ.`;
 
 main();
