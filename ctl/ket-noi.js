@@ -9,7 +9,8 @@ const { execFile } = require("child_process");
 
 const err = (code, message) => Object.assign(new Error(message), { code });
 const { CATALOG, CHAN_CLAUDE } = require("./ket-noi-danh-muc");
-const phong = require("./mcp-phong");   // mỗi phòng chỉ bật vài kết nối đúng phần việc
+const phong = require("./mcp-phong");      // mỗi phòng chỉ bật vài kết nối đúng phần việc
+const mcpMay = require("./mcp-may");        // MCP chạy trên máy: Chrome DevTools + MCP CEO duyệt thêm
 
 // Đọc `claude mcp list` / `agy mcp list` (chữ) và `codex mcp list --json`.
 function parseClaude(text) {
@@ -51,7 +52,20 @@ function createConnectors({ runner, audit, dir, run = execFile }) {
     }
     const s = cache;
     const giao = phong.read(dir);
-    const rows = CATALOG.map((c) => {
+    // Danh mục + MCP chạy trên máy CEO duyệt thêm (ctl/mcp-may.js) chưa có trong danh mục.
+    const dsMay = mcpMay.tatCa(dir);
+    const danhMuc = [...CATALOG, ...mcpMay.catalogMay(dir).filter((m) => !CATALOG.some((c) => c.id === m.id))];
+    const rows = danhMuc.map((c) => {
+      // MCP chạy trên máy: không đăng ký vào CLI, văn phòng gắn vào lượt; trạng thái = đã cài đúng bản chưa.
+      if (c.may) {
+        const def = dsMay.find((d) => d.id === c.id);
+        const t = def ? mcpMay.trangThai(dir, def) : { daCai: false }, st = t.daCai ? (t.dungBan ? "da-cau-hinh" : "cu") : "chua-co";
+        const ai = { claude: st, codex: st, agy: "khong-ho-tro" };
+        const rooms = Object.keys(phong.PHONG).filter((k) => giao[k].includes(c.id));
+        return { id: c.id, name: c.name, nhom: c.nhom, url: null, chan: false, note: c.note || null, web: false, app: null, may: true,
+          goi: def && def.goi, repo: def && def.repo || null, phienBan: t.phienBan, canBan: t.canBan, ai, rooms, ready: Object.fromEntries(rooms.map((k) => [k, t.daCai])),
+          coTheGiao: Object.keys(phong.PHONG).filter((k) => phong.hopLe(c.id, k, dir)) };
+      }
       const ai = {
         // App sáng tạo: MCP chạy trên máy (vd. capcut) nối cho AI nào thì hiện ở cột AI đó.
         claude: s.claude[c.claude || c.id] || (c.claude || c.nhom === "sang-tao" ? "chua-co" : "khong-ho-tro"),
@@ -67,7 +81,7 @@ function createConnectors({ runner, audit, dir, run = execFile }) {
       return { id: c.id, name: c.name, nhom: c.nhom, url: c.url || null, chan: Boolean(c.chan), note: c.note || null, web: Boolean(c.web), app, ai, rooms, ready, coTheGiao };
     });
     // Kết nối riêng của máy (vd. đã tự thêm) không có trong danh mục
-    const known = new Set(CATALOG.flatMap((c) => [c.claude, c.id]));
+    const known = new Set(danhMuc.flatMap((c) => [c.claude, c.id]));
     const extra = [...Object.keys(s.claude).filter((k) => !known.has(k)).map((k) => ({ ai: "claude", name: k, state: s.claude[k] })),
       ...Object.keys(s.codex).filter((k) => !known.has(k)).map((k) => ({ ai: "codex", name: k, state: s.codex[k] })),
       ...Object.keys(s.agy).filter((k) => !known.has(k)).map((k) => ({ ai: "agy", name: k, state: s.agy[k] }))];
@@ -101,6 +115,19 @@ function createConnectors({ runner, audit, dir, run = execFile }) {
     return status();
   }
 
+  // Cài MCP chạy trên máy (CEO bấm Cài trên trang Kết nối): tải đúng phiên bản đã ghim, không chạy script cài.
+  let dangCai = null;
+  async function caiMay(id) {
+    const def = mcpMay.tim(dir, id);
+    if (!def) throw err("BAD_REQUEST", "Không có kết nối chạy trên máy: " + id);
+    if (dangCai) throw err("TOO_MANY", "Đang cài, chờ xong đã");
+    dangCai = mcpMay.cai(dir, def);
+    try { const t = await dangCai; audit.log("ceo", "mcp.cai_may", id, { phienBan: t.phienBan, ok: true }); }
+    catch (e) { audit.log("ceo", "mcp.cai_may", id, { ok: false }); throw e; }
+    finally { dangCai = null; }
+    return status();
+  }
+
   // CEO chọn kết nối cho một phòng trên trang Kết nối.
   async function setPhong(room, ids) {
     phong.save(dir, room, ids);
@@ -111,7 +138,7 @@ function createConnectors({ runner, audit, dir, run = execFile }) {
   // Tên kết nối đã đọc được của Claude và Codex: runner dùng để tắt kết nối không thuộc phòng khi chạy lượt.
   const known = () => (last ? { claude: Object.keys(last.claude), codex: Object.keys(last.codex) } : {});
 
-  return { status, add, login, setPhong, known, CATALOG };
+  return { status, add, login, setPhong, caiMay, known, CATALOG };
 }
 
 module.exports = { createConnectors, CATALOG, CHAN_CLAUDE, parseClaude, parseCodex, parseAgy };

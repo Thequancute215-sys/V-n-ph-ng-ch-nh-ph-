@@ -4,13 +4,13 @@
 
 ## 0. Ranh giới an toàn (đọc trước)
 
-- Văn phòng **chỉ đọc** nhật ký phiên trong `~/.claude` và `~/.codex`. Không gửi dữ liệu ra ngoài, không cần khóa API.
+- Văn phòng **chỉ đọc** nhật ký phiên trong `~/.claude`, `~/.codex` và sổ `data/`. Nó chỉ ghi vài file trạng thái nhỏ của chính nó (`data/.task-seen.json`, `data/.noiquy-seen.json`, và trong `~/.van-phong-ao/`: `keys.json` khi chủ lưu khóa, `dieu-khien-xa.*` khi ghép điện thoại). Không gửi dữ liệu ra ngoài, không cần khóa API.
 - **Hỏi chủ trước khi** làm 4 việc sau:
   - tải hoặc cài phần mềm, ví dụ Node.js hay cloudflared;
   - sửa `AGENTS.md` / `CLAUDE.md` của dự án (bước 5);
   - mở văn phòng ra Internet (bước 7);
   - xóa dữ liệu ví dụ của người khác.
-- Không in khóa xem (`accessKey`) hay mã PIN vào tệp công khai, commit hay tin nhắn nhóm. Chỉ đưa cho chủ trong cuộc trò chuyện riêng.
+- Không in khóa xem (`accessKey`) hay mã ghép điện thoại vào tệp công khai, commit hay tin nhắn nhóm. Chỉ đưa cho chủ trong cuộc trò chuyện riêng.
 - Không đọc file `*.key` trong `~/.claude/sessions`. Văn phòng chỉ cần file `*.json` ở đó.
 
 ## 1. Kiểm tra máy
@@ -138,7 +138,7 @@ Ngắn gọn, kết luận trước. Ví dụ:
 | Cần anh | `CAN-ANH.md` + hộp hỏi đang mở trong phiên Claude + tin gắn `[CẦN ANH]` | `vp cananh` |
 | Tiền AI | token × giá trong `config.json` (`prices`) + tiền lượt DEV tự khai | tự động + `vp luot nha --usd` |
 | Phòng DEV | `DEV.lock`, `DEV-LUOT.jsonl`; container Docker nếu đặt `dockerFilter` | `vp luot` |
-| Nhắn tin cho agent | chủ gõ trên văn phòng → `hop-thu/<vai>.jsonl` (từ xa cần PIN) | agent đọc bằng `vp tiep` |
+| Hòm thư | `hop-thu/<vai>.jsonl` (giao việc giữa các vai) | `vp gui` / `vp tiep` / `vp xong` |
 
 ## Phụ lục B: Lệnh `vp` (gõ `node tools/vp.js giup` để xem đủ)
 

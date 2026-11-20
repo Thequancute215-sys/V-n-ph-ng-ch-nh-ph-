@@ -31,6 +31,8 @@ const { createUpdater } = require("./cap-nhat");
 const { createBoKiem } = require("./bo-kiem");
 const { createDuAnMoi } = require("./du-an-moi");
 const { createAgyTaiKhoan } = require("./agy-tai-khoan");
+const { createCodexTaiKhoan } = require("./codex-tai-khoan");
+const { createSkillDuyet } = require("./skill-duyet");
 const { kindOf } = require("./dieu-phoi");
 const { classify } = require("./policy");
 const { readTurn } = require("./handoff");
@@ -47,13 +49,16 @@ const HTTP_CODE = {
   CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_WAITING: 409, NEEDS_SPEC_TURN: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409, HANDOFF_PENDING: 409, NEEDS_ANSWER: 409, NO_QUESTION: 422, BAD_OPTION: 400,
   CHAT_BUSY: 409, PUBLISH_BUSY: 409, NOT_READY: 409, NO_RELEASE_WORKFLOW: 422, NOT_ON_MAIN: 409, TAG_EXISTS: 409, DIRTY_REPO: 409, NEEDS_SCAN_APPROVAL: 409, NO_COMMIT: 409, NO_QUOTA: 409, NO_GIT: 422, NO_REMOTE: 422, GIT_PUSH: 502,
   UPDATE_BUSY: 409, NOT_APP: 409, UPDATE_FAILED: 500, GIT_BRANCH: 409,
-  AGY_BUSY: 409, AGY_UNSAVED: 409, SONG_SONG: 409, AGY_CRED: 502, NO_LOGIN: 409, NOT_SUPPORTED: 501,
+  AGY_BUSY: 409, AGY_UNSAVED: 409, SKILL_BUSY: 409, SKILL_DA_CO: 409, BAD_CATALOG: 422, SONG_SONG: 409, AGY_CRED: 502, NO_LOGIN: 409, NOT_SUPPORTED: 501,
 };
 
 function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {}, quotaOptions = {}, updaterOptions = {}, agyOptions = {}, autopilotOptions = {}, notify = false } = {}) {
   const db = open(dir);
   const audit = createAudit(db);
-  const jobs = createJobs(db, audit, path.join(dir, "logs"));
+  // Nhiều tài khoản GPT cho Codex (ctl/codex-tai-khoan.js): mỗi tiến trình Codex mở ra nhận CODEX_HOME của tài khoản đang chọn.
+  let runnerRef = null, quotasRef = null;
+  const codexTk = createCodexTaiKhoan({ dir, audit, cli: () => (runnerRef ? runnerRef.cliOf("codex") : ["codex"]), khiDangNhapXong: () => { if (quotasRef) quotasRef.docGpt(true).catch(() => {}); } });
+  const jobs = createJobs(db, audit, path.join(dir, "logs"), { envFor: (j) => { try { return kindOf(JSON.parse(j.argv)) === "codex" ? codexTk.env() : {}; } catch { return {}; } } });
   const ws = createWorkspaces(db, audit);
   const activeFile = path.join(dir, "active-workspace.json");
   try { ws.switchTo(JSON.parse(fs.readFileSync(activeFile, "utf8")).path, "ctl-restore"); } catch (e) { if (e.code !== "ENOENT") audit.log("ctl", "workspace.restore_skipped", null, e.message); }
@@ -64,11 +69,13 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
   // Hai tài khoản Antigravity (family + Pro): cất đăng nhập từng tài khoản, tự chuyển khi cạn (ctl/agy-tai-khoan.js).
   const agyTk = createAgyTaiKhoan({ dir, audit, agyJobs: () => jobs.list("running").filter((j) => kindOf(j.argv) === "agy").length, ...agyOptions });
   // connectors khai báo bên dưới: chỉ gọi khi chạy lượt, lúc đó đã có.
-  const runner = createRunner({ jobs, ws, audit, db, dir, scanner, mcpKnown: () => connectors.known(), quotaSnapshot: () => quotas.snapshot(), agyTk });
-  const autopilot = createAutopilot({ runner, jobs, ws, audit, dir, quotaSnapshot: () => quotas.snapshot(), notify: notifier, scanner, ...autopilotOptions });
+  const runner = createRunner({ jobs, ws, audit, db, dir, scanner, mcpKnown: () => connectors.known(), quotaSnapshot: () => quotas.snapshot(), agyTk, codexTk });
+  runnerRef = runner;
+  const autopilot = createAutopilot({ runner, jobs, ws, audit, dir, quotaSnapshot: () => quotas.snapshot(), notify: notifier, scanner, codexTk, ...autopilotOptions });
   const ideas = createIdeas({ dir, ws, runner, autopilot, audit });
   const publisher = createPublisher({ jobs, ws, audit, dir, notify: notifier, github: () => github });
   const chat = createChat({ jobs, ws, runner, audit, dir });
+  const skillDuyet = createSkillDuyet({ dir, jobs, runner, audit });   // CEO dán link repo skill → Claude đội trưởng xem → CEO duyệt cài
   const connectors = createConnectors({ runner, audit, dir });   // trang Kết nối (MCP) của đội
   const journal = createJournal({ jobs, autopilot });           // Nhật ký: ai làm gì, lúc nào
   const boKiem = createBoKiem({ dir, audit });   // cài bộ kiểm chu trình (CI) vào repo dự án
@@ -96,7 +103,8 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
   const github = createGitHub({ alsoLook: githubOptions.projectsDir || projectsDir === defaultProjects ? [] : [defaultProjects], ...githubOptions, projectsDir, ws, jobs, audit, select: selectWorkspace });
   // Tạo dự án mới: gợi ý tên repo, CEO duyệt rồi mới tạo repo + tải về + agent.md + bộ kiểm + giao Hinata (ctl/du-an-moi.js).
   const duAnMoi = createDuAnMoi({ github, ideas, boKiem, audit, dir, ...duAnOptions });
-  const quotas = createQuotas({ ...quotaOptions, dir, agyTk });
+  const quotas = createQuotas({ ...quotaOptions, dir, agyTk, codexTk });
+  quotasRef = quotas;
   const monitor = createMonitor();
   const tokenBuf = Buffer.from(token);
   const streams = new Set();
@@ -205,6 +213,8 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     ["POST", "/ket-noi/add", async (p, qs, b) => ({ ketNoi: await connectors.add(String(b.id || ""), String(b.ai || "")) })],
     ["POST", "/ket-noi/login", async (p, qs, b) => ({ ketNoi: await connectors.login(String(b.id || "")) })],
   ["POST", "/ket-noi/phong", async (p, qs, b) => ({ ketNoi: await connectors.setPhong(String(b.room || ""), b.ids) })],
+    // Cài MCP chạy trên máy (Chrome DevTools) đúng phiên bản đã ghim; tải từ npm nên chỉ khi CEO bấm.
+    ["POST", "/ket-noi/cai-may", async (p, qs, b) => ({ ketNoi: await connectors.caiMay(String(b.id || "")) })],
     ["GET", "/dieu-phoi", () => ({ dieuPhoi: runner.dieuPhoi.status() })],
     ["GET", "/agy-tai-khoan", () => ({ taiKhoan: agyTk.trangThai() })],
     // Cất xong thì đọc luôn danh sách model của tài khoản vừa cất (mỗi tài khoản thấy model khác nhau).
@@ -213,9 +223,23 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     ["POST", "/agy-tai-khoan/doc-nghi", () => { quotas.docNghi(true); return [202, { taiKhoan: agyTk.trangThai() }]; }],
     ["POST", "/agy-tai-khoan/:id/chuyen", (p) => { agyTk.chuyen(p.id); quotas.refresh(true); return { taiKhoan: agyTk.trangThai() }; }],
     ["POST", "/agy-tai-khoan/:id/xoa", (p) => ({ taiKhoan: agyTk.xoa(p.id) })],
+    // Tài khoản GPT cho Codex: thêm (CEO tự đăng nhập), đổi tay, tự chuyển khi cạn, đọc hạn mức mọi tài khoản.
+    ["GET", "/codex-tai-khoan", () => ({ taiKhoan: codexTk.trangThai() })],
+    ["POST", "/codex-tai-khoan/them", (p, qs, b) => ({ taiKhoan: codexTk.them(b.nhan) })],
+    ["POST", "/codex-tai-khoan/sua", (p, qs, b) => ({ taiKhoan: codexTk.sua(b || {}) })],
+    ["POST", "/codex-tai-khoan/doc", async () => { await quotas.docGpt(true); return { taiKhoan: codexTk.trangThai() }; }],
+    ["POST", "/codex-tai-khoan/:id/dang-nhap", (p) => ({ taiKhoan: codexTk.moDangNhap(p.id) })],
+    ["POST", "/codex-tai-khoan/:id/chuyen", (p) => { codexTk.chuyen(p.id); quotas.refresh(true); return { taiKhoan: codexTk.trangThai() }; }],
+    ["POST", "/codex-tai-khoan/:id/bo", (p) => ({ taiKhoan: codexTk.bo(p.id) })],
     ["GET", "/dieu-phoi/models", async (p, qs) => ({ models: await quotas.models(qs.get("lai") === "1") })],
-    // Bộ skill mặc định: thiếu/cũ theo từng AI (chỉ đọc máy, không tải mạng). Cài bằng tools/cai-skill.js.
-    ["GET", "/skill", () => ({ skill: require("./skill").createSkill({ home: () => dir }).kiem() })],
+    // Bộ skill: thiếu/cũ theo từng AI (chỉ đọc máy, không tải mạng), danh mục (mặc định + CEO duyệt thêm) và các đề xuất.
+    ["GET", "/skill", () => { const t = skillDuyet.trangThai(); return { skill: t.kiem, danhMuc: t.danhMuc, deXuat: t.deXuat }; }],
+    // CEO dán link repo GitHub: tải đúng một commit vào thư mục cách ly, máy rà, rồi Claude đội trưởng đọc chỉ-đọc và giải thích.
+    ["POST", "/skill/de-xuat", async (p, qs, b) => [202, { deXuat: await skillDuyet.deXuat(b.link) }]],
+    ["POST", "/skill/de-xuat/:id/duyet", async (p, qs, b) => ({ deXuat: await skillDuyet.duyet(p.id, { nhom: b.nhom, dungCho: b.dungCho, phong: b.phong, chapNhanRepoKhac: b.chapNhanRepoKhac === true }) })],
+    ["POST", "/skill/de-xuat/:id/tham-khao", (p) => ({ deXuat: skillDuyet.thamKhao(p.id) })],
+    ["POST", "/skill/de-xuat/:id/tu-choi", (p) => ({ deXuat: skillDuyet.tuChoi(p.id) })],
+    ["POST", "/skill/de-xuat/:id/phan-tich-lai", (p) => [202, { deXuat: skillDuyet.phanTichLai(p.id) }]],
     ["POST", "/dieu-phoi", (p, qs, b) => ({ dieuPhoi: runner.dieuPhoi.save(b) })],
     ["GET", "/cap-nhat", async (p, qs) => ({ capNhat: qs.get("fetch") === "1" ? await updater.refresh() : updater.status() })],
     ["POST", "/cap-nhat", (p, qs, b) => [202, { capNhat: updater.start(String(b.name || "")) }]],
@@ -343,7 +367,7 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     db.close();
   }
 
-  return { server, jobs, ws, files, runner, autopilot, scanner, publisher, chat, connectors, journal, github, quotas, agyTk, updater, boKiem, audit, token, close };
+  return { server, jobs, ws, files, runner, autopilot, scanner, publisher, chat, connectors, journal, github, quotas, agyTk, codexTk, updater, boKiem, audit, token, close };
 }
 
 if (require.main === module) {

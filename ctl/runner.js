@@ -19,6 +19,8 @@ const { createSkill } = require("./skill");
 const mucLuc = require("./muc-luc");                 // mục lục từ bản đồ hệ thống (.ua) đưa vào prompt
 const { createDieuPhoi, kindOf } = require("./dieu-phoi");   // chọn model + mức suy nghĩ theo độ khó của lượt
 const { traCuuBat } = require("./tra-cuu");          // tra cứu Gemini miễn phí cho việc đơn giản
+const cdt = require("./chrome-devtools");             // Chrome DevTools MCP chạy trên máy (phòng được bật)
+const mcpMayDs = require("./mcp-may");             // MCP chạy trên máy: có sẵn + CEO duyệt thêm
 const { writeAtomic } = require("../lib/ghi-file");
 
 const MIN = 60 * 1000;
@@ -140,20 +142,45 @@ function fullAccessArgs(argv) {
 // CEO đã lưu khóa Gemini. Antigravity chạy nền chưa nạp MCP và vốn là Gemini có tìm kiếm Google nên không cần.
 const TRA_CUU_JS = path.join(__dirname, "tra-cuu-mcp.js").replace(/\\/g, "/");
 const TRA_CUU_TOOLS = ["mcp__tra-cuu__tim_kiem", "mcp__tra-cuu__doc_tai_lieu"];
-function withTraCuu(argv, kind, dir) {
-  if (!traCuuBat(dir) || (kind !== "claude" && kind !== "codex")) return argv;
-  const node = process.execPath.replace(/\\/g, "/"), home = dir.replace(/\\/g, "/");
+// MCP chạy trên máy cho lượt này: tra cứu Gemini (khi có khóa) + Chrome DevTools (khi phòng được bật trên trang Kết nối và
+// máy đã cài, ctl/chrome-devtools.js). Claude nhận MỘT file --mcp-config gộp; Codex nhận cờ -c cho từng máy chủ.
+function mcpMay(role, dir) {
+  const node = process.execPath.replace(/\\/g, "/"), home = dir.replace(/\\/g, "/"), out = {};
+  if (traCuuBat(dir)) out["tra-cuu"] = { command: node, args: [TRA_CUU_JS, home], tools: TRA_CUU_TOOLS };
+  const room = phong.ROLE_PHONG(role);
+  if (!room) return out;
+  const bat = phong.read(dir)[room];
+  // Chrome DevTools và MCP CEO duyệt thêm (ctl/mcp-may.js): chỉ khi phòng được bật và máy đã cài.
+  for (const d of mcpMayDs.tatCa(dir)) {
+    if (!bat.includes(d.id) || !phong.hopLe(d.id, room, dir)) continue;
+    const l = mcpMayDs.lenh(dir, d);
+    // Đo hiệu năng / chờ trang tải có thể quá 60 giây mặc định của Codex.
+    if (l) out[d.id] = { ...l, tools: ["mcp__" + d.id], codex: { tool_timeout_sec: 180 } };
+  }
+  return out;
+}
+function withTraCuu(argv, kind, dir, role = "") {
+  if (kind !== "claude" && kind !== "codex") return argv;
+  const may = mcpMay(role, dir);
+  if (!Object.keys(may).length) return argv;
   if (kind === "codex") {
     const at = argv.indexOf("exec");
     if (at < 0) return argv;
-    const add = ["-c", "mcp_servers.tra_cuu.command=" + JSON.stringify(node), "-c", "mcp_servers.tra_cuu.args=" + JSON.stringify([TRA_CUU_JS, home])];
+    const add = Object.entries(may).flatMap(([ten, s]) => {
+      const k = "mcp_servers." + ten.replace(/-/g, "_");
+      return ["-c", k + ".command=" + JSON.stringify(s.command), "-c", k + ".args=" + JSON.stringify(s.args),
+        ...Object.entries(s.codex || {}).flatMap(([x, v]) => ["-c", k + "." + x + "=" + JSON.stringify(v)])];
+    });
     return [...argv.slice(0, at + 1), ...add, ...argv.slice(at + 1)];
   }
-  const f = path.join(dir, "tra-cuu-mcp.json");
-  try { writeAtomic(f, JSON.stringify({ mcpServers: { "tra-cuu": { command: node, args: [TRA_CUU_JS, home] } } }, null, 2)); } catch { return argv; }
+  // File riêng theo phòng khi có Chrome DevTools (phòng khác nhau thì máy chủ khác nhau); chỉ tra cứu thì dùng file chung như cũ.
+  const f = path.join(dir, Object.keys(may).some((k) => k !== "tra-cuu") ? "mcp-may-" + phong.ROLE_PHONG(role) + ".json" : "tra-cuu-mcp.json");
+  const cfg = { mcpServers: Object.fromEntries(Object.entries(may).map(([ten, s]) => [ten, { command: s.command, args: s.args }])) };
+  try { writeAtomic(f, JSON.stringify(cfg, null, 2)); } catch { return argv; }
   const out = [...argv, "--mcp-config", f];
   const i = out.indexOf("--allowedTools");
-  return i >= 0 ? [...out.slice(0, i + 1), ...TRA_CUU_TOOLS, ...out.slice(i + 1)] : out;
+  const tools = Object.values(may).flatMap((s) => s.tools);
+  return i >= 0 ? [...out.slice(0, i + 1), ...tools, ...out.slice(i + 1)] : out;
 }
 const TRA_CUU_NOTE = "\nCông cụ tra cứu miễn phí (MCP tra-cuu, Gemini): việc đơn giản cần tìm trên web hoặc đọc tài liệu công khai (docs thư viện, changelog, lỗi thường gặp) thì gọi tim_kiem / doc_tai_lieu thay vì tự đọc dài, để đỡ token. " +
   "Chỉ gửi câu hỏi ngắn và link công khai; KHÔNG gửi mã nguồn, nội dung file dự án, khóa, token, dữ liệu cá nhân. Kết quả là gợi ý: đối chiếu nguồn trước khi dựa vào. Giới hạn 200 lần/ngày cho cả văn phòng.";
@@ -162,7 +189,7 @@ function withMcp(argv, role, dir, known = {}) {
   const prog = argv.findIndex((x) => /^(claude|codex|agy)(\.(exe|cmd|js))?$/.test(base(x)));
   if (prog < 0) return argv;
   const kind = base(argv[prog]).replace(/\..*$/, "");
-  argv = withTraCuu(argv, kind, dir);
+  argv = withTraCuu(argv, kind, dir, role);
   const { args } = phong.argsFor(kind, role, dir, known);
   if (!args.length) return argv;
   if (kind === "claude") {
@@ -180,6 +207,19 @@ const FULL_NOTE = "\nBẠN ĐANG CHẠY TOÀN QUYỀN trên máy CEO (không san
 const RETRYABLE = /rate.?limit|\b429\b|overloaded|ECONNRESET|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|socket hang up/i;
 const err = (code, msg) => Object.assign(new Error(msg), { code });
 
+// Phần chương trình của một lệnh CLI (bỏ lệnh con và đối số), để chạy lệnh khác cùng chương trình (codex login, mcp list…).
+// Cắt ở lệnh con trước ("exec", "-p", "{prompt}"). Lệnh chạy qua node.exe kèm cờ của node (--preserve-symlinks… rồi mới
+// tới codex.js, cách vòng lỗi đường dẫn dài 17/11/2026) thì giữ nguyên các cờ đó: trước đây cắt ở dấu "-" đầu tiên nên chỉ
+// còn node.exe, "codex login" thành "node.exe login" (lỗi gặp thật 20/11/2026).
+function phanChuongTrinh(a) {
+  let cut = a.findIndex((x, i) => i > 0 && (x === "exec" || x === "{prompt}" || x === "-p" || x === "--print"));
+  if (cut < 0) {
+    const laNode = /^node(.exe)?$/i.test(path.basename(String(a[0] || "")));
+    const batDau = laNode ? a.findIndex((x, i) => i > 0 && !String(x).startsWith("-")) + 1 : 1;   // node: qua hết cờ node và file script
+    cut = a.findIndex((x, i) => i >= Math.max(1, batDau) && String(x).startsWith("-"));
+  }
+  return cut > 0 ? a.slice(0, cut) : a.length && /^node(.exe)?$/i.test(path.basename(String(a[0]))) ? a.slice() : [a[0]];
+}
 // Model trong lệnh (--model X, -m X, --model=X); null = lệnh không chỉ định.
 function modelTrong(argv) {
   for (let i = 0; i < argv.length; i++) {
@@ -192,7 +232,7 @@ function modelTrong(argv) {
 // Ảnh chụp hạn mức với phần Antigravity thay bằng hạn mức của tài khoản sẽ chạy.
 const thayAgy = (snap, buckets) => ({ ...(snap || {}), providers: [...((snap && snap.providers) || []).filter((p) => p.id !== "antigravity"), { id: "antigravity", buckets }] });
 
-function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () => ({}), quotaSnapshot = () => null, agyTk = null }) {
+function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () => ({}), quotaSnapshot = () => null, agyTk = null, codexTk = null }) {
   const mien = createMienHopDong({ dir });   // miễn hợp đồng giao tiếp: chỉ CEO duyệt (ctl/mien-hop-dong.js)
   const dieuPhoi = createDieuPhoi({ dir, audit });
   const skills = createSkill({ home: () => dir });   // bộ skill mặc định: ghi chú vào prompt + bắt buộc khai skill_da_dung
@@ -274,6 +314,10 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
       // Vừa đổi tài khoản: chấm lại mức theo hạn mức của tài khoản sẽ chạy, không theo tài khoản vừa rời.
       if (doiTk && doiTk.toi && !d.fixed && doiTk.buckets) d = decideVoi(thayAgy(quota(), doiTk.buckets));
     }
+    // Codex: tài khoản GPT đang dùng còn ≤ ngưỡng thì chuyển sang tài khoản còn nhiều nhất (ctl/codex-tai-khoan.js).
+    // Tiến trình Codex của lượt này nhận CODEX_HOME của tài khoản được chọn lúc khởi chạy (ctl/jobs.js envFor).
+    let doiGpt = null;
+    if (d.kind === "codex" && codexTk) { try { doiGpt = codexTk.truocLuot(); } catch {} }
     // Codex: mức suy nghĩ đi qua codexArgs. Lệnh tự cấu hình đã có mức thì giữ, trừ khi đội trưởng đặt rõ.
     const customEffort = base.some((x, i) => (x === "-c" || x === "--config") && /^model_reasoning_effort=/.test(base[i + 1] || ""));
     const codexEffort = effort || (d.kind === "codex" && !customEffort ? d.effort : null);
@@ -281,7 +325,8 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     const shaped = dieuPhoi.apply(codexArgs(base, role, codexEffort, codexModel), d);
     const loiGiao = prompt + (["claude", "codex"].includes(d.kind) && traCuuBat(dir) ? TRA_CUU_NOTE : "");
     const argv = withMcp(fullFor(role) ? fullAccessArgs(shaped) : shaped, role, dir, mcpKnown()).map((x) => (x === "{prompt}" ? loiGiao : x));
-    const tkWhy = doiTk && doiTk.toi ? ["đổi tài khoản Antigravity: " + doiTk.lyDo] : doiTk && doiTk.loi ? ["tài khoản Antigravity: " + doiTk.loi] : [];
+    const tkWhy = [...(doiTk && doiTk.toi ? ["đổi tài khoản Antigravity: " + doiTk.lyDo] : doiTk && doiTk.loi ? ["tài khoản Antigravity: " + doiTk.loi] : []),
+      ...(doiGpt && doiGpt.toi ? ["đổi tài khoản GPT: " + doiGpt.lyDo] : doiGpt && doiGpt.loi ? ["tài khoản GPT: " + doiGpt.loi] : [])];
     const taiKhoan = doiTk ? (doiTk.toi ? { tu: doiTk.tu, toi: doiTk.toi, lyDo: doiTk.lyDo } : { loi: doiTk.loi }) : null;
     const chosen = { tier: d.tier, model: d.kind === "codex" ? codexModel || CODEX_MODEL[role] || null : d.kind === "agy" ? modelTrong(shaped) || d.model : d.model, effort: d.kind === "codex" ? codexEffort || (customEffort ? null : DEFAULT_EFFORT) : d.effort,
       why: [...d.why, ...tkWhy], ...(taiKhoan ? { taiKhoan } : {}) };
@@ -520,12 +565,10 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
 
   // Phần chương trình của từng CLI (trước lệnh con/cờ), để chạy lệnh quản lý như `mcp list`.
   function cliOf(kind) {
-    const a = argvFor({ claude: "CLAUDE_AUDITOR", codex: "CODEX_ASTRA_DEV", agy: "SPEC_ARCHITECT" }[kind]);
-    const cut = a.findIndex((x, i) => i > 0 && (x === "exec" || x.startsWith("-") || x === "{prompt}"));
-    return cut > 0 ? a.slice(0, cut) : [a[0]];
+    return phanChuongTrinh(argvFor({ claude: "CLAUDE_AUDITOR", codex: "CODEX_ASTRA_DEV", agy: "SPEC_ARCHITECT" }[kind]));
   }
 
   return { run, report, dieuPhoi, webPrompt, applyWeb, chatArgv, cliOf, fullOn, CODEX_MODEL, DEFAULT_EFFORT, status, approve, answer, reject, ghiNhan, boLoi, conflicts, get: (id) => view(q.get.get(id)), pending: () => q.open.all().map(view), AGENTS };
 }
 
-module.exports = { createRunner, AGENTS, fullAccessArgs, withMcp, FULL_ROLES };
+module.exports = { createRunner, AGENTS, fullAccessArgs, withMcp, FULL_ROLES, phanChuongTrinh };

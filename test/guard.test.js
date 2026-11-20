@@ -1,4 +1,4 @@
-// P2-C05 + CSRF /chat/send: trang lạ không được ghi vào máy chủ văn phòng.
+// P2-C05 + CSRF (POST /api/…, /dkx/…): trang lạ không được ghi vào máy chủ văn phòng.
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert");

@@ -45,7 +45,7 @@ function main() {
   w();
   w(`Quy mô: ${domains.length} miền nghiệp vụ, ${flows.length} workflow, ${steps.length} bước · ${kg.nodes.length} node (${nt.file || 0} file, ${nt.function || 0} hàm, ${nt.endpoint || 0} route API, ${(nt.document || 0) + (nt.config || 0) + (nt.pipeline || 0)} tài liệu/cấu hình/CI) · ${kg.edges.length} quan hệ (${et.calls || 0} lời gọi, ${et.imports || 0} import, ${et.tested_by || 0} liên kết test) · ${kg.layers.length} lớp kiến trúc · lộ trình ${kg.tour.length} bước.`);
   w();
-  w("Mục lục: [1. Miền nghiệp vụ](#1-các-miền-nghiệp-vụ) · [2. Workflow trung tâm](#2-workflow-trung-tâm-ceo-giao-việc--đội-ai--ceo-duyệt) · [3. Từng workflow](#3-từng-workflow-từng-bước-trỏ-tới-mã) · [4. Lớp kiến trúc](#4-bản-đồ-hệ-thống-các-lớp-kiến-trúc) · [5. Lộ trình đọc mã](#5-lộ-trình-đọc-mã) · [6. Điểm cần anh rà](#6-điểm-phát-hiện-khi-vẽ--cần-anh-rà)");
+  w("Mục lục: [1. Miền nghiệp vụ](#1-các-miền-nghiệp-vụ) · [2. Workflow trung tâm](#2-workflow-trung-tâm-ceo-giao-việc--đội-ai--ceo-duyệt) · [3. Từng workflow](#3-từng-workflow-từng-bước-trỏ-tới-mã) · [4. Lớp kiến trúc](#4-bản-đồ-hệ-thống-các-lớp-kiến-trúc) · [5. Lộ trình đọc mã](#5-lộ-trình-đọc-mã) · [6. Điểm cần anh rà](#6-điểm-phát-hiện-khi-vẽ--đã-xử-lý)");
   w();
 
   // 1. Miền nghiệp vụ
@@ -128,7 +128,7 @@ function main() {
   for (const [k, n] of [...pair].sort()) { const [a, b] = k.split("|"); w(`  ${mid(a)} ---|${n}| ${mid(b)}`); }
   w("```");
   w();
-  w("Số trên đường nối = số quan hệ giữa hai lớp (lời gọi, import, phụ thuộc, cấu hình, kích hoạt…), không tính `tested_by`, `documents`, `contains`. Hai tiến trình chạy trên máy CEO: **Văn phòng :7788** (`server.js`) và **OS Controller :7790** (`ctl/main.js`); trình duyệt chỉ nói chuyện với :7788, đường `/ctl/*` được `lib/ctlbridge.js` chuyển sang :7790 kèm token và chỉ khi yêu cầu đến từ chính máy.");
+  w("Số trên đường nối = số quan hệ giữa hai lớp (lời gọi, import, phụ thuộc, cấu hình, kích hoạt…), không tính `tested_by`, `documents`, `contains`. Hai tiến trình chạy trên máy CEO: **Văn phòng :7788** (`server.js`) và **OS Controller :7790** (`ctl/main.js`); trình duyệt chỉ nói chuyện với :7788, đường `/ctl/*` được `lib/ctlbridge.js` chuyển sang :7790 kèm token và chỉ khi yêu cầu đến từ chính máy; điện thoại đã ghép đi đường `/dkx/api/*` (`lib/dieu-khien-xa.js`) và chỉ gọi được các lệnh trong danh sách cho phép.");
   w();
   for (const l of kg.layers) {
     w(`### ${l.name}`);
@@ -159,7 +159,7 @@ function main() {
 
 const CENTRAL = `## 2. Workflow trung tâm: CEO giao việc → đội AI → CEO duyệt
 
-Vòng lặp \`ctl/autopilot.js\` + \`ctl/runner.js\`. Mỗi ô tròn là một trạng thái thật của luồng (\`run.status\`). Mặc định 10 lượt nội bộ, 90 phút (tối đa 12 lượt, 120 phút).
+Vòng lặp \`ctl/autopilot.js\` + \`ctl/runner.js\`. Mỗi ô tròn là một trạng thái thật của luồng (\`run.status\`). Mặc định 10 lượt nội bộ, 90 phút (tối đa 12 lượt, 120 phút). CEO giao từ máy tính (\`/ctl\`) hoặc từ điện thoại đã ghép (\`/dkx/api\`, cùng các route).
 
 \`\`\`mermaid
 flowchart TD
@@ -168,12 +168,13 @@ flowchart TD
   S -->|"có điểm lạ"| SA(["awaiting_scan<br/>CEO đọc rồi duyệt"]) --> C
   S -->|"sạch"| C["Tạo nhánh ai/việc-mã<br/>ctl/nhanh.js"]
   B -->|"không toàn quyền"| C
-  C --> L(["running<br/>chạy lượt của vai giữ NEXT_OWNER<br/>Hinata → Sol → Claude → Astra → Sol → Claude"])
-  L --> R["runner: claude -p / codex exec / agy -p<br/>job có timeout, MCP theo phòng (mcp-phong)"]
-  R --> H{"Kiểm bàn giao JSON<br/>handoff.checkHandoff +<br/>bộ kiểm agent.md (lib/kiem-agent.js)"}
-  H -->|"thiếu giải thích / sai luật agent.md<br/>(lần 1: trả lại đúng vai)"| L
+  C --> L(["running<br/>chạy lượt của vai giữ NEXT_OWNER<br/>Hinata → Sol → Claude → Astra (+ Kakashi) → Sol → Claude"])
+  L --> R["runner: claude -p / codex exec / agy -p<br/>model + mức theo độ khó (dieu-phoi), mục lục .ua (muc-luc),<br/>skill, MCP theo phòng + trên máy, tra cứu Gemini"]
+  L -->|"lượt Astra, hợp đồng đạt"| SS["Astra + Kakashi song song<br/>2 worktree, mỗi bên một thư mục<br/>ctl/song-song.js"] --> H
+  R --> H{"Kiểm bàn giao JSON<br/>handoff.checkHandoff + bộ kiểm agent.md<br/>+ hợp đồng contract/api.json"}
+  H -->|"thiếu giải thích / sai luật / lệch hợp đồng<br/>(lần 1: trả lại đúng vai)"| L
   H -->|"AI hết hạn mức"| Q(["waiting_quota<br/>chờ giờ mở lại hoặc làm qua ChatGPT web"]) --> L
-  H -->|"Claude hỏi CEO (ask_ceo)"| AQ(["awaiting_answer<br/>CEO chọn phương án"]) --> L
+  H -->|"Claude hỏi CEO (ask_ceo)<br/>hoặc Sol đề nghị miễn hợp đồng"| AQ(["awaiting_answer<br/>CEO chọn phương án"]) --> L
   H -->|"hợp lệ, chưa xong"| AU["Tự duyệt bàn giao nội bộ<br/>ghi NEXT_OWNER + commit chore(agent-sync)"] --> L
   H -->|"sai lần 2, lộ khóa, xung đột git, quá lượt/thời gian,<br/>Codex sửa quá 2 lần mà Claude vẫn trả về"| X(["reporting<br/>Claude viết báo cáo lỗi"])
   H -->|"Claude kết luận xong"| X
@@ -183,14 +184,20 @@ flowchart TD
   M --> T["CEO phát hành: tag vX.Y.Z<br/>CI kiểm tag khớp package.json"] --> U["Máy người dùng: nút Cập nhật<br/>fast-forward, lỗi thì quay lại"]
 \`\`\``;
 
-const FINDINGS = `## 6. Điểm phát hiện khi vẽ — cần anh rà
+const FINDINGS = `## 6. Điểm phát hiện khi vẽ — đã xử lý
 
-Các điểm dưới đây đã được đối chiếu lại với mã (không phải suy đoán của công cụ vẽ). Chưa sửa gì; chờ anh quyết.
+Vẽ lại toàn bộ ngày 19/11/2026 (thêm miền "Năng lực & tài nguyên của đội AI" và 14 workflow mới: ghép và điều khiển từ điện thoại, dự án mới, hợp đồng giao tiếp, miễn hợp đồng, chạy song song Astra + Kakashi, điều phối model, tài khoản Antigravity, tài khoản GPT cho Codex (vẽ thêm 20/11 sau khi PR #59 vào main), bộ skill, duyệt repo skill, Chrome DevTools, tra cứu Gemini, vẽ lại bản đồ). Các điểm phát hiện lần này đều đã sửa:
 
-1. **\`public/chat-ui.js\` không trang nào nạp.** Ô nhắn tin cũ gọi \`chat/status\`, \`chat/send\` (PIN 6 số) của \`lib/chat.js\`. Chat trên văn phòng 3D hiện đi qua \`/ctl/chat\` (\`ctl/chat.js\`). Đường \`/chat/*\` vẫn được \`server.js\` phục vụ nhưng giao diện không còn chỗ dùng — có thể là mã thừa; README dòng "Nhắn tin cho agent" có thể đã cũ.
-2. **"Văn phòng chỉ đọc" không tuyệt đối.** \`server.js\` ghi \`data/.task-seen.json\` (giờ đổi trạng thái việc), \`lib/docs.js\` ghi \`data/.noiquy-seen.json\`, và \`POST /api/accounts/save\` ghi khóa API anh nhập vào \`~/.van-phong-ao/keys.json\` (\`lib/keys.js\`). Đều là ghi nhỏ, có chủ đích, nhưng README/mô tả nên nói rõ.
-3. **Phần giao việc cả đội (loa) còn đơn giản.** \`POST /api/broadcast\` chỉ gợi ý người nhận theo từ khóa và cố ý trả \`peerReview\` rỗng; \`POST /api/accept-broadcast\` ghi việc trong bộ nhớ với \`pid: null\`; \`lib/hopthu.js\` luôn trả mục \`pending\` rỗng. Cần quyết: hoàn thiện, hay chuyển hẳn sang luồng tự động (\`/ctl/autopilot\`).
-4. **\`test/tat-ctl.test.js\` có 12 dòng chú thích tiếng Việt bị hỏng mã hoá** (ví dụ "Táº¯t"). Không ảnh hưởng test, nên sửa lại chữ.
-5. **4 trang chuyển hướng** (\`2d.html\`, \`board.html\`, \`congviec.html\`, \`tongquan.html\`) giữ lại cho dấu trang cũ — đúng chủ đích, chỉ ghi nhận.`;
+1. **Nút "Phân việc ngoài lề (Đặc cách)" là thao tác giả — đã làm thật (PR #58).** Trước đây nó chỉ hiện bong bóng và báo "đã ghi nhận vào sổ điều phối và hòm thư" mà không gửi gì; ô "Bypass Codex" không có tác dụng. Nay nút ⚡ **"Giao việc một vai"** (\`public/index.html\`) đọc lượt thật từ ctl và chạy đúng một lượt AI qua \`POST /ctl/ai/run\` cho vai đang giữ NEXT_OWNER; ctl chặn vai sai lượt, lỗi hiện nguyên văn. Quyền viết mã vượt vai chỉ theo đặc cách CEO ghi ở Vùng [4.1] của agent.md; \`test/van-phong-sach.test.js\` chặn hộp giả quay lại.
+2. **CLAUDE.md/AGENTS.md nay liệt kê đủ đường mạng ra ngoài** (hai file giống hệt nhau): tra cứu Gemini (\`ctl/tra-cuu.js\`); GitHub API và \`git push\` lên repo của CEO (\`ctl/github.js\`, \`ctl/nhanh.js\`, \`ctl/bo-kiem.js\`, \`ctl/xuat-ban.js\`); Claude CLI gợi ý tên repo (\`ctl/du-an-moi.js\`); \`git fetch\`/\`npm view\` khi duyệt skill (\`ctl/skill-duyet.js\`, \`ctl/skill.js\`); \`npm install\` MCP ghim bản (\`ctl/mcp-may.js\`). Thêm đường mới phải được CEO duyệt và ghi vào đó.
+3. **IP trong nhật ký điện thoại không còn tin tiêu đề do máy khác tự gửi.** \`ipOf\` (\`lib/dieu-khien-xa.js\`) chỉ đọc tiêu đề proxy khi yêu cầu nối từ chính máy (đường hầm chạy trên máy). Qua Tailscale nó lấy phần tử cuối của X-Forwarded-For (do \`tailscale serve\` thêm) và bỏ qua \`cf-*\`; qua Cloudflare nó lấy \`cf-connecting-ip\`; nối thẳng từ máy khác trong mạng thì lấy địa chỉ socket. Có test trong \`test/dieu-khien-xa.test.js\`. IP vẫn chỉ để xem lại, không dùng để xác thực.
+4. **README mục "Cấu trúc mã" đã liệt kê đủ module** của \`lib/\`, \`ctl/\` (chia nhóm), \`tools/\`, \`public/\` và \`scripts/\`.
+5. **README bảng "Các màn hình" đã viết lại theo các trang đang có** (sửa 20/11/2026): văn phòng 3D theo toà nhà hiện tại, bàn làm việc, giao việc cả đội / một vai, Tổng quan, Điều khiển máy, Kết nối, Repo & Skill, Cập nhật, Nội quy, Hòm thư, Đánh giá nhân sự, Tin nhắn, Nhân vật 3D, Điện thoại, App trên máy. Bỏ dòng "Sơ đồ 2D" (\`2d.html\` chỉ còn chuyển hướng) và các "màn trái/giữa/phải" cũ.
+
+Ghi nhận:
+
+6. **4 trang chuyển hướng** (\`2d.html\`, \`board.html\`, \`congviec.html\`, \`tongquan.html\`) giữ lại cho dấu trang cũ — đúng chủ đích, chỉ ghi nhận.
+
+Bốn điểm của lần vẽ trước (đường nhắn tin PIN cũ, ngoại lệ "văn phòng chỉ đọc", "Phát loa" giả, chữ hỏng mã hoá trong \`test/tat-ctl.test.js\`) đã xử lý ngày 17/11/2026; \`test/van-phong-sach.test.js\` giữ cho chúng không quay lại. Node \`isLocal\` trước đây trỏ \`lib/ctlbridge.js\` nay trỏ đúng \`lib/guard.js\`.`;
 
 main();

@@ -60,6 +60,14 @@ function lenhCodex() {
   } catch {}
   return { truoc: [process.platform === "win32" ? "codex.cmd" : "codex"], co: ["--json"] };
 }
+// Văn phòng có nhiều tài khoản GPT cho Codex (ctl/codex-tai-khoan.js, mỗi tài khoản một CODEX_HOME): dùng đúng tài khoản
+// văn phòng đang chọn, đọc lại mỗi lượt (văn phòng tự chuyển khi tài khoản cạn). Không có sổ tài khoản thì dùng ~/.codex.
+function envCodex() {
+  try {
+    const { createCodexTaiKhoan } = require("../ctl/codex-tai-khoan");
+    return createCodexTaiKhoan({ dir: path.join(os.homedir(), ".van-phong-ao") }).env();
+  } catch { return {}; }
+}
 function timPlugin() {
   const goc = path.join(os.homedir(), ".claude", "plugins", "cache", "understand-anything", "understand-anything");
   try {
@@ -91,8 +99,10 @@ function chay() {
   const log = fs.openSync(LOG, "a");
   fs.writeSync(log, `\n===== ${new Date().toISOString()} cập nhật bản đồ (vẽ ở ${(s.ve || "—").slice(0, 7)}, HEAD ${s.head.slice(0, 7)}, ${s.doi ?? "?"} file đổi) — ${MODEL} ${MUC}\n`);
   const lan = (n) => new Promise((xong) => {
+    const env = { ...process.env, ...envCodex() };
+    fs.writeSync(log, `----- lượt ${n}: tài khoản GPT ${env.CODEX_HOME ? path.basename(env.CODEX_HOME) : "1 (~/.codex)"}\n`);
     const p = spawn(cmd.truoc[0], [...cmd.truoc.slice(1), "exec", ...cmd.co, "-m", MODEL, "-c", "model_reasoning_effort=" + MUC, loiGiao(plugin)],
-      { cwd: ROOT, stdio: ["ignore", log, log], windowsHide: true });
+      { cwd: ROOT, env, stdio: ["ignore", log, log], windowsHide: true });
     p.on("exit", (code) => { fs.writeSync(log, `\n----- lượt ${n} xong, mã ${code}\n`); xong(code); });
     p.on("error", (e) => { fs.writeSync(log, `\n----- không chạy được Codex: ${e.message}\n`); xong(2); });
   });

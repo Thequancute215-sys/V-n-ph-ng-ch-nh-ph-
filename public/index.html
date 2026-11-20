@@ -142,7 +142,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
   .room-nav-pill > * { flex-shrink: 0; }
 }
 
-/* Modal Overlay: Phân việc ngoài lề */
+/* Modal Overlay: hộp thoại giữa màn hình (giao việc một vai, task đang chạy, tài khoản AI) */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -157,6 +157,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
   pointer-events: none;
   transition: opacity 0.25s ease;
 }
+#overrideRunBtn:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
 .modal-overlay.open {
   opacity: 1;
   pointer-events: auto;
@@ -268,10 +269,10 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
 
   <div class="sp"></div>
 
-  <!-- Nút Phát Loa Toàn Thể Nhân Viên -->
-  <button class="btn" id="openBroadcastBtn" style="background:linear-gradient(135deg, #0ea5e9, #2563eb);color:#fff;font-weight:800;box-shadow:0 6px 20px rgba(37,99,235,0.35);gap:6px">
+  <!-- Giao việc cho cả đội: mở mục giao việc thật của bàn làm việc (luồng tự động /ctl/autopilot) -->
+  <button class="btn" id="openBroadcastBtn" title="Giao một việc cho cả đội AI: Hinata → Sol → Astra → Claude, Claude báo cáo cho anh duyệt" style="background:linear-gradient(135deg, #0ea5e9, #2563eb);color:#fff;font-weight:800;box-shadow:0 6px 20px rgba(37,99,235,0.35);gap:6px">
     <span style="font-size:14px">📢</span>
-    <span>Phát Loa Toàn Thể</span>
+    <span>Giao việc cả đội</span>
   </button>
 
   <!-- Nút Nhắc Task Đang Chạy & Phanh Khẩn Cấp -->
@@ -285,10 +286,10 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
 
 
 
-  <!-- Nút Phân Việc Ngoài Lề Đặc Cách -->
-  <button class="btn" id="openOverrideBtn" style="background:linear-gradient(135deg, #ecc970, #f59e0b);color:#000;font-weight:800;box-shadow:0 6px 22px rgba(245,158,11,0.35)">
+  <!-- Giao việc cho một vai: chạy đúng một lượt AI thật cho vai đang giữ NEXT_OWNER (POST /ctl/ai/run) -->
+  <button class="btn" id="openOverrideBtn" title="Chạy một lượt AI cho vai đang giữ lượt (NEXT_OWNER trong agent.md) của dự án đang chọn" style="background:linear-gradient(135deg, #ecc970, #f59e0b);color:#000;font-weight:800;box-shadow:0 6px 22px rgba(245,158,11,0.35)">
     <span style="font-size:14px">⚡</span>
-    <span>Phân Việc Ngoài Lề (Đặc Cách)</span>
+    <span>Giao việc một vai</span>
   </button>
 
   <!-- Các nút ít dùng: gom vào menu để thanh trên không tràn viền -->
@@ -360,114 +361,52 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
   </div>
 </div>
 
-<!-- ================= MODAL: PHÂN VIỆC NGOÀI LỀ (ĐẶC CÁCH CODE CHO SOL) ================= -->
+<!-- ================= MODAL: GIAO VIỆC CHO MỘT VAI (MỘT LƯỢT AI THẬT, ĐÚNG LUẬT LƯỢT CỦA agent.md) ================= -->
 <div class="modal-overlay" id="overrideModal">
-  <div class="modal-card">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="overrideTitle">
     <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:12px">
       <div style="display:flex;align-items:center;gap:10px">
         <div style="width:34px;height:34px;border-radius:10px;background:rgba(236,201,112,0.2);color:var(--gold);display:grid;place-items:center;font-size:18px">⚡</div>
         <div>
-          <h3 style="margin:0;font-size:15px;font-weight:800;color:#fff;font-family:'Quicksand',sans-serif">CHỈ ĐỊNH PHÂN VIỆC NGOÀI LỀ (CEO OVERRIDE)</h3>
-          <p style="margin:2px 0 0;font-size:11px;color:var(--mute)">Cấp quyền đặc cách vượt ngoài vai trò mặc định của Protocol v2.2</p>
+          <h3 id="overrideTitle" style="margin:0;font-size:15px;font-weight:800;color:#fff;font-family:'Quicksand',sans-serif">GIAO VIỆC CHO MỘT VAI</h3>
+          <p style="margin:2px 0 0;font-size:11px;color:var(--mute)">Chạy đúng một lượt AI cho vai đang giữ lượt (NEXT_OWNER trong agent.md) của dự án đang chọn</p>
         </div>
       </div>
-      <button class="btn ghost" style="padding:4px 8px;font-size:12px" id="closeOverrideBtn">✕</button>
+      <button class="btn ghost" style="padding:4px 8px;font-size:12px" id="closeOverrideBtn" aria-label="Đóng">✕</button>
     </div>
 
-    <!-- Chọn AI -->
+    <!-- Lượt hiện tại, đọc từ OS Controller (/ctl/ai/status) -->
+    <div id="overrideTurn" role="status" style="font-size:12px;color:#f8fafc;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px 12px">Đang đọc lượt từ agent.md…</div>
+
+    <!-- Chọn vai: chỉ vai đang giữ lượt chạy được; các vai khác hiện để biết, không chọn được -->
     <div>
-      <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--mute);margin-bottom:6px">Chọn AI nhận chỉ thị đặc biệt:</label>
-      <select id="overrideAgentSelect" style="width:100%;padding:10px 12px;background:#090d16;border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:#fff;font-size:12.5px;font-family:inherit;outline:none">
-        <option value="sol" selected>👁️ Itachi Uchiha (GPT 6.1 Sol: Cho phép Code trực tiếp)</option>
-        <option value="pain">⚡ Pain Thiên Đạo (Quản lý Akatsuki - Tiếp quản điều phối)</option>
-        <option value="antigravity">🌸 Hinata Hyuga (Antigravity - Đặc tả & Thiết kế UI/UX)</option>
-        <option value="claude">🛡️ Sakura Haruno (Claude Captain - Kiểm toán & Y thuật QA)</option>
-        <option value="codex">💻 Sasuke Uchiha (Codex Astra - Kỹ sư trưởng Dev)</option>
+      <label for="overrideRole" style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--mute);margin-bottom:6px">Vai nhận việc</label>
+      <select id="overrideRole" style="width:100%;padding:10px 12px;background:#090d16;border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:#fff;font-size:12.5px;font-family:inherit;outline:none">
+        <option value="SPEC_ARCHITECT">🌸 Hinata · SPEC_ARCHITECT (đặc tả &amp; thiết kế)</option>
+        <option value="SOL_ARCHITECT_PLANNER">👁️ Itachi · SOL_ARCHITECT_PLANNER (kiến trúc, Vùng [3])</option>
+        <option value="SOL_ARCHITECT_ADVISOR">👁️ Itachi · SOL_ARCHITECT_ADVISOR (rà kiến trúc)</option>
+        <option value="CODEX_ASTRA_DEV">💻 Sasuke · CODEX_ASTRA_DEV (backend, API)</option>
+        <option value="FRONTEND_UIUX_DEV">🐺 Kakashi · FRONTEND_UIUX_DEV (giao diện)</option>
+        <option value="CLAUDE_AUDITOR">🛡️ Sakura · CLAUDE_AUDITOR (kiểm duyệt)</option>
       </select>
     </div>
 
-    <!-- Checkboxes đặc quyền -->
-    <div style="background:rgba(236,201,112,0.06);border:1px solid rgba(236,201,112,0.25);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px">
-      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#f8fafc;cursor:pointer">
-        <input type="checkbox" id="permCode" checked style="accent-color:var(--gold);width:16px;height:16px">
-        <b>Cho phép Lập Trình Mã Nguồn Trực Tiếp (Bypass Codex)</b>
-      </label>
-      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#f8fafc;cursor:pointer">
-        <input type="checkbox" id="permSync" checked style="accent-color:var(--gold);width:16px;height:16px">
-        <span>Ghi nhận chỉ thị vào <b>agent.md</b> Vùng [4.1] & Sổ <b>CAN-ANH.md</b></span>
-      </label>
-      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#f8fafc;cursor:pointer">
-        <input type="checkbox" id="permMail" checked style="accent-color:var(--gold);width:16px;height:16px">
-        <span>Gửi thông báo hỏa tốc vào hòm thư <b>hop-thu/sol.jsonl</b></span>
-      </label>
-    </div>
+    <!-- Quyền của vai do agent.md quy định: văn phòng không cấp quyền vượt luật -->
+    <p style="margin:0;font-size:11.5px;line-height:1.5;color:var(--mute);background:rgba(236,201,112,0.06);border:1px solid rgba(236,201,112,0.25);border-radius:12px;padding:10px 12px">
+      Vai làm đúng phạm vi agent.md cho phép. Muốn Sol viết mã thay Codex: ghi lệnh đặc cách vào <b>Vùng [4.1]</b> của agent.md trước rồi mới chạy lượt.
+      Muốn giao cho vai chưa tới lượt: chờ bàn giao, hoặc dùng <b>📢 Giao việc cả đội</b>.
+    </p>
 
-    <!-- Nội dung công việc -->
     <div>
-      <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--mute);margin-bottom:6px">Nội dung chỉ đạo của Giám Đốc:</label>
-      <textarea id="overrideTaskText" rows="3" style="width:100%;padding:10px 12px;background:#090d16;border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:#fff;font-size:12px;font-family:inherit;outline:none;resize:none">Sol hãy trực tiếp lập trình mã nguồn module đọc SQLite native và API Streaming trong server.js thay vì chờ Codex.</textarea>
+      <label for="overrideTaskText" style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--mute);margin-bottom:6px">Việc giao thêm cho lượt này (không bắt buộc)</label>
+      <textarea id="overrideTaskText" rows="3" maxlength="3000" placeholder="Ví dụ: ưu tiên sửa lỗi đăng nhập trên điện thoại trước." style="width:100%;padding:10px 12px;background:#090d16;border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:#fff;font-size:12px;font-family:inherit;outline:none;resize:none"></textarea>
     </div>
 
-    <!-- Nút hành động -->
+    <p id="overrideMsg" role="alert" style="margin:0;font-size:12px;min-height:1em"></p>
+
     <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:6px">
-      <button class="btn ghost" style="padding:10px 16px" id="cancelOverrideBtn">Hủy bỏ</button>
-      <button class="btn" style="padding:10px 18px;background:linear-gradient(135deg, #ecc970, #f59e0b)" onclick="submitOverrideDirective()">
-        🚀 Ban Hành Chỉ Thị Đặc Cách
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ================= MODAL 2: PHÁT LOA TOÀN THỂ NHÂN VIÊN (TỰ ĐẤU THẦU & CHECK CHÉO) ================= -->
-<div class="modal-overlay" id="broadcastModal">
-  <div class="modal-card" style="max-width:620px">
-    <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:12px">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:36px;height:36px;border-radius:12px;background:rgba(14,165,233,0.2);color:#38bdf8;display:grid;place-items:center;font-size:20px">📢</div>
-        <div>
-          <h3 style="margin:0;font-size:15px;font-weight:800;color:#fff;font-family:'Quicksand',sans-serif">PHÁT LOA TOÀN THỂ (TỰ ĐẤU THẦU & CHECK CHÉO)</h3>
-          <p style="margin:2px 0 0;font-size:11px;color:var(--mute)">Task chưa biết giao ai? Toàn thể AI sẽ tự rà soát ai rảnh và phù hợp nhất rồi báo CEO!</p>
-        </div>
-      </div>
-      <button class="btn ghost" style="padding:4px 8px;font-size:12px" id="closeBroadcastBtn">✕</button>
-    </div>
-
-    <!-- Nhập nội dung task -->
-    <div style="display:flex;flex-direction:column;gap:6px">
-      <label style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--mute)">Nội dung Task cần phân việc:</label>
-      <textarea id="broadcastInput" rows="3" placeholder="Ví dụ: Cần tối ưu truy vấn SQLite trong server.js và làm giao diện thông báo..." style="width:100%;padding:10px 12px;background:#090d16;border:1px solid rgba(255,255,255,0.15);border-radius:12px;color:#fff;font-size:12px;font-family:inherit;outline:none;resize:none"></textarea>
-      <div style="display:flex;justify-content:flex-end">
-        <button class="btn" id="sendBroadcastBtn" style="padding:8px 16px;background:linear-gradient(135deg, #0ea5e9, #2563eb);color:#fff;font-weight:800;box-shadow:0 4px 14px rgba(37,99,235,0.3)">
-          ⚡ Gửi Phát Loa Toàn Đội
-        </button>
-      </div>
-    </div>
-
-    <!-- Hộp Kết Quả Tự Thảo Luận & Check Chéo -->
-    <div id="broadcastResultArea" style="display:none;flex-direction:column;gap:12px;margin-top:6px;border-top:1px dashed rgba(255,255,255,0.15);padding-top:12px">
-      <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#38bdf8;display:flex;align-items:center;gap:6px">
-        <span>✓ KẾT QUẢ ĐỒNG THUẬN TỰ PHÂN VIỆC CỦA ĐỘI NGŨ</span>
-      </div>
-
-      <!-- Đề xuất Người Nhận Việc -->
-      <div id="proposedAssigneeCard" style="background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.3);border-radius:14px;padding:12px;display:flex;align-items:center;justify-content:space-between">
-        <div style="display:flex;align-items:center;gap:12px">
-          <div style="width:40px;height:40px;border-radius:12px;background:rgba(56,189,248,0.2);display:grid;place-items:center;font-size:22px" id="bPropIcon">💻</div>
-          <div>
-            <div style="font-size:13px;font-weight:800;color:#fff" id="bPropName">Codex Astra (Sasuke)</div>
-            <div style="font-size:11px;color:#38bdf8" id="bPropBeast">Đồng hành: Thất Vĩ Chomei (7-Tails)</div>
-            <div style="font-size:10.5px;color:var(--mute);margin-top:2px" id="bPropReason">Đang rảnh 100% · Chuyên gia Lập trình Fullstack</div>
-          </div>
-        </div>
-        <button class="btn" id="confirmAssignBtn" style="padding:10px 18px;background:linear-gradient(135deg, #10b981, #059669);color:#fff;font-weight:800;box-shadow:0 4px 14px rgba(16,185,129,0.3)">
-          🚀 Duyệt Giao Việc Ngay
-        </button>
-      </div>
-
-      <!-- Ý kiến thảo luận chéo (Peer Review) -->
-      <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px" id="peerReviewContainer">
-        <!-- Filled by JS -->
-      </div>
+      <button class="btn ghost" style="padding:10px 16px" id="cancelOverrideBtn">Đóng</button>
+      <button class="btn" style="padding:10px 18px;background:linear-gradient(135deg, #ecc970, #f59e0b);color:#000" id="overrideRunBtn" disabled>▶ Chạy lượt AI</button>
     </div>
   </div>
 </div>
@@ -748,7 +687,7 @@ import { connectLive, vietnamHour } from "./thoitiet.js";
 
 const $ = (id) => document.getElementById(id);
 
-// Đội AI hiển thị ở thanh bên và hộp phân việc; key giữ nguyên để khớp /api/broadcast.
+// Đội AI hiển thị ở thanh bên; key khớp với assigneeKey của việc đang chạy (/api/running-tasks).
 const defaultAgents = [
   { key: "ceo", name: "Thế Quân CEO", role: "Chủ Tịch Tối Cao (Naruto Uzumaki)", platform: "human", ninja: "naruto", lastText: "", status: "active" },
   { key: "pain", name: "Pain (Thiên Đạo)", role: "Tổng Quản Lý Điều Hành (Yahiko Akatsuki)", platform: "claude", ninja: "pain", lastText: "", status: "active" },
@@ -852,128 +791,63 @@ $("zoomInBtn").addEventListener("click", (e) => { office?.setDistance(office.get
 $("zoomOutBtn").addEventListener("click", (e) => { office?.setDistance(office.getDistance() + 3); e.currentTarget.blur(); });
 office?.controls.addEventListener("change", () => { zoomRange.value = office.getDistance(); });
 
-// ================= AD-HOC TASK ASSIGNMENT (PHÂN VIỆC NGOÀI LỀ) =================
+// ================= GIAO VIỆC CHO MỘT VAI (MỘT LƯỢT AI THẬT) =================
+// Trước đây là hộp "Phân việc ngoài lề (Đặc cách)" chỉ hiện bong bóng và báo "đã ghi nhận vào sổ điều phối và hòm thư" mà không ghi gì,
+// kèm ô "Bypass Codex" không có tác dụng. Nay chạy đúng một lượt AI qua OS Controller (POST /ctl/ai/run, như trang Điều khiển):
+// ctl chỉ cho chạy vai đang giữ NEXT_OWNER trong agent.md, không có lượt khác đang chạy hay bàn giao chờ duyệt.
+// Quyền viết mã vượt vai (Sol thay Codex) vẫn theo agent.md: CEO ghi đặc cách vào Vùng [4.1], văn phòng không tự cấp.
 const overrideModal = $("overrideModal");
-$("openOverrideBtn").addEventListener("click", () => overrideModal.classList.add("open"));
-$("closeOverrideBtn").addEventListener("click", () => overrideModal.classList.remove("open"));
-$("cancelOverrideBtn").addEventListener("click", () => overrideModal.classList.remove("open"));
-
-window.submitOverrideDirective = () => {
-  const agentKey = $("overrideAgentSelect").value;
-  const taskText = $("overrideTaskText").value.trim();
-  const permCode = $("permCode").checked;
-
-  overrideModal.classList.remove("open");
-
-  // Bong bóng việc trên đầu AI được giao, rồi đưa bạn tới phòng của AI đó
-  if (office) {
-    office.say(NPC_OF[agentKey], { tag: "👑 Đặc cách từ Giám đốc" + (permCode ? " (được phép code)" : ""), text: taskText, color: 0xecc970 });
-    office.setBusy(NPC_OF[agentKey], true);
-    focusOnAgent(agentKey);
+let overrideTurn = null, overrideBusy = false;
+const overrideSay = (text, bad = false) => { $("overrideMsg").textContent = text; $("overrideMsg").style.color = bad ? "var(--bad)" : "var(--ok)"; };
+function overrideRender() {
+  const box = $("overrideTurn"), sel = $("overrideRole"), t = overrideTurn;
+  const st = t?.status, owner = st?.turn?.nextOwner || "";
+  let ready = false;
+  if (!t) box.textContent = "Đang đọc lượt từ agent.md…";
+  else if (t.error) box.textContent = t.error;
+  else if (!t.active) box.textContent = "Chưa chọn dự án. Mở bàn làm việc → Dự án để chọn repo.";
+  else if (!st?.turn) box.textContent = `Dự án ${t.name}: ${st?.problem || "chưa đọc được lượt từ agent.md."}`;
+  else {
+    const why = st.aiBusy ? "đang có một lượt AI chạy, chờ lượt đó xong." : st.handoffPending ? `bàn giao ${st.handoffPending} đang chờ anh duyệt hoặc từ chối (bàn làm việc → Việc chờ anh duyệt).` : !st.runnable ? "vai này chưa có CLI chạy nền: giao qua Hòm thư (vp gui)." : "";
+    ready = !why && [...sel.options].some((o) => o.value === owner);
+    box.innerHTML = `Dự án <b>${escH(t.name)}</b> · đang giữ lượt: <b style="color:var(--gold)">${escH(owner)}</b>${st.turn.phase ? " · " + escH(st.turn.phase) : ""}<br>${why ? "Chưa chạy được: " + escH(why) : "Sẵn sàng chạy lượt này."}`;
   }
+  for (const o of sel.options) o.disabled = o.value !== owner;
+  if (owner) sel.value = owner;
+  $("overrideRunBtn").disabled = overrideBusy || !ready || sel.value !== owner;
+}
+async function overrideLoad() {
+  overrideTurn = null; overrideRender();
+  try { overrideTurn = await desk.turnNow(); } catch (e) { overrideTurn = { error: e.message }; }
+  overrideRender();
+}
+const closeOverride = () => overrideModal.classList.remove("open");
+$("openOverrideBtn").addEventListener("click", () => { overrideSay(""); overrideModal.classList.add("open"); overrideLoad(); });
+$("closeOverrideBtn").addEventListener("click", closeOverride);
+$("cancelOverrideBtn").addEventListener("click", closeOverride);
+$("overrideRunBtn").addEventListener("click", async () => {
+  const role = $("overrideRole").value, task = $("overrideTaskText").value.trim();
+  if (!confirm(`Chạy lượt ${role} trong dự án ${overrideTurn?.name || ""}?\nAI sẽ đọc agent.md và làm việc trong thư mục dự án (tối đa 20–30 phút, dừng được bằng Phanh khẩn cấp).`)) return;
+  overrideBusy = true; overrideRender(); overrideSay("Đang gửi lệnh tới OS Controller…");
+  try {
+    const job = await desk.runTurn(role, task);
+    $("overrideTaskText").value = "";
+    overrideSay(`Đã bắt đầu lượt ${role} (${job?.id || "không rõ mã"}). Theo dõi ở bàn làm việc → Việc đang làm.`);
+    const npc = desk.roomOf(role);
+    if (office && npc) { office.say(npc, { tag: "⚡ Lượt AI của " + role, text: task || "Làm việc theo agent.md", color: 0xecc970 }); focusRoom(KEY_OF[npc] || npc); }
+  } catch (e) { overrideSay("Chưa chạy: " + (e.code ? e.code + " · " : "") + e.message, true); }
+  finally { overrideBusy = false; await overrideLoad(); }
+});
 
-  // Update Right Sidebar
-  const agentObj = defaultAgents.find(a => a.key === agentKey) || { name: agentKey, role: "Agent" };
-  $("agentNameTxt").textContent = agentObj.name;
-  $("agentRoleTxt").textContent = permCode ? "ĐƯỢC PHÉP CODE TRỰC TIẾP (CEO Override)" : agentObj.role;
-  $("agentStatusBadge").textContent = "OVERRIDE CODE ACTIVE";
-  $("agentStatusBadge").style.color = "var(--gold)";
-  $("agentLastTextTxt").textContent = `“${taskText}”`;
-
-  openRightSidebar();
-
-  alert(`ĐÃ BAN HÀNH CHỈ THỊ THÀNH CÔNG!\n\n• Phiên: ${agentObj.name}\n• Quyền hạn: ${permCode ? 'Cho phép Code trực tiếp (Bypass Codex)' : 'Nhiệm vụ ngoài lề'}\n• Chỉ thị: "${taskText}"\n\nNội dung đã được ghi nhận vào sổ điều phối và hòm thư của ${agentObj.name}!`);
-};
-
-// ================= PHÁT LOA TOÀN THỂ (BROADCAST & SELF-ASSIGNMENT) =================
-const broadcastModal = $("broadcastModal");
+// ================= GIAO VIỆC CHO CẢ ĐỘI =================
+// Trước đây là hộp "Phát loa" chỉ gợi ý người nhận theo từ khóa và ghi việc giả trong bộ nhớ (không AI nào chạy).
+// Nay mở thẳng mục "Giao việc cho cả đội" của bàn làm việc: luồng tự động thật qua OS Controller (POST /ctl/autopilot).
 $("openBroadcastBtn").addEventListener("click", () => {
-  broadcastModal.classList.add("open");
-  $("broadcastResultArea").style.display = "none";
+  const b = document.querySelector('.desk-tools [data-desk="assign"]');
+  if (b) b.click(); else alert("Chưa mở được bàn làm việc. Tải lại trang rồi thử lại.");
 });
-$("closeBroadcastBtn").addEventListener("click", () => broadcastModal.classList.remove("open"));
-
-let currentConsensus = null;
-// Tiêu đề task, tên người nhận, lệnh từ OS Controller… đều là dữ liệu: thoát HTML trước khi chèn bằng innerHTML.
+// Tiêu đề việc, tên người nhận, lệnh từ OS Controller… đều là dữ liệu: thoát HTML trước khi chèn bằng innerHTML.
 const escH = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-
-$("sendBroadcastBtn").addEventListener("click", async () => {
-  const text = $("broadcastInput").value.trim();
-  if (!text) return alert("Vui lòng nhập nội dung task cần phát loa!");
-
-  $("sendBroadcastBtn").disabled = true;
-  $("sendBroadcastBtn").innerHTML = `⏳ Toàn thể AI đang rà soát & check chéo...`;
-
-  try {
-    const res = await fetch("/api/broadcast", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text })
-    });
-    const d = await res.json();
-    if (d.ok && d.consensus) {
-      currentConsensus = d.consensus;
-      const c = d.consensus;
-
-      $("broadcastResultArea").style.display = "flex";
-      $("bPropName").textContent = c.proposedAssignee.name;
-      $("bPropBeast").textContent = `Linh vật: ${c.proposedAssignee.beast}`;
-      $("bPropReason").textContent = `${c.proposedAssignee.reason} · Đang giữ ${c.proposedAssignee.activeTaskCount} task`;
-      
-      const iconMap = { codex: "💻", kakashi: "🎨", antigravity: "🤖", sol: "📐", claude: "🛡️" };
-      $("bPropIcon").textContent = iconMap[c.proposedAssignee.key] || "🍥";
-
-      // Render Peer Reviews
-      $("peerReviewContainer").innerHTML = !c.peerReview.length
-        ? `<div style="font-size:11.5px;color:var(--mute)">Gợi ý theo từ khóa — chưa có AI nào được hỏi ý kiến thật.</div>`
-        : c.peerReview.map(pr => `
-        <div style="font-size:11.5px;display:flex;gap:8px;align-items:flex-start">
-          <b style="color:var(--gold);white-space:nowrap">${escH(pr.who)}:</b>
-          <span style="color:#cbd5e1">“${escH(pr.comment)}”</span>
-        </div>
-      `).join("");
-    }
-  } catch (err) {
-    alert("Lỗi kết nối phát loa: " + err.message);
-  } finally {
-    $("sendBroadcastBtn").disabled = false;
-    $("sendBroadcastBtn").innerHTML = `⚡ Gửi Phát Loa Toàn Đội`;
-  }
-});
-
-$("confirmAssignBtn").addEventListener("click", async () => {
-  if (!currentConsensus) return;
-  const p = currentConsensus.proposedAssignee;
-  try {
-    const res = await fetch("/api/accept-broadcast", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: currentConsensus.taskTitle,
-        assigneeKey: p.key,
-        assigneeName: p.name,
-        beast: p.beast
-      })
-    });
-    const d = await res.json();
-    if (d.ok) {
-      broadcastModal.classList.remove("open");
-      $("broadcastInput").value = "";
-
-      // Bong bóng việc trên đầu AI nhận task
-      if (office && NPC_OF[p.key]) {
-        office.say(NPC_OF[p.key], { tag: "📢 Nhận task từ phát loa toàn thể", text: currentConsensus.taskTitle, color: 0x38bdf8 });
-        office.setBusy(NPC_OF[p.key], true);
-        focusOnAgent(p.key);
-      }
-
-      refreshRunningTasks();
-      alert(`ĐÃ DUYỆT GIAO VIỆC THÀNH CÔNG!\n\n• Nhẫn giả nhận việc: ${p.name}\n• Linh vật đồng hành: ${p.beast}\n• Task: "${currentConsensus.taskTitle}"\n\nTask đã được thêm vào danh sách quản lý task đang chạy!`);
-    }
-  } catch (err) {
-    alert("Lỗi giao việc: " + err.message);
-  }
-});
 
 // ================= QUẢN LÝ TASK ĐANG CHẠY & KILL SWITCH =================
 const runningTasksModal = $("runningTasksModal");
