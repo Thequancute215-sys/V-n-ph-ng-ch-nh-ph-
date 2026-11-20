@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "gitCommitHash": "7629d85212331264ded8619a441e3a030aff6e98",
-  "generatedAt": "2026-11-20T04:32:31.008Z",
+  "gitCommitHash": "1fbe53ca856fbd62ce32f2360009a1582dd317c9",
+  "generatedAt": "2026-11-20T04:34:19.517Z",
   "files": {
     ".gitattributes": {
       "filePath": ".gitattributes",
@@ -75,12 +75,12 @@
     },
     "README.md": {
       "filePath": "README.md",
-      "contentHash": "5ef6669d5a798fecc4f0ddb32a6497f3c8adc52195be48e381be828883ba14d2",
+      "contentHash": "cb004da9279c09835fc301d2756966d5cf48265fd6b2db494d880793391ac90b",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 475,
+      "totalLines": 494,
       "hasStructuralAnalysis": false
     },
     "YEU-CAU-SUA-LOI-CLAUDE.md": {
@@ -240,7 +240,7 @@
     },
     "ctl/autopilot.js": {
       "filePath": "ctl/autopilot.js",
-      "contentHash": "57d696eb41053a8d80f1f89a8daf8d9d4617796075963fda14a427ea1d7e0368",
+      "contentHash": "547e3cb6feaae9cb0ea86cc612f3e71b3d649b7db76315a61bdb645e6ec255d8",
       "functions": [
         {
           "name": "sauDuoc",
@@ -295,13 +295,13 @@
             "quotaSnapshot"
           ],
           "exported": true,
-          "lineCount": 736
+          "lineCount": 741
         }
       ],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 809,
+      "totalLines": 814,
       "hasStructuralAnalysis": true
     },
     "ctl/bo-kiem.js": {
@@ -518,6 +518,50 @@
       "imports": [],
       "exports": [],
       "totalLines": 36,
+      "hasStructuralAnalysis": true
+    },
+    "ctl/codex-tai-khoan.js": {
+      "filePath": "ctl/codex-tai-khoan.js",
+      "contentHash": "086f0f719982aea420a66227e13de12a26ea61bcfaf141f8c99e50d839d3f7ac",
+      "functions": [
+        {
+          "name": "err",
+          "params": [
+            "code",
+            "message"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "anEmail",
+          "params": [
+            "e"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "conLaiCua",
+          "params": [
+            "buckets"
+          ],
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "createCodexTaiKhoan",
+          "params": [
+            "audit"
+          ],
+          "exported": true,
+          "lineCount": 197
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 228,
       "hasStructuralAnalysis": true
     },
     "ctl/db.js": {
@@ -918,7 +962,7 @@
     },
     "ctl/jobs.js": {
       "filePath": "ctl/jobs.js",
-      "contentHash": "1afb35be2a7d58f04dca564e558166972b413db965d4007b7aba3b396b4ebfa2",
+      "contentHash": "1f163dc0817750c71a5f44dca20fa90f8b82361a0fc3b1119b1dbc3f34da887d",
       "functions": [
         {
           "name": "row",
@@ -951,7 +995,7 @@
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 205,
+      "totalLines": 206,
       "hasStructuralAnalysis": true
     },
     "ctl/ket-noi-danh-muc.js": {
@@ -1038,7 +1082,7 @@
     },
     "ctl/main.js": {
       "filePath": "ctl/main.js",
-      "contentHash": "4f3963d85c4c23bbf7873ecaf2a2068477de8975b6c474eb7a9fe95c3c958b79",
+      "contentHash": "c29b36d8d1415939a210f0a6ce850bddba3b3b382284eb1c1485c6245cd1d4bc",
       "functions": [
         {
           "name": "createCtl",
@@ -1046,7 +1090,7 @@
             "dir"
           ],
           "exported": true,
-          "lineCount": 304
+          "lineCount": 317
         },
         {
           "name": "checkUpdate",
@@ -1064,7 +1108,7 @@
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 391,
+      "totalLines": 405,
       "hasStructuralAnalysis": true
     },
     "ctl/mcp-may.js": {
@@ -1684,7 +1728,7 @@
     },
     "ctl/quotas.js": {
       "filePath": "ctl/quotas.js",
-      "contentHash": "a63b3fbda8961be5efef70b82a095fb3575faff35023100750011acc39a4d554",
+      "contentHash": "0a54b858723e9b877b9b5ea052af01061b865a72a957ecff62cde1d32cbce30d",
       "functions": [
         {
           "name": "number",
@@ -1779,7 +1823,7 @@
             "dir"
           ],
           "exported": false,
-          "lineCount": 62
+          "lineCount": 64
         },
         {
           "name": "createQuotas",
@@ -1787,16 +1831,17 @@
             "queries",
             "clock",
             "intervalMs",
-            "agyTk"
+            "agyTk",
+            "codexTk"
           ],
           "exported": true,
-          "lineCount": 87
+          "lineCount": 105
         }
       ],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 254,
+      "totalLines": 275,
       "hasStructuralAnalysis": true
     },
     "ctl/ra-soat.js": {
@@ -1897,7 +1942,7 @@
     },
     "ctl/runner.js": {
       "filePath": "ctl/runner.js",
-      "contentHash": "22d0a90cac34387fcee9309442487a1f83eb1e180969606cd239f11c6343ec77",
+      "contentHash": "65941de40985d62d8eedcb89de2c331b5938203c52c4172dcae6b6f377e1ab6a",
       "functions": [
         {
           "name": "END",
@@ -2002,13 +2047,13 @@
             "mcpKnown"
           ],
           "exported": true,
-          "lineCount": 335
+          "lineCount": 340
         }
       ],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 559,
+      "totalLines": 564,
       "hasStructuralAnalysis": true
     },
     "ctl/skill-duyet.js": {
@@ -3040,7 +3085,7 @@
     },
     "lib/dieu-khien-xa.js": {
       "filePath": "lib/dieu-khien-xa.js",
-      "contentHash": "7486330ecee2ca58fcedca6748f59a127c21ad49f3bf0e7ae5d78b8df1835829",
+      "contentHash": "cf3e948ccfb1843f67f7155ec430f4a0116f9ed557851fe02895c77eec8709c8",
       "functions": [
         {
           "name": "HOME",
@@ -4464,7 +4509,7 @@
     },
     "public/office-desk.js": {
       "filePath": "public/office-desk.js",
-      "contentHash": "26d84433438088c0765eaabafe7e99ea99652fed46b60e182d73d104561f7ce7",
+      "contentHash": "5c901bce22e04ce748f001dfcfa7606477cbdbff54b8a38e40cb89f592574c7b",
       "functions": [
         {
           "name": "$",
@@ -4542,13 +4587,13 @@
             "getOffice"
           ],
           "exported": false,
-          "lineCount": 601
+          "lineCount": 671
         }
       ],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 650,
+      "totalLines": 720,
       "hasStructuralAnalysis": true
     },
     "public/offline.html": {
@@ -6228,6 +6273,52 @@
       "totalLines": 90,
       "hasStructuralAnalysis": true
     },
+    "test/codex-tai-khoan.test.js": {
+      "filePath": "test/codex-tai-khoan.test.js",
+      "contentHash": "5e24bfeb2565cdb31193e42a0a544ce952412b57c73b7b795f23dd2089b11eee",
+      "functions": [
+        {
+          "name": "fixture",
+          "params": [
+            "t",
+            "opts"
+          ],
+          "exported": false,
+          "lineCount": 12
+        },
+        {
+          "name": "rate",
+          "params": [
+            "pct"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "chay",
+          "params": [
+            "cmd",
+            "args",
+            "o"
+          ],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "raw",
+          "params": [
+            "pct"
+          ],
+          "exported": false,
+          "lineCount": 1
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 156,
+      "hasStructuralAnalysis": true
+    },
     "test/ctl.test.js": {
       "filePath": "test/ctl.test.js",
       "contentHash": "bec82051b971d79cce8e2233ad3bdf3be760c83aa588ddd1d50b31cdafeaab66",
@@ -7667,7 +7758,7 @@
     },
     "tools/ve-ban-do.js": {
       "filePath": "tools/ve-ban-do.js",
-      "contentHash": "1b550baaf21691111cb2e949b4d5e81076578e1001b8f8bd5b09584b046a9d11",
+      "contentHash": "cb2a364d43b963b91431cb7a6a4ced4f6cfc614dc43792f9ca6fc6ae42cc9be7",
       "functions": [
         {
           "name": "read",
@@ -7721,7 +7812,7 @@
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 205,
+      "totalLines": 204,
       "hasStructuralAnalysis": true
     },
     "tools/vp.js": {

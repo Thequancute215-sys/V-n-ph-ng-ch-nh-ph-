@@ -488,6 +488,6 @@ HUONG-DAN-CHO-AGENT.md hướng dẫn để agent tự cài từ link này
 docs/BAN-DO-HE-THONG.md bản đồ workflow → kiến trúc → mã (sinh bằng tools/ve-ban-do.js từ đồ thị Understand Anything trong .ua/)
 ```
 
-Bản đồ toàn hệ thống (8 miền nghiệp vụ, 52 workflow, từng bước trỏ tới file:dòng): [docs/BAN-DO-HE-THONG.md](docs/BAN-DO-HE-THONG.md). Mã đổi nhiều thì vẽ lại đồ thị bằng `/understand` và `/understand-domain` (plugin Understand Anything), rồi chạy `node tools/ve-ban-do.js`.
+Bản đồ toàn hệ thống (8 miền nghiệp vụ, 53 workflow, từng bước trỏ tới file:dòng): [docs/BAN-DO-HE-THONG.md](docs/BAN-DO-HE-THONG.md). Mã đổi nhiều thì vẽ lại đồ thị bằng `/understand` và `/understand-domain` (plugin Understand Anything), rồi chạy `node tools/ve-ban-do.js`.
 
 Giấy phép MIT.

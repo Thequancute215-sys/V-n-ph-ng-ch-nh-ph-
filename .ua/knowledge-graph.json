@@ -17,8 +17,8 @@
       "GitHub Actions"
     ],
     "description": "Văn phòng AI 3D chạy tại chỗ, chỉ đọc, giúp theo dõi phiên làm việc của đội AI (Claude Code, Codex, Antigravity) cùng sổ điều phối data/, kèm OS Controller riêng chạy lệnh, lượt AI và luồng tự động theo giao thức agent.md (hợp đồng giao tiếp, chạy song song backend/frontend, điều phối model, bộ skill, MCP trên máy, tra cứu Gemini) trong các workspace đã đăng ký, và điều khiển từ điện thoại đã ghép; không cần thư viện npm bên ngoài.",
-    "analyzedAt": "2026-11-20T04:32:31.008Z",
-    "gitCommitHash": "7629d85212331264ded8619a441e3a030aff6e98"
+    "analyzedAt": "2026-11-20T04:34:19.517Z",
+    "gitCommitHash": "1fbe53ca856fbd62ce32f2360009a1582dd317c9"
   },
   "nodes": [
     {
@@ -45,7 +45,7 @@
       "filePath": "ctl/autopilot.js",
       "lineRange": [
         71,
-        806
+        811
       ],
       "summary": "Factory tạo bộ autopilot: nạp lại các luồng đã lưu (luồng đang chạy khi khởi động lại chuyển sang 'attention'), dựng vòng tick định kỳ và trả về API start/stop/answer/decide/resumeNow/resumeScan/webPrompt/applyWeb/pushBranch/stepDiff/preflight.",
       "tags": [
@@ -132,7 +132,7 @@
       "filePath": "ctl/autopilot.js",
       "lineRange": [
         175,
-        186
+        191
       ],
       "summary": "Chuyển luồng sang trạng thái 'waiting_quota' khi AI của lượt hết hạn mức gói, tính giờ chạy lại (ưu tiên bộ theo dõi hạn mức, rồi thông báo CLI, mặc định 30 phút) và ghi nhật ký kiểm toán.",
       "tags": [
@@ -148,8 +148,8 @@
       "name": "templatePrompt",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        197,
-        217
+        202,
+        222
       ],
       "summary": "Soạn master prompt mẫu từ agent.md (đã che khóa), việc CEO giao và quyết định của CEO, kèm chuẩn đầu ra riêng cho từng vai, dùng khi không AI nào còn hạn mức để soạn.",
       "tags": [
@@ -165,8 +165,8 @@
       "name": "webPrompt",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        220,
-        231
+        225,
+        236
       ],
       "summary": "Xử lý yêu cầu của CEO soạn master prompt cho ChatGPT web khi luồng đang chờ hạn mức: chụp hạn mức các AI rồi giao cho nextWriter chọn người soạn.",
       "tags": [
@@ -182,8 +182,8 @@
       "name": "nextWriter",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        235,
-        250
+        240,
+        255
       ],
       "summary": "Chọn AI còn nhiều hạn mức nhất (trừ AI vừa hết và AI đã thử hỏng) để chạy runner.webPrompt; không còn ai thì dùng templatePrompt.",
       "tags": [
@@ -199,8 +199,8 @@
       "name": "finishWeb",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        261,
-        279
+        266,
+        284
       ],
       "summary": "Khi job soạn master prompt kết thúc: tách đoạn ===MASTER_PROMPT=== / ===CHUAN_DAU_RA===, đạt thì đánh dấu sẵn sàng và thông báo, không đạt thì chuyển AI kế tiếp; cảnh báo nếu có chuỗi giống khóa API.",
       "tags": [
@@ -216,8 +216,8 @@
       "name": "launch",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        281,
-        329
+        286,
+        334
       ],
       "summary": "Chạy lượt kế tiếp theo NEXT_OWNER: dựng lời giao việc (đặc cách CEO, quyết định CEO, giải thích các lượt và đề nghị xoá cho Claude, ghi chú trả lại), chụp mốc git, gọi runner.run; gặp NEEDS_SCAN_APPROVAL thì tạm dừng 'awaiting_scan'.",
       "tags": [
@@ -233,8 +233,8 @@
       "name": "report",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        494,
-        504
+        499,
+        509
       ],
       "summary": "Ngắt mạch luồng: gom giải thích các lượt và đuôi log làm bằng chứng rồi gọi runner.report để Claude viết báo cáo cho CEO; lỗi thì chuyển 'attention'.",
       "tags": [
@@ -250,8 +250,8 @@
       "name": "start",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        506,
-        522
+        511,
+        527
       ],
       "summary": "Bắt đầu luồng tự động: kiểm việc giao (≤3000 ký tự), giới hạn 1–12 lượt/≤120 phút, dự án rảnh và agent.md đọc được, cổng rà soát .md khi chạy toàn quyền, tạo nhánh riêng qua nhanh.prepare rồi launch.",
       "tags": [
@@ -267,8 +267,8 @@
       "name": "tick",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        524,
-        607
+        529,
+        612
       ],
       "summary": "Vòng lặp chính chạy định kỳ: theo dõi job từng luồng, xử lý hết thời gian, nhận báo cáo, kiểm xoá/commit lượt, chờ hạn mức, trả lại lượt thiếu giải thích, phát hiện khóa/xung đột git, chờ CEO trả lời ask_ceo, dừng ở báo cáo cuối của Claude hoặc duyệt bàn giao và chạy lượt tiếp.",
       "tags": [
@@ -285,8 +285,8 @@
       "name": "answer",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        656,
-        669
+        661,
+        674
       ],
       "summary": "CEO chọn phương án cho câu hỏi ask_ceo của Claude: duyệt bàn giao theo phương án qua runner.answer, ghi quyết định vào luồng, đặt lại mốc lượt/thời gian rồi chạy tiếp.",
       "tags": [
@@ -302,8 +302,8 @@
       "name": "stop",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        671,
-        681
+        676,
+        686
       ],
       "summary": "CEO dừng luồng: đặt 'stopped', kill job đang chạy, từ chối các bàn giao còn chờ và commit dở dang lượt cuối nếu chưa lưu.",
       "tags": [
@@ -319,8 +319,8 @@
       "name": "decide",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        683,
-        697
+        688,
+        702
       ],
       "summary": "CEO duyệt hoặc từ chối báo cáo cuối: duyệt/từ chối bàn giao cuối của Claude qua runner và chuyển luồng sang approved/acknowledged/rejected.",
       "tags": [
@@ -336,8 +336,8 @@
       "name": "pushBranch",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        700,
-        707
+        705,
+        712
       ],
       "summary": "Sau khi CEO duyệt, đẩy nhánh riêng của luồng lên remote qua nhanh.push (không --force) và lưu thông tin để tạo PR.",
       "tags": [
@@ -353,8 +353,8 @@
       "name": "stepDiff",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        710,
-        724
+        715,
+        729
       ],
       "summary": "Trả danh sách file đổi và diff của lượt thứ n giữa mốc base và head của lượt (qua nhanh.diff), từ chối khi lượt đang chạy hoặc không có mốc git.",
       "tags": [
@@ -370,8 +370,8 @@
       "name": "applyWeb",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        728,
-        757
+        733,
+        762
       ],
       "summary": "Nhận kết quả CEO dán từ ChatGPT web cho lượt đang chờ hạn mức: kiểm độ dài và chuỗi giống khóa, lưu vào .git/van-phong-ai, giao AI còn hạn mức (Claude hoặc Codex) kiểm và áp qua runner.applyWeb như một lượt của vai đó.",
       "tags": [
@@ -388,8 +388,8 @@
       "name": "webRejected",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        759,
-        770
+        764,
+        775
       ],
       "summary": "Lượt áp kết quả GPT web không đạt: lấy lý do WEB_RESULT_REJECTED hoặc lỗi bàn giao, từ chối bàn giao và đưa luồng về 'waiting_quota' kèm lỗi để CEO sửa và dán lại.",
       "tags": [
@@ -405,8 +405,8 @@
       "name": "resumeScan",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        792,
-        804
+        797,
+        809
       ],
       "summary": "Sau khi CEO duyệt điểm bất thường của dự án, chạy tiếp các luồng đang 'awaiting_scan' của workspace đó (cộng thời gian chờ vào hạn chót) bằng launch.",
       "tags": [
@@ -787,8 +787,8 @@
       "name": "createCtl",
       "filePath": "ctl/main.js",
       "lineRange": [
-        54,
-        357
+        55,
+        371
       ],
       "summary": "Composition root: mở DB, tạo audit/jobs/workspaces/files/notifier/scanner/runner/autopilot/ideas/publisher/chat/connectors/journal/boKiem/updater/github/quotas/monitor, khai báo route REST, server HTTP kiểm Host loopback + token + guard.checkWrite, ánh xạ mã lỗi sang HTTP và hàm close dọn dẹp.",
       "tags": [
@@ -805,8 +805,8 @@
       "name": "projects",
       "filePath": "ctl/main.js",
       "lineRange": [
-        134,
-        155
+        140,
+        161
       ],
       "summary": "Tổng hợp bảng dự án cho /projects: với mỗi workspace đọc lượt, AUDIT_STATUS, số blocker OPEN ở Vùng [5], bàn giao chờ, job đang chạy/gần nhất/đếm theo trạng thái và các luồng autopilot; mọi chuỗi đều che khóa.",
       "tags": [
@@ -829,8 +829,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        197,
-        197
+        203,
+        203
       ]
     },
     {
@@ -846,8 +846,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        174,
-        174
+        180,
+        180
       ]
     },
     {
@@ -863,8 +863,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        189,
-        189
+        195,
+        195
       ]
     },
     {
@@ -880,8 +880,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        204,
-        204
+        210,
+        210
       ]
     },
     {
@@ -897,8 +897,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        274,
-        274
+        288,
+        288
       ]
     },
     {
@@ -914,8 +914,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        276,
-        276
+        290,
+        290
       ]
     },
     {
@@ -931,8 +931,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        275,
-        275
+        289,
+        289
       ]
     },
     {
@@ -948,8 +948,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        284,
-        284
+        298,
+        298
       ]
     },
     {
@@ -965,8 +965,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        278,
-        278
+        292,
+        292
       ]
     },
     {
@@ -982,8 +982,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        280,
-        280
+        294,
+        294
       ]
     },
     {
@@ -999,8 +999,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        282,
-        282
+        296,
+        296
       ]
     },
     {
@@ -1016,8 +1016,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        283,
-        283
+        297,
+        297
       ]
     },
     {
@@ -1033,8 +1033,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        234,
-        234
+        248,
+        248
       ]
     },
     {
@@ -1050,8 +1050,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        235,
-        235
+        249,
+        249
       ]
     },
     {
@@ -1066,8 +1066,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        237,
-        237
+        251,
+        251
       ]
     },
     {
@@ -1083,8 +1083,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        240,
-        240
+        254,
+        254
       ]
     },
     {
@@ -1100,8 +1100,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        242,
-        242
+        256,
+        256
       ]
     },
     {
@@ -1116,8 +1116,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        264,
-        264
+        278,
+        278
       ]
     },
     {
@@ -1886,7 +1886,7 @@
       "type": "file",
       "name": "jobs.js",
       "filePath": "ctl/jobs.js",
-      "summary": "Sổ tiến trình của OS Controller trên bảng SQLite `jobs`: tạo, chạy (spawn không qua shell, env đã lọc khóa), giới hạn 8 việc đồng thời và 1 lượt AI mỗi workspace, timeout, hàng chờ CEO duyệt (pending_approval → approve/reject), dừng cả cây tiến trình và đọc log đã che khóa.",
+      "summary": "Sổ tiến trình của OS Controller (SQLite): đề xuất/duyệt/từ chối, chạy lệnh không qua shell với env đã lọc khóa cộng biến của tài khoản đang chọn lúc khởi chạy (envFor, vd. CODEX_HOME của tài khoản GPT), timeout, giới hạn 8 job đồng thời, ghi log, dừng cả cây tiến trình và phanh khẩn cấp.",
       "tags": [
         "process-manager",
         "job-queue",
@@ -1904,8 +1904,8 @@
       "name": "createJobs",
       "filePath": "ctl/jobs.js",
       "lineRange": [
-        22,
-        202
+        23,
+        203
       ],
       "summary": "Factory nhận (db, audit, logDir); khi khởi động đánh dấu 'failed' các việc 'running' còn sót từ lần trước; trả về start, propose, approve, reject, kill, killAll, readLog, rawLog, drain, get, list, aiBusy. launch nội bộ dùng resolveProgram + spawn(shell:false, env: cleanEnv()), đặt timer timeout gọi killTree, và ghi audit cho mọi chuyển trạng thái.",
       "tags": [
@@ -2259,7 +2259,7 @@
       "type": "file",
       "name": "quotas.js",
       "filePath": "ctl/quotas.js",
-      "summary": "Bộ theo dõi hạn mức thuê bao của ba CLI AI (Codex qua app-server JSON-RPC, Claude /usage, Antigravity /usage): chạy CLI cục bộ không qua shell, chuẩn hóa thành bucket % kèm giờ đặt lại, cache 2 phút; ghi hạn mức Antigravity cho đúng tài khoản đang đăng nhập và đọc tài khoản nghỉ qua agy-tai-khoan; đọc danh sách model thật của 3 AI (nhớ 6 giờ, gộp model theo từng tài khoản Antigravity) cho bảng chọn model.",
+      "summary": "Bộ theo dõi hạn mức thuê bao của ba CLI AI (Codex qua app-server JSON-RPC, Claude /usage, Antigravity /usage): chạy CLI cục bộ không qua shell, chuẩn hóa thành bucket % kèm giờ đặt lại, cache 2 phút; ghi hạn mức Antigravity cho đúng tài khoản đang đăng nhập và đọc tài khoản nghỉ qua agy-tai-khoan; đọc hạn mức + email/gói của mọi tài khoản GPT bằng CODEX_HOME riêng (docGpt); đọc danh sách model thật của 3 AI (nhớ 6 giờ, gộp model theo từng tài khoản Antigravity) cho bảng chọn model.",
       "tags": [
         "quota-monitoring",
         "cli-integration",
@@ -2346,7 +2346,7 @@
       "filePath": "ctl/quotas.js",
       "lineRange": [
         102,
-        163
+        165
       ],
       "summary": "Tạo bộ đọc hạn mức thật: chọn chương trình (có thể ghi đè theo ctl-agents.json của vai), spawn CLI với env đã lọc khóa, timeout 25s, giới hạn 2MB đầu ra; Codex dùng giao thức JSON-RPC initialize → account/rateLimits/read; close() dừng cả cây mọi tiến trình con còn chạy.",
       "tags": [
@@ -2363,8 +2363,8 @@
       "name": "createQuotas",
       "filePath": "ctl/quotas.js",
       "lineRange": [
-        166,
-        252
+        169,
+        273
       ],
       "summary": "Factory bộ theo dõi: giữ trạng thái từng nhà cung cấp (loading/ready/stale/error), refresh chỉ đọc nhà nào đến hạn, gộp yêu cầu đồng thời, lỗi thì giữ số liệu cũ và lùi 5 phút; trả { get, refresh, snapshot, close }.",
       "tags": [
@@ -3233,7 +3233,7 @@
       "filePath": "ctl/runner.js",
       "lineRange": [
         222,
-        556
+        561
       ],
       "summary": "Factory runner: chuẩn bị câu lệnh SQLite bảng handoffs, trả API run, report, webPrompt, applyWeb, chatArgv, cliOf, status, approve, answer, reject, conflicts, get, pending; đọc quyen.json để bật toàn quyền và bắt rà soát (scanner.require) trước khi chạy.",
       "tags": [
@@ -3267,7 +3267,7 @@
       "filePath": "ctl/runner.js",
       "lineRange": [
         271,
-        323
+        328
       ],
       "summary": "Chạy một lượt AI: kiểm vai hợp lệ, đúng NEXT_OWNER, workspace không bận và không còn bàn giao chờ duyệt, rà soát toàn quyền; ghép prompt (vai, ghi chú quyền, MCP phòng, việc giao, END, CAPTAIN), dựng argv qua codexArgs/fullAccessArgs/withMcp rồi jobs.start với onExit gọi done.",
       "tags": [
@@ -3283,8 +3283,8 @@
       "name": "done",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        369,
-        390
+        374,
+        395
       ],
       "summary": "Xử lý khi job AI kết thúc: lỗi tạm thời (rate limit, mạng) thì hẹn chạy lại sau 1 phút một lần; ngược lại tìm và kiểm dòng bàn giao, cộng lỗi chu trình agent.md (kiemAgent.checkChange) rồi lưu bàn giao vào SQLite và ghi kiểm toán.",
       "tags": [
@@ -3300,8 +3300,8 @@
       "name": "approve",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        408,
-        435
+        413,
+        440
       ],
       "summary": "CEO duyệt chuyển lượt: chặn bàn giao không có, đã quyết, có lỗi hoặc đang hỏi CEO; ghi agent.md bằng setTurn khi cần, commit cục bộ `chore(agent-sync): VAI -> NEXT: VAI` nếu là repo git, đánh dấu approved.",
       "tags": [
@@ -3317,8 +3317,8 @@
       "name": "answer",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        439,
-        451
+        444,
+        456
       ],
       "summary": "CEO chọn một phương án cho câu hỏi ask_ceo của Claude: duyệt bàn giao với next_owner của phương án, ghi kiểm toán và trả kèm câu quyết định để luồng tự động chạy tiếp.",
       "tags": [
@@ -3334,8 +3334,8 @@
       "name": "webPrompt",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        494,
-        510
+        499,
+        515
       ],
       "summary": "Giao một AI chỉ đọc soạn MASTER PROMPT và chuẩn đầu ra để CEO tự làm lượt của vai hết hạn mức trên ChatGPT web.",
       "tags": [
@@ -3351,8 +3351,8 @@
       "name": "applyWeb",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        514,
-        535
+        519,
+        540
       ],
       "summary": "Giao Claude hoặc Codex kiểm và áp kết quả ChatGPT web (đọc từ file) vào repo thay cho vai đang hết hạn mức; kiểm lượt, workspace bận, bàn giao chờ, rà soát toàn quyền, rồi chạy job có onExit gọi done.",
       "tags": [
@@ -3401,7 +3401,7 @@
       "filePath": "public/office-desk.js",
       "lineRange": [
         49,
-        649
+        719
       ],
       "summary": "Dựng bàn điều phối: tạo toolbar và dialog, quản lý trạng thái (runs, jobs, handoffs, quotas, scan, publish, journal…), các hàm render từng mục, đồng bộ NPC, xử lý sự kiện duyệt/trả lời/đẩy nhánh/xuất bản/rà soát/mở repo GitHub; trả { syncTurn }.",
       "tags": [
@@ -3418,8 +3418,8 @@
       "name": "renderApprovals",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        154,
-        178
+        158,
+        182
       ],
       "summary": "Hiển thị Việc chờ anh duyệt: khung rà soát, luồng tự động cần CEO (câu hỏi Claude, báo cáo, hết hạn mức, đẩy nhánh), bàn giao tay chưa quyết và bản build sẵn sàng xuất bản; cập nhật huy hiệu đếm và tiêu đề trang.",
       "tags": [
@@ -3435,8 +3435,8 @@
       "name": "syncWork",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        403,
-        425
+        449,
+        471
       ],
       "summary": "Đồng bộ cảnh 3D: đặt NPC đang làm/chờ duyệt theo job và luồng của dự án, xoá trạng thái cũ, hiện dòng ai đang giữ lượt agent.md.",
       "tags": [
@@ -3452,8 +3452,8 @@
       "name": "syncTurn",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        427,
-        461
+        473,
+        507
       ],
       "summary": "Một nhịp đồng bộ: đọc /workspaces rồi song song /autopilot, /jobs, /handoffs, /quotas, /scan, /publish, /nhat-ky, /ai/status, /ideas, /workspaces/overview; ghi lỗi theo từng mục, render và syncWork; không chồng yêu cầu khi đang chạy.",
       "tags": [
@@ -9909,8 +9909,8 @@
       "name": "batDauSongSong",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        346,
-        356
+        351,
+        361
       ],
       "summary": "Tới lượt Astra mà hợp đồng đạt: tạo hai worktree và chạy Astra + Kakashi cùng lúc; không đủ 2 lượt trong giới hạn hoặc tạo lỗi thì chạy lần lượt.",
       "tags": [
@@ -9925,8 +9925,8 @@
       "name": "chayBen",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        357,
-        384
+        362,
+        389
       ],
       "summary": "Chạy lượt của một bên trong worktree của nó với lời giao việc song song (chỉ sửa thư mục của mình, không sửa agent.md/hợp đồng); chờ khi Antigravity đang đổi tài khoản.",
       "tags": [
@@ -9940,8 +9940,8 @@
       "name": "dungSongSong",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        388,
-        398
+        393,
+        403
       ],
       "summary": "Dừng chạy song song: gỡ trạng thái, huỷ lượt còn chạy, từ chối bàn giao chưa quyết, gỡ worktree (giữ lại khi gộp lỗi); có vấn đề thì chuyển sang báo cáo.",
       "tags": [
@@ -9956,8 +9956,8 @@
       "name": "tickSongSong",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        399,
-        466
+        404,
+        471
       ],
       "summary": "Vòng theo dõi song song: bên nào xong thì kiểm bàn giao (trả lại riêng bên sai một lần), cả hai đạt thì gộp qua song-song.gop và chuyển lượt cho Sol.",
       "tags": [
@@ -9972,8 +9972,8 @@
       "name": "hoiMienHopDong",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        610,
-        630
+        615,
+        635
       ],
       "summary": "Sol đề nghị miễn hợp đồng: dừng luồng ở awaiting_answer, hỏi CEO kèm nguyên văn đề nghị, giải thích của Sol và hệ quả khi miễn.",
       "tags": [
@@ -9988,8 +9988,8 @@
       "name": "traLoiMien",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        631,
-        652
+        636,
+        657
       ],
       "summary": "CEO trả lời: đồng ý thì ghi sổ miễn và bỏ lỗi chờ duyệt khỏi bàn giao; không đồng ý thì trả lại Sol tạo contract/api.json rồi chạy tiếp.",
       "tags": [
@@ -10049,8 +10049,8 @@
       "name": "hopDongProblems",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        352,
-        367
+        357,
+        372
       ],
       "summary": "Kiểm hợp đồng giao tiếp sau lượt: Sol chưa tạo hợp đồng, đề nghị miễn chờ CEO, hoặc lỗi lệch thuộc phần của vai (backend/frontend/cấu trúc), bỏ lỗi đã có trước lượt.",
       "tags": [
@@ -10065,8 +10065,8 @@
       "name": "ghiNhan",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        455,
-        461
+        460,
+        466
       ],
       "summary": "Đánh dấu bàn giao song song đã duyệt mà không đụng khoá lượt (văn phòng tự ghi agent.md sau khi gộp).",
       "tags": [
@@ -10080,8 +10080,8 @@
       "name": "boLoi",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        464,
-        471
+        469,
+        476
       ],
       "summary": "Bỏ một loại lỗi khỏi bàn giao chưa quyết sau khi CEO vừa quyết điều đó (vd. duyệt miễn hợp đồng).",
       "tags": [
@@ -10125,8 +10125,8 @@
       "name": "docNghi",
       "filePath": "ctl/quotas.js",
       "lineRange": [
-        182,
-        190
+        202,
+        210
       ],
       "summary": "Đọc hạn mức tài khoản Antigravity đang nghỉ qua agy-tai-khoan, chờ lần đọc thường xong nếu đang chạy.",
       "tags": [
@@ -10141,8 +10141,8 @@
       "name": "gopAgy",
       "filePath": "ctl/quotas.js",
       "lineRange": [
-        222,
-        233
+        243,
+        254
       ],
       "summary": "Gộp model của mọi tài khoản Antigravity đã cất, ghi “chỉ <tên>” cho model chỉ một tài khoản có.",
       "tags": [
@@ -10156,8 +10156,8 @@
       "name": "models",
       "filePath": "ctl/quotas.js",
       "lineRange": [
-        234,
-        249
+        255,
+        270
       ],
       "summary": "Danh sách model thật của 3 AI (nhớ 6 giờ); AI nào lỗi thì trả lỗi riêng cho AI đó.",
       "tags": [
@@ -10235,8 +10235,8 @@
       "name": "dieuPhoiHtml",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        211,
-        222
+        215,
+        226
       ],
       "summary": "Vẽ bảng điều phối model theo phòng trong mục Hạn mức (tự động / cố định).",
       "tags": [
@@ -10251,8 +10251,8 @@
       "name": "agyTkHtml",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        230,
-        244
+        234,
+        248
       ],
       "summary": "Vẽ bảng tài khoản Antigravity: đang dùng, % còn lại, đổi, cất, ngưỡng tự chuyển.",
       "tags": [
@@ -10267,8 +10267,8 @@
       "name": "renderTkMenu",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        251,
-        263
+        288,
+        302
       ],
       "summary": "Khối tài khoản Antigravity trong ngăn kéo điện thoại: đổi bằng một chạm.",
       "tags": [
@@ -10283,8 +10283,8 @@
       "name": "moChonModel",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        293,
-        300
+        339,
+        346
       ],
       "summary": "Chạm ô ⚙ dưới tên nhân vật: mở bảng chọn model/mức cho phòng đó.",
       "tags": [
@@ -10298,8 +10298,8 @@
       "name": "veSheet",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        301,
-        329
+        347,
+        375
       ],
       "summary": "Vẽ bảng chọn model dạng thẻ (model thật của AI phòng đó, ghi 'chỉ Pro/Family') và mức suy nghĩ dạng nút.",
       "tags": [
@@ -10313,8 +10313,8 @@
       "name": "renderDam",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        480,
-        499
+        526,
+        545
       ],
       "summary": "Vẽ mục Dự án mới: ý tưởng, 3 tên gợi ý, ô sửa tên/mô tả, tiến độ từng bước.",
       "tags": [
@@ -10329,8 +10329,8 @@
       "name": "damTheoDoi",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        500,
-        515
+        546,
+        561
       ],
       "summary": "Theo dõi quy trình tạo dự án mới theo nhịp cho tới khi xong hoặc lỗi.",
       "tags": [
@@ -10555,8 +10555,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        200,
-        200
+        206,
+        206
       ]
     },
     {
@@ -10572,8 +10572,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        201,
-        201
+        207,
+        207
       ]
     },
     {
@@ -10589,8 +10589,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        212,
-        212
+        218,
+        218
       ]
     },
     {
@@ -10606,8 +10606,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        229,
-        229
+        243,
+        243
       ]
     },
     {
@@ -10622,8 +10622,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        220,
-        220
+        234,
+        234
       ]
     },
     {
@@ -10638,8 +10638,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        218,
-        218
+        224,
+        224
       ]
     },
     {
@@ -10654,8 +10654,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        215,
-        215
+        221,
+        221
       ]
     },
     {
@@ -10671,8 +10671,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        222,
-        222
+        236,
+        236
       ]
     },
     {
@@ -10688,8 +10688,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        224,
-        224
+        238,
+        238
       ]
     },
     {
@@ -10705,8 +10705,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        225,
-        225
+        239,
+        239
       ]
     },
     {
@@ -10722,8 +10722,8 @@
       ],
       "complexity": "simple",
       "lineRange": [
-        211,
-        211
+        217,
+        217
       ]
     },
     {
@@ -10741,6 +10741,209 @@
         "network"
       ],
       "complexity": "simple"
+    },
+    {
+      "id": "file:ctl/codex-tai-khoan.js",
+      "type": "file",
+      "name": "codex-tai-khoan.js",
+      "filePath": "ctl/codex-tai-khoan.js",
+      "summary": "Nhiều tài khoản GPT cho Codex: mỗi tài khoản một thư mục CODEX_HOME (tài khoản 1 là ~/.codex, tài khoản thêm ở ~/.van-phong-ao/codex-tk/<id>), CEO tự đăng nhập bằng `codex login` văn phòng mở; không chép hay đọc file đăng nhập. Dùng chung cấu hình, luật, skill, plugin, sandbox với ~/.codex; mỗi tiến trình Codex nhận CODEX_HOME của tài khoản đang chọn lúc khởi chạy; tự chuyển trước lượt khi còn dưới ngưỡng và đổi ngay khi lượt báo hết hạn mức.",
+      "tags": [
+        "service",
+        "accounts",
+        "codex",
+        "quota",
+        "tested"
+      ],
+      "complexity": "complex",
+      "languageNotes": "Skill/plugin/sandbox nối bằng junction (thư mục liên kết) thay vì chép, để mọi tài khoản thấy cùng một bản; config.toml, AGENTS.md chép lại trước mỗi lượt."
+    },
+    {
+      "id": "file:test/codex-tai-khoan.test.js",
+      "type": "file",
+      "name": "codex-tai-khoan.test.js",
+      "filePath": "test/codex-tai-khoan.test.js",
+      "summary": "Kiểm nhiều tài khoản GPT cho Codex: thêm tài khoản không chép file đăng nhập, đọc hạn mức mọi tài khoản bằng CODEX_HOME riêng, tự chuyển theo ngưỡng (không sang tài khoản cùng email), đổi ngay khi hết hạn mức, đăng nhập qua codex login, bỏ tài khoản, và tiến trình nhận biến môi trường lúc khởi chạy.",
+      "tags": [
+        "test",
+        "node-test"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:ctl/codex-tai-khoan.js:createCodexTaiKhoan",
+      "type": "function",
+      "name": "createCodexTaiKhoan",
+      "filePath": "ctl/codex-tai-khoan.js",
+      "lineRange": [
+        29,
+        225
+      ],
+      "summary": "Factory quản lý tài khoản GPT cho Codex: thêm, đăng nhập, đổi, sửa ngưỡng, bỏ, đọc hạn mức, quyết định trước lượt và khi hết hạn mức.",
+      "tags": [
+        "factory",
+        "accounts"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:ctl/codex-tai-khoan.js:dongBo",
+      "type": "function",
+      "name": "dongBo",
+      "filePath": "ctl/codex-tai-khoan.js",
+      "lineRange": [
+        46,
+        63
+      ],
+      "summary": "Đồng bộ thư mục tài khoản với ~/.codex: chép config.toml, AGENTS.md, cap_sid; nối skills, plugins, sandbox bằng junction.",
+      "tags": [
+        "sync",
+        "filesystem"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:ctl/codex-tai-khoan.js:envCho",
+      "type": "function",
+      "name": "envCho",
+      "filePath": "ctl/codex-tai-khoan.js",
+      "lineRange": [
+        66,
+        71
+      ],
+      "summary": "Biến môi trường cho tiến trình Codex của một tài khoản (CODEX_HOME; tài khoản 1 thì để trống = ~/.codex).",
+      "tags": [
+        "env"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:ctl/codex-tai-khoan.js:them",
+      "type": "function",
+      "name": "them",
+      "filePath": "ctl/codex-tai-khoan.js",
+      "lineRange": [
+        74,
+        86
+      ],
+      "summary": "Thêm tài khoản: tạo thư mục CODEX_HOME riêng và đồng bộ cấu hình; chưa đăng nhập.",
+      "tags": [
+        "accounts"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:ctl/codex-tai-khoan.js:moDangNhap",
+      "type": "function",
+      "name": "moDangNhap",
+      "filePath": "ctl/codex-tai-khoan.js",
+      "lineRange": [
+        90,
+        115
+      ],
+      "summary": "Mở `codex login` với CODEX_HOME của tài khoản, đọc link đăng nhập để CEO bấm; xong thì đọc hạn mức.",
+      "tags": [
+        "login",
+        "process"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:ctl/codex-tai-khoan.js:chuyen",
+      "type": "function",
+      "name": "chuyen",
+      "filePath": "ctl/codex-tai-khoan.js",
+      "lineRange": [
+        154,
+        164
+      ],
+      "summary": "Đổi tài khoản đang dùng; lượt đang chạy không bị ảnh hưởng.",
+      "tags": [
+        "accounts",
+        "switch"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:ctl/codex-tai-khoan.js:truocLuot",
+      "type": "function",
+      "name": "truocLuot",
+      "filePath": "ctl/codex-tai-khoan.js",
+      "lineRange": [
+        201,
+        210
+      ],
+      "summary": "Trước lượt Codex: tài khoản đang dùng còn ≤ ngưỡng thì chuyển sang tài khoản còn nhiều nhất (bỏ qua tài khoản cùng email).",
+      "tags": [
+        "quota-aware",
+        "auto-switch"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:ctl/codex-tai-khoan.js:baoCan",
+      "type": "function",
+      "name": "baoCan",
+      "filePath": "ctl/codex-tai-khoan.js",
+      "lineRange": [
+        213,
+        222
+      ],
+      "summary": "Lượt báo hết hạn mức: đánh dấu tài khoản cạn và đổi ngay sang tài khoản còn hạn mức để luồng chạy lại.",
+      "tags": [
+        "quota",
+        "auto-switch"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "endpoint:ctl/main.js:POST /codex-tai-khoan/them",
+      "type": "endpoint",
+      "name": "POST /codex-tai-khoan/them",
+      "filePath": "ctl/main.js",
+      "summary": "Thêm tài khoản GPT cho Codex (thư mục CODEX_HOME riêng).",
+      "tags": [
+        "api-endpoint",
+        "accounts"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        228,
+        228
+      ]
+    },
+    {
+      "id": "endpoint:ctl/main.js:POST /codex-tai-khoan/:id/dang-nhap",
+      "type": "endpoint",
+      "name": "POST /codex-tai-khoan/:id/dang-nhap",
+      "filePath": "ctl/main.js",
+      "summary": "Mở codex login cho tài khoản để CEO đăng nhập trên trình duyệt.",
+      "tags": [
+        "api-endpoint",
+        "accounts",
+        "login"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        231,
+        231
+      ]
+    },
+    {
+      "id": "endpoint:ctl/main.js:POST /codex-tai-khoan/:id/chuyen",
+      "type": "endpoint",
+      "name": "POST /codex-tai-khoan/:id/chuyen",
+      "filePath": "ctl/main.js",
+      "summary": "Đổi tài khoản GPT đang dùng rồi làm mới hạn mức (điện thoại đã ghép gọi được).",
+      "tags": [
+        "api-endpoint",
+        "accounts"
+      ],
+      "complexity": "simple",
+      "lineRange": [
+        232,
+        232
+      ]
     }
   ],
   "edges": [
@@ -15477,6 +15680,90 @@
       "weight": 0.8
     },
     {
+      "source": "file:ctl/codex-tai-khoan.js",
+      "target": "function:ctl/codex-tai-khoan.js:createCodexTaiKhoan",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:ctl/codex-tai-khoan.js",
+      "target": "function:ctl/codex-tai-khoan.js:createCodexTaiKhoan",
+      "type": "exports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:ctl/codex-tai-khoan.js",
+      "target": "function:ctl/codex-tai-khoan.js:dongBo",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:ctl/codex-tai-khoan.js",
+      "target": "function:ctl/codex-tai-khoan.js:envCho",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:ctl/codex-tai-khoan.js",
+      "target": "function:ctl/codex-tai-khoan.js:them",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:ctl/codex-tai-khoan.js",
+      "target": "function:ctl/codex-tai-khoan.js:moDangNhap",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:ctl/codex-tai-khoan.js",
+      "target": "function:ctl/codex-tai-khoan.js:chuyen",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:ctl/codex-tai-khoan.js",
+      "target": "function:ctl/codex-tai-khoan.js:truocLuot",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:ctl/codex-tai-khoan.js",
+      "target": "function:ctl/codex-tai-khoan.js:baoCan",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "endpoint:ctl/main.js:POST /codex-tai-khoan/them",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "endpoint:ctl/main.js:POST /codex-tai-khoan/:id/dang-nhap",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "endpoint:ctl/main.js:POST /codex-tai-khoan/:id/chuyen",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
       "source": "file:ctl/agy-tai-khoan.js",
       "target": "file:lib/ghi-file.js",
       "type": "imports",
@@ -15598,6 +15885,20 @@
     {
       "source": "file:ctl/chrome-devtools.js",
       "target": "file:ctl/mcp-may.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:ctl/codex-tai-khoan.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:ctl/codex-tai-khoan.js",
+      "target": "file:lib/mask.js",
       "type": "imports",
       "direction": "forward",
       "weight": 0.7
@@ -15878,6 +16179,13 @@
     {
       "source": "file:ctl/main.js",
       "target": "file:ctl/agy-tai-khoan.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/codex-tai-khoan.js",
       "type": "imports",
       "direction": "forward",
       "weight": 0.7
@@ -16613,6 +16921,34 @@
     {
       "source": "file:test/codex-model.test.js",
       "target": "file:ctl/handoff.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:test/codex-tai-khoan.test.js",
+      "target": "file:ctl/codex-tai-khoan.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:test/codex-tai-khoan.test.js",
+      "target": "file:ctl/quotas.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:test/codex-tai-khoan.test.js",
+      "target": "file:ctl/db.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "file:test/codex-tai-khoan.test.js",
+      "target": "file:ctl/jobs.js",
       "type": "imports",
       "direction": "forward",
       "weight": 0.7
@@ -18181,6 +18517,13 @@
     },
     {
       "source": "function:ctl/main.js:createCtl",
+      "target": "function:ctl/codex-tai-khoan.js:createCodexTaiKhoan",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:ctl/main.js:createCtl",
       "target": "function:ctl/skill-duyet.js:createSkillDuyet",
       "type": "calls",
       "direction": "forward",
@@ -18524,13 +18867,6 @@
     },
     {
       "source": "function:ctl/jobs.js:createJobs",
-      "target": "function:lib/mask.js:cleanEnv",
-      "type": "calls",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "function:ctl/jobs.js:createJobs",
       "target": "function:lib/mask.js:maskSecrets",
       "type": "calls",
       "direction": "forward",
@@ -18735,6 +19071,13 @@
     {
       "source": "function:ctl/quotas.js:createQueries",
       "target": "function:lib/proc.js:killTree",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:ctl/quotas.js:createQuotas",
+      "target": "function:ctl/quotas.js:codexBuckets",
       "type": "calls",
       "direction": "forward",
       "weight": 0.8
@@ -21141,6 +21484,69 @@
       "weight": 0.8
     },
     {
+      "source": "function:ctl/codex-tai-khoan.js:createCodexTaiKhoan",
+      "target": "function:ctl/codex-tai-khoan.js:dongBo",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:ctl/codex-tai-khoan.js:createCodexTaiKhoan",
+      "target": "function:ctl/codex-tai-khoan.js:envCho",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:ctl/codex-tai-khoan.js:createCodexTaiKhoan",
+      "target": "function:lib/ghi-file.js:writeAtomic",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:ctl/codex-tai-khoan.js:envCho",
+      "target": "function:ctl/codex-tai-khoan.js:dongBo",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:ctl/codex-tai-khoan.js:them",
+      "target": "function:ctl/codex-tai-khoan.js:dongBo",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:ctl/codex-tai-khoan.js:moDangNhap",
+      "target": "function:ctl/codex-tai-khoan.js:dongBo",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:ctl/codex-tai-khoan.js:chuyen",
+      "target": "function:ctl/codex-tai-khoan.js:dongBo",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:ctl/codex-tai-khoan.js:truocLuot",
+      "target": "function:ctl/codex-tai-khoan.js:chuyen",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "function:ctl/codex-tai-khoan.js:baoCan",
+      "target": "function:ctl/codex-tai-khoan.js:chuyen",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
       "source": "file:ctl/agy-tai-khoan.js",
       "target": "file:test/agy-tai-khoan.test.js",
       "type": "tested_by",
@@ -21318,6 +21724,34 @@
     {
       "source": "file:ctl/handoff.js",
       "target": "file:test/codex-model.test.js",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:ctl/codex-tai-khoan.js",
+      "target": "file:test/codex-tai-khoan.test.js",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:ctl/quotas.js",
+      "target": "file:test/codex-tai-khoan.test.js",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:ctl/db.js",
+      "target": "file:test/codex-tai-khoan.test.js",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:ctl/jobs.js",
+      "target": "file:test/codex-tai-khoan.test.js",
       "type": "tested_by",
       "direction": "forward",
       "weight": 0.5
@@ -21918,6 +22352,13 @@
       "weight": 0.5
     },
     {
+      "source": "function:ctl/jobs.js:createJobs",
+      "target": "function:lib/mask.js:cleanEnv",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
       "source": "function:ctl/autopilot.js:nextWriter",
       "target": "function:ctl/autopilot.js:templatePrompt",
       "type": "calls",
@@ -22095,13 +22536,6 @@
     {
       "source": "function:ctl/xuat-ban.js:release",
       "target": "function:ctl/github.js:dispatch",
-      "type": "calls",
-      "direction": "forward",
-      "weight": 0.8
-    },
-    {
-      "source": "function:ctl/quotas.js:createQuotas",
-      "target": "function:ctl/quotas.js:codexBuckets",
       "type": "calls",
       "direction": "forward",
       "weight": 0.8
@@ -25571,6 +26005,27 @@
       "type": "documents",
       "direction": "forward",
       "weight": 0.5
+    },
+    {
+      "source": "endpoint:ctl/main.js:POST /codex-tai-khoan/them",
+      "target": "function:ctl/codex-tai-khoan.js:them",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "endpoint:ctl/main.js:POST /codex-tai-khoan/:id/dang-nhap",
+      "target": "function:ctl/codex-tai-khoan.js:moDangNhap",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "endpoint:ctl/main.js:POST /codex-tai-khoan/:id/chuyen",
+      "target": "function:ctl/codex-tai-khoan.js:chuyen",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.8
     }
   ],
   "layers": [
@@ -25741,7 +26196,11 @@
         "endpoint:ctl/main.js:GET /skill",
         "endpoint:ctl/main.js:POST /skill/de-xuat",
         "endpoint:ctl/main.js:POST /skill/de-xuat/:id/duyet",
-        "endpoint:ctl/main.js:POST /ket-noi/cai-may"
+        "endpoint:ctl/main.js:POST /ket-noi/cai-may",
+        "file:ctl/codex-tai-khoan.js",
+        "endpoint:ctl/main.js:POST /codex-tai-khoan/them",
+        "endpoint:ctl/main.js:POST /codex-tai-khoan/:id/dang-nhap",
+        "endpoint:ctl/main.js:POST /codex-tai-khoan/:id/chuyen"
       ]
     },
     {
@@ -25819,7 +26278,7 @@
     {
       "id": "layer:10-kiem-thu",
       "name": "10 · Kiểm thử",
-      "description": "Bộ node --test (48 tệp) chạy trong CI mỗi PR và trước khi phát hành.",
+      "description": "Bộ node --test (49 tệp) chạy trong CI mỗi PR và trước khi phát hành.",
       "nodeIds": [
         "file:test/autopilot.test.js",
         "file:test/chat.test.js",
@@ -25868,7 +26327,8 @@
         "file:test/skill.test.js",
         "file:test/song-song.test.js",
         "file:test/tra-cuu.test.js",
-        "file:test/ban-do.test.js"
+        "file:test/ban-do.test.js",
+        "file:test/codex-tai-khoan.test.js"
       ]
     }
   ],
@@ -26008,11 +26468,12 @@
     {
       "order": 12,
       "title": "Chọn model, mục lục và tra cứu cho mỗi lượt",
-      "description": "Trước khi chạy, runner hỏi ctl/dieu-phoi.js chọn model + mức suy nghĩ theo độ khó và hạn mức (CEO cố định được theo phòng), ctl/muc-luc.js tra bản đồ .ua của repo để đưa file:dòng liên quan vào prompt, ctl/agy-tai-khoan.js đổi tài khoản Antigravity khi tài khoản đang dùng sắp cạn. Khi CEO đã lưu khóa Gemini, lượt Claude/Codex có thêm MCP tra-cuu (ctl/tra-cuu-mcp.js) — chỗ duy nhất văn phòng gửi nội dung ra ngoài, nên ctl/tra-cuu.js chặn khóa, mã nguồn và địa chỉ nội bộ.",
+      "description": "Trước khi chạy, runner hỏi ctl/dieu-phoi.js chọn model + mức suy nghĩ theo độ khó và hạn mức (CEO cố định được theo phòng), ctl/muc-luc.js tra bản đồ .ua của repo để đưa file:dòng liên quan vào prompt, ctl/agy-tai-khoan.js và ctl/codex-tai-khoan.js đổi tài khoản Antigravity / GPT khi tài khoản đang dùng sắp cạn. Khi CEO đã lưu khóa Gemini, lượt Claude/Codex có thêm MCP tra-cuu (ctl/tra-cuu-mcp.js) — chỗ duy nhất văn phòng gửi nội dung ra ngoài, nên ctl/tra-cuu.js chặn khóa, mã nguồn và địa chỉ nội bộ.",
       "nodeIds": [
         "file:ctl/dieu-phoi.js",
         "file:ctl/muc-luc.js",
         "file:ctl/agy-tai-khoan.js",
+        "file:ctl/codex-tai-khoan.js",
         "file:ctl/tra-cuu.js",
         "file:ctl/tra-cuu-mcp.js"
       ]

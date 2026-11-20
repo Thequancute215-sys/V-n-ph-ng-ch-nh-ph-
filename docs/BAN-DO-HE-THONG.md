@@ -1,10 +1,10 @@
 # Bản đồ hệ thống Văn phòng AI — từ workflow tới mã nguồn
 
-> Sinh tự động bằng `node tools/ve-ban-do.js` từ `.ua/domain-graph.json` (workflow nghiệp vụ) và `.ua/knowledge-graph.json` (bản đồ hệ thống) do Understand Anything vẽ tại commit `7629d85`. Mã đổi nhiều thì vẽ lại đồ thị (`/understand`, `/understand-domain`) rồi chạy lại lệnh trên; đừng sửa tay trang này.
+> Sinh tự động bằng `node tools/ve-ban-do.js` từ `.ua/domain-graph.json` (workflow nghiệp vụ) và `.ua/knowledge-graph.json` (bản đồ hệ thống) do Understand Anything vẽ tại commit `1fbe53c`. Mã đổi nhiều thì vẽ lại đồ thị (`/understand`, `/understand-domain`) rồi chạy lại lệnh trên; đừng sửa tay trang này.
 
 **Bản tương tác** (bấm vào từng node, xem quan hệ, đi theo lộ trình): trong repo chạy `/understand-dashboard` của plugin Understand Anything (Claude Code), hoặc lệnh `npx` trong README của dự án Understand Anything. Lệnh đó tải và chạy mã của bên thứ ba: chỉ chạy khi anh tin nguồn; đọc các sơ đồ dưới đây trên GitHub thì không cần.
 
-Quy mô: 8 miền nghiệp vụ, 52 workflow, 338 bước · 666 node (151 file, 439 hàm, 46 route API, 30 tài liệu/cấu hình/CI) · 2110 quan hệ (680 lời gọi, 282 import, 135 liên kết test) · 10 lớp kiến trúc · lộ trình 20 bước.
+Quy mô: 8 miền nghiệp vụ, 53 workflow, 346 bước · 679 node (153 file, 447 hàm, 49 route API, 30 tài liệu/cấu hình/CI) · 2146 quan hệ (693 lời gọi, 289 import, 139 liên kết test) · 10 lớp kiến trúc · lộ trình 20 bước.
 
 Mục lục: [1. Miền nghiệp vụ](#1-các-miền-nghiệp-vụ) · [2. Workflow trung tâm](#2-workflow-trung-tâm-ceo-giao-việc--đội-ai--ceo-duyệt) · [3. Từng workflow](#3-từng-workflow-từng-bước-trỏ-tới-mã) · [4. Lớp kiến trúc](#4-bản-đồ-hệ-thống-các-lớp-kiến-trúc) · [5. Lộ trình đọc mã](#5-lộ-trình-đọc-mã) · [6. Điểm cần anh rà](#6-điểm-phát-hiện-khi-vẽ--đã-xử-lý)
 
@@ -19,7 +19,7 @@ flowchart TD
   domain_giao_tiep_ceo_doi["<b>Giao tiếp CEO với đội AI</b><br/>3 workflow"]
   domain_so_dieu_phoi["<b>Sổ điều phối của đội</b><br/>5 workflow"]
   domain_chu_trinh_ai["<b>Chu trình AI tự động (/bcc)</b><br/>13 workflow"]
-  domain_nang_luc_doi["<b>Năng lực & tài nguyên của đội AI</b><br/>6 workflow"]
+  domain_nang_luc_doi["<b>Năng lực & tài nguyên của đội AI</b><br/>7 workflow"]
   domain_dieu_khien_may["<b>Điều khiển máy (OS Controller)</b><br/>6 workflow"]
   domain_chat_luong_phat_hanh["<b>Chất lượng & phát hành</b><br/>6 workflow"]
   domain_cai_dat_van_hanh -->|1| domain_dieu_khien_may
@@ -64,7 +64,7 @@ flowchart TD
 - **Giao tiếp CEO với đội AI** — Các kênh Giám đốc nói chuyện với đội AI mà không phá khóa lượt: chat chỉ đọc với từng nhân vật qua OS Controller (trên máy này hoặc điện thoại đã ghép), và nút 📢 giao việc cho cả đội đi thẳng vào luồng tự động, kèm danh sách việc đang chạy có nút dừng.
 - **Sổ điều phối của đội** — Bộ sổ chung trong data/ mà các agent (Claude Code, Codex) ghi bằng công cụ dòng lệnh vp (tools/vp.js) còn văn phòng chỉ đọc: hòm thư giữa các vai, lượt dùng môi trường DEV, sổ “Cần anh”, việc ưu tiên – gói việc – tiến độ và sổ bài học tự học.
 - **Chu trình AI tự động (/bcc)** — Trái tim của OS Controller: CEO giao một việc (hoặc ý tưởng), các lượt AI chạy nối tiếp theo NEXT_OWNER trong agent.md (Hinata/Antigravity → Sol, Astra trên Codex → Claude đội trưởng) trên nhánh git riêng ai/…; mỗi lượt phải nộp dòng JSON bàn giao hợp lệ.
-- **Năng lực & tài nguyên của đội AI** — Cho mỗi lượt AI đúng công cụ với chi phí hợp lý: điều phối model và mức suy nghĩ theo độ khó và hạn mức, mục lục từ bản đồ hệ thống, nhiều tài khoản Antigravity tự chuyển khi cạn, bộ skill ghim commit cài cho cả ba AI, duyệt skill/MCP mới từ link GitHub, MCP…
+- **Năng lực & tài nguyên của đội AI** — Cho mỗi lượt AI đúng công cụ với chi phí hợp lý: điều phối model và mức suy nghĩ theo độ khó và hạn mức, mục lục từ bản đồ hệ thống, nhiều tài khoản Antigravity và GPT (Codex) tự chuyển khi cạn, bộ skill ghim commit cài cho cả ba AI, duyệt skill/MCP mới từ li…
 - **Điều khiển máy (OS Controller)** — OS Controller (ctl/main.js, chỉ nghe 127.0.0.1:7790, Bearer token sinh mới mỗi lần khởi động) là bàn tay của CEO trên máy: chạy lệnh theo chính sách allow/approve/deny không qua shell, phanh khẩn cấp dừng cả cây tiến trình, mở repo GitHub thành workspace, nạp…
 - **Chất lượng & phát hành** — Máy kiểm thay người nhớ luật: bộ kiểm agent.md (lib/kiem-agent.js) chấm từng lượt AI trong văn phòng và từng PR trên CI; văn phòng cài bộ kiểm này vào repo dự án qua nhánh riêng; xuất bản dự án hai bước do CEO bấm; và phát hành chính Văn phòng AI bằng tag vX.…
 
@@ -452,18 +452,18 @@ Ghép việc ưu tiên, trạng thái gói việc, tiến độ mới nhất và
 2. **Xác định repo công khai hay riêng tư** — github.visibility qua origin và GitHub API, nhớ 10 phút; công khai mà agent.md chưa từng commit thì excludeAgentMd. [`ctl/github.js:126`](../ctl/github.js#L126-L135)
 3. **Đọc thật git, công nghệ, README** — ws.overview đọc repo; mục nào không đọc được để null kèm lý do, không tạo agent.md khi thiếu. [`ctl/workspaces.js:150`](../ctl/workspaces.js#L150-L190)
 4. **Phân tích tiến độ agent.md** — readProgress lấy CURRENT_PHASE, NEXT_OWNER, LAST_UPDATED_BY ở Vùng [4], AUDIT_STATUS và blocker [ ] OPEN chỉ ở Vùng [5], 25 dòng cuối [4.1], các mục [1]–[3] còn nội dung mẫu; che secret. [`ctl/workspaces.js:11`](../ctl/workspaces.js#L11-L44)
-5. **Tổng hợp bảng mọi dự án** — projects(): với mỗi workspace đọc lượt, AUDIT_STATUS, số blocker, bàn giao chờ, job đang chạy/10 việc gần nhất và luồng tự động; mọi chuỗi đã che khóa; thư mục mất vẫn có phần tử kèm problem. [`ctl/main.js:134`](../ctl/main.js#L134-L155)
+5. **Tổng hợp bảng mọi dự án** — projects(): với mỗi workspace đọc lượt, AUDIT_STATUS, số blocker, bàn giao chờ, job đang chạy/10 việc gần nhất và luồng tự động; mọi chuỗi đã che khóa; thư mục mất vẫn có phần tử kèm problem. [`ctl/main.js:140`](../ctl/main.js#L140-L161)
 6. **Hiện “đang dừng ở đâu / đã làm gì / còn cần gì”** — progress-view.html dựng ba phần tiến độ kèm trạng thái bộ kiểm chu trình (nút cài khi chua-cai hoặc cu). [`public/progress-view.js:16`](../public/progress-view.js#L16-L30)
 
 #### Theo dõi hạn mức thuê bao AI
 
 Đọc hạn mức gói của Codex, Claude và Antigravity qua CLI cục bộ, chuẩn hóa thành % còn lại kèm giờ đặt lại, cho CEO xem và cho luồng tự động biết khi nào chạy lại. — *Kích hoạt:* `Tab Hạn mức → GET /ctl/quotas, POST /ctl/quotas/refresh` (http).
 
-1. **Chỉ đọc nhà cung cấp đến hạn** — createQuotas.refresh theo chu kỳ 2 phút, gộp các yêu cầu đồng thời, giữ trạng thái loading/ready/stale/error từng hãng. [`ctl/quotas.js:167`](../ctl/quotas.js#L167-L252)
-2. **Chạy CLI cục bộ không qua shell** — createQueries spawn CLI với env đã lọc khóa, timeout 25 giây, tối đa 2 MB; Codex dùng JSON-RPC app-server (account/rateLimits/read), Claude và Antigravity dùng /usage. [`ctl/quotas.js:102`](../ctl/quotas.js#L102-L163)
+1. **Chỉ đọc nhà cung cấp đến hạn** — createQuotas.refresh theo chu kỳ 2 phút, gộp các yêu cầu đồng thời, giữ trạng thái loading/ready/stale/error từng hãng. [`ctl/quotas.js:170`](../ctl/quotas.js#L170-L273)
+2. **Chạy CLI cục bộ không qua shell** — createQueries spawn CLI với env đã lọc khóa, timeout 25 giây, tối đa 2 MB; Codex dùng JSON-RPC app-server (account/rateLimits/read), Claude và Antigravity dùng /usage. [`ctl/quotas.js:102`](../ctl/quotas.js#L102-L165)
 3. **Chuẩn hóa bucket và giờ đặt lại** — codexBuckets, claudeBuckets (+ claudeReset quy đổi múi giờ, qua năm/nửa đêm), antigravityBuckets ra bucket 5 giờ/7 ngày theo % đã dùng/còn lại. [`ctl/quotas.js:54`](../ctl/quotas.js#L54-L67)
-4. **Hạn mức theo từng tài khoản Antigravity** — Ghi hạn mức cho đúng tài khoản đang đăng nhập và đọc tài khoản nghỉ. [`ctl/quotas.js:182`](../ctl/quotas.js#L182-L190)
-5. **Lỗi từng hãng độc lập** — Hãng lỗi thì giữ số liệu cũ (stale) và lùi 5 phút, không ảnh hưởng hãng khác; không để lộ dữ liệu tài khoản. [`ctl/quotas.js:167`](../ctl/quotas.js#L167-L252)
+4. **Hạn mức theo từng tài khoản Antigravity** — Ghi hạn mức cho đúng tài khoản đang đăng nhập và đọc tài khoản nghỉ. [`ctl/quotas.js:202`](../ctl/quotas.js#L202-L210)
+5. **Lỗi từng hãng độc lập** — Hãng lỗi thì giữ số liệu cũ (stale) và lùi 5 phút, không ảnh hưởng hãng khác; không để lộ dữ liệu tài khoản. [`ctl/quotas.js:170`](../ctl/quotas.js#L170-L273)
 6. **Hiện hạn mức** — prototype.renderQuotas đánh dấu số liệu cũ hoặc đã qua giờ đặt lại. [`public/prototype.js:106`](../public/prototype.js#L106-L127)
 
 #### Nhật ký “ai làm gì, lúc nào”
@@ -473,7 +473,7 @@ Ghép log JSONL từng lượt AI và các luồng tự động thành dòng th�
 1. **Đọc dần log từng lượt AI** — createJournal nhớ offset qua jobs.readLog, giữ tối đa 200 job / 400 mục. [`ctl/nhat-ky.js:46`](../ctl/nhat-ky.js#L46-L89)
 2. **Dịch dòng log thành mục dễ đọc** — parseLine: noi/lenh/loi/sua cho item.completed của Codex, stream-json của Claude (Edit/Write/Bash/mcp__) và tin trợ lý của Antigravity. [`ctl/nhat-ky.js:15`](../ctl/nhat-ky.js#L15-L44)
 3. **Ghép với luồng tự động và nhân vật** — Thêm mục nhận việc/bắt đầu/xong/lỗi/chờ duyệt từ 3 luồng gần nhất, che khóa bằng maskText, gán nhân vật theo vai, sắp mới nhất trước. [`ctl/nhat-ky.js:46`](../ctl/nhat-ky.js#L46-L89)
-4. **Hiện cùng nhịp đồng bộ bàn điều phối** — office-desk.syncTurn đọc /nhat-ky song song với /autopilot, /jobs, /handoffs, /quotas… [`public/office-desk.js:427`](../public/office-desk.js#L427-L461)
+4. **Hiện cùng nhịp đồng bộ bàn điều phối** — office-desk.syncTurn đọc /nhat-ky song song với /autopilot, /jobs, /handoffs, /quotas… [`public/office-desk.js:473`](../public/office-desk.js#L473-L507)
 
 ### Giao tiếp CEO với đội AI
 
@@ -546,10 +546,10 @@ flowchart TD
 CEO bấm một nhân vật trong văn phòng 3D để hỏi; câu hỏi chạy CLI chỉ đọc theo phạm vi phòng, có thể gợi ý chuyển phòng hoặc soạn prompt giao việc. — *Kích hoạt:* `Bấm nhân vật trong văn phòng 3D → POST /ctl/chat` (http).
 
 1. **Giao việc riêng cho một AI** — Nút ⚡ trên thanh trên: chọn AI và gõ việc; văn phòng mở chat của phòng đó và gửi thật qua /ctl/chat (thay hộp “Đặc cách” giả). [`public/index.html:801`](../public/index.html#L801-L814)
-2. **CEO gửi tin cho một nhân vật** — index.html renderChat → POST /ctl/chat qua cầu /ctl (chỉ từ chính máy); trả 202. [`ctl/main.js:237`](../ctl/main.js#L237-L237)
+2. **CEO gửi tin cho một nhân vật** — index.html renderChat → POST /ctl/chat qua cầu /ctl (chỉ từ chính máy); trả 202. [`ctl/main.js:251`](../ctl/main.js#L251-L251)
 3. **Kiểm tin và trạng thái bận** — chat.send: tin ≤ 4000 ký tự, mỗi người chỉ một câu đang chờ. [`ctl/chat.js:85`](../ctl/chat.js#L85-L107)
 4. **Dựng prompt theo phạm vi phòng** — promptFor: vai, phạm vi, danh sách phòng, luật chỉ đọc, ba cách trả lời, dòng JSON kết thúc bắt buộc, 6 tin gần nhất làm ngữ cảnh. [`ctl/chat.js:32`](../ctl/chat.js#L32-L53)
-5. **Chạy CLI chỉ đọc như job “cmd”** — runner.chatArgv thay {prompt}; job không chặn lượt AI chính của workspace. [`ctl/runner.js:539`](../ctl/runner.js#L539-L548)
+5. **Chạy CLI chỉ đọc như job “cmd”** — runner.chatArgv thay {prompt}; job không chặn lượt AI chính của workspace. [`ctl/runner.js:544`](../ctl/runner.js#L544-L553)
 6. **Xử lý câu trả lời hoặc lỗi** — finish: hết hạn mức/timeout/lỗi CLI thì báo kèm đuôi log đã che; ngược lại responseText + parseReply tách dòng JSON chuyen_phong/prompt (bỏ phòng lạ hoặc chuyển cho chính mình). [`ctl/chat.js:109`](../ctl/chat.js#L109-L129)
 7. **Việc cần sửa file: giao cả đội** — AI soạn prompt giao việc; nút “Giao cả đội” mở mục giao việc của bàn làm việc và điền sẵn để CEO tự bấm giao (luồng tự động). [`public/index.html:1020`](../public/index.html#L1020-L1028)
 8. **Lưu lịch sử chat.json** — Giữ tối đa 40 tin mỗi người; tin đang chờ khi app tắt thành lỗi lúc khởi động lại. [`ctl/chat.js:72`](../ctl/chat.js#L72-L140)
@@ -559,7 +559,7 @@ CEO bấm một nhân vật trong văn phòng 3D để hỏi; câu hỏi chạy 
 Giám đốc giao một việc cho cả đội từ thanh trên của văn phòng 3D: nút 📢 mở mục giao việc thật của bàn làm việc (luồng tự động /ctl/autopilot); văn phòng liệt kê việc OS Controller đang chạy và cho dừng từng việc hoặc tất cả. — *Kích hoạt:* `Nút 📢 Giao việc cả đội trên index.html → mục Giao việc của bàn làm việc → POST /ctl/autopilot` (http).
 
 1. **Nút 📢 mở mục Giao việc cho cả đội** — Bấm 📢 "Giao việc cả đội" trên thanh trên: mở thẳng mục giao việc của bàn làm việc (nút data-desk="assign"), không còn hộp gợi ý theo từ khóa. [`public/index.html:820`](../public/index.html#L820-L823)
-2. **Gửi việc vào luồng tự động thật** — Bàn làm việc gọi POST /ctl/autopilot {workspace, task}: đội Hinata → Sol → Astra → Claude làm trên nhánh riêng, Claude báo cáo cho CEO duyệt (xem workflow "Luồng tự động"). [`public/office-desk.js:574`](../public/office-desk.js#L574-L574)
+2. **Gửi việc vào luồng tự động thật** — Bàn làm việc gọi POST /ctl/autopilot {workspace, task}: đội Hinata → Sol → Astra → Claude làm trên nhánh riêng, Claude báo cáo cho CEO duyệt (xem workflow "Luồng tự động"). [`public/office-desk.js:620`](../public/office-desk.js#L620-L620)
 3. **Liệt kê việc đang chạy thật** — GET /api/running-tasks: chỉ các việc OS Controller đang chạy (lượt AI, lệnh), có pid; gắn cờ cảnh báo quá 10 phút. [`server.js:714`](../server.js#L714-L728)
 4. **Hiện danh sách và cảnh báo chạy lâu** — refreshRunningTasks đếm việc đang chạy, đổi màu nút cảnh báo, dựng danh sách có nút dừng từng việc. [`public/index.html:835`](../public/index.html#L835-L890)
 5. **Dừng một việc hoặc tất cả** — POST /api/kill-task: chuyển sang OS Controller dừng cả cây tiến trình; ctl không chạy thì báo 503, không giả vờ đã dừng. [`server.js:731`](../server.js#L731-L749)
@@ -960,50 +960,50 @@ CEO lưu ý tưởng rồi giao cho đội: luồng tự động bắt đầu t�
 2. **Kiểm trước khi giao** — ideas.start: ý tưởng chưa chạy, agent.md đọc được, dự án rảnh, preflight (rà soát toàn quyền + repo sạch). [`ctl/ideas.js:58`](../ctl/ideas.js#L58-L84)
 3. **Sai lượt thì cần CEO xác nhận ghi đè** — NEXT_OWNER khác SPEC_ARCHITECT mà không có force thì từ chối; có force thì setTurn ghi đúng hai dòng LAST_UPDATED_BY/NEXT_OWNER. [`ctl/handoff.js:27`](../ctl/handoff.js#L27-L33)
 4. **Commit riêng agent.md khi ghi đè** — commitTurn chỉ commit khi agent.md được git theo dõi và có thay đổi; trả mã commit ngắn. [`ctl/ideas.js:47`](../ctl/ideas.js#L47-L55)
-5. **Bật luồng từ lượt SPEC_ARCHITECT** — Gọi autopilot.start với nhiệm vụ đặc tả Vùng [2]; trạng thái ý tưởng lấy từ luồng thật. [`ctl/autopilot.js:506`](../ctl/autopilot.js#L506-L522)
+5. **Bật luồng từ lượt SPEC_ARCHITECT** — Gọi autopilot.start với nhiệm vụ đặc tả Vùng [2]; trạng thái ý tưởng lấy từ luồng thật. [`ctl/autopilot.js:511`](../ctl/autopilot.js#L511-L527)
 
 #### Tạo dự án mới từ ý tưởng
 
 CEO gõ ý tưởng; văn phòng gợi ý 3 tên repo và kiểm tên trống trên GitHub; CEO chọn/sửa rồi duyệt thì văn phòng tạo repo riêng tư, tải về, mở làm dự án với agent.md, lưu ý tưởng, cài bộ kiểm và giao Hinata đặc tả. — *Kích hoạt:* `Bàn làm việc → Dự án mới → POST /ctl/du-an-moi/goi-y rồi POST /ctl/du-an-moi` (http).
 
-1. **CEO gõ ý tưởng, xin gợi ý tên** — Mục Dự án mới gửi ý tưởng, hiện 3 tên kèm mô tả và tên nào đã có. [`public/office-desk.js:480`](../public/office-desk.js#L480-L499)
+1. **CEO gõ ý tưởng, xin gợi ý tên** — Mục Dự án mới gửi ý tưởng, hiện 3 tên kèm mô tả và tên nào đã có. [`public/office-desk.js:526`](../public/office-desk.js#L526-L545)
 2. **Gợi ý 3 tên repo** — Claude Haiku đề xuất; lỗi thì đặt tên theo quy tắc; mỗi lúc một lượt Claude. [`ctl/du-an-moi.js:77`](../ctl/du-an-moi.js#L77-L83)
 3. **Kiểm tên còn trống** — Hỏi GitHub repo owner/tên đã có chưa. [`ctl/github.js:153`](../ctl/github.js#L153-L156)
 4. **CEO duyệt tên** — Kiểm tên hợp lệ, chạy quy trình nền và trả mã theo dõi; repo luôn riêng tư. [`ctl/du-an-moi.js:108`](../ctl/du-an-moi.js#L108-L121)
 5. **Tạo repo riêng tư** — POST /user/repos với auto_init; quá giờ thì kiểm lại repo đã có chưa. [`ctl/github.js:160`](../ctl/github.js#L160-L174)
 6. **Tải về, mở dự án, cài bộ kiểm, giao Hinata** — Từng bước có trạng thái; bước lỗi thì dừng và giữ các bước đã xong. [`ctl/du-an-moi.js:123`](../ctl/du-an-moi.js#L123-L175)
-7. **Theo dõi từng bước** — Giao diện hỏi GET /du-an-moi/:id theo nhịp tới khi xong. [`public/office-desk.js:500`](../public/office-desk.js#L500-L515)
+7. **Theo dõi từng bước** — Giao diện hỏi GET /du-an-moi/:id theo nhịp tới khi xong. [`public/office-desk.js:546`](../public/office-desk.js#L546-L561)
 
 #### Luồng tự động: CEO giao việc → báo cáo Claude
 
 Con đường chính: kiểm đầu vào, rà file .md, tạo nhánh ai/…, chạy từng lượt theo NEXT_OWNER, commit sau mỗi lượt, kiểm bàn giao (trả lại đúng vai một lần), duyệt nội bộ chuyển lượt và dừng ở báo cáo của Claude chờ CEO. — *Kích hoạt:* `Bàn điều phối “Giao việc” → POST /ctl/autopilot` (http).
 
-1. **CEO giao việc cho cả đội** — office-desk “Giao việc” hoặc prototype autoTask gửi POST /ctl/autopilot (workspace, task, maxSteps, timeoutMs). [`ctl/main.js:274`](../ctl/main.js#L274-L274)
-2. **Kiểm đầu vào và dự án rảnh** — start: việc ≤ 3000 ký tự, 1–12 lượt, ≤ 120 phút (mặc định 10 lượt/90 phút); đã có luồng/báo cáo chờ hoặc job/bàn giao đang chờ → AI_BUSY; agent.md không đọc được → BAD_AGENT_MD. [`ctl/autopilot.js:506`](../ctl/autopilot.js#L506-L522)
+1. **CEO giao việc cho cả đội** — office-desk “Giao việc” hoặc prototype autoTask gửi POST /ctl/autopilot (workspace, task, maxSteps, timeoutMs). [`ctl/main.js:288`](../ctl/main.js#L288-L288)
+2. **Kiểm đầu vào và dự án rảnh** — start: việc ≤ 3000 ký tự, 1–12 lượt, ≤ 120 phút (mặc định 10 lượt/90 phút); đã có luồng/báo cáo chờ hoặc job/bàn giao đang chờ → AI_BUSY; agent.md không đọc được → BAD_AGENT_MD. [`ctl/autopilot.js:511`](../ctl/autopilot.js#L511-L527)
 3. **Cổng rà soát file .md khi toàn quyền** — scanGate gọi scanner.require; còn điểm bất thường chưa duyệt thì NEEDS_SCAN_APPROVAL, luồng không bắt đầu (xem luồng Rà file trước khi cho AI toàn quyền). [`ctl/ra-soat.js:168`](../ctl/ra-soat.js#L168-L205)
 4. **Kiểm repo sạch** — nhanh.preflight: chưa có commit → NO_COMMIT; file đang theo dõi bị sửa chưa commit (trừ agent.md) → DIRTY_REPO; thư mục không phải git thì chạy không nhánh. [`ctl/nhanh.js:55`](../ctl/nhanh.js#L55-L61)
 5. **Tạo nhánh riêng ai/<việc>-<mã>** — nhanh.prepare: slug bỏ dấu ≤ 32 ký tự + 6 ký tự cuối mã luồng; đang đứng trên nhánh ai/ cũ đã merge thì về nhánh chính và fast-forward trước; chụp baseline file chưa theo dõi. [`ctl/nhanh.js:65`](../ctl/nhanh.js#L65-L79)
-6. **Chạy lượt kế tiếp theo NEXT_OWNER** — launch: chạm maxSteps thì ngắt mạch; lời giao gồm đặc cách CEO, quyết định CEO, giải thích các lượt và đề nghị xóa (cho Claude), ghi chú bị trả lại; chụp mốc git rồi runner.run; gặp NEEDS_SCAN_APPROVAL thì luồng chuyển awaiting_scan. [`ctl/autopilot.js:281`](../ctl/autopilot.js#L281-L466)
-7. **Lượt Astra: chạy song song khi có hợp đồng** — Hợp đồng đạt thì Astra + Kakashi chạy cùng lúc trong hai worktree rồi gộp. [`ctl/autopilot.js:346`](../ctl/autopilot.js#L346-L356)
+6. **Chạy lượt kế tiếp theo NEXT_OWNER** — launch: chạm maxSteps thì ngắt mạch; lời giao gồm đặc cách CEO, quyết định CEO, giải thích các lượt và đề nghị xóa (cho Claude), ghi chú bị trả lại; chụp mốc git rồi runner.run; gặp NEEDS_SCAN_APPROVAL thì luồng chuyển awaiting_scan. [`ctl/autopilot.js:286`](../ctl/autopilot.js#L286-L471)
+7. **Lượt Astra: chạy song song khi có hợp đồng** — Hợp đồng đạt thì Astra + Kakashi chạy cùng lúc trong hai worktree rồi gộp. [`ctl/autopilot.js:351`](../ctl/autopilot.js#L351-L361)
 8. **Commit file AI đổi sau lượt** — tick → saveStep → nhanh.save: add -u (trừ agent.md) + file mới so với baseline; diff có chuỗi giống khóa thì bỏ stage, không commit và ngắt mạch. [`ctl/nhanh.js:83`](../ctl/nhanh.js#L83-L94)
-9. **Kiểm bàn giao, trả lại đúng vai một lần** — Lỗi chỉ thuộc giai_thich hoặc “agent.md:” và vai vẫn giữ lượt → runner.reject, ghi retryNote, chạy lại đúng vai đó một lần; lần hai còn sai hoặc lỗi khác → ngắt mạch báo CEO. [`ctl/autopilot.js:562`](../ctl/autopilot.js#L562-L580)
-10. **Duyệt nội bộ và chuyển lượt** — Sau khi qua kiểm khóa trong log, xung đột git, ask_ceo, MAX_REWORK và giới hạn: Claude đặt effort cho vai Codex kế; runner.approve ghi agent.md, commit chore(agent-sync) rồi launch lượt sau. [`ctl/runner.js:408`](../ctl/runner.js#L408-L435)
-11. **Dừng ở báo cáo Claude chờ CEO** — CLAUDE_AUDITOR bàn giao done:true hoặc không trả về CODEX_ASTRA_DEV → awaiting_approval, lưu báo cáo; thông báo Windows một lần. [`ctl/autopilot.js:592`](../ctl/autopilot.js#L592-L594)
+9. **Kiểm bàn giao, trả lại đúng vai một lần** — Lỗi chỉ thuộc giai_thich hoặc “agent.md:” và vai vẫn giữ lượt → runner.reject, ghi retryNote, chạy lại đúng vai đó một lần; lần hai còn sai hoặc lỗi khác → ngắt mạch báo CEO. [`ctl/autopilot.js:567`](../ctl/autopilot.js#L567-L585)
+10. **Duyệt nội bộ và chuyển lượt** — Sau khi qua kiểm khóa trong log, xung đột git, ask_ceo, MAX_REWORK và giới hạn: Claude đặt effort cho vai Codex kế; runner.approve ghi agent.md, commit chore(agent-sync) rồi launch lượt sau. [`ctl/runner.js:413`](../ctl/runner.js#L413-L440)
+11. **Dừng ở báo cáo Claude chờ CEO** — CLAUDE_AUDITOR bàn giao done:true hoặc không trả về CODEX_ASTRA_DEV → awaiting_approval, lưu báo cáo; thông báo Windows một lần. [`ctl/autopilot.js:597`](../ctl/autopilot.js#L597-L599)
 
 #### Một lượt AI và kiểm bàn giao
 
 Chạy một lượt của vai giữ lượt bằng CLI nền (claude -p / codex exec / agy -p), tìm và kiểm dòng JSON bàn giao cùng luật agent.md, lưu vào bảng handoffs để luồng tự động hoặc CEO duyệt/từ chối. — *Kích hoạt:* `runner.run — từ luồng tự động hoặc nút “Chạy lượt” (POST /ctl/ai/run) ở Điều khiển máy` (event).
 
 1. **Kiểm đúng lượt và workspace rảnh** — run: vai hợp lệ và có CLI; NOT_YOUR_TURN khi NEXT_OWNER khác; AI_BUSY khi đã có lượt; HANDOFF_PENDING khi bàn giao trước chưa quyết; guard rà soát khi vai chạy toàn quyền. [`ctl/runner.js:272`](../ctl/runner.js#L272-L284)
-2. **Ghép lời giao việc** — Prompt vai + ghi chú quyền (toàn quyền hoặc sandbox Codex) + kết nối MCP của phòng + việc giao (≤ 8000) + END(role) bắt buộc dòng JSON; Claude nhận thêm CAPTAIN. [`ctl/runner.js:285`](../ctl/runner.js#L285-L323)
-3. **Chọn model, mức và mục lục** — Runner hỏi bộ điều phối (model + mức theo độ khó, hạn mức), thêm mục lục từ bản đồ .ua, bộ skill, MCP theo phòng và MCP trên máy; đổi tài khoản Antigravity nếu cần. [`ctl/runner.js:288`](../ctl/runner.js#L288-L308)
+2. **Ghép lời giao việc** — Prompt vai + ghi chú quyền (toàn quyền hoặc sandbox Codex) + kết nối MCP của phòng + việc giao (≤ 8000) + END(role) bắt buộc dòng JSON; Claude nhận thêm CAPTAIN. [`ctl/runner.js:285`](../ctl/runner.js#L285-L328)
+3. **Chọn model, mức và mục lục** — Runner hỏi bộ điều phối (model + mức theo độ khó, hạn mức), thêm mục lục từ bản đồ .ua, bộ skill, MCP theo phòng và MCP trên máy; đổi tài khoản Antigravity nếu cần. [`ctl/runner.js:288`](../ctl/runner.js#L288-L312)
 4. **Dựng lệnh CLI** — argvFor (ctl-agents.json, BAD_CONFIG nếu thiếu {prompt}); codexArgs chọn model Sol gpt-6.1-sol / Astra gpt-6-astra, effort mặc định medium; fullAccessArgs; withMcp. [`ctl/runner.js:244`](../ctl/runner.js#L244-L256)
-5. **Chạy job kind=ai** — jobs.start spawn không qua shell, env đã lọc khóa; trước đó agentBefore chụp agent.md để so sau lượt. [`ctl/jobs.js:127`](../ctl/jobs.js#L127-L134)
-6. **Lỗi tạm thời: hẹn chạy lại một lần** — done: job failed và log khớp RETRYABLE (rate limit, 429, overloaded, ECONNRESET…) khi allowRetry → chạy lại sau 1 phút một lần (luồng tự động tắt allowRetry). [`ctl/runner.js:369`](../ctl/runner.js#L369-L390)
+5. **Chạy job kind=ai** — jobs.start spawn không qua shell, env đã lọc khóa; trước đó agentBefore chụp agent.md để so sau lượt. [`ctl/jobs.js:128`](../ctl/jobs.js#L128-L135)
+6. **Lỗi tạm thời: hẹn chạy lại một lần** — done: job failed và log khớp RETRYABLE (rate limit, 429, overloaded, ECONNRESET…) khi allowRetry → chạy lại sau 1 phút một lần (luồng tự động tắt allowRetry). [`ctl/runner.js:374`](../ctl/runner.js#L374-L395)
 7. **Tìm dòng JSON bàn giao trong log** — findHandoff lấy object {"role":…} cuối cùng, kể cả lồng trong JSON/JSONL của claude --output-format json và codex exec --json. [`ctl/handoff.js:126`](../ctl/handoff.js#L126-L149)
 8. **Kiểm schema bàn giao** — checkHandoff: role khớp, next_owner hợp lệ và khác vai, files/claim_fixed (ID dạng P2-C01), effort chỉ Claude; checkExplain (giai_thich 1–20 mục, 15–2000 ký tự, chặn chữ mẫu), checkAsk, checkList. [`ctl/handoff.js:38`](../ctl/handoff.js#L38-L60)
-9. **Cộng lỗi chu trình agent.md và lưu** — agentProblems gọi kiemAgent.checkChange (tiền tố “agent.md:”); lưu bàn giao + danh sách lỗi vào bảng handoffs và ghi kiểm toán. [`ctl/runner.js:336`](../ctl/runner.js#L336-L390)
-10. **Kiểm hợp đồng giao tiếp** — Lỗi lệch hợp đồng thuộc phần của vai được cộng vào bàn giao. [`ctl/runner.js:352`](../ctl/runner.js#L352-L367)
+9. **Cộng lỗi chu trình agent.md và lưu** — agentProblems gọi kiemAgent.checkChange (tiền tố “agent.md:”); lưu bàn giao + danh sách lỗi vào bảng handoffs và ghi kiểm toán. [`ctl/runner.js:341`](../ctl/runner.js#L341-L395)
+10. **Kiểm hợp đồng giao tiếp** — Lỗi lệch hợp đồng thuộc phần của vai được cộng vào bàn giao. [`ctl/runner.js:357`](../ctl/runner.js#L357-L372)
 11. **CEO duyệt hoặc từ chối (chạy tay)** — dieukhien loadHandoffs → POST /handoffs/:id/approve|reject; approve chặn INVALID_HANDOFF, NEEDS_ANSWER, TURN_CHANGED, ghi agent.md và commit “chore(agent-sync): VAI -> NEXT: VAI”. [`public/dieukhien.html:234`](../public/dieukhien.html#L234-L245)
 
 #### Chốt hợp đồng giao tiếp trước khi code
@@ -1012,7 +1012,7 @@ Giao thức v2.3: Sol viết contract/api.json (OpenAPI 3 dạng JSON) cùng Vù
 
 1. **Luật hợp đồng trước, code sau** — agent.md mẫu v2.3: [1].8 smoke test theo hợp đồng, [1].9 Backend/Frontend giao tiếp đúng contract/api.json. [`ctl/agent-template.md:24`](../ctl/agent-template.md#L24-L25)
 2. **Kiểm cấu trúc hợp đồng** — openapi 3.x, responses, $ref, required, example đúng kiểu, tham số đường dẫn. [`lib/kiem-hop-dong.js:121`](../lib/kiem-hop-dong.js#L121-L166)
-3. **Kiểm sau mỗi lượt theo vai** — Sol chưa tạo hợp đồng thì trả lại; lỗi lệch chỉ tính phần của vai (backend/frontend/cấu trúc). [`ctl/runner.js:352`](../ctl/runner.js#L352-L367)
+3. **Kiểm sau mỗi lượt theo vai** — Sol chưa tạo hợp đồng thì trả lại; lỗi lệch chỉ tính phần của vai (backend/frontend/cấu trúc). [`ctl/runner.js:357`](../ctl/runner.js#L357-L372)
 4. **Bắt lệch hợp đồng với mã** — Backend thiếu đường dẫn/sự kiện của Phase hiện tại; frontend gọi ngoài hợp đồng. [`lib/kiem-hop-dong.js:235`](../lib/kiem-hop-dong.js#L235-L284)
 5. **CI của repo dự án** — Workflow kiem-chu-trinh.yml chạy node tools/kiem-hop-dong.js --neu-co trên mỗi PR. [`ctl/khung/kiem-chu-trinh.yml:41`](../ctl/khung/kiem-chu-trinh.yml#L41-L42)
 6. **Kiểm phản hồi thật** — --kiem-mau so một phản hồi JSON thật với schema/sự kiện trong hợp đồng. [`lib/kiem-hop-dong.js:298`](../lib/kiem-hop-dong.js#L298-L302)
@@ -1021,60 +1021,60 @@ Giao thức v2.3: Sol viết contract/api.json (OpenAPI 3 dạng JSON) cùng Vù
 
 Sol ghi “Không có API” ở Vùng [3] chỉ là đề nghị: luồng dừng hỏi CEO kèm nguyên văn và hệ quả; CEO đồng ý thì văn phòng ghi sổ miễn (AI không ghi được) và chạy tiếp, không đồng ý thì trả lại Sol tạo hợp đồng. — *Kích hoạt:* `Bàn giao của Sol có lỗi hop-dong-mien → luồng tự động` (event).
 
-1. **Phát hiện đề nghị miễn** — Vùng [3] ghi 'Không có API' mà chưa có sổ miễn: bàn giao mang lỗi chờ CEO duyệt. [`ctl/runner.js:352`](../ctl/runner.js#L352-L367)
-2. **Dừng luồng hỏi CEO** — awaiting_answer với câu hỏi kèm dòng đề nghị, giải thích của Sol, hệ quả khi miễn; gửi thông báo. [`ctl/autopilot.js:610`](../ctl/autopilot.js#L610-L630)
+1. **Phát hiện đề nghị miễn** — Vùng [3] ghi 'Không có API' mà chưa có sổ miễn: bàn giao mang lỗi chờ CEO duyệt. [`ctl/runner.js:357`](../ctl/runner.js#L357-L372)
+2. **Dừng luồng hỏi CEO** — awaiting_answer với câu hỏi kèm dòng đề nghị, giải thích của Sol, hệ quả khi miễn; gửi thông báo. [`ctl/autopilot.js:615`](../ctl/autopilot.js#L615-L635)
 3. **Lấy nguyên văn đề nghị** — Dòng Vùng [3] của Sol đưa nguyên vào câu hỏi. [`ctl/mien-hop-dong.js:26`](../ctl/mien-hop-dong.js#L26-L29)
-4. **CEO chọn A/B** — A: ghi miễn, bỏ lỗi chờ duyệt; B: trả lại Sol tạo contract/api.json. [`ctl/autopilot.js:631`](../ctl/autopilot.js#L631-L652)
+4. **CEO chọn A/B** — A: ghi miễn, bỏ lỗi chờ duyệt; B: trả lại Sol tạo contract/api.json. [`ctl/autopilot.js:636`](../ctl/autopilot.js#L636-L657)
 5. **Ghi sổ miễn** — Sổ nằm trong thư mục dữ liệu văn phòng, theo đường dẫn dự án. [`ctl/mien-hop-dong.js:10`](../ctl/mien-hop-dong.js#L10-L24)
-6. **Bỏ lỗi đã được CEO quyết** — Bàn giao xử lý tiếp như thường: đạt thì chuyển lượt. [`ctl/runner.js:464`](../ctl/runner.js#L464-L471)
+6. **Bỏ lỗi đã được CEO quyết** — Bàn giao xử lý tiếp như thường: đạt thì chuyển lượt. [`ctl/runner.js:469`](../ctl/runner.js#L469-L476)
 
 #### Chạy song song Astra (backend) và Kakashi (frontend)
 
 Tới lượt Astra mà hợp đồng đã đạt và khai đủ thư mục hai bên: văn phòng tạo hai worktree, chạy hai AI cùng lúc theo một hợp đồng, kiểm bàn giao và phạm vi từng bên (trả lại riêng bên sai một lần), rồi gộp vào nhánh luồng và ghi agent.md bằng hai commit đúng giao thức. — *Kích hoạt:* `Luồng tự động, khi NEXT_OWNER là CODEX_ASTRA_DEV` (event).
 
 1. **Kiểm điều kiện song song** — Hợp đồng đạt, x-thu-muc đủ backend + frontend không chồng nhau, repo sạch. [`ctl/song-song.js:28`](../ctl/song-song.js#L28-L45)
-2. **Bắt đầu hai bên** — Đủ 2 lượt trong giới hạn thì tạo worktree và chạy cả hai; không thì chạy lần lượt. [`ctl/autopilot.js:346`](../ctl/autopilot.js#L346-L356)
+2. **Bắt đầu hai bên** — Đủ 2 lượt trong giới hạn thì tạo worktree và chạy cả hai; không thì chạy lần lượt. [`ctl/autopilot.js:351`](../ctl/autopilot.js#L351-L361)
 3. **Tạo hai worktree tách rời** — Cùng một mốc, HEAD tách rời, không tạo nhánh. [`ctl/song-song.js:49`](../ctl/song-song.js#L49-L66)
-4. **Chạy lượt từng bên** — Lời giao việc song song: chỉ sửa thư mục của mình, không sửa agent.md/hợp đồng, chạy kiểm hợp đồng trước khi bàn giao. [`ctl/autopilot.js:357`](../ctl/autopilot.js#L357-L384)
+4. **Chạy lượt từng bên** — Lời giao việc song song: chỉ sửa thư mục của mình, không sửa agent.md/hợp đồng, chạy kiểm hợp đồng trước khi bàn giao. [`ctl/autopilot.js:362`](../ctl/autopilot.js#L362-L389)
 5. **Kiểm phạm vi thư mục** — File ngoài phần của bên đó (kể cả đổi tên, xoá) là lỗi bàn giao. [`ctl/song-song.js:69`](../ctl/song-song.js#L69-L79)
-6. **Theo dõi và trả lại riêng bên sai** — Bên sai được trả lại một lần; sai nữa hoặc lỗi khác thì dừng cả luồng và báo cáo. [`ctl/autopilot.js:399`](../ctl/autopilot.js#L399-L466)
+6. **Theo dõi và trả lại riêng bên sai** — Bên sai được trả lại một lần; sai nữa hoặc lỗi khác thì dừng cả luồng và báo cáo. [`ctl/autopilot.js:404`](../ctl/autopilot.js#L404-L471)
 7. **Gộp hai phần, ghi agent.md** — Commit từng bên, gộp lần lượt (xung đột thì huỷ và báo CEO), hai commit agent.md chuyển lượt sang Sol. [`ctl/song-song.js:83`](../ctl/song-song.js#L83-L140)
-8. **Dọn worktree** — Gỡ worktree tạm; gộp lỗi thì giữ lại để CEO xem. [`ctl/autopilot.js:388`](../ctl/autopilot.js#L388-L398)
+8. **Dọn worktree** — Gỡ worktree tạm; gộp lỗi thì giữ lại để CEO xem. [`ctl/autopilot.js:393`](../ctl/autopilot.js#L393-L403)
 
 #### Claude hỏi CEO (ask_ceo)
 
 Đội trưởng Claude không tự quyết hướng: nộp câu hỏi kèm 2–4 phương án, luồng dừng chờ; CEO chọn, lượt chuyển sang vai của phương án và quyết định được ghi cho các lượt sau. — *Kích hoạt:* `Bàn giao của CLAUDE_AUDITOR có trường ask_ceo` (event).
 
 1. **Claude đặt câu hỏi kèm phương án** — checkAsk: chỉ CLAUDE_AUDITOR được hỏi; question 1–2000 ký tự; 2–4 phương án có id ngắn không trùng, label, next_owner hợp lệ, task ≤ 4000. [`ctl/handoff.js:106`](../ctl/handoff.js#L106-L122)
-2. **Luồng chuyển awaiting_answer** — tick không tự duyệt, lưu câu hỏi kèm toàn bộ phân tích của Claude để CEO đọc trước khi chọn; thông báo Windows. [`ctl/autopilot.js:584`](../ctl/autopilot.js#L584-L590)
-3. **Hiện ở “Việc chờ anh duyệt”** — office-desk.renderApprovals hiện câu hỏi Claude cùng các luồng cần CEO. [`public/office-desk.js:154`](../public/office-desk.js#L154-L178)
-4. **CEO chọn phương án** — POST /autopilot/:id/answer (chạy tay thì POST /handoffs/:id/answer). [`ctl/main.js:276`](../ctl/main.js#L276-L276)
-5. **Duyệt bàn giao theo phương án** — runner.answer duyệt với next_owner của phương án, ghi kiểm toán và trả câu quyết định. [`ctl/runner.js:439`](../ctl/runner.js#L439-L451)
-6. **Ghi quyết định và chạy tiếp** — autopilot.answer thêm quyết định vào luồng (các lượt sau làm theo), đặt lại mốc lượt/thời gian rồi launch. [`ctl/autopilot.js:656`](../ctl/autopilot.js#L656-L669)
+2. **Luồng chuyển awaiting_answer** — tick không tự duyệt, lưu câu hỏi kèm toàn bộ phân tích của Claude để CEO đọc trước khi chọn; thông báo Windows. [`ctl/autopilot.js:589`](../ctl/autopilot.js#L589-L595)
+3. **Hiện ở “Việc chờ anh duyệt”** — office-desk.renderApprovals hiện câu hỏi Claude cùng các luồng cần CEO. [`public/office-desk.js:158`](../public/office-desk.js#L158-L182)
+4. **CEO chọn phương án** — POST /autopilot/:id/answer (chạy tay thì POST /handoffs/:id/answer). [`ctl/main.js:290`](../ctl/main.js#L290-L290)
+5. **Duyệt bàn giao theo phương án** — runner.answer duyệt với next_owner của phương án, ghi kiểm toán và trả câu quyết định. [`ctl/runner.js:444`](../ctl/runner.js#L444-L456)
+6. **Ghi quyết định và chạy tiếp** — autopilot.answer thêm quyết định vào luồng (các lượt sau làm theo), đặt lại mốc lượt/thời gian rồi launch. [`ctl/autopilot.js:661`](../ctl/autopilot.js#L661-L674)
 
 #### Hết hạn mức: chờ hoặc làm qua ChatGPT web
 
 AI của lượt hết hạn mức gói: luồng chờ tới giờ mở lại rồi chạy lại đúng lượt đó, hoặc CEO xin master prompt để tự làm lượt trên ChatGPT web, dán kết quả cho AI còn hạn mức kiểm và áp vào repo. — *Kích hoạt:* `Log lượt khớp QUOTA_HIT (usage limit, insufficient_quota, rate_limit_exceeded…)` (event).
 
-1. **Nhận ra hết hạn mức gói** — tick: lượt không có bàn giao hợp lệ mà 8000 ký tự cuối log khớp QUOTA_HIT → từ chối bàn giao dở và chuyển sang chờ. [`ctl/autopilot.js:558`](../ctl/autopilot.js#L558-L560)
-2. **Chuyển waiting_quota và tính giờ chạy lại** — waitQuota/resumeTime: ưu tiên giờ mở lại từ bộ theo dõi hạn mức, rồi câu “try again in…” của CLI, mặc định 30 phút; kẹp 2 phút–8 giờ, cộng 1 phút đệm; không tính vào giới hạn lượt. [`ctl/autopilot.js:175`](../ctl/autopilot.js#L175-L186)
-3. **Tới giờ tự chạy lại đúng lượt** — resume cộng thời gian chờ vào hạn chót và launch; CEO có thể bấm “Chạy lại ngay” (POST /autopilot/:id/resume, NOT_WAITING nếu không chờ). [`ctl/autopilot.js:188`](../ctl/autopilot.js#L188-L194)
-4. **CEO xin master prompt** — POST /autopilot/:id/web-prompt → webPrompt chụp hạn mức → nextWriter chọn AI còn nhiều hạn mức nhất (trừ AI vừa hết và AI đã hỏng) chạy runner.webPrompt chỉ đọc. [`ctl/autopilot.js:235`](../ctl/autopilot.js#L235-L250)
-5. **Không ai còn hạn mức: dùng mẫu** — templatePrompt soạn từ agent.md (đã che khóa), việc CEO giao và quyết định, kèm chuẩn đầu ra từng vai. [`ctl/autopilot.js:197`](../ctl/autopilot.js#L197-L217)
-6. **Tách MASTER_PROMPT / CHUAN_DAU_RA** — finishWeb: đạt thì đánh dấu sẵn sàng và thông báo; không đạt thì chuyển AI kế tiếp; cảnh báo nếu có chuỗi giống khóa. [`ctl/autopilot.js:261`](../ctl/autopilot.js#L261-L279)
-7. **CEO dán kết quả ChatGPT web** — POST /autopilot/:id/web-result → applyWeb: kiểm độ dài và chuỗi giống khóa, lưu vào .git/van-phong-ai, giao Claude hoặc Codex còn hạn mức kiểm và áp như một lượt của vai đó (runner.applyWeb). [`ctl/autopilot.js:728`](../ctl/autopilot.js#L728-L757)
-8. **Kết quả web không đạt: quay lại chờ** — webRejected lấy lý do WEB_RESULT_REJECTED hoặc lỗi bàn giao, từ chối bàn giao và đưa luồng về waiting_quota để CEO sửa rồi dán lại. [`ctl/autopilot.js:759`](../ctl/autopilot.js#L759-L770)
+1. **Nhận ra hết hạn mức gói** — tick: lượt không có bàn giao hợp lệ mà 8000 ký tự cuối log khớp QUOTA_HIT → từ chối bàn giao dở và chuyển sang chờ. [`ctl/autopilot.js:563`](../ctl/autopilot.js#L563-L565)
+2. **Chuyển waiting_quota và tính giờ chạy lại** — waitQuota/resumeTime: ưu tiên giờ mở lại từ bộ theo dõi hạn mức, rồi câu “try again in…” của CLI, mặc định 30 phút; kẹp 2 phút–8 giờ, cộng 1 phút đệm; không tính vào giới hạn lượt. [`ctl/autopilot.js:175`](../ctl/autopilot.js#L175-L191)
+3. **Tới giờ tự chạy lại đúng lượt** — resume cộng thời gian chờ vào hạn chót và launch; CEO có thể bấm “Chạy lại ngay” (POST /autopilot/:id/resume, NOT_WAITING nếu không chờ). [`ctl/autopilot.js:193`](../ctl/autopilot.js#L193-L199)
+4. **CEO xin master prompt** — POST /autopilot/:id/web-prompt → webPrompt chụp hạn mức → nextWriter chọn AI còn nhiều hạn mức nhất (trừ AI vừa hết và AI đã hỏng) chạy runner.webPrompt chỉ đọc. [`ctl/autopilot.js:240`](../ctl/autopilot.js#L240-L255)
+5. **Không ai còn hạn mức: dùng mẫu** — templatePrompt soạn từ agent.md (đã che khóa), việc CEO giao và quyết định, kèm chuẩn đầu ra từng vai. [`ctl/autopilot.js:202`](../ctl/autopilot.js#L202-L222)
+6. **Tách MASTER_PROMPT / CHUAN_DAU_RA** — finishWeb: đạt thì đánh dấu sẵn sàng và thông báo; không đạt thì chuyển AI kế tiếp; cảnh báo nếu có chuỗi giống khóa. [`ctl/autopilot.js:266`](../ctl/autopilot.js#L266-L284)
+7. **CEO dán kết quả ChatGPT web** — POST /autopilot/:id/web-result → applyWeb: kiểm độ dài và chuỗi giống khóa, lưu vào .git/van-phong-ai, giao Claude hoặc Codex còn hạn mức kiểm và áp như một lượt của vai đó (runner.applyWeb). [`ctl/autopilot.js:733`](../ctl/autopilot.js#L733-L762)
+8. **Kết quả web không đạt: quay lại chờ** — webRejected lấy lý do WEB_RESULT_REJECTED hoặc lỗi bàn giao, từ chối bàn giao và đưa luồng về waiting_quota để CEO sửa rồi dán lại. [`ctl/autopilot.js:764`](../ctl/autopilot.js#L764-L775)
 
 #### Ngắt mạch & báo cáo của Claude
 
 Khi luồng gặp điều kiện nguy hiểm hoặc vượt giới hạn, bộ điều phối dừng, gom bằng chứng và giao Claude viết báo cáo chỉ đọc cho CEO; CEO có thể dừng luồng bất kỳ lúc nào. — *Kích hoạt:* `Một điều kiện ngắt mạch trong tick/launch` (event).
 
-1. **Phát hiện điều kiện ngắt mạch** — Hết thời gian (kill job “autopilot-timeout”), hết maxSteps, lượt không có bàn giao, bàn giao sai sau lần trả lại, log có chuỗi giống khóa API, xung đột git, Codex sửa quá 2 lần, diff có khóa. [`ctl/autopilot.js:524`](../ctl/autopilot.js#L524-L607)
-2. **Gom bằng chứng** — report: giải thích các lượt (≤ 8000 ký tự) + 4000 ký tự cuối log mỗi lượt, che khóa. [`ctl/autopilot.js:494`](../ctl/autopilot.js#L494-L504)
-3. **Claude viết báo cáo chỉ đọc** — runner.report chạy Claude chỉ đọc → luồng “reporting”; không chạy được thì “attention”. [`ctl/runner.js:481`](../ctl/runner.js#L481-L492)
+1. **Phát hiện điều kiện ngắt mạch** — Hết thời gian (kill job “autopilot-timeout”), hết maxSteps, lượt không có bàn giao, bàn giao sai sau lần trả lại, log có chuỗi giống khóa API, xung đột git, Codex sửa quá 2 lần, diff có khóa. [`ctl/autopilot.js:529`](../ctl/autopilot.js#L529-L612)
+2. **Gom bằng chứng** — report: giải thích các lượt (≤ 8000 ký tự) + 4000 ký tự cuối log mỗi lượt, che khóa. [`ctl/autopilot.js:499`](../ctl/autopilot.js#L499-L509)
+3. **Claude viết báo cáo chỉ đọc** — runner.report chạy Claude chỉ đọc → luồng “reporting”; không chạy được thì “attention”. [`ctl/runner.js:486`](../ctl/runner.js#L486-L497)
 4. **Nhận báo cáo hoặc cần anh xem** — tick: responseText lấy câu trả lời cuối; job done và có nội dung → awaiting_approval; Claude hết lượt phiên hoặc không gửi được → attention. [`ctl/autopilot.js:58`](../ctl/autopilot.js#L58-L69)
 5. **Báo ra máy cho CEO** — createNotifier gửi toast Windows một lần mỗi trạng thái cần CEO, tiêu đề/nội dung qua biến môi trường; VP_NO_TOAST=1 hoặc máy khác Windows chỉ ghi kiểm toán. [`ctl/thongbao.js:20`](../ctl/thongbao.js#L20-L30)
-6. **CEO dừng luồng / ctl khởi động lại** — POST /autopilot/:id/stop → stop: kill job, từ chối bàn giao còn chờ, commit dở lượt cuối; ctl khởi động lại thì luồng đang chạy thành attention, không tự chạy lại việc dang dở. [`ctl/autopilot.js:671`](../ctl/autopilot.js#L671-L681)
+6. **CEO dừng luồng / ctl khởi động lại** — POST /autopilot/:id/stop → stop: kill job, từ chối bàn giao còn chờ, commit dở lượt cuối; ctl khởi động lại thì luồng đang chạy thành attention, không tự chạy lại việc dang dở. [`ctl/autopilot.js:676`](../ctl/autopilot.js#L676-L686)
 
 #### CEO duyệt báo cáo, đẩy nhánh & mở PR
 
@@ -1082,7 +1082,7 @@ CEO xem diff và lời giải thích từng lượt, duyệt hoặc từ chối 
 
 1. **Xem diff từng lượt** — GET /autopilot/:id/steps/:n/diff → stepDiff → nhanh.diff: file với số dòng thêm/bớt, commit, patch đã che khóa cắt ở 300 KB. [`ctl/nhanh.js:109`](../ctl/nhanh.js#L109-L121)
 2. **Đọc “Vì sao làm vậy”** — explainHtml hiện vấn đề, đã làm, vì sao, cách khác của từng lượt và lượt bị trả lại. [`public/progress-view.js:34`](../public/progress-view.js#L34-L45)
-3. **Duyệt hoặc từ chối báo cáo** — decide duyệt/từ chối bàn giao cuối của Claude qua runner và chuyển luồng sang approved / acknowledged / rejected. [`ctl/autopilot.js:683`](../ctl/autopilot.js#L683-L697)
+3. **Duyệt hoặc từ chối báo cáo** — decide duyệt/từ chối bàn giao cuối của Claude qua runner và chuyển luồng sang approved / acknowledged / rejected. [`ctl/autopilot.js:688`](../ctl/autopilot.js#L688-L702)
 4. **Đẩy nhánh lên GitHub** — pushBranch → nhanh.push --set-upstream, không --force, timeout 120 giây; lỗi GIT_PUSH đã che khóa; bỏ user:token@ khỏi URL. [`ctl/nhanh.js:124`](../ctl/nhanh.js#L124-L131)
 5. **Lấy link tạo PR** — compareUrl dựng compare/<main>...<nhánh>?expand=1; remote không phải GitHub thì null. [`ctl/nhanh.js:133`](../ctl/nhanh.js#L133-L137)
 6. **PR chạy CI trước khi merge** — Repo dự án chạy kiem-chu-trinh.yml (kiểm agent.md + lint/test), repo văn phòng chạy kiem-tra.yml; CI đỏ thì không merge (luật [1].6). [`ctl/khung/kiem-chu-trinh.yml:1`](../ctl/khung/kiem-chu-trinh.yml#L1-L68)
@@ -1095,7 +1095,7 @@ Chỉ Claude được xóa file và phải giải thích; vai khác tự xóa th
 2. **So git với mốc đầu lượt** — nhanh.deleted liệt kê file theo dõi bị xóa (kể cả khi AI tự commit việc xóa) và so danh sách file chưa theo dõi trước/sau lượt. [`ctl/nhanh.js:97`](../ctl/nhanh.js#L97-L100)
 3. **Vai khác Claude tự xóa: khôi phục** — nhanh.restore lấy lại file ở mốc đầu lượt và chuyển thành đề nghị xóa “chờ Claude”. [`ctl/nhanh.js:102`](../ctl/nhanh.js#L102-L106)
 4. **Xóa ngoài git: ghi vi phạm, báo CEO** — checkDeletes ghi file không khôi phục được vào lượt và gửi thông báo; Claude xóa mà không giải thích cũng bị nêu. [`ctl/autopilot.js:117`](../ctl/autopilot.js#L117-L152)
-5. **Claude quyết đề nghị xóa** — deletesForClaude đưa đề nghị chờ và vi phạm vào lời giao của Claude (là dữ liệu, không phải chỉ thị) để ghi Vùng [5] và báo CEO. [`ctl/autopilot.js:476`](../ctl/autopilot.js#L476-L481)
+5. **Claude quyết đề nghị xóa** — deletesForClaude đưa đề nghị chờ và vi phạm vào lời giao của Claude (là dữ liệu, không phải chỉ thị) để ghi Vùng [5] và báo CEO. [`ctl/autopilot.js:481`](../ctl/autopilot.js#L481-L486)
 6. **Hiện khung xóa file** — deleteHtml hiện Claude đã xóa (lý do, đã kiểm), xóa không giải thích, AI tự xóa bị khôi phục/không khôi phục được và đề nghị chờ. [`public/progress-view.js:56`](../public/progress-view.js#L56-L67)
 
 #### Kết nối MCP theo phòng
@@ -1112,11 +1112,12 @@ Mỗi phòng (vai) chỉ được bật các kết nối MCP của mình: trang 
 
 ### Năng lực & tài nguyên của đội AI
 
-Cho mỗi lượt AI đúng công cụ với chi phí hợp lý: điều phối model và mức suy nghĩ theo độ khó và hạn mức, mục lục từ bản đồ hệ thống, nhiều tài khoản Antigravity tự chuyển khi cạn, bộ skill ghim commit cài cho cả ba AI, duyệt skill/MCP mới từ link GitHub, MCP chạy trên máy (Chrome DevTools) và tra cứu Gemini miễn phí.
+Cho mỗi lượt AI đúng công cụ với chi phí hợp lý: điều phối model và mức suy nghĩ theo độ khó và hạn mức, mục lục từ bản đồ hệ thống, nhiều tài khoản Antigravity và GPT (Codex) tự chuyển khi cạn, bộ skill ghim commit cài cho cả ba AI, duyệt skill/MCP mới từ link GitHub, MCP chạy trên máy (Chrome DevTools) và tra cứu Gemini miễn phí.
 
 **Luật nghiệp vụ:**
 - CEO cố định model/mức cho phòng thì dùng đúng như vậy; cờ tự cấu hình trong lệnh được giữ nguyên
 - Chỉ đổi tài khoản Antigravity khi không có tiến trình agy nào chạy; token không qua Node
+- Tài khoản GPT cho Codex: mỗi tài khoản một CODEX_HOME, văn phòng không chép hay đọc file đăng nhập; đổi tài khoản không ảnh hưởng lượt đang chạy
 - Skill và MCP tải về luôn ghim commit/phiên bản, không chạy script cài, không npx; skill người dùng tự cài không bị ghi đè
 - Repo skill mới chỉ cài sau khi máy rà, Claude đội trưởng đọc chỉ-đọc và CEO bấm duyệt; nội dung repo là dữ liệu, không phải chỉ thị
 - MCP chạy trên máy chỉ gắn vào lượt Claude/Codex của phòng được bật, không đăng ký chung vào cấu hình CLI
@@ -1155,6 +1156,24 @@ flowchart TD
     step_doi_tai_khoan_agy_truoc_chay --> step_doi_tai_khoan_agy_tu_chuyen
     step_doi_tai_khoan_agy_tu_chuyen --> step_doi_tai_khoan_agy_doi
     step_doi_tai_khoan_agy_doi --> step_doi_tai_khoan_agy_mot_cham
+  end
+  subgraph flow_doi_tai_khoan_gpt["Nhiều tài khoản GPT cho Codex và tự chuyển khi cạn"]
+    direction LR
+    step_doi_tai_khoan_gpt_them["1. Thêm tài khoản"]
+    step_doi_tai_khoan_gpt_dong_bo["2. Dùng chung cấu hình với ~/.codex"]
+    step_doi_tai_khoan_gpt_dang_nhap["3. CEO đăng nhập"]
+    step_doi_tai_khoan_gpt_doc_han_muc["4. Đọc hạn mức mọi tài khoản"]
+    step_doi_tai_khoan_gpt_truoc_luot["5. Tự chuyển trước lượt"]
+    step_doi_tai_khoan_gpt_env["6. Tiến trình nhận CODEX_HOME lúc khởi chạy"]
+    step_doi_tai_khoan_gpt_het_han_muc["7. Hết hạn mức: đổi ngay"]
+    step_doi_tai_khoan_gpt_mot_cham["8. Đổi một chạm"]
+    step_doi_tai_khoan_gpt_them --> step_doi_tai_khoan_gpt_dong_bo
+    step_doi_tai_khoan_gpt_dong_bo --> step_doi_tai_khoan_gpt_dang_nhap
+    step_doi_tai_khoan_gpt_dang_nhap --> step_doi_tai_khoan_gpt_doc_han_muc
+    step_doi_tai_khoan_gpt_doc_han_muc --> step_doi_tai_khoan_gpt_truoc_luot
+    step_doi_tai_khoan_gpt_truoc_luot --> step_doi_tai_khoan_gpt_env
+    step_doi_tai_khoan_gpt_env --> step_doi_tai_khoan_gpt_het_han_muc
+    step_doi_tai_khoan_gpt_het_han_muc --> step_doi_tai_khoan_gpt_mot_cham
   end
   subgraph flow_bo_skill_mac_dinh["Cài bộ skill mặc định cho cả ba AI"]
     direction LR
@@ -1221,7 +1240,8 @@ flowchart TD
     step_tra_cuu_gemini_chan_link --> step_tra_cuu_gemini_goi
   end
   flow_dieu_phoi_model ~~~ flow_doi_tai_khoan_agy
-  flow_doi_tai_khoan_agy ~~~ flow_bo_skill_mac_dinh
+  flow_doi_tai_khoan_agy ~~~ flow_doi_tai_khoan_gpt
+  flow_doi_tai_khoan_gpt ~~~ flow_bo_skill_mac_dinh
   flow_bo_skill_mac_dinh ~~~ flow_duyet_repo_skill
   flow_duyet_repo_skill ~~~ flow_chrome_devtools_mcp
   flow_chrome_devtools_mcp ~~~ flow_tra_cuu_gemini
@@ -1236,8 +1256,8 @@ Mỗi lượt AI được chấm độ khó, chọn model + mức suy nghĩ theo
 3. **Quyết định model + mức** — Cố định của CEO trước, rồi bảng theo độ khó; leo thang/hạ bậc; ghi lý do vào kiểm toán. [`ctl/dieu-phoi.js:86`](../ctl/dieu-phoi.js#L86-L98)
 4. **Chèn cờ vào lệnh** — --model/--effort, -c model_reasoning_effort, --model Gemini; giữ cờ tự cấu hình. [`ctl/dieu-phoi.js:101`](../ctl/dieu-phoi.js#L101-L114)
 5. **Đưa mục lục vào prompt** — Chọn workflow/hàm khớp việc trong .ua của repo, kèm file:dòng và cảnh báo lệch commit. [`ctl/muc-luc.js:49`](../ctl/muc-luc.js#L49-L70)
-6. **Danh sách model thật** — Đọc model của 3 CLI (nhớ 6 giờ) cho bảng chọn. [`ctl/quotas.js:234`](../ctl/quotas.js#L234-L249)
-7. **CEO chạm để chọn** — Bảng chọn model dạng thẻ và mức suy nghĩ dạng nút cho một phòng. [`public/office-desk.js:301`](../public/office-desk.js#L301-L329)
+6. **Danh sách model thật** — Đọc model của 3 CLI (nhớ 6 giờ) cho bảng chọn. [`ctl/quotas.js:255`](../ctl/quotas.js#L255-L270)
+7. **CEO chạm để chọn** — Bảng chọn model dạng thẻ và mức suy nghĩ dạng nút cho một phòng. [`public/office-desk.js:347`](../public/office-desk.js#L347-L375)
 
 #### Nhiều tài khoản Antigravity và tự chuyển khi cạn
 
@@ -1249,7 +1269,20 @@ CEO cất đăng nhập từng tài khoản Antigravity (family, Pro); văn phò
 4. **Trả lại tài khoản đang mượn** — Còn mượn để đọc hạn mức thì trả lại trước khi chạy agy. [`ctl/agy-tai-khoan.js:258`](../ctl/agy-tai-khoan.js#L258-L272)
 5. **Tự chuyển trước lượt** — Tài khoản đang dùng dưới ngưỡng mà tài khoản kia còn nhiều hơn thì chuyển. [`ctl/agy-tai-khoan.js:215`](../ctl/agy-tai-khoan.js#L215-L251)
 6. **Đổi tài khoản** — Cất lại đăng nhập hiện tại, nạp bản đã cất, kiểm email; đang có agy chạy thì AGY_BUSY. [`ctl/agy-tai-khoan.js:151`](../ctl/agy-tai-khoan.js#L151-L168)
-7. **Đổi một chạm trên điện thoại** — Khối tài khoản trong ngăn kéo ☰: đang dùng + % còn lại. [`public/office-desk.js:251`](../public/office-desk.js#L251-L263)
+7. **Đổi một chạm trên điện thoại** — Khối tài khoản trong ngăn kéo ☰: đang dùng + % còn lại. [`public/office-desk.js:288`](../public/office-desk.js#L288-L302)
+
+#### Nhiều tài khoản GPT cho Codex và tự chuyển khi cạn
+
+CEO thêm tài khoản GPT và tự đăng nhập bằng codex login văn phòng mở; mỗi tài khoản một CODEX_HOME dùng chung cấu hình với ~/.codex. — *Kích hoạt:* `Mục Hạn mức / menu ☰ trên điện thoại → POST /ctl/codex-tai-khoan/*; runner trước lượt Codex` (http).
+
+1. **Thêm tài khoản** — Tạo thư mục CODEX_HOME riêng; không chép file đăng nhập. [`ctl/codex-tai-khoan.js:74`](../ctl/codex-tai-khoan.js#L74-L86)
+2. **Dùng chung cấu hình với ~/.codex** — Chép config.toml, AGENTS.md; nối skills, plugins, sandbox. [`ctl/codex-tai-khoan.js:46`](../ctl/codex-tai-khoan.js#L46-L63)
+3. **CEO đăng nhập** — Văn phòng mở codex login với CODEX_HOME đó, CEO bấm link trên trình duyệt. [`ctl/codex-tai-khoan.js:90`](../ctl/codex-tai-khoan.js#L90-L115)
+4. **Đọc hạn mức mọi tài khoản** — app-server với CODEX_HOME riêng từng tài khoản, kèm email/gói. [`ctl/quotas.js:187`](../ctl/quotas.js#L187-L199)
+5. **Tự chuyển trước lượt** — Tài khoản đang dùng ≤ ngưỡng thì sang tài khoản còn nhiều nhất. [`ctl/codex-tai-khoan.js:201`](../ctl/codex-tai-khoan.js#L201-L210)
+6. **Tiến trình nhận CODEX_HOME lúc khởi chạy** — Bộ chạy việc thêm biến của tài khoản đang chọn khi spawn. [`ctl/codex-tai-khoan.js:66`](../ctl/codex-tai-khoan.js#L66-L71)
+7. **Hết hạn mức: đổi ngay** — Đánh dấu cạn, đổi tài khoản; luồng tự động chạy lại lượt ở nhịp kế tiếp. [`ctl/codex-tai-khoan.js:213`](../ctl/codex-tai-khoan.js#L213-L222)
+8. **Đổi một chạm** — Bảng tài khoản GPT trong mục Hạn mức và menu điện thoại. [`public/office-desk.js:257`](../public/office-desk.js#L257-L281)
 
 #### Cài bộ skill mặc định cho cả ba AI
 
@@ -1412,23 +1445,23 @@ flowchart TD
 CEO chạy một lệnh argv trong workspace: ctl xác thực, phân loại allow/approve/deny, chạy ngay hoặc chờ duyệt, spawn không qua shell có giới hạn, log đã che khóa và giám sát CPU/RAM. — *Kích hoạt:* `Điều khiển máy (dieukhien.html) → POST /ctl/jobs` (http).
 
 1. **CEO gửi argv qua cầu /ctl** — dieukhien.api gọi /ctl/*; ctlbridge.proxy gắn Bearer token đọc từ ~/.van-phong-ao/ctl-token, chỉ phục vụ máy này. [`public/dieukhien.html:140`](../public/dieukhien.html#L140-L155)
-2. **ctl kiểm Host và token** — Máy chủ ctl chỉ nhận Host loopback (HOST_DENIED) và token đúng (UNAUTHORIZED, ghi auth.fail vào kiểm toán). [`ctl/main.js:304`](../ctl/main.js#L304-L309)
+2. **ctl kiểm Host và token** — Máy chủ ctl chỉ nhận Host loopback (HOST_DENIED) và token đúng (UNAUTHORIZED, ghi auth.fail vào kiểm toán). [`ctl/main.js:318`](../ctl/main.js#L318-L323)
 3. **Phân loại allow / approve / deny** — classify: shell/trình thông dịch (cmd, powershell, bash, reg, certutil…) bị deny; git theo danh sách, thao tác nguy hiểm (push, reset --hard, -C, --output) cần duyệt; npm/node/python/pytest/cargo/go theo luật riêng. [`ctl/policy.js:37`](../ctl/policy.js#L37-L83)
-4. **Deny thì từ chối, approve thì chờ CEO** — POST /jobs: deny → COMMAND_DENIED; allow → chạy ngay (201); approve → jobs.propose pending_approval (202), CEO bấm approve/reject. [`ctl/main.js:174`](../ctl/main.js#L174-L174)
+4. **Deny thì từ chối, approve thì chờ CEO** — POST /jobs: deny → COMMAND_DENIED; allow → chạy ngay (201); approve → jobs.propose pending_approval (202), CEO bấm approve/reject. [`ctl/main.js:180`](../ctl/main.js#L180-L180)
 5. **Tìm chương trình spawn không qua shell** — resolveProgram: npm → node + npm-cli.js, node → process.execPath, .cmd/.bat đọc ra script .js, xử lý App Execution Alias của Microsoft Store. [`ctl/policy.js:87`](../ctl/policy.js#L87-L116)
-6. **Chạy job có giới hạn** — jobs.launch: tối đa 8 job (TOO_MANY), env lọc khóa (cleanEnv), timeout, log riêng; dừng cả cây khi hết giờ; ghi kiểm toán. [`ctl/jobs.js:75`](../ctl/jobs.js#L75-L126)
+6. **Chạy job có giới hạn** — jobs.launch: tối đa 8 job (TOO_MANY), env lọc khóa (cleanEnv), timeout, log riêng; dừng cả cây khi hết giờ; ghi kiểm toán. [`ctl/jobs.js:76`](../ctl/jobs.js#L76-L127)
 7. **Xem log và tài nguyên** — readLog trả log đã che khóa; monitor.snapshot tính CPU/RAM máy và từng job, đẩy qua SSE /monitor/stream. [`ctl/monitor.js:10`](../ctl/monitor.js#L10-L69)
 
 #### Phanh khẩn cấp (Kill-All)
 
 Một nút dừng mọi thứ: hủy luồng tự động trước, rồi kill toàn bộ job cùng cây tiến trình con và báo rõ nếu còn tiến trình chưa dừng; ctl tắt có trật tự khi bộ chạy yêu cầu. — *Kích hoạt:* `Nút “Dừng tất cả” → POST /ctl/kill-all` (http).
 
-1. **CEO bấm phanh** — dieukhien hoặc bàn điều phối gửi POST /kill-all (từng việc: /jobs/:id/kill; từ văn phòng: /api/kill-task). [`ctl/main.js:189`](../ctl/main.js#L189-L189)
-2. **Hủy mọi luồng tự động đang chạy** — autopilot.cancelAll/cancelJob chuyển luồng sang stopped trước khi kill để vòng tick không chạy tiếp lượt mới. [`ctl/autopilot.js:776`](../ctl/autopilot.js#L776-L780)
-3. **Kill toàn bộ job** — jobs.kill/killAll dừng từng job đang chạy và ghi kiểm toán. [`ctl/jobs.js:159`](../ctl/jobs.js#L159-L177)
+1. **CEO bấm phanh** — dieukhien hoặc bàn điều phối gửi POST /kill-all (từng việc: /jobs/:id/kill; từ văn phòng: /api/kill-task). [`ctl/main.js:195`](../ctl/main.js#L195-L195)
+2. **Hủy mọi luồng tự động đang chạy** — autopilot.cancelAll/cancelJob chuyển luồng sang stopped trước khi kill để vòng tick không chạy tiếp lượt mới. [`ctl/autopilot.js:781`](../ctl/autopilot.js#L781-L785)
+3. **Kill toàn bộ job** — jobs.kill/killAll dừng từng job đang chạy và ghi kiểm toán. [`ctl/jobs.js:160`](../ctl/jobs.js#L160-L178)
 4. **Dừng cả cây tiến trình** — killTree: Windows taskkill /T /F rồi TerminateProcess, Unix SIGTERM/SIGKILL cả nhóm; từ chối PID ≤ 1 hoặc của chính máy chủ; ngân sách 5 giây (KILL_BUDGET_MS). [`lib/proc.js:16`](../lib/proc.js#L16-L31)
-5. **Báo kết quả** — Còn tiến trình không dừng được thì trả 500 KILL_FAILED kèm danh sách lỗi; ngược lại trả kết quả từng job. [`ctl/main.js:189`](../ctl/main.js#L189-L189)
-6. **Tắt ctl có trật tự** — Nhận “stop” qua IPC, mất kênh IPC hoặc SIGINT/SIGTERM/SIGHUP → close: chờ việc nền, killAll, drain, đóng db rồi xóa file token. [`ctl/main.js:343`](../ctl/main.js#L343-L357)
+5. **Báo kết quả** — Còn tiến trình không dừng được thì trả 500 KILL_FAILED kèm danh sách lỗi; ngược lại trả kết quả từng job. [`ctl/main.js:195`](../ctl/main.js#L195-L195)
+6. **Tắt ctl có trật tự** — Nhận “stop” qua IPC, mất kênh IPC hoặc SIGINT/SIGTERM/SIGHUP → close: chờ việc nền, killAll, drain, đóng db rồi xóa file token. [`ctl/main.js:357`](../ctl/main.js#L357-L371)
 
 #### Mở repo GitHub thành workspace
 
@@ -1438,7 +1471,7 @@ CEO chọn một repo trong tài khoản GitHub: ctl tìm bản sao có sẵn ho
 2. **Bắt đầu phiên mở repo** — github.open kiểm tên repo (chặn chèn lệnh, thoát đường dẫn), không mở song song, giữ tối đa 30 phiên. [`ctl/github.js:114`](../ctl/github.js#L114-L122)
 3. **Tìm bản sao có sẵn** — local xét workspace đã đăng ký và thư mục ngay dưới Projects (VP_PROJECTS_DIR và Projects cũ), so origin HTTPS/SSH bằng remoteName; junction không được thoát Projects. [`ctl/github.js:59`](../ctl/github.js#L59-L71)
 4. **Clone khi chưa có** — perform kiểm repo trên GitHub, giữ chỗ thư mục bằng mkdir độc quyền rồi clone qua jobs.start; lỗi xác thực/mạng báo đúng mã. [`ctl/github.js:72`](../ctl/github.js#L72-L113)
-5. **Đăng ký và chọn workspace** — selectWorkspace → ws.switchTo (tạo agent.md nếu thiếu), lưu workspace đang chọn và chạy nền protectPublic. [`ctl/main.js:78`](../ctl/main.js#L78-L95)
+5. **Đăng ký và chọn workspace** — selectWorkspace → ws.switchTo (tạo agent.md nếu thiếu), lưu workspace đang chọn và chạy nền protectPublic. [`ctl/main.js:83`](../ctl/main.js#L83-L100)
 6. **Trình duyệt hỏi kết quả** — openGitHub hỏi GET /github/operations/:id mỗi 800 ms tới khi xong rồi chuyển dự án đang chọn. [`public/prototype.js:65`](../public/prototype.js#L65-L85)
 
 #### Nạp repo mới và tạo agent.md từ mẫu
@@ -1450,7 +1483,7 @@ Repo mới đăng ký hoặc được chọn mà chưa có giao thức thì ctl 
 3. **Mẫu mang luật [1].6 và [1].7** — [1].6: mỗi PR phải qua CI kiểm agent.md + lint/test, CI đỏ không merge; [1].7: cập nhật không cài lại, chỉ bản tag vX.Y.Z trên nhánh chính tới người dùng. [`ctl/agent-template.md:9`](../ctl/agent-template.md#L9-L23)
 4. **Repo công khai: agent.md chỉ giữ trên máy** — protectPublic → github.visibility; công khai và agent.md chưa từng commit thì excludeAgentMd thêm /agent.md vào .git/info/exclude. [`ctl/workspaces.js:135`](../ctl/workspaces.js#L135-L148)
 5. **Đánh dấu mục còn nội dung mẫu** — readProgress nêu các mục [1]–[3] còn chữ mẫu để Hinata/Sol điền. [`ctl/workspaces.js:11`](../ctl/workspaces.js#L11-L44)
-6. **Commit agent.md ở lần duyệt đầu** — runner.approve: agent.md trạng thái “??” thì git add rồi commit chore(agent-sync); repo công khai bị exclude thì không commit. [`ctl/runner.js:408`](../ctl/runner.js#L408-L435)
+6. **Commit agent.md ở lần duyệt đầu** — runner.approve: agent.md trạng thái “??” thì git add rồi commit chore(agent-sync); repo công khai bị exclude thì không commit. [`ctl/runner.js:413`](../ctl/runner.js#L413-L440)
 
 #### Sửa file an toàn trong workspace
 
@@ -1472,7 +1505,7 @@ Trước khi AI chạy toàn quyền, bộ rà soát so mẫu (không gọi AI) 
 4. **Rà manifest thư viện** — scanDeps: nguồn ngoài registry chuẩn, tên nhái (near: khoảng cách sửa 1), script cài đặt tải mạng/chạy mã. [`ctl/ra-soat.js:105`](../ctl/ra-soat.js#L105-L149)
 5. **Tính dấu vân tay** — scan cộng kết quả, bỏ file > 1 MB kèm cảnh báo, tính sha256 16 ký tự không phụ thuộc số dòng. [`ctl/ra-soat.js:151`](../ctl/ra-soat.js#L151-L163)
 6. **Chặn chạy tới khi CEO duyệt** — scanner.require ném NEEDS_SCAN_APPROVAL; luồng đang chạy chuyển awaiting_scan; báo CEO một lần mỗi dấu vân tay. [`ctl/ra-soat.js:168`](../ctl/ra-soat.js#L168-L205)
-7. **CEO duyệt và chạy tiếp** — scanHtml hiện điểm bất thường → POST /scan/approve: dấu vân tay đã đổi thì từ chối; lưu ra-soat.json; resumeScan chạy tiếp luồng chờ và cộng thời gian chờ vào hạn chót. [`ctl/main.js:240`](../ctl/main.js#L240-L240)
+7. **CEO duyệt và chạy tiếp** — scanHtml hiện điểm bất thường → POST /scan/approve: dấu vân tay đã đổi thì từ chối; lưu ra-soat.json; resumeScan chạy tiếp luồng chờ và cộng thời gian chờ vào hạn chót. [`ctl/main.js:254`](../ctl/main.js#L254-L254)
 
 ### Chất lượng & phát hành
 
@@ -1589,12 +1622,12 @@ flowchart TD
 
 Sau mỗi lượt AI, bộ kiểm so agent.md trước/sau theo vai: vi phạm luật giao thức được cộng vào lỗi bàn giao, luồng tự động trả lại đúng vai một lần, duyệt xong thì commit chore(agent-sync) đúng chuẩn để CI đọc lại được. — *Kích hoạt:* `runner.done sau mỗi lượt AI (runner.agentProblems)` (event).
 
-1. **Chụp agent.md trước lượt** — agentBefore lấy bản HEAD:agent.md (bản đã commit); chưa commit (repo công khai, vừa tạo) thì đọc file lúc giao việc. [`ctl/runner.js:325`](../ctl/runner.js#L325-L333)
-2. **Đọc bản sau lượt** — agentProblems đọc agent.md sau lượt; mất file thì lỗi “agent.md: lượt này làm mất file agent.md”. [`ctl/runner.js:334`](../ctl/runner.js#L334-L367)
+1. **Chụp agent.md trước lượt** — agentBefore lấy bản HEAD:agent.md (bản đã commit); chưa commit (repo công khai, vừa tạo) thì đọc file lúc giao việc. [`ctl/runner.js:330`](../ctl/runner.js#L330-L338)
+2. **Đọc bản sau lượt** — agentProblems đọc agent.md sau lượt; mất file thì lỗi “agent.md: lượt này làm mất file agent.md”. [`ctl/runner.js:339`](../ctl/runner.js#L339-L372)
 3. **Kiểm một lần sửa theo vai** — checkChange: đúng lượt NEXT_OWNER (Luật 1), chỉ sửa vùng vai được ghi theo bảng OWNER, CLAUDE_AUDITOR không tự sửa CURRENT_PHASE, cấm tăng Phase khi Vùng [5] còn OPEN, FORCE_OVERRIDE, onlyNew. [`lib/kiem-agent.js:89`](../lib/kiem-agent.js#L89-L111)
 4. **Kiểm luật đọc được của bản mới** — checkText: đủ vùng, CURRENT_PHASE dạng “Phase <số>”, vai hợp lệ, AUDIT_STATUS/REVIEW_ROUND đúng mẫu, [4.1] ≤ 25 và [4.2] ≤ 5 dòng, mẫu blocker OPEN/RESOLVED, chuỗi giống khóa. [`lib/kiem-agent.js:60`](../lib/kiem-agent.js#L60-L83)
-5. **Lỗi “agent.md:” → trả lại đúng vai một lần** — Luồng tự động trả lại vai vi phạm kèm ghi chú lỗi; lần hai vẫn sai thì ngắt mạch, Claude báo cáo cho CEO. [`ctl/autopilot.js:562`](../ctl/autopilot.js#L562-L580)
-6. **Duyệt → commit chore(agent-sync)** — runner.approve commit “chore(agent-sync): VAI -> NEXT: VAI” chỉ với agent.md, đúng mẫu mà parseSync của CI đọc được. [`ctl/runner.js:408`](../ctl/runner.js#L408-L435)
+5. **Lỗi “agent.md:” → trả lại đúng vai một lần** — Luồng tự động trả lại vai vi phạm kèm ghi chú lỗi; lần hai vẫn sai thì ngắt mạch, Claude báo cáo cho CEO. [`ctl/autopilot.js:567`](../ctl/autopilot.js#L567-L585)
+6. **Duyệt → commit chore(agent-sync)** — runner.approve commit “chore(agent-sync): VAI -> NEXT: VAI” chỉ với agent.md, đúng mẫu mà parseSync của CI đọc được. [`ctl/runner.js:413`](../ctl/runner.js#L413-L440)
 
 #### Kiểm chu trình agent.md trên CI
 
@@ -1612,7 +1645,7 @@ Trên GitHub, mỗi PR và mỗi lần push main chạy bộ kiểm agent.md cho
 CEO bấm cài bộ kiểm chu trình cho repo dự án: ctl tạo nhánh vp/bo-kiem-chu-trinh-<giờ> từ nhánh chính trong một git worktree tạm, ghi tools/kiem-agent.js, tools/kiem-hop-dong.js và workflow kiem-chu-trinh.yml, commit, đẩy lên GitHub và lưu link tạo PR; không đụng thư mục/nhánh đang làm. — *Kích hoạt:* `Bàn điều phối → nút “Cài bộ kiểm” (data-bo-kiem) → POST /ctl/bo-kiem` (http).
 
 1. **So bộ kiểm trong repo với bản văn phòng** — boKiem.status: da-cai / cu / chua-cai / khong-phai-git, hoặc van-phong cho chính repo Văn phòng AI; nút chỉ hiện khi chua-cai hoặc cu. [`ctl/bo-kiem.js:31`](../ctl/bo-kiem.js#L31-L45)
-2. **CEO bấm cài** — office-desk gửi POST /bo-kiem (timeout 120 giây) cho workspace đang chọn. [`public/office-desk.js:608`](../public/office-desk.js#L608-L614)
+2. **CEO bấm cài** — office-desk gửi POST /bo-kiem (timeout 120 giây) cho workspace đang chọn. [`public/office-desk.js:678`](../public/office-desk.js#L678-L684)
 3. **Kiểm điều kiện cài** — install: đang cài → TOO_MANY; không phải git → NO_GIT; repo của chính văn phòng hoặc đã bản mới nhất → NOT_READY; chưa có commit → NO_COMMIT; không có origin → NO_REMOTE. [`ctl/bo-kiem.js:46`](../ctl/bo-kiem.js#L46-L54)
 4. **Xác định nhánh chính và tên nhánh** — defaultBranch (không có main/master → NOT_ON_MAIN), fetch origin; tên vp/bo-kiem-chu-trinh-<giờ>, trùng thì thêm -2, -3… [`ctl/bo-kiem.js:55`](../ctl/bo-kiem.js#L55-L65)
 5. **Tạo worktree tạm từ nhánh chính** — git worktree add -b <nhánh> vào thư mục tạm từ origin/<main>; lỗi thì GIT_BRANCH. [`ctl/bo-kiem.js:66`](../ctl/bo-kiem.js#L66-L67)
@@ -1625,7 +1658,7 @@ CEO bấm cài bộ kiểm chu trình cho repo dự án: ctl tạo nhánh vp/bo-
 
 Xuất bản chỉ do CEO bấm, hai bước: kiểm tra & build trên máy (repo sạch, Dockerfile, Docker, test, docker build), rồi kích GitHub Actions của repo bằng đẩy tag vX.Y.Z hoặc workflow_dispatch sau khi kiểm phiên bản và commit. — *Kích hoạt:* `Bàn CEO → Xuất bản → POST /ctl/publish/prepare, POST /ctl/publish/:id/release` (http).
 
-1. **Bước 1: bắt đầu Kiểm tra & build** — POST /publish/prepare trả 202; lượt lưu xuat-ban.json (tối đa 20), lượt dở khi app tắt thành failed. [`ctl/main.js:234`](../ctl/main.js#L234-L234)
+1. **Bước 1: bắt đầu Kiểm tra & build** — POST /publish/prepare trả 202; lượt lưu xuat-ban.json (tối đa 20), lượt dở khi app tắt thành failed. [`ctl/main.js:248`](../ctl/main.js#L248-L248)
 2. **Kiểm repo sạch, Dockerfile, Docker** — prepare: repo git sạch (trừ agent.md), có Dockerfile, docker version chạy; mỗi bước ghi trạng thái và thông báo CEO. [`ctl/xuat-ban.js:115`](../ctl/xuat-ban.js#L115-L157)
 3. **Chạy test của dự án** — testCommand: npm test khi có script test thật, pytest hoặc unittest (ưu tiên Python trong .venv); không có thì bỏ qua. [`ctl/xuat-ban.js:24`](../ctl/xuat-ban.js#L24-L39)
 4. **docker build --pull** — Build image tag vanphong/<slug>:<sha> qua jobs; lỗi build dừng ở failed. [`ctl/xuat-ban.js:115`](../ctl/xuat-ban.js#L115-L157)
@@ -1662,12 +1695,12 @@ flowchart TD
   layer_02_van_phong["<b>2 · Văn phòng chỉ đọc (:7788)</b><br/>27 node"]
   layer_03_so_dieu_phoi["<b>3 · Sổ điều phối & công cụ vp</b><br/>15 node"]
   layer_04_os_controller["<b>4 · OS Controller lõi (:7790)</b><br/>12 node"]
-  layer_05_chu_trinh_ai["<b>5 · Chu trình AI tự động</b><br/>49 node"]
+  layer_05_chu_trinh_ai["<b>5 · Chu trình AI tự động</b><br/>53 node"]
   layer_06_chat_luong_phat_hanh["<b>6 · Kiểm chu trình, xuất bản & cập nhật</b><br/>17 node"]
   layer_07_nen_tang["<b>7 · Nền tảng dùng chung</b><br/>3 node"]
   layer_08_cai_dat_app["<b>8 · Cài đặt & app trên máy</b><br/>14 node"]
   layer_09_tai_lieu["<b>9 · Tài liệu & giao thức đội</b><br/>10 node"]
-  layer_10_kiem_thu["<b>10 · Kiểm thử</b><br/>48 node"]
+  layer_10_kiem_thu["<b>10 · Kiểm thử</b><br/>49 node"]
   layer_01_giao_dien ---|16| layer_02_van_phong
   layer_01_giao_dien ---|5| layer_03_so_dieu_phoi
   layer_01_giao_dien ---|6| layer_04_os_controller
@@ -1682,16 +1715,16 @@ flowchart TD
   layer_03_so_dieu_phoi ---|1| layer_05_chu_trinh_ai
   layer_03_so_dieu_phoi ---|15| layer_08_cai_dat_app
   layer_03_so_dieu_phoi ---|4| layer_09_tai_lieu
-  layer_04_os_controller ---|36| layer_05_chu_trinh_ai
+  layer_04_os_controller ---|38| layer_05_chu_trinh_ai
   layer_04_os_controller ---|9| layer_06_chat_luong_phat_hanh
   layer_04_os_controller ---|18| layer_07_nen_tang
   layer_04_os_controller ---|3| layer_08_cai_dat_app
   layer_04_os_controller ---|3| layer_09_tai_lieu
-  layer_04_os_controller ---|51| layer_10_kiem_thu
+  layer_04_os_controller ---|53| layer_10_kiem_thu
   layer_05_chu_trinh_ai ---|23| layer_06_chat_luong_phat_hanh
-  layer_05_chu_trinh_ai ---|67| layer_07_nen_tang
+  layer_05_chu_trinh_ai ---|70| layer_07_nen_tang
   layer_05_chu_trinh_ai ---|2| layer_08_cai_dat_app
-  layer_05_chu_trinh_ai ---|51| layer_10_kiem_thu
+  layer_05_chu_trinh_ai ---|53| layer_10_kiem_thu
   layer_06_chat_luong_phat_hanh ---|11| layer_07_nen_tang
   layer_06_chat_luong_phat_hanh ---|10| layer_08_cai_dat_app
   layer_06_chat_luong_phat_hanh ---|6| layer_09_tai_lieu
@@ -1801,15 +1834,15 @@ Tiến trình ctl/main.js riêng chỉ nghe localhost cổng 7790, có token: đ
 - [`ctl/audit.js`](../ctl/audit.js) — Tạo nhật ký kiểm toán chỉ-thêm (append-only) của OS Controller trên bảng SQLite `audit`: ghi mọi lần chạy, dừng, từ chối kèm chi tiết đã che khóa, đọc các dòng gần nhất… *Hàm chính:* `createAudit`.
 - [`ctl/db.js`](../ctl/db.js) — Sổ SQLite của OS Controller (~/.van-phong-ao/ctl.db, node:sqlite, chế độ WAL): khai báo schema các bảng jobs, audit (trigger chỉ cho thêm, chỉ xóa bản ghi quá 90 ngày),… *Hàm chính:* `home`, `migrate`, `open`.
 - [`ctl/files.js`](../ctl/files.js) — Đọc/ghi file trong workspace đã đăng ký: liệt kê thư mục, đọc file ≤2 MB kèm sha256, ghi file bắt buộc kèm sha256 của bản đang đọc (expectSha256) để không đè thay đổi củ… *Hàm chính:* `createFiles`, `write`.
-- [`ctl/jobs.js`](../ctl/jobs.js) — Sổ tiến trình của OS Controller trên bảng SQLite `jobs`: tạo, chạy (spawn không qua shell, env đã lọc khóa), giới hạn 8 việc đồng thời và 1 lượt AI mỗi workspace, timeou… *Hàm chính:* `createJobs`.
+- [`ctl/jobs.js`](../ctl/jobs.js) — Sổ tiến trình của OS Controller (SQLite): đề xuất/duyệt/từ chối, chạy lệnh không qua shell với env đã lọc khóa cộng biến của tài khoản đang chọn lúc khởi chạy (envFor, v… *Hàm chính:* `createJobs`.
 - [`ctl/main.js`](../ctl/main.js) — Điểm vào của OS Controller (ctl): máy chủ HTTP chỉ nghe 127.0.0.1:7790, xác thực Bearer token sinh mới mỗi lần khởi động, nối mọi dịch vụ ctl (jobs, workspace, runner, a… *Hàm chính:* `createCtl`, `projects`.
 - [`ctl/monitor.js`](../ctl/monitor.js) — Giám sát tài nguyên: CPU/RAM toàn máy và CPU/RAM của tiến trình gốc từng job ctl đang chạy; Linux đọc /proc, Windows hỏi PowerShell Get-Process với bộ đệm 5 giây. *Hàm chính:* `createMonitor`, `linuxProc`, `refreshWindows`.
 - [`ctl/policy.js`](../ctl/policy.js) — Chính sách chạy lệnh của OS Controller: phân loại argv thành allow (chạy ngay), approve (CEO phải duyệt) hoặc deny (shell/trình thông dịch tùy ý), và tìm đường dẫn chươn… *Hàm chính:* `classify`, `resolveProgram`.
 - [`ctl/workspaces.js`](../ctl/workspaces.js) — Quản lý workspace đã đăng ký của OS Controller (vùng duy nhất ctl được chạy lệnh và đọc/ghi file): thêm/gỡ/chọn workspace với kiểm tra realpath chặn PATH_ESCAPE, tự tạo… *Hàm chính:* `readProgress`, `createWorkspaces`.
-- Route `GET /projects` ([`ctl/main.js:197`](../ctl/main.js#L197-L197)) — Trả bảng tổng hợp mọi dự án đã đăng ký (lượt, kiểm duyệt, blocker, job, luồng tự động).
-- Route `POST /jobs` ([`ctl/main.js:174`](../ctl/main.js#L174-L174)) — Chạy lệnh trong workspace theo policy.classify: cho phép thì chạy ngay (201), cần duyệt thì đề xuất chờ CEO (202), cấm thì COMMAND_DENIED.
-- Route `POST /kill-all` ([`ctl/main.js:189`](../ctl/main.js#L189-L189)) — Kill-switch: huỷ mọi luồng autopilot đang chạy rồi kill toàn bộ job; trả 500 nếu có job không dừng được.
-- Route `POST /fs/write` ([`ctl/main.js:264`](../ctl/main.js#L264-L264)) — Ghi file trong workspace với expectSha256 để chống ghi đè.
+- Route `GET /projects` ([`ctl/main.js:203`](../ctl/main.js#L203-L203)) — Trả bảng tổng hợp mọi dự án đã đăng ký (lượt, kiểm duyệt, blocker, job, luồng tự động).
+- Route `POST /jobs` ([`ctl/main.js:180`](../ctl/main.js#L180-L180)) — Chạy lệnh trong workspace theo policy.classify: cho phép thì chạy ngay (201), cần duyệt thì đề xuất chờ CEO (202), cấm thì COMMAND_DENIED.
+- Route `POST /kill-all` ([`ctl/main.js:195`](../ctl/main.js#L195-L195)) — Kill-switch: huỷ mọi luồng autopilot đang chạy rồi kill toàn bộ job; trả 500 nếu có job không dừng được.
+- Route `POST /fs/write` ([`ctl/main.js:278`](../ctl/main.js#L278-L278)) — Ghi file trong workspace với expectSha256 để chống ghi đè.
 
 ### 5 · Chu trình AI tự động
 
@@ -1820,6 +1853,7 @@ Tiến trình ctl/main.js riêng chỉ nghe localhost cổng 7790, có token: đ
 - [`ctl/autopilot.js`](../ctl/autopilot.js) — Bộ điều phối luồng tự động của OS Controller: CEO giao một việc, các lượt AI chạy nối tiếp theo NEXT_OWNER trên nhánh git riêng, kết thúc bằng báo cáo của Claude chờ CEO… *Hàm chính:* `createAutopilot`, `responseText`, `waitFromMessage`, `saveStep`, `checkDeletes`, `waitQuota`, `templatePrompt`, `webPrompt` (+20).
 - [`ctl/chat.js`](../ctl/chat.js) — Chat chỉ đọc giữa CEO và từng nhân vật AI trong văn phòng 3D (Pain, Hinata, Itachi, Sasuke, Kakashi, Sakura): dựng prompt theo phạm vi từng phòng, chạy CLI như job 'cmd'… *Hàm chính:* `createChat`, `promptFor`, `parseReply`, `send`, `finish`.
 - [`ctl/chrome-devtools.js`](../ctl/chrome-devtools.js) — Định nghĩa Chrome DevTools MCP cho văn phòng: gói chrome-devtools-mcp ghim 1.12.0, cờ chạy an toàn (Chrome ẩn, hồ sơ tạm, không gửi thống kê/CrUX, không mở file:, che he… *Hàm chính:* `trangThai`, `cai`.
+- [`ctl/codex-tai-khoan.js`](../ctl/codex-tai-khoan.js) — Nhiều tài khoản GPT cho Codex: mỗi tài khoản một thư mục CODEX_HOME (tài khoản 1 là ~/.codex, tài khoản thêm ở ~/.van-phong-ao/codex-tk/<id>), CEO tự đăng nhập bằng `cod… *Hàm chính:* `createCodexTaiKhoan`, `dongBo`, `envCho`, `them`, `moDangNhap`, `chuyen`, `truocLuot`, `baoCan`.
 - [`ctl/dieu-phoi.js`](../ctl/dieu-phoi.js) — Điều phối model và mức suy nghĩ cho từng lượt AI: chấm độ khó nhẹ/vừa/nặng theo vai, chữ trong việc giao, blocker CRITICAL, lượt bị trả lại; chọn cờ thật của CLI (Claude… *Hàm chính:* `kindOf`, `remaining`, `classify`, `createDieuPhoi`, `decide`, `apply`.
 - [`ctl/du-an-moi.js`](../ctl/du-an-moi.js) — Tạo dự án mới: CEO gõ ý tưởng → gợi ý 3 tên repo kèm mô tả (Claude Haiku, lỗi thì đặt tên theo quy tắc bỏ dấu/bỏ từ đệm) và kiểm tên còn trống trên GitHub; chỉ khi CEO d… *Hàm chính:* `slug`, `goiYClaude`, `createDuAnMoi`, `goiY`, `tao`, `chay`.
 - [`ctl/handoff.js`](../ctl/handoff.js) — Khóa lượt agent.md của OS Controller: đọc/ghi LAST_UPDATED_BY / NEXT_OWNER, tìm dòng JSON bàn giao cuối trong log CLI và kiểm schema bàn giao (vai kể cả FRONTEND_UIUX_DE… *Hàm chính:* `readTurn`, `setTurn`, `checkHandoff`, `checkList`, `checkExplain`, `checkAsk`, `findHandoff`.
@@ -1842,28 +1876,31 @@ Tiến trình ctl/main.js riêng chỉ nghe localhost cổng 7790, có token: đ
 - [`ctl/thongbao.js`](../ctl/thongbao.js) — Thông báo góc màn hình Windows (toast) khi luồng cần CEO, gửi tại chỗ qua PowerShell với tiêu đề/nội dung truyền qua biến môi trường để tránh chèn lệnh; máy khác Windows… *Hàm chính:* `createNotifier`.
 - [`ctl/tra-cuu-mcp.js`](../ctl/tra-cuu-mcp.js) — Máy chủ MCP stdio “tra-cuu” cho lượt Claude/Codex: trả lời initialize, tools/list và tools/call cho hai công cụ tim_kiem, doc_tai_lieu (gọi ctl/tra-cuu.js). *Hàm chính:* `handle`.
 - [`ctl/tra-cuu.js`](../ctl/tra-cuu.js) — Tra cứu miễn phí bằng Gemini API (khóa AI Studio CEO lưu): tìm trên web và đọc tài liệu công khai thay cho Claude/Codex tự đọc dài. *Hàm chính:* `kiemCau`, `laIpNoiBo`, `kiemLink`, `createTraCuu`, `goi`, `traCuuBat`.
-- Route `POST /ideas/:id/start` ([`ctl/main.js:204`](../ctl/main.js#L204-L204)) — Giao ý tưởng của CEO cho đội AI (bắt đầu từ lượt SPEC_ARCHITECT), force=true để ghi đè lượt.
-- Route `POST /autopilot` ([`ctl/main.js:274`](../ctl/main.js#L274-L274)) — Bắt đầu luồng tự động cho workspace với việc CEO giao, maxSteps và timeoutMs.
-- Route `POST /autopilot/:id/answer` ([`ctl/main.js:276`](../ctl/main.js#L276-L276)) — CEO chọn phương án cho câu hỏi ask_ceo của Claude để luồng chạy tiếp.
-- Route `POST /autopilot/:id/stop` ([`ctl/main.js:275`](../ctl/main.js#L275-L275)) — CEO dừng một luồng tự động.
-- Route `POST /autopilot/:id/approve` ([`ctl/main.js:284`](../ctl/main.js#L284-L284)) — CEO duyệt báo cáo cuối của Claude cho luồng (reject tương ứng ở /autopilot/:id/reject).
-- Route `POST /autopilot/:id/web-prompt` ([`ctl/main.js:278`](../ctl/main.js#L278-L278)) — Yêu cầu đội trưởng soạn master prompt cho ChatGPT web khi luồng chờ hạn mức (202).
-- Route `POST /autopilot/:id/web-result` ([`ctl/main.js:280`](../ctl/main.js#L280-L280)) — CEO dán kết quả ChatGPT web; AI còn hạn mức kiểm rồi áp vào repo (202).
-- Route `GET /autopilot/:id/steps/:n/diff` ([`ctl/main.js:282`](../ctl/main.js#L282-L282)) — Trả file đổi và diff của lượt thứ n trên nhánh riêng của luồng.
-- Route `POST /autopilot/:id/push` ([`ctl/main.js:283`](../ctl/main.js#L283-L283)) — Đẩy nhánh riêng của luồng lên GitHub sau khi CEO duyệt.
-- Route `POST /chat` ([`ctl/main.js:237`](../ctl/main.js#L237-L237)) — Gửi tin của CEO cho một nhân vật AI (chat chỉ đọc) (202).
-- Route `POST /scan/approve` ([`ctl/main.js:240`](../ctl/main.js#L240-L240)) — CEO duyệt dấu vân tay điểm bất thường trong file .md của dự án, rồi chạy tiếp các luồng đang chờ rà soát.
-- Route `POST /du-an-moi/goi-y` ([`ctl/main.js:200`](../ctl/main.js#L200-L200)) — Gợi ý 3 tên repo cho ý tưởng và kiểm tên còn trống; không tạo gì.
-- Route `POST /du-an-moi` ([`ctl/main.js:201`](../ctl/main.js#L201-L201)) — CEO duyệt tên: chạy quy trình tạo dự án mới (repo luôn riêng tư).
-- Route `GET /dieu-phoi` ([`ctl/main.js:212`](../ctl/main.js#L212-L212)) — Bảng điều phối model/mức hiện tại theo phòng.
-- Route `POST /dieu-phoi` ([`ctl/main.js:229`](../ctl/main.js#L229-L229)) — Lưu cố định model/mức cho phòng hoặc bật/tắt điều phối tự động.
-- Route `GET /dieu-phoi/models` ([`ctl/main.js:220`](../ctl/main.js#L220-L220)) — Danh sách model thật của 3 AI cho bảng chọn.
-- Route `POST /agy-tai-khoan/:id/chuyen` ([`ctl/main.js:218`](../ctl/main.js#L218-L218)) — Đổi tài khoản Antigravity rồi làm mới hạn mức.
-- Route `POST /agy-tai-khoan/cat` ([`ctl/main.js:215`](../ctl/main.js#L215-L215)) — Cất đăng nhập Antigravity đang dùng thành tài khoản có nhãn, đọc luôn model của nó.
-- Route `GET /skill` ([`ctl/main.js:222`](../ctl/main.js#L222-L222)) — Bộ skill thiếu/cũ theo từng AI, danh mục và các đề xuất đang xem.
-- Route `POST /skill/de-xuat` ([`ctl/main.js:224`](../ctl/main.js#L224-L224)) — CEO dán link repo GitHub: tải đúng commit, máy rà, Claude đội trưởng xem.
-- Route `POST /skill/de-xuat/:id/duyet` ([`ctl/main.js:225`](../ctl/main.js#L225-L225)) — CEO duyệt cài skill/MCP đã xem (ghim commit) cho cả 3 AI.
-- Route `POST /ket-noi/cai-may` ([`ctl/main.js:211`](../ctl/main.js#L211-L211)) — Cài MCP chạy trên máy (Chrome DevTools…) đúng phiên bản ghim.
+- Route `POST /ideas/:id/start` ([`ctl/main.js:210`](../ctl/main.js#L210-L210)) — Giao ý tưởng của CEO cho đội AI (bắt đầu từ lượt SPEC_ARCHITECT), force=true để ghi đè lượt.
+- Route `POST /autopilot` ([`ctl/main.js:288`](../ctl/main.js#L288-L288)) — Bắt đầu luồng tự động cho workspace với việc CEO giao, maxSteps và timeoutMs.
+- Route `POST /autopilot/:id/answer` ([`ctl/main.js:290`](../ctl/main.js#L290-L290)) — CEO chọn phương án cho câu hỏi ask_ceo của Claude để luồng chạy tiếp.
+- Route `POST /autopilot/:id/stop` ([`ctl/main.js:289`](../ctl/main.js#L289-L289)) — CEO dừng một luồng tự động.
+- Route `POST /autopilot/:id/approve` ([`ctl/main.js:298`](../ctl/main.js#L298-L298)) — CEO duyệt báo cáo cuối của Claude cho luồng (reject tương ứng ở /autopilot/:id/reject).
+- Route `POST /autopilot/:id/web-prompt` ([`ctl/main.js:292`](../ctl/main.js#L292-L292)) — Yêu cầu đội trưởng soạn master prompt cho ChatGPT web khi luồng chờ hạn mức (202).
+- Route `POST /autopilot/:id/web-result` ([`ctl/main.js:294`](../ctl/main.js#L294-L294)) — CEO dán kết quả ChatGPT web; AI còn hạn mức kiểm rồi áp vào repo (202).
+- Route `GET /autopilot/:id/steps/:n/diff` ([`ctl/main.js:296`](../ctl/main.js#L296-L296)) — Trả file đổi và diff của lượt thứ n trên nhánh riêng của luồng.
+- Route `POST /autopilot/:id/push` ([`ctl/main.js:297`](../ctl/main.js#L297-L297)) — Đẩy nhánh riêng của luồng lên GitHub sau khi CEO duyệt.
+- Route `POST /chat` ([`ctl/main.js:251`](../ctl/main.js#L251-L251)) — Gửi tin của CEO cho một nhân vật AI (chat chỉ đọc) (202).
+- Route `POST /scan/approve` ([`ctl/main.js:254`](../ctl/main.js#L254-L254)) — CEO duyệt dấu vân tay điểm bất thường trong file .md của dự án, rồi chạy tiếp các luồng đang chờ rà soát.
+- Route `POST /du-an-moi/goi-y` ([`ctl/main.js:206`](../ctl/main.js#L206-L206)) — Gợi ý 3 tên repo cho ý tưởng và kiểm tên còn trống; không tạo gì.
+- Route `POST /du-an-moi` ([`ctl/main.js:207`](../ctl/main.js#L207-L207)) — CEO duyệt tên: chạy quy trình tạo dự án mới (repo luôn riêng tư).
+- Route `GET /dieu-phoi` ([`ctl/main.js:218`](../ctl/main.js#L218-L218)) — Bảng điều phối model/mức hiện tại theo phòng.
+- Route `POST /dieu-phoi` ([`ctl/main.js:243`](../ctl/main.js#L243-L243)) — Lưu cố định model/mức cho phòng hoặc bật/tắt điều phối tự động.
+- Route `GET /dieu-phoi/models` ([`ctl/main.js:234`](../ctl/main.js#L234-L234)) — Danh sách model thật của 3 AI cho bảng chọn.
+- Route `POST /agy-tai-khoan/:id/chuyen` ([`ctl/main.js:224`](../ctl/main.js#L224-L224)) — Đổi tài khoản Antigravity rồi làm mới hạn mức.
+- Route `POST /agy-tai-khoan/cat` ([`ctl/main.js:221`](../ctl/main.js#L221-L221)) — Cất đăng nhập Antigravity đang dùng thành tài khoản có nhãn, đọc luôn model của nó.
+- Route `GET /skill` ([`ctl/main.js:236`](../ctl/main.js#L236-L236)) — Bộ skill thiếu/cũ theo từng AI, danh mục và các đề xuất đang xem.
+- Route `POST /skill/de-xuat` ([`ctl/main.js:238`](../ctl/main.js#L238-L238)) — CEO dán link repo GitHub: tải đúng commit, máy rà, Claude đội trưởng xem.
+- Route `POST /skill/de-xuat/:id/duyet` ([`ctl/main.js:239`](../ctl/main.js#L239-L239)) — CEO duyệt cài skill/MCP đã xem (ghim commit) cho cả 3 AI.
+- Route `POST /ket-noi/cai-may` ([`ctl/main.js:217`](../ctl/main.js#L217-L217)) — Cài MCP chạy trên máy (Chrome DevTools…) đúng phiên bản ghim.
+- Route `POST /codex-tai-khoan/them` ([`ctl/main.js:228`](../ctl/main.js#L228-L228)) — Thêm tài khoản GPT cho Codex (thư mục CODEX_HOME riêng).
+- Route `POST /codex-tai-khoan/:id/dang-nhap` ([`ctl/main.js:231`](../ctl/main.js#L231-L231)) — Mở codex login cho tài khoản để CEO đăng nhập trên trình duyệt.
+- Route `POST /codex-tai-khoan/:id/chuyen` ([`ctl/main.js:232`](../ctl/main.js#L232-L232)) — Đổi tài khoản GPT đang dùng rồi làm mới hạn mức (điện thoại đã ghép gọi được).
 
 ### 6 · Kiểm chu trình, xuất bản & cập nhật
 
@@ -1883,9 +1920,9 @@ Bộ kiểm agent.md và bộ kiểm hợp đồng giao tiếp (văn phòng + CI
 - [`tools/kiem-agent.js`](../tools/kiem-agent.js) — Lớp vỏ dòng lệnh mỏng để CI của GitHub (và AI/CEO chạy tay) kiểm agent.md: chuyển tham số dòng lệnh sang main() của lib/kiem-agent.js và đặt process.exitCode theo kết qu…
 - [`tools/kiem-hop-dong.js`](../tools/kiem-hop-dong.js) — Lớp vỏ dòng lệnh của lib/kiem-hop-dong.js cho CI và người chạy tay: kiểm contract/api.json với mã backend/frontend, --neu-co bỏ qua khi chưa có hợp đồng, --kiem-mau kiểm…
 - [`tools/ve-ban-do.js`](../tools/ve-ban-do.js) — Sinh docs/BAN-DO-HE-THONG.md từ đồ thị Understand Anything trong .ua/: miền nghiệp vụ, workflow trung tâm (viết tay), từng workflow với bước trỏ tới file:dòng, các lớp k… *Hàm chính:* `main`.
-- Route `POST /publish/prepare` ([`ctl/main.js:234`](../ctl/main.js#L234-L234)) — Bước 1 xuất bản: chạy kiểm tra & build trên máy (repo sạch, Dockerfile, Docker, test, docker build) (202).
-- Route `POST /publish/:id/release` ([`ctl/main.js:235`](../ctl/main.js#L235-L235)) — Bước 2 xuất bản: đẩy tag vX.Y.Z hoặc chạy tay workflow GitHub Actions cho bản vừa kiểm.
-- Route `POST /github/open` ([`ctl/main.js:242`](../ctl/main.js#L242-L242)) — Mở repo GitHub theo fullName: dùng bản sao có sẵn hoặc clone, rồi đăng ký và chọn workspace (202).
+- Route `POST /publish/prepare` ([`ctl/main.js:248`](../ctl/main.js#L248-L248)) — Bước 1 xuất bản: chạy kiểm tra & build trên máy (repo sạch, Dockerfile, Docker, test, docker build) (202).
+- Route `POST /publish/:id/release` ([`ctl/main.js:249`](../ctl/main.js#L249-L249)) — Bước 2 xuất bản: đẩy tag vX.Y.Z hoặc chạy tay workflow GitHub Actions cho bản vừa kiểm.
+- Route `POST /github/open` ([`ctl/main.js:256`](../ctl/main.js#L256-L256)) — Mở repo GitHub theo fullName: dùng bản sao có sẵn hoặc clone, rồi đăng ký và chọn workspace (202).
 
 ### 7 · Nền tảng dùng chung
 
@@ -1931,7 +1968,7 @@ README, hướng dẫn cho agent, sổ agent.md, chỉ thị của CEO, đặc t
 
 ### 10 · Kiểm thử
 
-Bộ node --test (48 tệp) chạy trong CI mỗi PR và trước khi phát hành.
+Bộ node --test (49 tệp) chạy trong CI mỗi PR và trước khi phát hành.
 
 - [`test/agy-tai-khoan.test.js`](../test/agy-tai-khoan.test.js) — Kiểm nhiều tài khoản Antigravity bằng kho đăng nhập giả: cất chỉ lưu email, đổi khi máy rảnh và kiểm email sau khi nạp, tự chuyển theo ngưỡng, đọc hạn mức tài khoản nghỉ…
 - [`test/app.test.js`](../test/app.test.js) — Bộ test node:test cho app trên máy: manifest PWA cài được, mọi trang public gắn manifest/app.js/icon, service worker không lưu đệm dữ liệu, tìm trình duyệt, mở cửa sổ kh…
@@ -1943,6 +1980,7 @@ Bộ node --test (48 tệp) chạy trong CI mỗi PR và trước khi phát hàn
 - [`test/cho-han-muc.test.js`](../test/cho-han-muc.test.js) — Kiểm thử chờ hạn mức: luồng chờ đúng giờ CLI báo mà không tính vào giới hạn lượt, tới giờ thì tự chạy tiếp (ưu tiên giờ từ bộ theo dõi hạn mức), master prompt giao cho A… *Hàm chính:* `fixture`.
 - [`test/chrome-devtools.test.js`](../test/chrome-devtools.test.js) — Kiểm Chrome DevTools MCP: ghim bản đã qua 2 tuần, cờ chạy an toàn, trạng thái cài, chạy bằng node + file của gói, chỉ gắn vào lượt của phòng được bật, file cấu hình MCP…
 - [`test/codex-model.test.js`](../test/codex-model.test.js) — Kiểm chọn model Codex: Sol chạy gpt-6.1-sol, Astra gpt-6-astra, mức suy luận mặc định medium, đội trưởng Claude nâng effort cho Astra không cần hỏi CEO; chỉ CLAUDE_AUDIT… *Hàm chính:* `fixture`.
+- [`test/codex-tai-khoan.test.js`](../test/codex-tai-khoan.test.js) — Kiểm nhiều tài khoản GPT cho Codex: thêm tài khoản không chép file đăng nhập, đọc hạn mức mọi tài khoản bằng CODEX_HOME riêng, tự chuyển theo ngưỡng (không sang tài khoả…
 - [`test/ctl.test.js`](../test/ctl.test.js) — Kiểm thử nghiệm thu Phase 3 của OS Controller qua HTTP: token/Host/Origin sai bị chặn, Kill-All và kill từng việc dừng cả cây 3 tiến trình, timeout, trạng thái done/fail… *Hàm chính:* `call`.
 - [`test/ctlbridge.test.js`](../test/ctlbridge.test.js) — Kiểm cầu nối ctl mở kết nối mới cho mỗi yêu cầu (không keep-alive) để không báo nhầm 503 khi ctl vừa đóng kết nối rảnh.
 - [`test/dieu-khien-xa.test.js`](../test/dieu-khien-xa.test.js) — Kiểm điều khiển từ điện thoại: danh sách lệnh mở/chặn, mã ghép 6 số dùng một lần có hạn và khóa khi sai nhiều, tối đa 5 máy, chưa có khóa xem thì từ xa không làm được gì…
@@ -1995,7 +2033,7 @@ Bộ node --test (48 tệp) chạy trong CI mỗi PR và trước khi phát hàn
 9. **Chính sách lệnh & sổ tiến trình** — Mọi lệnh đều đi qua ctl/policy.js, phân loại argv thành allow, approve (CEO phải duyệt) hoặc deny (shell, trình thông dịch tùy ý). ctl/jobs.js chạy lệnh bằng spawn không qua shell với env đã lọc khóa, giới hạn 8 việc đồng thời và 1 lượt AI mỗi workspace, còn lib/proc.js là nút phanh dừng cả cây tiến trình. lib/ghi-file.js ghi nguyên tử cho các sổ, và trang dieukhien.html là nơi CEO duyệt, từ chối hoặc dừng việc. (`ctl/policy.js`, `ctl/jobs.js`, `lib/proc.js`, `lib/ghi-file.js`, `public/dieukhien.html`)
 10. **CEO giao việc → autopilot** — Luồng nghiệp vụ trung tâm bắt đầu ở ctl/ideas.js: CEO lưu ý tưởng rồi giao, bật một luồng autopilot từ lượt SPEC_ARCHITECT. ctl/autopilot.js điều phối các lượt AI nối tiếp theo NEXT_OWNER trên nhánh git riêng do ctl/nhanh.js tạo (ai/<việc>-<mã>, kiểm repo sạch, chặn commit có chuỗi giống khóa). Bộ ngắt mạch dừng luồng khi bàn giao sai, hết lượt hoặc thời gian, xung đột git hay sửa lại quá MAX_REWORK. (`ctl/ideas.js`, `POST /ideas/:id/start`, `POST /autopilot`, `ctl/autopilot.js`, `ctl/nhanh.js`)
 11. **Một lượt AI và bàn giao** — Mỗi bước của autopilot là một lượt do ctl/runner.js chạy: gọi CLI nền claude -p, codex exec hoặc agy -p theo vai đang giữ NEXT_OWNER, rồi lưu bàn giao vào SQLite. ctl/handoff.js tìm dòng JSON bàn giao cuối cùng trong log của AI, kiểm schema (vai, next_owner, claim_fixed, ask_ceo…) và cập nhật khóa lượt trong agent.md từ Bước 2. ctl/quotas.js theo dõi hạn mức thuê bao của ba CLI để autopilot biết khi nào phải chờ. (`ctl/runner.js`, `ctl/handoff.js`, `ctl/quotas.js`)
-12. **Chọn model, mục lục và tra cứu cho mỗi lượt** — Trước khi chạy, runner hỏi ctl/dieu-phoi.js chọn model + mức suy nghĩ theo độ khó và hạn mức (CEO cố định được theo phòng), ctl/muc-luc.js tra bản đồ .ua của repo để đưa file:dòng liên quan vào prompt, ctl/agy-tai-khoan.js đổi tài khoản Antigravity khi tài khoản đang dùng sắp cạn. Khi CEO đã lưu khóa Gemini, lượt Claude/Codex có thêm MCP tra-cuu (ctl/tra-cuu-mcp.js) — chỗ duy nhất văn phòng gửi nội dung ra ngoài, nên ctl/tra-cuu.js chặn khóa, mã nguồn và địa chỉ nội bộ. (`ctl/dieu-phoi.js`, `ctl/muc-luc.js`, `ctl/agy-tai-khoan.js`, `ctl/tra-cuu.js`, `ctl/tra-cuu-mcp.js`)
+12. **Chọn model, mục lục và tra cứu cho mỗi lượt** — Trước khi chạy, runner hỏi ctl/dieu-phoi.js chọn model + mức suy nghĩ theo độ khó và hạn mức (CEO cố định được theo phòng), ctl/muc-luc.js tra bản đồ .ua của repo để đưa file:dòng liên quan vào prompt, ctl/agy-tai-khoan.js và ctl/codex-tai-khoan.js đổi tài khoản Antigravity / GPT khi tài khoản đang dùng sắp cạn. Khi CEO đã lưu khóa Gemini, lượt Claude/Codex có thêm MCP tra-cuu (ctl/tra-cuu-mcp.js) — chỗ duy nhất văn phòng gửi nội dung ra ngoài, nên ctl/tra-cuu.js chặn khóa, mã nguồn và địa chỉ nội bộ. (`ctl/dieu-phoi.js`, `ctl/muc-luc.js`, `ctl/agy-tai-khoan.js`, `ctl/codex-tai-khoan.js`, `ctl/tra-cuu.js`, `ctl/tra-cuu-mcp.js`)
 13. **Kết nối MCP theo phòng** — Mỗi phòng NPC chỉ được bật đúng kết nối MCP của phần việc mình: ctl/mcp-phong.js lưu phân phòng trong mcp-phong.json và sinh cờ CLI cho từng lượt (--disallowedTools cho Claude, -c mcp_servers.*.enabled=false cho Codex). ctl/ket-noi-danh-muc.js là danh mục kết nối dùng chung, còn ctl/ket-noi.js đọc mcp list của từng CLI để hiện trạng thái trên trang ket-noi.html. Đây là nguyên tắc quyền tối thiểu áp dụng cho runner ở Bước 10. (`ctl/mcp-phong.js`, `ctl/ket-noi-danh-muc.js`, `ctl/ket-noi.js`, `public/ket-noi.html`)
 14. **Bộ skill, duyệt repo và MCP chạy trên máy** — ctl/skill.js cài cùng một bộ skill ghim commit (ctl/skill-mac-dinh.json) cho cả ba AI mà không chạy file nào của skill. Repo mới đi qua ctl/skill-duyet.js: tải đúng một commit vào chỗ cách ly, máy rà, Claude đội trưởng đọc chỉ-đọc rồi giải thích trên public/skill.html; CEO duyệt mới cài. MCP chạy trên máy (ctl/mcp-may.js, Chrome DevTools trong ctl/chrome-devtools.js) cài từ npm đúng bản ghim, không npx, và chỉ gắn vào lượt của phòng được bật. (`ctl/skill.js`, `ctl/skill-mac-dinh.json`, `ctl/skill-duyet.js`, `public/skill.html`, `ctl/mcp-may.js`, `ctl/chrome-devtools.js`)
 15. **Rà soát, duyệt và đẩy nhánh** — Trước khi cho AI chạy toàn quyền, ctl/ra-soat.js quét bằng quy tắc so mẫu (không gọi AI) tìm prompt injection, lệnh tải-và-chạy, ký tự ẩn hay thư viện tên nhái. Khi luồng cần CEO, ctl/thongbao.js bật thông báo Windows và ctl/nhat-ky.js ghép dòng thời gian ai làm gì. Luồng kết thúc bằng báo cáo của Claude: CEO duyệt qua /autopilot/:id/approve rồi mới đẩy nhánh riêng lên GitHub qua /autopilot/:id/push. (`ctl/ra-soat.js`, `ctl/thongbao.js`, `ctl/nhat-ky.js`, `POST /autopilot/:id/approve`, `POST /autopilot/:id/push`)
@@ -2007,7 +2045,7 @@ Bộ node --test (48 tệp) chạy trong CI mỗi PR và trước khi phát hàn
 
 ## 6. Điểm phát hiện khi vẽ — đã xử lý
 
-Vẽ lại toàn bộ ngày 19/11/2026 (thêm miền "Năng lực & tài nguyên của đội AI" và 13 workflow mới: ghép và điều khiển từ điện thoại, dự án mới, hợp đồng giao tiếp, miễn hợp đồng, chạy song song Astra + Kakashi, điều phối model, tài khoản Antigravity, bộ skill, duyệt repo skill, Chrome DevTools, tra cứu Gemini, vẽ lại bản đồ). Các điểm phát hiện lần này đều đã sửa:
+Vẽ lại toàn bộ ngày 19/11/2026 (thêm miền "Năng lực & tài nguyên của đội AI" và 14 workflow mới: ghép và điều khiển từ điện thoại, dự án mới, hợp đồng giao tiếp, miễn hợp đồng, chạy song song Astra + Kakashi, điều phối model, tài khoản Antigravity, tài khoản GPT cho Codex (vẽ thêm 20/11 sau khi PR #59 vào main), bộ skill, duyệt repo skill, Chrome DevTools, tra cứu Gemini, vẽ lại bản đồ). Các điểm phát hiện lần này đều đã sửa:
 
 1. **Nút "Phân việc ngoài lề (Đặc cách)" là thao tác giả — đã thay.** Trước đây nó chỉ hiện bong bóng và báo "đã ghi nhận vào sổ điều phối và hòm thư" mà không gửi gì. Nay là nút **"Giao việc riêng cho một AI"** (`public/index.html`): chọn AI, gõ việc, văn phòng mở chat của phòng đó và gửi thật qua `/ctl/chat` (chỉ đọc, đúng vai). Việc cần sửa file thì AI soạn prompt và nút **"Giao cả đội"** điền sẵn vào mục giao việc của bàn làm việc để anh tự bấm giao (luồng tự động). Không có quyền "đặc cách" vượt giao thức agent.md, vì runner và CI vẫn chặn lượt sai vai.
 2. **CLAUDE.md/AGENTS.md nay liệt kê đủ đường mạng ra ngoài** (hai file giống hệt nhau): tra cứu Gemini (`ctl/tra-cuu.js`); GitHub API và `git push` lên repo của CEO (`ctl/github.js`, `ctl/nhanh.js`, `ctl/bo-kiem.js`, `ctl/xuat-ban.js`); Claude CLI gợi ý tên repo (`ctl/du-an-moi.js`); `git fetch`/`npm view` khi duyệt skill (`ctl/skill-duyet.js`, `ctl/skill.js`); `npm install` MCP ghim bản (`ctl/mcp-may.js`). Thêm đường mới phải được CEO duyệt và ghi vào đó.

@@ -21,8 +21,8 @@
       "GitHub Actions"
     ],
     "description": "Quy trình nghiệp vụ của Văn phòng AI: cài đặt và vận hành app (kể cả ghép điện thoại), theo dõi đội AI chỉ đọc, giao tiếp CEO với đội (kể cả điều khiển từ điện thoại), sổ điều phối, chu trình giao việc tự động đa AI theo agent.md (dự án mới, hợp đồng giao tiếp, chạy song song), năng lực của đội (model, tài khoản, skill, MCP, tra cứu), điều khiển máy an toàn (OS Controller), chất lượng và phát hành.",
-    "analyzedAt": "2026-11-20T04:32:31.008Z",
-    "gitCommitHash": "7629d85212331264ded8619a441e3a030aff6e98"
+    "analyzedAt": "2026-11-20T04:34:19.517Z",
+    "gitCommitHash": "1fbe53ca856fbd62ce32f2360009a1582dd317c9"
   },
   "nodes": [
     {
@@ -1264,8 +1264,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        134,
-        155
+        140,
+        161
       ]
     },
     {
@@ -1312,8 +1312,8 @@
       "complexity": "simple",
       "filePath": "ctl/quotas.js",
       "lineRange": [
-        167,
-        252
+        170,
+        273
       ]
     },
     {
@@ -1329,7 +1329,7 @@
       "filePath": "ctl/quotas.js",
       "lineRange": [
         102,
-        163
+        165
       ]
     },
     {
@@ -1360,8 +1360,8 @@
       "complexity": "simple",
       "filePath": "ctl/quotas.js",
       "lineRange": [
-        167,
-        252
+        170,
+        273
       ]
     },
     {
@@ -1455,8 +1455,8 @@
       "complexity": "simple",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        427,
-        461
+        473,
+        507
       ]
     },
     {
@@ -1518,8 +1518,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        237,
-        237
+        251,
+        251
       ]
     },
     {
@@ -1566,8 +1566,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        539,
-        548
+        544,
+        553
       ]
     },
     {
@@ -2164,7 +2164,7 @@
       "id": "domain:nang-luc-doi",
       "type": "domain",
       "name": "Năng lực & tài nguyên của đội AI",
-      "summary": "Cho mỗi lượt AI đúng công cụ với chi phí hợp lý: điều phối model và mức suy nghĩ theo độ khó và hạn mức, mục lục từ bản đồ hệ thống, nhiều tài khoản Antigravity tự chuyển khi cạn, bộ skill ghim commit cài cho cả ba AI, duyệt skill/MCP mới từ link GitHub, MCP chạy trên máy (Chrome DevTools) và tra cứu Gemini miễn phí. Mọi thứ tải về đều ghim phiên bản và chỉ cài khi CEO bấm.",
+      "summary": "Cho mỗi lượt AI đúng công cụ với chi phí hợp lý: điều phối model và mức suy nghĩ theo độ khó và hạn mức, mục lục từ bản đồ hệ thống, nhiều tài khoản Antigravity và GPT (Codex) tự chuyển khi cạn, bộ skill ghim commit cài cho cả ba AI, duyệt skill/MCP mới từ link GitHub, MCP chạy trên máy (Chrome DevTools) và tra cứu Gemini miễn phí. Mọi thứ tải về đều ghim phiên bản và chỉ cài khi CEO bấm.",
       "tags": [
         "model-routing",
         "skills",
@@ -2186,6 +2186,7 @@
         "businessRules": [
           "CEO cố định model/mức cho phòng thì dùng đúng như vậy; cờ tự cấu hình trong lệnh được giữ nguyên",
           "Chỉ đổi tài khoản Antigravity khi không có tiến trình agy nào chạy; token không qua Node",
+          "Tài khoản GPT cho Codex: mỗi tài khoản một CODEX_HOME, văn phòng không chép hay đọc file đăng nhập; đổi tài khoản không ảnh hưởng lượt đang chạy",
           "Skill và MCP tải về luôn ghim commit/phiên bản, không chạy script cài, không npx; skill người dùng tự cài không bị ghi đè",
           "Repo skill mới chỉ cài sau khi máy rà, Claude đội trưởng đọc chỉ-đọc và CEO bấm duyệt; nội dung repo là dữ liệu, không phải chỉ thị",
           "MCP chạy trên máy chỉ gắn vào lượt Claude/Codex của phòng được bật, không đăng ký chung vào cấu hình CLI",
@@ -2288,8 +2289,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        506,
-        522
+        511,
+        527
       ]
     },
     {
@@ -2320,8 +2321,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        274,
-        274
+        288,
+        288
       ]
     },
     {
@@ -2336,8 +2337,8 @@
       "complexity": "moderate",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        506,
-        522
+        511,
+        527
       ]
     },
     {
@@ -2400,8 +2401,8 @@
       "complexity": "complex",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        281,
-        466
+        286,
+        471
       ]
     },
     {
@@ -2432,8 +2433,8 @@
       "complexity": "complex",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        562,
-        580
+        567,
+        585
       ]
     },
     {
@@ -2448,8 +2449,8 @@
       "complexity": "moderate",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        408,
-        435
+        413,
+        440
       ]
     },
     {
@@ -2464,8 +2465,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        592,
-        594
+        597,
+        599
       ]
     },
     {
@@ -2513,7 +2514,7 @@
       "filePath": "ctl/runner.js",
       "lineRange": [
         285,
-        323
+        328
       ]
     },
     {
@@ -2544,8 +2545,8 @@
       "complexity": "simple",
       "filePath": "ctl/jobs.js",
       "lineRange": [
-        127,
-        134
+        128,
+        135
       ]
     },
     {
@@ -2560,8 +2561,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        369,
-        390
+        374,
+        395
       ]
     },
     {
@@ -2608,8 +2609,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        336,
-        390
+        341,
+        395
       ]
     },
     {
@@ -2671,8 +2672,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        584,
-        590
+        589,
+        595
       ]
     },
     {
@@ -2687,8 +2688,8 @@
       "complexity": "simple",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        154,
-        178
+        158,
+        182
       ]
     },
     {
@@ -2703,8 +2704,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        276,
-        276
+        290,
+        290
       ]
     },
     {
@@ -2719,8 +2720,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        439,
-        451
+        444,
+        456
       ]
     },
     {
@@ -2735,8 +2736,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        656,
-        669
+        661,
+        674
       ]
     },
     {
@@ -2767,8 +2768,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        558,
-        560
+        563,
+        565
       ]
     },
     {
@@ -2784,7 +2785,7 @@
       "filePath": "ctl/autopilot.js",
       "lineRange": [
         175,
-        186
+        191
       ]
     },
     {
@@ -2799,8 +2800,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        188,
-        194
+        193,
+        199
       ]
     },
     {
@@ -2815,8 +2816,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        235,
-        250
+        240,
+        255
       ]
     },
     {
@@ -2831,8 +2832,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        197,
-        217
+        202,
+        222
       ]
     },
     {
@@ -2847,8 +2848,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        261,
-        279
+        266,
+        284
       ]
     },
     {
@@ -2863,8 +2864,8 @@
       "complexity": "moderate",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        728,
-        757
+        733,
+        762
       ]
     },
     {
@@ -2879,8 +2880,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        759,
-        770
+        764,
+        775
       ]
     },
     {
@@ -2911,8 +2912,8 @@
       "complexity": "complex",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        524,
-        607
+        529,
+        612
       ]
     },
     {
@@ -2927,8 +2928,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        494,
-        504
+        499,
+        509
       ]
     },
     {
@@ -2943,8 +2944,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        481,
-        492
+        486,
+        497
       ]
     },
     {
@@ -2991,8 +2992,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        671,
-        681
+        676,
+        686
       ]
     },
     {
@@ -3055,8 +3056,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        683,
-        697
+        688,
+        702
       ]
     },
     {
@@ -3199,8 +3200,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        476,
-        481
+        481,
+        486
       ]
     },
     {
@@ -3413,8 +3414,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        304,
-        309
+        318,
+        323
       ]
     },
     {
@@ -3445,8 +3446,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        174,
-        174
+        180,
+        180
       ]
     },
     {
@@ -3477,8 +3478,8 @@
       "complexity": "moderate",
       "filePath": "ctl/jobs.js",
       "lineRange": [
-        75,
-        126
+        76,
+        127
       ]
     },
     {
@@ -3524,8 +3525,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        189,
-        189
+        195,
+        195
       ]
     },
     {
@@ -3540,8 +3541,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        776,
-        780
+        781,
+        785
       ]
     },
     {
@@ -3556,8 +3557,8 @@
       "complexity": "simple",
       "filePath": "ctl/jobs.js",
       "lineRange": [
-        159,
-        177
+        160,
+        178
       ]
     },
     {
@@ -3588,8 +3589,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        189,
-        189
+        195,
+        195
       ]
     },
     {
@@ -3604,8 +3605,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        343,
-        357
+        357,
+        371
       ]
     },
     {
@@ -3700,8 +3701,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        78,
-        95
+        83,
+        100
       ]
     },
     {
@@ -3828,8 +3829,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        408,
-        435
+        413,
+        440
       ]
     },
     {
@@ -4052,8 +4053,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        240,
-        240
+        254,
+        254
       ]
     },
     {
@@ -4119,8 +4120,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        325,
-        333
+        330,
+        338
       ]
     },
     {
@@ -4135,8 +4136,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        334,
-        367
+        339,
+        372
       ]
     },
     {
@@ -4183,8 +4184,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        562,
-        580
+        567,
+        585
       ]
     },
     {
@@ -4199,8 +4200,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        408,
-        435
+        413,
+        440
       ]
     },
     {
@@ -4359,8 +4360,8 @@
       "complexity": "simple",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        608,
-        614
+        678,
+        684
       ]
     },
     {
@@ -4487,8 +4488,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        234,
-        234
+        248,
+        248
       ]
     },
     {
@@ -4757,8 +4758,8 @@
       "complexity": "simple",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        574,
-        574
+        620,
+        620
       ]
     },
     {
@@ -5106,8 +5107,8 @@
       "complexity": "simple",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        480,
-        499
+        526,
+        545
       ]
     },
     {
@@ -5202,8 +5203,8 @@
       "complexity": "simple",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        500,
-        515
+        546,
+        561
       ]
     },
     {
@@ -5266,8 +5267,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        352,
-        367
+        357,
+        372
       ]
     },
     {
@@ -5345,8 +5346,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        352,
-        367
+        357,
+        372
       ]
     },
     {
@@ -5361,8 +5362,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        610,
-        630
+        615,
+        635
       ]
     },
     {
@@ -5393,8 +5394,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        631,
-        652
+        636,
+        657
       ]
     },
     {
@@ -5425,8 +5426,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        464,
-        471
+        469,
+        476
       ]
     },
     {
@@ -5473,8 +5474,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        346,
-        356
+        351,
+        361
       ]
     },
     {
@@ -5505,8 +5506,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        357,
-        384
+        362,
+        389
       ]
     },
     {
@@ -5537,8 +5538,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        399,
-        466
+        404,
+        471
       ]
     },
     {
@@ -5569,8 +5570,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        388,
-        398
+        393,
+        403
       ]
     },
     {
@@ -5681,8 +5682,8 @@
       "complexity": "simple",
       "filePath": "ctl/quotas.js",
       "lineRange": [
-        234,
-        249
+        255,
+        270
       ]
     },
     {
@@ -5697,8 +5698,8 @@
       "complexity": "simple",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        301,
-        329
+        347,
+        375
       ]
     },
     {
@@ -5825,8 +5826,8 @@
       "complexity": "simple",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        251,
-        263
+        288,
+        302
       ]
     },
     {
@@ -6435,7 +6436,7 @@
       "filePath": "ctl/runner.js",
       "lineRange": [
         288,
-        308
+        312
       ]
     },
     {
@@ -6450,8 +6451,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        352,
-        367
+        357,
+        372
       ]
     },
     {
@@ -6466,8 +6467,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        346,
-        356
+        351,
+        361
       ]
     },
     {
@@ -6482,8 +6483,8 @@
       "complexity": "simple",
       "filePath": "ctl/quotas.js",
       "lineRange": [
-        182,
-        190
+        202,
+        210
       ]
     },
     {
@@ -6548,6 +6549,150 @@
       "lineRange": [
         1020,
         1028
+      ]
+    },
+    {
+      "id": "flow:doi-tai-khoan-gpt",
+      "type": "flow",
+      "name": "Nhiều tài khoản GPT cho Codex và tự chuyển khi cạn",
+      "summary": "CEO thêm tài khoản GPT và tự đăng nhập bằng codex login văn phòng mở; mỗi tài khoản một CODEX_HOME dùng chung cấu hình với ~/.codex. Mỗi tiến trình Codex chạy bằng tài khoản đang chọn lúc khởi chạy; văn phòng đọc hạn mức mọi tài khoản, tự chuyển trước lượt khi sắp cạn và đổi ngay khi lượt báo hết hạn mức.",
+      "tags": [
+        "codex",
+        "tai-khoan",
+        "han-muc"
+      ],
+      "complexity": "complex",
+      "domainMeta": {
+        "entryPoint": "Mục Hạn mức / menu ☰ trên điện thoại → POST /ctl/codex-tai-khoan/*; runner trước lượt Codex",
+        "entryType": "http"
+      }
+    },
+    {
+      "id": "step:doi-tai-khoan-gpt:them",
+      "type": "step",
+      "name": "Thêm tài khoản",
+      "summary": "Tạo thư mục CODEX_HOME riêng; không chép file đăng nhập.",
+      "tags": [
+        "codex",
+        "tai-khoan"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/codex-tai-khoan.js",
+      "lineRange": [
+        74,
+        86
+      ]
+    },
+    {
+      "id": "step:doi-tai-khoan-gpt:dong-bo",
+      "type": "step",
+      "name": "Dùng chung cấu hình với ~/.codex",
+      "summary": "Chép config.toml, AGENTS.md; nối skills, plugins, sandbox.",
+      "tags": [
+        "codex",
+        "tai-khoan"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/codex-tai-khoan.js",
+      "lineRange": [
+        46,
+        63
+      ]
+    },
+    {
+      "id": "step:doi-tai-khoan-gpt:dang-nhap",
+      "type": "step",
+      "name": "CEO đăng nhập",
+      "summary": "Văn phòng mở codex login với CODEX_HOME đó, CEO bấm link trên trình duyệt.",
+      "tags": [
+        "codex",
+        "tai-khoan"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/codex-tai-khoan.js",
+      "lineRange": [
+        90,
+        115
+      ]
+    },
+    {
+      "id": "step:doi-tai-khoan-gpt:doc-han-muc",
+      "type": "step",
+      "name": "Đọc hạn mức mọi tài khoản",
+      "summary": "app-server với CODEX_HOME riêng từng tài khoản, kèm email/gói.",
+      "tags": [
+        "codex",
+        "tai-khoan"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/quotas.js",
+      "lineRange": [
+        187,
+        199
+      ]
+    },
+    {
+      "id": "step:doi-tai-khoan-gpt:truoc-luot",
+      "type": "step",
+      "name": "Tự chuyển trước lượt",
+      "summary": "Tài khoản đang dùng ≤ ngưỡng thì sang tài khoản còn nhiều nhất.",
+      "tags": [
+        "codex",
+        "tai-khoan"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/codex-tai-khoan.js",
+      "lineRange": [
+        201,
+        210
+      ]
+    },
+    {
+      "id": "step:doi-tai-khoan-gpt:env",
+      "type": "step",
+      "name": "Tiến trình nhận CODEX_HOME lúc khởi chạy",
+      "summary": "Bộ chạy việc thêm biến của tài khoản đang chọn khi spawn.",
+      "tags": [
+        "codex",
+        "tai-khoan"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/codex-tai-khoan.js",
+      "lineRange": [
+        66,
+        71
+      ]
+    },
+    {
+      "id": "step:doi-tai-khoan-gpt:het-han-muc",
+      "type": "step",
+      "name": "Hết hạn mức: đổi ngay",
+      "summary": "Đánh dấu cạn, đổi tài khoản; luồng tự động chạy lại lượt ở nhịp kế tiếp.",
+      "tags": [
+        "codex",
+        "tai-khoan"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/codex-tai-khoan.js",
+      "lineRange": [
+        213,
+        222
+      ]
+    },
+    {
+      "id": "step:doi-tai-khoan-gpt:mot-cham",
+      "type": "step",
+      "name": "Đổi một chạm",
+      "summary": "Bảng tài khoản GPT trong mục Hạn mức và menu điện thoại.",
+      "tags": [
+        "codex",
+        "tai-khoan"
+      ],
+      "complexity": "simple",
+      "filePath": "public/office-desk.js",
+      "lineRange": [
+        257,
+        281
       ]
     }
   ],
@@ -6885,6 +7030,69 @@
       "source": "domain:nang-luc-doi",
       "target": "flow:doi-tai-khoan-agy",
       "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:nang-luc-doi",
+      "target": "flow:doi-tai-khoan-gpt",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "flow:doi-tai-khoan-gpt",
+      "target": "step:doi-tai-khoan-gpt:them",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.13
+    },
+    {
+      "source": "flow:doi-tai-khoan-gpt",
+      "target": "step:doi-tai-khoan-gpt:dong-bo",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.25
+    },
+    {
+      "source": "flow:doi-tai-khoan-gpt",
+      "target": "step:doi-tai-khoan-gpt:dang-nhap",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.38
+    },
+    {
+      "source": "flow:doi-tai-khoan-gpt",
+      "target": "step:doi-tai-khoan-gpt:doc-han-muc",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "flow:doi-tai-khoan-gpt",
+      "target": "step:doi-tai-khoan-gpt:truoc-luot",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.63
+    },
+    {
+      "source": "flow:doi-tai-khoan-gpt",
+      "target": "step:doi-tai-khoan-gpt:env",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.75
+    },
+    {
+      "source": "flow:doi-tai-khoan-gpt",
+      "target": "step:doi-tai-khoan-gpt:het-han-muc",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.88
+    },
+    {
+      "source": "flow:doi-tai-khoan-gpt",
+      "target": "step:doi-tai-khoan-gpt:mot-cham",
+      "type": "flow_step",
       "direction": "forward",
       "weight": 1
     },
