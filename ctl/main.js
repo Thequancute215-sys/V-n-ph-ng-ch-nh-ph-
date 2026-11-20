@@ -24,6 +24,9 @@ const { createIdeas } = require("./ideas");
 const { createPublisher } = require("./xuat-ban");
 const { createConnectors } = require("./ket-noi");
 const { createXuongPhim } = require("./xuong-phim");
+const { createMayQuay } = require("./may-quay");
+const { createTramFlow } = require("./tram-flow");
+const libPhim = require("../lib/phim");
 const { createJournal } = require("./nhat-ky");
 const { createChat } = require("./chat");
 const { createNotifier } = require("./thongbao");
@@ -50,7 +53,7 @@ const HTTP_CODE = {
   CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_WAITING: 409, NEEDS_SPEC_TURN: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409, HANDOFF_PENDING: 409, NEEDS_ANSWER: 409, NO_QUESTION: 422, BAD_OPTION: 400,
   CHAT_BUSY: 409, PUBLISH_BUSY: 409, NOT_READY: 409, NO_RELEASE_WORKFLOW: 422, NOT_ON_MAIN: 409, TAG_EXISTS: 409, DIRTY_REPO: 409, NEEDS_SCAN_APPROVAL: 409, NO_COMMIT: 409, NO_QUOTA: 409, NO_GIT: 422, NO_REMOTE: 422, GIT_PUSH: 502,
   UPDATE_BUSY: 409, NOT_APP: 409, UPDATE_FAILED: 500, GIT_BRANCH: 409,
-  AGY_BUSY: 409, XUONG_BUSY: 409, CAI_LOI: 500, AGY_UNSAVED: 409, SKILL_BUSY: 409, SKILL_DA_CO: 409, BAD_CATALOG: 422, SONG_SONG: 409, AGY_CRED: 502, NO_LOGIN: 409, NOT_SUPPORTED: 501,
+  AGY_BUSY: 409, XUONG_BUSY: 409, CAI_LOI: 500, NO_KEY: 409, MAY_QUAY_BAN: 409, VUOT_NGAN_SACH: 409, TOI_DA_TAKE: 409, PHIM_LOI: 422, MAY_QUAY_LOI: 502, BAD_URL: 400, AGY_UNSAVED: 409, SKILL_BUSY: 409, SKILL_DA_CO: 409, BAD_CATALOG: 422, SONG_SONG: 409, AGY_CRED: 502, NO_LOGIN: 409, NOT_SUPPORTED: 501,
 };
 
 function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {}, quotaOptions = {}, updaterOptions = {}, agyOptions = {}, autopilotOptions = {}, notify = false } = {}) {
@@ -80,6 +83,13 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
   const chat = createChat({ jobs, ws, runner, audit, dir });
   const skillDuyet = createSkillDuyet({ dir, jobs, runner, audit });   // CEO dán link repo skill → Claude đội trưởng xem → CEO duyệt cài
   const connectors = createConnectors({ runner, audit, dir });   // trang Kết nối (MCP) của đội
+  // Xưởng phim P2: máy quay API (Gemini) và trạm Google Flow. Chỉ CEO bấm trên trang Xưởng phim; AI không gọi được.
+  const mayQuay = createMayQuay({ dir, audit });
+  const tramFlow = createTramFlow({ dir, goc: () => xuongPhim.duongDan.goc, audit, jobs, cliClaude: () => runner.cliOf("claude") });
+  const phimRoot = (v) => ws.find(v).path;
+  const docHoSo = (root) => { const doc = (f, mac) => { try { return JSON.parse(fs.readFileSync(path.join(root, f), "utf8").replace(/^\uFEFF/, "")); } catch { return mac; } };
+    const phim = doc("phim.json", null); if (!phim) throw Object.assign(new Error("Dự án không có phim.json"), { code: "NOT_FOUND" });
+    return { phim, kiem: libPhim.kiem(phim, { giong: doc("media/giong/voice.json", null) }) }; };
   const journal = createJournal({ jobs, autopilot });           // Nhật ký: ai làm gì, lúc nào
   const boKiem = createBoKiem({ dir, audit });   // cài bộ kiểm chu trình (CI) vào repo dự án
   const updater = createUpdater({ root: path.join(__dirname, ".."), audit, jobs, autopilot, ...updaterOptions });   // nút Cập nhật app
@@ -219,6 +229,15 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     // Cài MCP chạy trên máy (Chrome DevTools) đúng phiên bản đã ghim; tải từ npm nên chỉ khi CEO bấm.
     ["POST", "/ket-noi/cai-may", async (p, qs, b) => ({ ketNoi: await connectors.caiMay(String(b.id || "")) })],
     // Xưởng phim P0: kiểm FFmpeg, Python chung, giọng đọc; cài chạy nền khi CEO bấm (trang Kết nối hỏi lại tới khi xong).
+    // Xưởng phim P2: hồ sơ, ước tính, quay (chạy nền), phần của CEO, trạm Flow.
+    ["GET", "/phim/du-an", () => ({ duAn: ws.list().filter((w) => fs.existsSync(path.join(w.path, "phim.json"))).map((w) => ({ path: w.path, ten: path.basename(w.path) })) })],
+    ["GET", "/phim", (p, qs) => { const root = phimRoot(qs.get("workspace")); return { ...docHoSo(root), mayQuay: mayQuay.trangThai(root) }; }],
+    ["POST", "/phim/uoc-tinh", (p, qs, b) => ({ uocTinh: mayQuay.uocTinh(phimRoot(b.workspace), { canh: b.canh, loai: b.loai, soPhuongAn: b.soPhuongAn, doPhanGiai: b.doPhanGiai }) })],
+    ["POST", "/phim/quay", (p, qs, b) => [202, { mayQuay: mayQuay.batDauQuay(phimRoot(b.workspace), { canh: b.canh, loai: b.loai, soPhuongAn: b.soPhuongAn, doPhanGiai: b.doPhanGiai }) }]],
+    ["POST", "/phim/ceo", (p, qs, b) => ({ phim: mayQuay.suaCeo(phimRoot(b.workspace), { canh: b.canh, khungChon: b.khungChon, takeChon: b.takeChon, nguoiThat: b.nguoiThat, nganSach: b.nganSach }) })],
+    ["GET", "/flow", async () => ({ flow: await tramFlow.trangThai() })],
+    ["POST", "/flow/:id/mo", async (p) => ({ flow: await tramFlow.mo(p.id) })],
+    ["POST", "/flow/nhip", async (p, qs, b) => [202, { flow: await tramFlow.nhip(phimRoot(b.workspace), { canh: b.canh, taiKhoan: b.taiKhoan, buoc: b.buoc }) }]],
     ["GET", "/xuong-phim", async (p, qs) => ({ xuongPhim: await xuongPhim.kiem({ fresh: qs.get("fresh") === "1" }) })],
     ["POST", "/xuong-phim/cai", () => [202, { xuongPhim: xuongPhim.batDauCai() }]],
     ["GET", "/dieu-phoi", () => ({ dieuPhoi: runner.dieuPhoi.status() })],
@@ -321,6 +340,26 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     return params;
   };
 
+  const MIME_MEDIA = { ".mp4": "video/mp4", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".mp3": "audio/mpeg", ".wav": "audio/wav" };
+  function guiMedia(req, res, url) {
+    const rel = String(url.searchParams.get("path") || "");
+    if (!/^media\//.test(rel) || !libPhim.duongDanHopLe(rel)) return fail(res, 403, "PATH_DENIED", "Chỉ xem được file trong media/ của phim");
+    const loai = MIME_MEDIA[path.extname(rel).toLowerCase()];
+    if (!loai) return fail(res, 403, "PATH_DENIED", "Loại file không xem được");
+    const { real } = ws.resolve(phimRoot(url.searchParams.get("workspace")), rel);
+    const size = fs.statSync(real).size;
+    const m = /^bytes=(\d*)-(\d*)$/.exec(String(req.headers.range || ""));
+    if (m && size) {
+      const start = m[1] === "" ? Math.max(0, size - Number(m[2])) : Number(m[1]);
+      const end = m[1] !== "" && m[2] !== "" ? Math.min(Number(m[2]), size - 1) : size - 1;
+      if (start > end || start >= size) { res.writeHead(416, { "Content-Range": "bytes */" + size }); return res.end(); }
+      res.writeHead(206, { "Content-Type": loai, "Content-Length": end - start + 1, "Content-Range": `bytes ${start}-${end}/${size}`, "Accept-Ranges": "bytes", "Cache-Control": "no-store" });
+      return fs.createReadStream(real, { start, end }).pipe(res);
+    }
+    res.writeHead(200, { "Content-Type": loai, "Content-Length": size, "Accept-Ranges": "bytes", "Cache-Control": "no-store" });
+    fs.createReadStream(real).pipe(res);
+  }
+
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, "http://x");
     if (!LOOPBACK.test(String(req.headers.host || ""))) return fail(res, 403, "HOST_DENIED", "Chỉ nhận yêu cầu tới localhost");
@@ -342,6 +381,8 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
         res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", "X-Next-Offset": String(l.next), "X-Size": String(l.size) });
         return res.end(l.text);
       }
+      // Ảnh/giọng/clip của phim cho trang Xưởng phim xem: chỉ trong media/ của workspace đã đăng ký, có Range để tua video.
+      if (req.method === "GET" && url.pathname === "/phim/media") return guiMedia(req, res, url);
       for (const [method, pattern, fn] of routes) {
         if (method !== req.method) continue;
         const params = match(pattern, url.pathname);
@@ -373,7 +414,7 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     db.close();
   }
 
-  return { server, jobs, ws, files, xuongPhim, runner, autopilot, scanner, publisher, chat, connectors, journal, github, quotas, agyTk, codexTk, updater, boKiem, audit, token, close };
+  return { server, jobs, ws, files, xuongPhim, mayQuay, tramFlow, runner, autopilot, scanner, publisher, chat, connectors, journal, github, quotas, agyTk, codexTk, updater, boKiem, audit, token, close };
 }
 
 if (require.main === module) {
