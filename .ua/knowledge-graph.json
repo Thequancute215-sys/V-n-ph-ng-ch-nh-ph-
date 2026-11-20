@@ -7028,7 +7028,7 @@
       "type": "file",
       "name": "characters.html",
       "filePath": "public/characters.html",
-      "summary": "Trang hồ sơ nhân vật 3D: các nhân vật đội (Naruto CEO, Hinata, Pain, Itachi, Sasuke, Sakura) và 10 Vĩ Thú dựng thủ tục bằng three.js (texture vẽ canvas), có OrbitControls, nạp model .glb/.gltf của Meshy.ai bằng kéo-thả, và nút duyệt chỉ hiện alert. Dùng Tailwind CDN, lucide và three@0.160.0 qua importmap; không gọi API máy chủ.",
+      "summary": "Trang hồ sơ nhân vật 3D: các nhân vật đội (Naruto CEO, Hinata, Pain, Itachi, Sasuke, Sakura) và 10 Vĩ Thú dựng thủ tục bằng three.js (texture vẽ canvas), có OrbitControls, nạp model .glb/.gltf của Meshy.ai bằng kéo-thả. Ô \"Yêu cầu chỉnh thêm chi tiết\" lưu thật thành ý tưởng của dự án đang chọn (GET /ctl/workspaces rồi POST /ctl/ideas), chỉ báo \"Đã lưu\" sau khi ctl trả về, lỗi hiện \"Chưa lưu: …\"; hai nút \"Duyệt\" giả cũ đã bỏ (20/11/2026). Dùng Tailwind CDN, lucide và three@0.160.0 qua importmap.",
       "tags": [
         "giao-dien-3d",
         "nhan-vat",
@@ -25490,6 +25490,14 @@
       "direction": "forward",
       "weight": 0.6,
       "description": "gọi API của OS Controller qua /ctl: /ctl/github/repos?page=, /ctl/github/open, /ctl/github/operations/, /ctl/workspaces, /ctl/health, /ctl/jobs, /ctl/handoffs, /ctl/autopilot"
+    },
+    {
+      "source": "file:public/characters.html",
+      "target": "file:ctl/main.js",
+      "type": "depends_on",
+      "direction": "forward",
+      "weight": 0.6,
+      "description": "gọi API của OS Controller qua /ctl: /ctl/workspaces, /ctl/ideas"
     },
     {
       "source": "file:public/tinnhan.html",

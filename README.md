@@ -127,7 +127,7 @@ Có thể đặt `"appStartPath": "/prototype.html#board"` trong `config.json` �
 | **Hòm thư** (`hopthu.html`) | Mỗi vai: số tin chưa xong, chờ quá 1 giờ, đọc lại từ 3 lần mà chưa xong, chưa đọc, tin cũ nhất |
 | **Đánh giá nhân sự** (`hieusuat.html`) | Token theo giờ và ngày, quỹ Codex tuần, xếp loại A/B/C/D theo việc xong, lỗi lệnh, lượt DEV, giờ làm, độ tiết kiệm |
 | **Tin nhắn** (`tinnhan.html`) | Toàn bộ tin 24 giờ, lọc theo người |
-| **Nhân vật 3D** (`characters.html`, `anime-studio.html`) | Hồ sơ nhân vật của đội và vĩ thú; studio xem mẫu nhân vật và soạn prompt dựng nhân vật |
+| **Nhân vật 3D** (`characters.html`, `anime-studio.html`) | Hồ sơ nhân vật của đội và vĩ thú; gửi yêu cầu chỉnh tạo hình thành ý tưởng của dự án đang chọn; studio xem mẫu nhân vật và soạn prompt dựng nhân vật |
 | **Điện thoại** | `dieu-khien.html`: app điều khiển cài ra màn hình chính (Tình hình, Giao việc, Chờ duyệt, Hạn mức). `dien-thoai.html` (trên máy tính): tạo mã ghép, xem và thu hồi máy đã ghép. Văn phòng 3D cũng mở được trên điện thoại đã ghép. Xem mục "Xem trên điện thoại" |
 | **App trên máy** | Lối tắt Desktop / Start Menu, cửa sổ riêng, tự bật ngầm khi đăng nhập Windows (xem mục "Dùng như app trên máy"). Văn phòng tắt thì hiện trang báo "chưa chạy" và tự tải lại khi bật |
 

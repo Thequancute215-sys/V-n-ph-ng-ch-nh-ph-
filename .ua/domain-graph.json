@@ -2209,9 +2209,25 @@
       ],
       "complexity": "moderate",
       "domainMeta": {
-        "entryPoint": "Bàn CEO → Ý tưởng → POST /ctl/ideas, POST /ctl/ideas/:id/start",
+        "entryPoint": "Bàn CEO → Ý tưởng → POST /ctl/ideas, POST /ctl/ideas/:id/start; trang Nhân vật 3D → Yêu cầu chỉnh thêm chi tiết → POST /ctl/ideas",
         "entryType": "http"
       }
+    },
+    {
+      "id": "step:giao-y-tuong:nhan-vat",
+      "type": "step",
+      "name": "Yêu cầu chỉnh tạo hình từ trang Nhân vật 3D",
+      "summary": "Ô \"Yêu cầu chỉnh thêm chi tiết\" đọc dự án đang chọn (GET /ctl/workspaces) rồi lưu ý tưởng \"Chỉnh tạo hình nhân vật: …\" qua POST /ctl/ideas; chưa chọn dự án hay ctl tắt thì báo \"Chưa lưu\". Giao Hinata vẫn do CEO bấm ở Bàn CEO → Ý tưởng.",
+      "tags": [
+        "y-tuong",
+        "nhan-vat"
+      ],
+      "complexity": "simple",
+      "filePath": "public/characters.html",
+      "lineRange": [
+        1713,
+        1737
+      ]
     },
     {
       "id": "step:giao-y-tuong:luu",
@@ -8467,6 +8483,13 @@
       "type": "flow_step",
       "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "flow:giao-y-tuong",
+      "target": "step:giao-y-tuong:nhan-vat",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.1
     },
     {
       "source": "flow:giao-y-tuong",
