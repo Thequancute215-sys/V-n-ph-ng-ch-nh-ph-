@@ -53,7 +53,7 @@ test("kiểm: thiếu FFmpeg và Python thì báo cách sửa; đủ thì sẵn 
   let x = xp.createXuongPhim({ dir: d, env: { PATH: "" }, run, models, appDir: d });
   let k = await x.kiem({ fresh: true });
   assert.equal(k.san, false);
-  assert.match(k.muc.find((m) => m.id === "ffmpeg").cachSua, /winget install Gyan\.FFmpeg/);
+  assert.match(k.muc.find((m) => m.id === "ffmpeg").cachSua, /Cài xưởng phim/);
   assert.equal(k.muc.find((m) => m.id === "giong-viet").ok, false);
 
   ghi(path.join(d, "bin", EXE)); ghi(path.join(d, "bin", WIN ? "ffprobe.exe" : "ffprobe"));
@@ -72,15 +72,25 @@ test("cài: tạo venv, pip chỉ nhận gói đóng sẵn đúng file ghim, ch�
   const models = [{ ten: "a.onnx", bytes: 3, sha256: sha("abc") }];
   const goi = [];
   let x;
+  const moiTruong = [];
   const run = (prog, args, opts, cb) => {
     goi.push([prog, ...args]);
+    moiTruong.push(opts.env);
     if (args.includes("venv")) { ghi(x.duongDan.python); return setImmediate(() => cb(null, "", "")); }
+    if (prog === "winget") { ghi(path.join(x.duongDan.ffmpeg, "ffmpeg-9.0-full_build", "bin", EXE)); return setImmediate(() => cb(null, "", "")); }
     setImmediate(() => cb(null, "{}", ""));
   };
   x = xp.createXuongPhim({ dir: d, env: { PATH: "" }, run, models, nguonModel: [nguon], appDir: d, get: () => { throw new Error("không được tải khi đã có bản chép"); } });
+  if (!WIN) ghi(path.join(x.duongDan.ffmpeg, "bin", EXE));   // ngoài Windows không cài qua winget
   const lan1 = x.cai();
   await assert.rejects(x.cai(), (e) => e.code === "XUONG_BUSY");
   await lan1;
+  assert.ok(moiTruong.every((e) => e.TEMP === x.duongDan.tam && e.PIP_CACHE_DIR.startsWith(x.duongDan.goc)), "tải và tạm đều nằm trong thư mục gốc của xưởng");
+  if (WIN) {
+    const wg = goi.find((g) => g[0] === "winget");
+    assert.ok(wg && wg.includes("Gyan.FFmpeg") && wg[wg.indexOf("--location") + 1] === x.duongDan.ffmpeg, "FFmpeg cài vào <gốc>/ffmpeg");
+    assert.equal(x.envAi().XUONG_PHIM_FFMPEG, path.join(x.duongDan.ffmpeg, "ffmpeg-9.0-full_build", "bin", EXE));
+  }
   const venv = goi.find((g) => g.includes("venv"));
   assert.ok(venv, "có tạo venv");
   const pip = goi.find((g) => g.includes("pip"));
@@ -88,6 +98,20 @@ test("cài: tạo venv, pip chỉ nhận gói đóng sẵn đúng file ghim, ch�
   assert.ok(pip.includes(path.join(d, "tools", "xuong-phim", "requirements.txt")));
   assert.equal(fs.readFileSync(path.join(x.duongDan.models, "a.onnx"), "utf8"), "abc");
   assert.ok(!fs.existsSync(path.join(x.duongDan.models, "b.bin")));
+});
+
+test("thư mục gốc đổi được bằng xuong-phim.json (ổ khác); hỏng hoặc đường dẫn tương đối thì về mặc định; model ở chỗ cũ là nguồn chép", (t) => {
+  const d = tmp(t), dich = path.join(d, "o-d", "xuong-phim");
+  assert.equal(xp.thuMucGoc(d), path.join(d, "xuong-phim"));
+  ghi(path.join(d, "xuong-phim.json"), JSON.stringify({ thuMuc: "tuong-doi" }));
+  assert.equal(xp.thuMucGoc(d), path.join(d, "xuong-phim"));
+  ghi(path.join(d, "xuong-phim.json"), "{hỏng");
+  assert.equal(xp.thuMucGoc(d), path.join(d, "xuong-phim"));
+  ghi(path.join(d, "xuong-phim.json"), JSON.stringify({ thuMuc: dich }));
+  const x = xp.createXuongPhim({ dir: d, env: { PATH: "" } });
+  assert.equal(x.duongDan.goc, dich);
+  assert.equal(x.duongDan.python.startsWith(dich), true);
+  assert.equal(x.envAi().XUONG_PHIM_MODELS, path.join(dich, "models"));
 });
 
 test("tải model: chỉ host GitHub, theo chuyển hướng, sai mã băm thì bỏ file", async (t) => {

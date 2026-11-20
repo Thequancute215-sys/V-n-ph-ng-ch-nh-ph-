@@ -206,7 +206,7 @@ button.act:disabled { opacity: .5; cursor: wait; }
   $("xp").addEventListener("click", async (e) => {
     if (e.target.id === "xp-kiem") { xpLoad(true); return; }
     if (e.target.id !== "xp-cai") return;
-    if (!confirm("Cài bộ làm phim cho cả văn phòng?\n• Tạo Python chung trong thư mục dữ liệu văn phòng\n• Cài edge-tts, kokoro-onnx, soundfile đúng bản ghim (chỉ gói đóng sẵn, không chạy script cài)\n• Chép model Kokoro (~340 MB) từ bản Antigravity đã tải, thiếu thì tải từ GitHub và kiểm mã băm")) return;
+    if (!confirm("Cài bộ làm phim cho cả văn phòng vào " + ((xp && xp.duongDan && xp.duongDan.goc) || "thư mục xưởng phim") + "?\n• Tạo Python chung\n• Cài edge-tts, kokoro-onnx, soundfile đúng bản ghim (chỉ gói đóng sẵn, không chạy script cài)\n• Chép model Kokoro (~340 MB) từ bản đã có, thiếu thì tải từ GitHub và kiểm mã băm\n• Cài FFmpeg (bản Gyan, khoảng 200 MB) bằng winget nếu máy chưa có")) return;
     try { xp = await xpReq("/xuong-phim/cai", {}); xpRender(); xpHen = setTimeout(() => xpLoad(false), 3000); }
     catch (err) { xpRender(err.message); }
   });

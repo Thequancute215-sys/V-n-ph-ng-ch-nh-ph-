@@ -1,10 +1,12 @@
 // Xưởng phim AI — P0 "sửa nền máy" (CEO duyệt 20/11/2026, bản thiết kế "Xưởng Phim AI").
 // Mọi phòng (Claude, Codex, Antigravity) dùng CHUNG một bộ công cụ làm phim trên máy:
-//   - FFmpeg: CEO cài một lần (winget install Gyan.FFmpeg); văn phòng tìm trên PATH rồi trong thư mục của winget,
-//     vì ctl có thể đã chạy từ trước khi cài nên PATH của nó chưa có FFmpeg.
-//   - Python chung ~/.van-phong-ao/xuong-phim/venv: edge-tts, kokoro-onnx, soundfile đúng bản ghim ở tools/xuong-phim/requirements.txt.
+//   - Thư mục gốc của xưởng: mặc định ~/.van-phong-ao/xuong-phim; máy có ổ khác rộng hơn thì ghi {"thuMuc": "D:\..."} vào
+//     ~/.van-phong-ao/xuong-phim.json (CEO chọn ổ D ngày 20/11/2026 vì ổ C đầy; phim sẽ chiếm nhiều GB).
+//   - FFmpeg: tìm trên PATH, trong <gốc>/ffmpeg, rồi trong thư mục của winget (ctl có thể chạy từ trước khi cài nên PATH chưa có).
+//     Nút "Cài xưởng phim" cài Gyan.FFmpeg bằng winget vào <gốc>/ffmpeg, thư mục tạm cũng đặt trong <gốc> để không đầy ổ C.
+//   - Python chung <gốc>/venv: edge-tts, kokoro-onnx, soundfile đúng bản ghim ở tools/xuong-phim/requirements.txt.
 //     Trước đây các gói này nằm trong bản Python của Microsoft Store mà Antigravity tình cờ dùng, phòng khác không thấy.
-//   - Model Kokoro (giọng Anh chạy trên máy) ở ~/.van-phong-ao/xuong-phim/models, kiểm mã băm SHA-256 đã ghim.
+//   - Model Kokoro (giọng Anh chạy trên máy) ở <gốc>/models, kiểm mã băm SHA-256 đã ghim.
 // Mỗi lượt AI nhận biến môi trường XUONG_PHIM_* (envFor của ctl/jobs.js) để gọi đúng Python, script giọng đọc và FFmpeg.
 // Cài chỉ chạy khi CEO bấm "Cài xưởng phim" ở trang Kết nối: pip chỉ nhận gói đóng sẵn (--only-binary=:all:), không chạy
 // script cài; model chép lại từ bản Antigravity đã tải nếu khớp mã băm, không có thì tải từ release đã ghim rồi kiểm mã băm.
@@ -30,23 +32,39 @@ const MODELS = [
 const TAI_HOST = /^(github\.com|objects\.githubusercontent\.com|release-assets\.githubusercontent\.com)$/;
 const GOI_PY = ["edge_tts", "kokoro_onnx", "soundfile"];
 
-function duongDan(dir, appDir = APP) {
-  const goc = path.join(dir, "xuong-phim");
+// Thư mục gốc: ~/.van-phong-ao/xuong-phim.json {"thuMuc": "<đường dẫn tuyệt đối>"}; hỏng hoặc không có thì <dir>/xuong-phim.
+function thuMucGoc(dir, fsx = fs) {
+  try {
+    const t = JSON.parse(fsx.readFileSync(path.join(dir, "xuong-phim.json"), "utf8")).thuMuc;
+    if (typeof t === "string" && path.isAbsolute(t) && !t.includes("\0")) return path.normalize(t);
+  } catch {}
+  return path.join(dir, "xuong-phim");
+}
+
+function duongDan(dir, appDir = APP, goc = thuMucGoc(dir)) {
   const venv = path.join(goc, "venv");
   return {
     goc, venv,
     python: WIN ? path.join(venv, "Scripts", "python.exe") : path.join(venv, "bin", "python"),
     models: path.join(goc, "models"),
+    ffmpeg: path.join(goc, "ffmpeg"),
+    tam: path.join(goc, "tmp"),
     tts: path.join(appDir, "tools", "xuong-phim", "tts_sync.py"),
     req: path.join(appDir, "tools", "xuong-phim", "requirements.txt"),
   };
 }
 
-// FFmpeg: PATH của ctl trước, rồi lối tắt winget (Links), rồi thư mục gói Gyan.FFmpeg do winget giải nén.
-function timFfmpeg({ env = process.env, fsx = fs } = {}) {
+// FFmpeg: PATH của ctl trước, rồi <gốc>/ffmpeg (bin/ hoặc <bản>/bin/), rồi lối tắt winget (Links), rồi thư mục gói Gyan.FFmpeg.
+function timFfmpeg({ env = process.env, fsx = fs, rieng = null } = {}) {
   const exe = WIN ? "ffmpeg.exe" : "ffmpeg";
   const co = (p) => { try { return fsx.statSync(p).isFile(); } catch { return false; } };
   for (const d of String(env.PATH || env.Path || "").split(path.delimiter).filter(Boolean)) if (co(path.join(d, exe))) return path.join(d, exe);
+  if (rieng) {
+    if (co(path.join(rieng, "bin", exe))) return path.join(rieng, "bin", exe);
+    let con = [];
+    try { con = fsx.readdirSync(rieng); } catch {}
+    for (const c of con) { const p = path.join(rieng, c, "bin", exe); if (co(p)) return p; }
+  }
   const local = env.LOCALAPPDATA;
   if (!local) return null;
   const link = path.join(local, "Microsoft", "WinGet", "Links", exe);
@@ -97,19 +115,23 @@ function taiFile(url, dich, { sha256, get = https.get, soLan = 5 } = {}) {
   });
 }
 
-function createXuongPhim({ dir, audit = null, appDir = APP, run = execFile, env = process.env, fsx = fs, get = https.get,
-  nguonModel = [path.join(os.homedir(), ".gemini", "config", "skills", "videopromax", "models")], models = MODELS, cacheMs = 60000 } = {}) {
-  const p = duongDan(dir, appDir);
+function createXuongPhim({ dir, audit = null, appDir = APP, run = execFile, env = process.env, fsx = fs, get = https.get, goc = null,
+  nguonModel = null, models = MODELS, cacheMs = 60000 } = {}) {
+  const p = duongDan(dir, appDir, goc || thuMucGoc(dir, fsx));
+  // Nguồn chép model: bản ở chỗ cũ (trước khi đổi thư mục gốc) và bản Antigravity đã tải cho skill /videopromax.
+  if (!nguonModel) nguonModel = [path.join(dir, "xuong-phim", "models"), path.join(os.homedir(), ".gemini", "config", "skills", "videopromax", "models")].filter((d) => path.resolve(d) !== path.resolve(p.models));
+  const timFf = () => timFfmpeg({ env, fsx, rieng: p.ffmpeg });
   let cache = null, cacheAt = 0, dangCai = null, buoc = "", loiCuoi = "";
   const exec = (prog, args, timeout = 60000) => new Promise((resolve) => {
-    run(prog, args, { timeout, windowsHide: true, maxBuffer: 8 * 1024 * 1024, env: { ...env, PYTHONIOENCODING: "utf-8", PIP_DISABLE_PIP_VERSION_CHECK: "1" } },
+    // Thư mục tạm và bộ đệm pip đặt trong thư mục gốc của xưởng: tải gói/bộ cài không làm đầy ổ hệ thống.
+    run(prog, args, { timeout, windowsHide: true, maxBuffer: 8 * 1024 * 1024, env: { ...env, PYTHONIOENCODING: "utf-8", PIP_DISABLE_PIP_VERSION_CHECK: "1", TEMP: p.tam, TMP: p.tam, PIP_CACHE_DIR: path.join(p.goc, "pip-cache") } },
       (e, stdout, stderr) => resolve({ ok: !e, out: String(stdout || ""), err: String(stderr || ""), error: e && e.message }));
   });
   const coFile = (f) => { try { return fsx.statSync(f).isFile(); } catch { return false; } };
 
   // Biến môi trường cho mỗi lượt AI. Chỉ đường dẫn, không có khóa nào.
   function envAi() {
-    const ff = timFfmpeg({ env, fsx });
+    const ff = timFf();
     const out = { XUONG_PHIM_TTS: p.tts, XUONG_PHIM_MODELS: p.models };
     if (coFile(p.python)) out.XUONG_PHIM_PYTHON = p.python;
     if (ff) { out.XUONG_PHIM_FFMPEG = ff; out.XUONG_PHIM_FFPROBE = path.join(path.dirname(ff), WIN ? "ffprobe.exe" : "ffprobe"); }
@@ -128,13 +150,13 @@ function createXuongPhim({ dir, audit = null, appDir = APP, run = execFile, env 
   async function kiem({ fresh = false } = {}) {
     if (dangCai || (!fresh && cache && Date.now() - cacheAt < cacheMs)) return { ...(cache || { san: false, muc: [] }), dangCai: !!dangCai, buoc, loiCuoi };
     const muc = [];
-    const ff = timFfmpeg({ env, fsx });
+    const ff = timFf();
     if (ff) {
       const r = await exec(ff, ["-hide_banner", "-version"], 20000);
       const dong = (r.out.split(/\r?\n/)[0] || "").replace(/^ffmpeg version\s+/i, "").split(" ")[0];
       const probe = coFile(path.join(path.dirname(ff), WIN ? "ffprobe.exe" : "ffprobe"));
-      muc.push({ id: "ffmpeg", ten: "FFmpeg + ffprobe", ok: r.ok && probe, chiTiet: r.ok ? "Bản " + dong + (probe ? "" : " · thiếu ffprobe") : "Có file nhưng không chạy được", cachSua: r.ok && probe ? "" : "Cài lại: winget install Gyan.FFmpeg" });
-    } else muc.push({ id: "ffmpeg", ten: "FFmpeg + ffprobe", ok: false, chiTiet: "Chưa có trên máy", cachSua: "Mở PowerShell, chạy: winget install Gyan.FFmpeg" });
+      muc.push({ id: "ffmpeg", ten: "FFmpeg + ffprobe", ok: r.ok && probe, chiTiet: r.ok ? "Bản " + dong + (probe ? "" : " · thiếu ffprobe") : "Có file nhưng không chạy được", cachSua: r.ok && probe ? "" : "Bấm Cài xưởng phim" });
+    } else muc.push({ id: "ffmpeg", ten: "FFmpeg + ffprobe", ok: false, chiTiet: "Chưa có trên máy", cachSua: "Bấm Cài xưởng phim" });
 
     const py = await docPython();
     const b = py.banGoi || {};
@@ -145,9 +167,19 @@ function createXuongPhim({ dir, audit = null, appDir = APP, run = execFile, env 
       chiTiet: [b["kokoro-onnx"] ? "kokoro-onnx " + b["kokoro-onnx"] : "Thiếu kokoro-onnx", thieuModel.length ? "thiếu model " + thieuModel.join(", ") : "model đủ"].join(" · "), cachSua: "Bấm Cài xưởng phim" });
     muc.push({ id: "script-giong", ten: "Script đọc lời dẫn", ok: coFile(p.tts), chiTiet: p.tts, cachSua: "Cập nhật văn phòng lên bản mới" });
 
-    cache = { san: muc.every((m) => m.ok), muc, duongDan: { python: p.python, tts: p.tts, models: p.models, ffmpeg: ff }, luc: new Date().toISOString() };
+    cache = { san: muc.every((m) => m.ok), muc, duongDan: { goc: p.goc, python: p.python, tts: p.tts, models: p.models, ffmpeg: ff }, luc: new Date().toISOString() };
     cacheAt = Date.now();
     return { ...cache, dangCai: !!dangCai, buoc, loiCuoi };
+  }
+
+  // FFmpeg bản Gyan qua winget, giải nén vào <gốc>/ffmpeg; thư mục tạm của winget cũng nằm trong <gốc>.
+  async function caiFfmpeg() {
+    if (timFf()) return;
+    if (!WIN) throw err("CAI_LOI", "Máy không phải Windows: cài FFmpeg bằng trình quản lý gói của máy.");
+    fsx.mkdirSync(p.ffmpeg, { recursive: true });
+    const r = await exec("winget", ["install", "--id", "Gyan.FFmpeg", "-e", "--scope", "user", "--location", p.ffmpeg, "--silent", "--disable-interactivity",
+      "--accept-source-agreements", "--accept-package-agreements"], 1800000);
+    if (!timFf()) throw err("CAI_LOI", "winget chưa cài được FFmpeg: " + (r.out + r.err).split(/\r?\n/).map((l) => l.trim()).filter((l) => l && !/^[-\\|/█▒ ]+$/.test(l)).slice(-2).join(" | ").slice(0, 300));
   }
 
   async function taoVenv() {
@@ -193,9 +225,11 @@ function createXuongPhim({ dir, audit = null, appDir = APP, run = execFile, env 
   async function cai() {
     if (dangCai) throw err("XUONG_BUSY", "Đang cài xưởng phim, chờ xong lần này.");
     dangCai = (async () => {
+      fsx.mkdirSync(p.tam, { recursive: true });
       buoc = "Đang tạo Python chung…"; await taoVenv();
       buoc = "Đang cài thư viện giọng đọc (có thể mất vài phút)…"; await caiGoi();
       buoc = "Đang chép model Kokoro…"; await caiModel();
+      buoc = "Đang cài FFmpeg (tải khoảng 200 MB)…"; await caiFfmpeg();
     })();
     try { await dangCai; if (audit) audit.log("ceo", "xuong_phim.cai", null, { ok: true }); }
     catch (e) { if (audit) audit.log("ceo", "xuong_phim.cai", null, { ok: false, loi: String(e.message).slice(0, 200) }); throw e; }
@@ -206,4 +240,4 @@ function createXuongPhim({ dir, audit = null, appDir = APP, run = execFile, env 
   return { kiem, cai, batDauCai, envAi, duongDan: p };
 }
 
-module.exports = { createXuongPhim, timFfmpeg, taiFile, duongDan, MODELS };
+module.exports = { createXuongPhim, timFfmpeg, taiFile, duongDan, thuMucGoc, MODELS };

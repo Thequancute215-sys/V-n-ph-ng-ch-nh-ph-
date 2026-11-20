@@ -74,8 +74,20 @@ def la_kokoro(voice):
     return v.startswith("kokoro-") or v in KOKORO_VOICES
 
 
+def thu_muc_goc():
+    """Thư mục gốc của xưởng: ~/.van-phong-ao/xuong-phim.json {"thuMuc": ...} nếu có (vd. ổ D), không thì mặc định."""
+    try:
+        with open(os.path.join(os.path.dirname(THU_MUC_XUONG), "xuong-phim.json"), encoding="utf-8-sig") as f:
+            t = json.load(f).get("thuMuc")
+        if isinstance(t, str) and os.path.isabs(t):
+            return t
+    except Exception:
+        pass
+    return THU_MUC_XUONG
+
+
 def thu_muc_model(tham_so):
-    return tham_so or os.environ.get("XUONG_PHIM_MODELS") or os.path.join(THU_MUC_XUONG, "models")
+    return tham_so or os.environ.get("XUONG_PHIM_MODELS") or os.path.join(thu_muc_goc(), "models")
 
 
 def tim_ffmpeg():
@@ -228,7 +240,7 @@ def main():
     ap.add_argument("--rate", default="+0%", help="Tốc độ Edge-TTS, vd +10%%")
     ap.add_argument("--volume", default="+0%", help="Âm lượng Edge-TTS, vd +0%%")
     ap.add_argument("--speed", type=float, default=1.0, help="Tốc độ Kokoro, vd 1.05")
-    ap.add_argument("--models", help="Thư mục model Kokoro (mặc định ~/.van-phong-ao/xuong-phim/models)")
+    ap.add_argument("--models", help="Thư mục model Kokoro (mặc định <thư mục gốc xưởng phim>/models)")
     a = ap.parse_args()
 
     if a.text:

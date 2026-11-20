@@ -401,9 +401,11 @@ Giao thức [8] và [9] (CEO duyệt 16/11/2026): chốt hợp đồng trước,
 
 Văn phòng đang được mở rộng để tự làm phim ngắn AI (bản thiết kế "Xưởng Phim AI", CEO duyệt 20/11/2026). P0 sửa nền máy để mọi phòng dùng chung một bộ công cụ:
 
-- **FFmpeg**: anh cài một lần bằng `winget install Gyan.FFmpeg`. Văn phòng tự tìm trên PATH hoặc trong thư mục của winget.
-- **Python chung** `~/.van-phong-ao/xuong-phim/venv` có edge-tts, kokoro-onnx, soundfile đúng bản ghim ở `tools/xuong-phim/requirements.txt`. Bấm **Cài xưởng phim** ở trang **Kết nối**: pip chỉ nhận gói đóng sẵn, không chạy script cài.
-- **Model Kokoro** (giọng Anh chạy trên máy, ~340 MB) ở `~/.van-phong-ao/xuong-phim/models`: chép từ bản Antigravity đã tải nếu khớp mã băm SHA-256 đã ghim, không có thì tải từ release GitHub cố định rồi kiểm mã băm.
+- **Thư mục gốc của xưởng**: mặc định `~/.van-phong-ao/xuong-phim`. Phim chiếm nhiều GB, nên máy có ổ rộng hơn thì ghi `{ "thuMuc": "D:\\VanPhongAI\\xuong-phim" }` vào `~/.van-phong-ao/xuong-phim.json` (máy CEO đặt ở ổ D từ 20/11/2026). Thư mục tạm và bộ đệm pip khi cài cũng nằm trong thư mục gốc.
+- Bấm **Cài xưởng phim** ở trang **Kết nối** để cài cả ba thứ dưới đây vào thư mục gốc:
+  - **Python chung** `<gốc>/venv` có edge-tts, kokoro-onnx, soundfile đúng bản ghim ở `tools/xuong-phim/requirements.txt`; pip chỉ nhận gói đóng sẵn, không chạy script cài.
+  - **Model Kokoro** (giọng Anh chạy trên máy, ~340 MB) ở `<gốc>/models`: chép từ bản đã có (chỗ cũ hoặc bản Antigravity) nếu khớp mã băm SHA-256 đã ghim, không có thì tải từ release GitHub cố định rồi kiểm mã băm.
+  - **FFmpeg** bản Gyan qua winget vào `<gốc>/ffmpeg`. FFmpeg đã có trên PATH thì dùng luôn.
 - **Script đọc lời dẫn** `tools/xuong-phim/tts_sync.py`: giọng Việt/Anh (Edge-TTS, cần mạng) và giọng Anh offline (Kokoro), xuất `.mp3`, `.srt`, `.json` có mốc từng câu. Lỗi mạng thì thử lại, không để lại file rỗng.
 
 Mỗi lượt AI nhận biến `XUONG_PHIM_PYTHON`, `XUONG_PHIM_TTS`, `XUONG_PHIM_MODELS`, `XUONG_PHIM_FFMPEG`, `XUONG_PHIM_FFPROBE` (chỉ đường dẫn, không khóa). Ví dụ đọc lời dẫn:
