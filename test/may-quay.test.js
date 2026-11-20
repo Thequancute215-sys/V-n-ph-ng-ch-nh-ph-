@@ -194,6 +194,37 @@ test("trạm Flow: mở Chrome hồ sơ riêng không cờ tự động hoá; nh
   await assert.rejects(flow.nhip(root, { canh: "C02", taiKhoan: "phu", buoc: "tao" }), (e) => e.code === "TOI_DA_TAKE");
 });
 
+test("đọc kết quả Opus: log thật của claude -p có \"type\" ở cuối, kết quả trong .result; dòng JSON cuối có ket_qua", () => {
+  const { docKetQua } = require("../ctl/tram-flow");
+  // Dạng log thật lần chạy 20/11/2026 (rút gọn): khoá type nằm SAU result.
+  const that = JSON.stringify({ duration_api_ms: 58059, result: "Đã chuẩn bị.\n\n**Những gì đã đặt** {không phải JSON}\n\n" +
+    JSON.stringify({ ket_qua: "xong", ghi_chu: "chưa bấm tạo; tốn 30 tín dụng", credit_con_lai: null, credit_lan_tao: 30 }), type: "result", terminal_reason: "completed" });
+  assert.deepEqual(docKetQua(that), { ket_qua: "xong", ghi_chu: "chưa bấm tạo; tốn 30 tín dụng", credit_con_lai: null, credit_lan_tao: 30 });
+  assert.equal(docKetQua("cảnh báo gì đó\n" + that).ket_qua, "xong", "log lẫn dòng khác");
+  assert.equal(docKetQua(JSON.stringify({ type: "result", result: "Không có JSON" })), null);
+  assert.equal(docKetQua(JSON.stringify({ type: "result", result: '{"ket_qua":"bừa"}' })), null, "ket_qua lạ không nhận");
+});
+
+test("credit: ghi chi phí lần tạo ở nhịp chuẩn bị, cộng vào tháng khi tạo xong, trừ dần số dư đã biết", async (t) => {
+  const d = tmp(t), root = duAn(path.join(d, "phim"));
+  const cdt = require("../ctl/chrome-devtools");
+  const entry = path.join(d, "mcp", cdt.ID, "node_modules", cdt.GOI);
+  ghi(path.join(entry, "package.json"), JSON.stringify({ name: cdt.GOI, version: cdt.PHIEN_BAN, bin: { [cdt.GOI]: "./build/src/bin/chrome-devtools-mcp.js" } }));
+  ghi(path.join(entry, "build/src/bin/chrome-devtools-mcp.js"), "");
+  let ket = null; const viec = [];
+  const flow = createTramFlow({ dir: d, goc: path.join(d, "xp"), jobs: { start: (o) => { viec.push(o); return { id: "j" }; }, rawLog: () => JSON.stringify({ result: JSON.stringify(ket), type: "result" }) },
+    cliClaude: () => ["claude"], thu: async () => true });
+  const chay = async (buoc, k) => { ket = k; await flow.nhip(root, { canh: "C02", taiKhoan: "phu", buoc }); viec[viec.length - 1].onExit({ id: "j" }); };
+  await chay("chuan-bi", { ket_qua: "xong", ghi_chu: "", credit_con_lai: "1.000 credits", credit_lan_tao: "15 tín dụng" });
+  let c = (await flow.trangThai()).taiKhoan.find((x) => x.id === "phu").credit;
+  assert.equal(c.conLai, 1000); assert.equal(c.creditLanTao, 15); assert.equal(c.creditDungThang, 0);
+  await chay("tao", { ket_qua: "xong", ghi_chu: "", credit_con_lai: null, credit_lan_tao: null });
+  c = (await flow.trangThai()).taiKhoan.find((x) => x.id === "phu").credit;
+  assert.equal(c.luotTaoThang, 1); assert.equal(c.creditDungThang, 15); assert.equal(c.conLai, 985, "không đọc lại được thì trừ dần");
+  const prompt = viec[0].argv[viec[0].argv.indexOf("-p") + 1];
+  assert.match(prompt, /SỐ BẢN TẠO = 1/); assert.match(prompt, /credit_lan_tao/);
+});
+
 test("xem media qua ctl: chỉ file trong media/ của workspace đã đăng ký, có Range để tua video", async (t) => {
   // Không dùng tmp(t): phải đóng ctl (sổ SQLite đang mở) TRƯỚC khi xoá thư mục, không thì Windows báo EPERM.
   const d = fs.mkdtempSync(path.join(os.tmpdir(), "vp-mq-")), root = duAn(path.join(d, "phim"));
