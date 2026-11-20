@@ -397,6 +397,25 @@ Giao thức [8] và [9] (CEO duyệt 16/11/2026): chốt hợp đồng trước,
 - **Chạy thật và nghiệm thu:** dự án có backend phải có `npm run smoke`, nên có `npm run perf`. Mỗi Phase ghi "Kiểm tay của Chủ Dự Án" và cập nhật `docs/TICH-HOP.md`. Thiếu thì Claude không cho đóng Phase.
 - **Bàn giao sai mẫu** (thiếu dòng JSON, `next_owner` trùng vai…) được trả lại đúng lượt đó sửa một lần thay vì dừng cả luồng.
 
+## Xưởng phim AI (đang xây, P0)
+
+Văn phòng đang được mở rộng để tự làm phim ngắn AI (bản thiết kế "Xưởng Phim AI", CEO duyệt 20/11/2026). P0 sửa nền máy để mọi phòng dùng chung một bộ công cụ:
+
+- **Thư mục gốc của xưởng**: mặc định `~/.van-phong-ao/xuong-phim`. Phim chiếm nhiều GB, nên máy có ổ rộng hơn thì ghi `{ "thuMuc": "D:\\VanPhongAI\\xuong-phim" }` vào `~/.van-phong-ao/xuong-phim.json` (máy CEO đặt ở ổ D từ 20/11/2026). Thư mục tạm và bộ đệm pip khi cài cũng nằm trong thư mục gốc.
+- Bấm **Cài xưởng phim** ở trang **Kết nối** để cài cả ba thứ dưới đây vào thư mục gốc:
+  - **Python chung** `<gốc>/venv` có edge-tts, kokoro-onnx, soundfile đúng bản ghim ở `tools/xuong-phim/requirements.txt`; pip chỉ nhận gói đóng sẵn, không chạy script cài.
+  - **Model Kokoro** (giọng Anh chạy trên máy, ~340 MB) ở `<gốc>/models`: chép từ bản đã có (chỗ cũ hoặc bản Antigravity) nếu khớp mã băm SHA-256 đã ghim, không có thì tải từ release GitHub cố định rồi kiểm mã băm.
+  - **FFmpeg** bản Gyan qua winget vào `<gốc>/ffmpeg`. FFmpeg đã có trên PATH thì dùng luôn.
+- **Script đọc lời dẫn** `tools/xuong-phim/tts_sync.py`: giọng Việt/Anh (Edge-TTS, cần mạng) và giọng Anh offline (Kokoro), xuất `.mp3`, `.srt`, `.json` có mốc từng câu. Lỗi mạng thì thử lại, không để lại file rỗng.
+
+Mỗi lượt AI nhận biến `XUONG_PHIM_PYTHON`, `XUONG_PHIM_TTS`, `XUONG_PHIM_MODELS`, `XUONG_PHIM_FFMPEG`, `XUONG_PHIM_FFPROBE` (chỉ đường dẫn, không khóa). Ví dụ đọc lời dẫn:
+
+```powershell
+& $env:XUONG_PHIM_PYTHON $env:XUONG_PHIM_TTS --text "Xin chào các bạn" --voice vi-nu --output media/giong/voice
+```
+
+Trang **Kết nối** hiện khối **🎬 Xưởng phim**: FFmpeg, giọng Việt, giọng Anh offline, script đã sẵn sàng hay còn thiếu, kèm cách sửa.
+
 ## Xem trên điện thoại
 
 - **Cùng Wi-Fi:** đặt `"host": "0.0.0.0"` và `accessKey` trong `config.json`, rồi mở `http://<IP máy>:7788`.
@@ -469,7 +488,7 @@ ctl/                   OS Controller: main (HTTP) · jobs · policy · workspace
                        hợp đồng: song-song (Astra + Kakashi) · mien-hop-dong (CEO quyết miễn) · ra-soat (rà file trước khi toàn quyền)
                        model & hạn mức: dieu-phoi (chọn model/mức) · muc-luc (mục lục từ bản đồ) · quotas · agy-tai-khoan (+ agy-dang-nhap.ps1)
                        skill & kết nối: skill (+ skill-mac-dinh.json) · skill-duyet (duyệt repo từ link) · ket-noi · ket-noi-danh-muc · mcp-phong
-                                        mcp-may (MCP chạy trên máy) · chrome-devtools · tra-cuu + tra-cuu-mcp (Gemini)
+                                        mcp-may (MCP chạy trên máy) · chrome-devtools · tra-cuu + tra-cuu-mcp (Gemini) · xuong-phim (FFmpeg, Python chung, giọng đọc)
                        GitHub & phát hành: github · xuat-ban · bo-kiem (cài bộ kiểm vào repo dự án, mẫu trong khung/) · agent-template.md
 test/                  node --test (npm test)
 tools/vp.js            công cụ ghi sổ cho agent
@@ -477,6 +496,7 @@ tools/kiem-agent.js    bộ kiểm chu trình agent.md (lib/kiem-agent.js), CI c
 tools/kiem-hop-dong.js bộ kiểm hợp đồng giao tiếp contract/api.json (lib/kiem-hop-dong.js)
 tools/cai-skill.js     cài / kiểm bộ skill mặc định cho Claude, Codex, Antigravity
 tools/cai-chrome-devtools.js  cài / kiểm Chrome DevTools MCP
+tools/xuong-phim/       tts_sync.py (đọc lời dẫn + phụ đề) và requirements.txt (thư viện ghim)
 tools/ve-ban-do.js     sinh docs/BAN-DO-HE-THONG.md từ đồ thị trong .ua/
 setup.js               cài đặt (hỏi–đáp hoặc --yes cho agent)
 mau/                   khung mẫu sổ điều phối + đoạn luật đội cho AGENTS.md / CLAUDE.md

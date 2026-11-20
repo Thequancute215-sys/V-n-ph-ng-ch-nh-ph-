@@ -23,6 +23,7 @@ const { createQuotas } = require("./quotas");
 const { createIdeas } = require("./ideas");
 const { createPublisher } = require("./xuat-ban");
 const { createConnectors } = require("./ket-noi");
+const { createXuongPhim } = require("./xuong-phim");
 const { createJournal } = require("./nhat-ky");
 const { createChat } = require("./chat");
 const { createNotifier } = require("./thongbao");
@@ -49,7 +50,7 @@ const HTTP_CODE = {
   CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_WAITING: 409, NEEDS_SPEC_TURN: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409, HANDOFF_PENDING: 409, NEEDS_ANSWER: 409, NO_QUESTION: 422, BAD_OPTION: 400,
   CHAT_BUSY: 409, PUBLISH_BUSY: 409, NOT_READY: 409, NO_RELEASE_WORKFLOW: 422, NOT_ON_MAIN: 409, TAG_EXISTS: 409, DIRTY_REPO: 409, NEEDS_SCAN_APPROVAL: 409, NO_COMMIT: 409, NO_QUOTA: 409, NO_GIT: 422, NO_REMOTE: 422, GIT_PUSH: 502,
   UPDATE_BUSY: 409, NOT_APP: 409, UPDATE_FAILED: 500, GIT_BRANCH: 409,
-  AGY_BUSY: 409, AGY_UNSAVED: 409, SKILL_BUSY: 409, SKILL_DA_CO: 409, BAD_CATALOG: 422, SONG_SONG: 409, AGY_CRED: 502, NO_LOGIN: 409, NOT_SUPPORTED: 501,
+  AGY_BUSY: 409, XUONG_BUSY: 409, CAI_LOI: 500, AGY_UNSAVED: 409, SKILL_BUSY: 409, SKILL_DA_CO: 409, BAD_CATALOG: 422, SONG_SONG: 409, AGY_CRED: 502, NO_LOGIN: 409, NOT_SUPPORTED: 501,
 };
 
 function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {}, quotaOptions = {}, updaterOptions = {}, agyOptions = {}, autopilotOptions = {}, notify = false } = {}) {
@@ -58,7 +59,9 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
   // Nhiều tài khoản GPT cho Codex (ctl/codex-tai-khoan.js): mỗi tiến trình Codex mở ra nhận CODEX_HOME của tài khoản đang chọn.
   let runnerRef = null, quotasRef = null;
   const codexTk = createCodexTaiKhoan({ dir, audit, cli: () => (runnerRef ? runnerRef.cliOf("codex") : ["codex"]), khiDangNhapXong: () => { if (quotasRef) quotasRef.docGpt(true).catch(() => {}); } });
-  const jobs = createJobs(db, audit, path.join(dir, "logs"), { envFor: (j) => { try { return kindOf(JSON.parse(j.argv)) === "codex" ? codexTk.env() : {}; } catch { return {}; } } });
+  // Xưởng phim (ctl/xuong-phim.js): mọi tiến trình nhận XUONG_PHIM_* (Python chung, script giọng đọc, FFmpeg) — chỉ đường dẫn, không khóa.
+  const xuongPhim = createXuongPhim({ dir, audit });
+  const jobs = createJobs(db, audit, path.join(dir, "logs"), { envFor: (j) => { let xp = {}; try { xp = xuongPhim.envAi(); } catch {} try { return { ...xp, ...(kindOf(JSON.parse(j.argv)) === "codex" ? codexTk.env() : {}) }; } catch { return xp; } } });
   const ws = createWorkspaces(db, audit);
   const activeFile = path.join(dir, "active-workspace.json");
   try { ws.switchTo(JSON.parse(fs.readFileSync(activeFile, "utf8")).path, "ctl-restore"); } catch (e) { if (e.code !== "ENOENT") audit.log("ctl", "workspace.restore_skipped", null, e.message); }
@@ -215,6 +218,9 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
   ["POST", "/ket-noi/phong", async (p, qs, b) => ({ ketNoi: await connectors.setPhong(String(b.room || ""), b.ids) })],
     // Cài MCP chạy trên máy (Chrome DevTools) đúng phiên bản đã ghim; tải từ npm nên chỉ khi CEO bấm.
     ["POST", "/ket-noi/cai-may", async (p, qs, b) => ({ ketNoi: await connectors.caiMay(String(b.id || "")) })],
+    // Xưởng phim P0: kiểm FFmpeg, Python chung, giọng đọc; cài chạy nền khi CEO bấm (trang Kết nối hỏi lại tới khi xong).
+    ["GET", "/xuong-phim", async (p, qs) => ({ xuongPhim: await xuongPhim.kiem({ fresh: qs.get("fresh") === "1" }) })],
+    ["POST", "/xuong-phim/cai", () => [202, { xuongPhim: xuongPhim.batDauCai() }]],
     ["GET", "/dieu-phoi", () => ({ dieuPhoi: runner.dieuPhoi.status() })],
     ["GET", "/agy-tai-khoan", () => ({ taiKhoan: agyTk.trangThai() })],
     // Cất xong thì đọc luôn danh sách model của tài khoản vừa cất (mỗi tài khoản thấy model khác nhau).
@@ -367,7 +373,7 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     db.close();
   }
 
-  return { server, jobs, ws, files, runner, autopilot, scanner, publisher, chat, connectors, journal, github, quotas, agyTk, codexTk, updater, boKiem, audit, token, close };
+  return { server, jobs, ws, files, xuongPhim, runner, autopilot, scanner, publisher, chat, connectors, journal, github, quotas, agyTk, codexTk, updater, boKiem, audit, token, close };
 }
 
 if (require.main === module) {
