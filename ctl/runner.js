@@ -219,7 +219,7 @@ function modelTrong(argv) {
 // Ảnh chụp hạn mức với phần Antigravity thay bằng hạn mức của tài khoản sẽ chạy.
 const thayAgy = (snap, buckets) => ({ ...(snap || {}), providers: [...((snap && snap.providers) || []).filter((p) => p.id !== "antigravity"), { id: "antigravity", buckets }] });
 
-function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () => ({}), quotaSnapshot = () => null, agyTk = null }) {
+function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () => ({}), quotaSnapshot = () => null, agyTk = null, codexTk = null }) {
   const mien = createMienHopDong({ dir });   // miễn hợp đồng giao tiếp: chỉ CEO duyệt (ctl/mien-hop-dong.js)
   const dieuPhoi = createDieuPhoi({ dir, audit });
   const skills = createSkill({ home: () => dir });   // bộ skill mặc định: ghi chú vào prompt + bắt buộc khai skill_da_dung
@@ -301,6 +301,10 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
       // Vừa đổi tài khoản: chấm lại mức theo hạn mức của tài khoản sẽ chạy, không theo tài khoản vừa rời.
       if (doiTk && doiTk.toi && !d.fixed && doiTk.buckets) d = decideVoi(thayAgy(quota(), doiTk.buckets));
     }
+    // Codex: tài khoản GPT đang dùng còn ≤ ngưỡng thì chuyển sang tài khoản còn nhiều nhất (ctl/codex-tai-khoan.js).
+    // Tiến trình Codex của lượt này nhận CODEX_HOME của tài khoản được chọn lúc khởi chạy (ctl/jobs.js envFor).
+    let doiGpt = null;
+    if (d.kind === "codex" && codexTk) { try { doiGpt = codexTk.truocLuot(); } catch {} }
     // Codex: mức suy nghĩ đi qua codexArgs. Lệnh tự cấu hình đã có mức thì giữ, trừ khi đội trưởng đặt rõ.
     const customEffort = base.some((x, i) => (x === "-c" || x === "--config") && /^model_reasoning_effort=/.test(base[i + 1] || ""));
     const codexEffort = effort || (d.kind === "codex" && !customEffort ? d.effort : null);
@@ -308,7 +312,8 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     const shaped = dieuPhoi.apply(codexArgs(base, role, codexEffort, codexModel), d);
     const loiGiao = prompt + (["claude", "codex"].includes(d.kind) && traCuuBat(dir) ? TRA_CUU_NOTE : "");
     const argv = withMcp(fullFor(role) ? fullAccessArgs(shaped) : shaped, role, dir, mcpKnown()).map((x) => (x === "{prompt}" ? loiGiao : x));
-    const tkWhy = doiTk && doiTk.toi ? ["đổi tài khoản Antigravity: " + doiTk.lyDo] : doiTk && doiTk.loi ? ["tài khoản Antigravity: " + doiTk.loi] : [];
+    const tkWhy = [...(doiTk && doiTk.toi ? ["đổi tài khoản Antigravity: " + doiTk.lyDo] : doiTk && doiTk.loi ? ["tài khoản Antigravity: " + doiTk.loi] : []),
+      ...(doiGpt && doiGpt.toi ? ["đổi tài khoản GPT: " + doiGpt.lyDo] : doiGpt && doiGpt.loi ? ["tài khoản GPT: " + doiGpt.loi] : [])];
     const taiKhoan = doiTk ? (doiTk.toi ? { tu: doiTk.tu, toi: doiTk.toi, lyDo: doiTk.lyDo } : { loi: doiTk.loi }) : null;
     const chosen = { tier: d.tier, model: d.kind === "codex" ? codexModel || CODEX_MODEL[role] || null : d.kind === "agy" ? modelTrong(shaped) || d.model : d.model, effort: d.kind === "codex" ? codexEffort || (customEffort ? null : DEFAULT_EFFORT) : d.effort,
       why: [...d.why, ...tkWhy], ...(taiKhoan ? { taiKhoan } : {}) };

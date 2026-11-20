@@ -134,7 +134,7 @@ function createQueries(dir) {
           let m; try { m = JSON.parse(line); } catch { continue; }
           if (m.id === 1) {
             if (m.error) return stop("Codex không khởi tạo được kênh đọc hạn mức.");
-            send({ method: "initialized", params: {} }); send(rpc === "model/list" ? { id: 2, method: rpc, params: {} } : { id: 2, method: rpc });
+            send({ method: "initialized", params: {} }); send(rpc === "model/list" || rpc === "account/read" ? { id: 2, method: rpc, params: {} } : { id: 2, method: rpc });
           }
           if (m.id === 2) { if (m.error) problem = new Error("Codex chưa trả lời " + rpc + "; kiểm tra đăng nhập ChatGPT."); else result = m.result; child.stdin.end(); }
         }
@@ -153,8 +153,10 @@ function createQueries(dir) {
     });
   }
   return {
-    codex: () => query("codex", ["app-server", "-c", "analytics.enabled=false", "--listen", "stdio://"], "account/rateLimits/read"),
-    codexModels: () => query("codex", ["app-server", "-c", "analytics.enabled=false", "--listen", "stdio://"], "model/list"),
+    // env: { CODEX_HOME } của tài khoản GPT (ctl/codex-tai-khoan.js); không có = ~/.codex.
+    codex: (env) => query("codex", ["app-server", "-c", "analytics.enabled=false", "--listen", "stdio://"], "account/rateLimits/read", false, env && Object.keys(env).length ? { ...cleanEnv(), ...env } : null),
+    codexAccount: (env) => query("codex", ["app-server", "-c", "analytics.enabled=false", "--listen", "stdio://"], "account/read", false, env && Object.keys(env).length ? { ...cleanEnv(), ...env } : null),
+    codexModels: (env) => query("codex", ["app-server", "-c", "analytics.enabled=false", "--listen", "stdio://"], "model/list", false, env && Object.keys(env).length ? { ...cleanEnv(), ...env } : null),
     agyModels: () => query("agy", ["models"], null, true),
     claude: () => query("claude", ["-p", "/usage", "--output-format", "json", "--max-turns", "1", "--tools", "", "--safe-mode"]),
     antigravity: () => query("agy", ["-p", "/usage", "--output-format", "json", "--print-timeout", "20s", "--mode", "plan"]),
@@ -163,7 +165,8 @@ function createQueries(dir) {
 }
 
 // agyTk (ctl/agy-tai-khoan.js): nhiều tài khoản Antigravity — ghi hạn mức theo tài khoản, đọc tài khoản đang nghỉ.
-function createQuotas({ dir, queries, clock = Date.now, intervalMs = EVERY, agyTk = null } = {}) {
+// codexTk (ctl/codex-tai-khoan.js): nhiều tài khoản GPT — đọc hạn mức tài khoản đang dùng, và mọi tài khoản (≥5 phút một lần).
+function createQuotas({ dir, queries, clock = Date.now, intervalMs = EVERY, agyTk = null, codexTk = null } = {}) {
   const reader = queries || createQueries(dir);
   const defs = [
     { id: "codex", name: "Codex · Sol & Astra", source: "Codex app-server", parse: codexBuckets, url: "https://chatgpt.com/codex/settings/usage" },
@@ -175,7 +178,24 @@ function createQuotas({ dir, queries, clock = Date.now, intervalMs = EVERY, agyT
   function snapshot() {
     const providers = JSON.parse(JSON.stringify([...states.values()]));
     if (agyTk) { const a = providers.find((p) => p.id === "antigravity"); try { if (a) a.taiKhoan = agyTk.trangThai({ nhanh: true }); } catch {} }
+    if (codexTk) { const x = providers.find((p) => p.id === "codex"); try { if (x) x.taiKhoan = codexTk.trangThai(); } catch {} }
     return { providers, intervalMs };
+  }
+  // Hạn mức + email/gói của mọi tài khoản GPT (mỗi tài khoản một CODEX_HOME nên đọc được cả tài khoản đang nghỉ).
+  const DOC_GPT_MOI = 5 * 60 * 1000;
+  let gptPending = null, gptLuc = 0;
+  function docGpt(force = false) {
+    if (!codexTk || stopped) return Promise.resolve(false);
+    if (gptPending) return gptPending;
+    if (!force && clock() - gptLuc < DOC_GPT_MOI) return Promise.resolve(false);
+    gptLuc = clock();
+    gptPending = codexTk.docTatCa(async (env) => {
+      const rate = codexBuckets(await reader.codex(env));
+      let acc = null;
+      if (reader.codexAccount) { try { const r = await reader.codexAccount(env); acc = r && (r.account || r); } catch {} }
+      return { buckets: rate.buckets, email: acc && acc.email ? acc.email : null, plan: (acc && acc.planType) || rate.plan || null };
+    }).catch(() => false).finally(() => { gptPending = null; });
+    return gptPending;
   }
   // Đọc hạn mức tài khoản Antigravity đang nghỉ (đổi sang ~10 giây rồi đổi về; agyTk tự giữ nhịp 30 phút và chỉ làm khi máy rảnh).
   let nghiPending = null;
@@ -198,7 +218,8 @@ function createQuotas({ dir, queries, clock = Date.now, intervalMs = EVERY, agyT
       const s = states.get(d.id); s.refreshing = true;
       try {
         // Antigravity: biết chắc hạn mức vừa đọc là của tài khoản nào (đổi tài khoản chen giữa thì không ghi cho tài khoản nào).
-        const r = d.id === "antigravity" && agyTk ? await agyTk.docVoiTk(() => reader.antigravity()) : { value: await reader[d.id]() };
+        const r = d.id === "antigravity" && agyTk ? await agyTk.docVoiTk(() => reader.antigravity())
+          : d.id === "codex" && codexTk ? { value: await reader.codex(codexTk.env()) } : { value: await reader[d.id]() };
         const parsed = d.parse(r.value, clock());
         if (stopped) return;
         Object.assign(s, parsed, { status: "ready", error: "", lastSuccessAt: new Date(clock()).toISOString() });
@@ -211,7 +232,7 @@ function createQuotas({ dir, queries, clock = Date.now, intervalMs = EVERY, agyT
       } finally {
         if (!stopped) Object.assign(s, { refreshing: false, checkedAt: new Date(clock()).toISOString(), nextCheckAt: new Date(clock() + (s.status === "ready" ? intervalMs : Math.max(intervalMs, 5 * 60000))).toISOString() });
       }
-    })).finally(() => { pending = null; if (!stopped) docNghi(); });
+    })).finally(() => { pending = null; if (!stopped) { docNghi(); docGpt(); } });
     return pending;
   }
   function get() { refresh(); return snapshot(); }
@@ -238,7 +259,7 @@ function createQuotas({ dir, queries, clock = Date.now, intervalMs = EVERY, agyT
       // Danh sách model Antigravity ghi cho đúng tài khoản đã đọc, ngay khi đọc xong (không đợi Codex: chờ lâu thì tài khoản có thể đã đổi).
       const docAgy = () => (agyTk ? agyTk.docVoiTk(() => reader.agyModels()) : reader.agyModels().then((value) => ({ value, email: null })))
         .then(({ value, email }) => { const list = agyModelList(value); if (agyTk && email) { try { agyTk.ghiModels(list.map((m) => m.id), email); } catch {} } return list; });
-      const [codex, agy] = await Promise.allSettled([reader.codexModels ? reader.codexModels().then(codexModelList) : Promise.reject(new Error("không hỗ trợ")),
+      const [codex, agy] = await Promise.allSettled([reader.codexModels ? reader.codexModels(codexTk ? codexTk.env() : undefined).then(codexModelList) : Promise.reject(new Error("không hỗ trợ")),
         reader.agyModels ? docAgy() : Promise.reject(new Error("không hỗ trợ"))]);
       const pick = (r) => r.status === "fulfilled" ? { models: r.value } : { models: [], error: String(r.reason && r.reason.message || r.reason).slice(0, 200) };
       const data = { claude: { models: CLAUDE_MODELS }, codex: pick(codex), agy: pick(agy), checkedAt: new Date(clock()).toISOString() };
@@ -248,6 +269,6 @@ function createQuotas({ dir, queries, clock = Date.now, intervalMs = EVERY, agyT
     return modelPending;
   }
   async function close() { stopped = true; await reader.close?.(); await pending; await nghiPending; }
-  return { get, refresh, snapshot, close, models, docNghi };
+  return { get, refresh, snapshot, close, models, docNghi, docGpt };
 }
 module.exports = { createQuotas, codexBuckets, claudeBuckets, antigravityBuckets, claudeReset, agyModelList, codexModelList, CLAUDE_MODELS };

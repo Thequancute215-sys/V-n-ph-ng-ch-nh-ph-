@@ -178,6 +178,25 @@ Sau đó:
 - **Đổi tay:** bấm **Dùng tài khoản này**.
 - **An toàn:** chỉ đổi khi không có tiến trình `agy.exe` nào chạy, vì đổi giữa chừng thì tiến trình đang chạy có thể ghi đè đăng nhập. Trước khi nạp tài khoản mới, văn phòng cất lại token đang dùng vào đúng chỗ của nó, và sau khi nạp thì kiểm lại email. Ứng dụng Antigravity trên máy có thể dùng chung chỗ lưu đăng nhập này (cần kiểm chứng): đang dùng app mà thấy đổi tài khoản thì đó là lý do.
 
+### Nhiều tài khoản GPT cho Codex (Itachi, Sasuke)
+
+Codex nhận biến `CODEX_HOME`, nên **mỗi tài khoản GPT có một thư mục riêng**: chứa đăng nhập, lịch sử phiên và hạn mức của tài khoản đó (`ctl/codex-tai-khoan.js`). Văn phòng không chép và không đọc file đăng nhập (`auth.json`).
+
+- **Tài khoản 1** là `~/.codex` đang có sẵn (app Codex của anh cũng dùng). Tài khoản thêm nằm ở `~/.van-phong-ao/codex-tk/<id>`.
+- **Thêm:** mục **Hạn mức** → thẻ Codex → *Thêm tài khoản GPT*, đặt tên → **Thêm và đăng nhập**. Văn phòng mở `codex login` với thư mục của tài khoản đó và trình duyệt mở trang đăng nhập ChatGPT. Anh đăng nhập **đúng tài khoản GPT kia** trên máy tính này. Trình duyệt đang đăng nhập tài khoản khác thì chép link mở trong cửa sổ ẩn danh. Xong, văn phòng tự đọc hạn mức và email (che bớt) của tài khoản mới. Hai tài khoản trùng email thì thẻ báo để đăng nhập lại.
+- **Dùng chung với `~/.codex`:**
+  - chép và đồng bộ trước mỗi lượt: `config.toml` (model, plugin, sandbox `elevated`), `AGENTS.md`, `cap_sid`;
+  - nối thẳng bằng junction: `skills`, `plugins`, phần sandbox (`.sandbox`, `.sandbox-bin`, `.sandbox-secrets`).
+
+  Nhờ vậy lượt chạy bằng tài khoản nào cũng cùng cấu hình và không phải dựng lại sandbox.
+- **Chạy:** mỗi tiến trình Codex văn phòng mở (lượt làm việc, chat, soạn prompt) nhận `CODEX_HOME` của tài khoản đang chọn **lúc khởi chạy**. Đổi tài khoản không ảnh hưởng lượt đang chạy.
+- **Xem song song:** hạn mức đọc được của mọi tài khoản cùng lúc (5 phút/lần), không cần đổi qua đổi lại như Antigravity.
+- **Tự chuyển:**
+  - trước mỗi lượt Codex, tài khoản đang dùng còn ≤ ngưỡng (mặc định 10%) thì chuyển sang tài khoản còn nhiều nhất;
+  - lượt nào báo "hết hạn mức" thì tài khoản đó bị đánh dấu cạn và văn phòng **đổi ngay rồi chạy lại lượt**, không chờ tới giờ mở lại;
+  - không chuyển sang tài khoản cùng email hay cũng sắp cạn.
+- **Điện thoại:** có từ 2 tài khoản GPT đã đăng nhập thì menu ☰ → Tài khoản có nút đổi một chạm.
+
 ### Chọn model ngoài chế độ tự động
 
 Ở mục **Hạn mức**, mỗi phòng có hai ô:
