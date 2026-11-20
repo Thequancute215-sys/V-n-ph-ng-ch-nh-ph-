@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "gitCommitHash": "662681d2d34d292b987f4532a52cd4bd5af9a5f5",
-  "generatedAt": "2026-11-19T20:16:08.472Z",
+  "gitCommitHash": "7629d85212331264ded8619a441e3a030aff6e98",
+  "generatedAt": "2026-11-20T04:32:31.008Z",
   "files": {
     ".gitattributes": {
       "filePath": ".gitattributes",
@@ -75,12 +75,12 @@
     },
     "README.md": {
       "filePath": "README.md",
-      "contentHash": "c1761e21746bfffa12f344a6cb6b31d1700a8bb45da01d87f04efe8ac1625aa8",
+      "contentHash": "5ef6669d5a798fecc4f0ddb32a6497f3c8adc52195be48e381be828883ba14d2",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 470,
+      "totalLines": 475,
       "hasStructuralAnalysis": false
     },
     "YEU-CAU-SUA-LOI-CLAUDE.md": {
@@ -7667,7 +7667,7 @@
     },
     "tools/ve-ban-do.js": {
       "filePath": "tools/ve-ban-do.js",
-      "contentHash": "1cfa490aabd183a63b383c98b22f153ef34a05ef65f89f40b590d1700ddaed19",
+      "contentHash": "1b550baaf21691111cb2e949b4d5e81076578e1001b8f8bd5b09584b046a9d11",
       "functions": [
         {
           "name": "read",
@@ -7721,7 +7721,7 @@
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 204,
+      "totalLines": 205,
       "hasStructuralAnalysis": true
     },
     "tools/vp.js": {

@@ -21,8 +21,8 @@
       "GitHub Actions"
     ],
     "description": "Quy trình nghiệp vụ của Văn phòng AI: cài đặt và vận hành app (kể cả ghép điện thoại), theo dõi đội AI chỉ đọc, giao tiếp CEO với đội (kể cả điều khiển từ điện thoại), sổ điều phối, chu trình giao việc tự động đa AI theo agent.md (dự án mới, hợp đồng giao tiếp, chạy song song), năng lực của đội (model, tài khoản, skill, MCP, tra cứu), điều khiển máy an toàn (OS Controller), chất lượng và phát hành.",
-    "analyzedAt": "2026-11-19T20:16:08.472Z",
-    "gitCommitHash": "662681d2d34d292b987f4532a52cd4bd5af9a5f5"
+    "analyzedAt": "2026-11-20T04:32:31.008Z",
+    "gitCommitHash": "7629d85212331264ded8619a441e3a030aff6e98"
   },
   "nodes": [
     {

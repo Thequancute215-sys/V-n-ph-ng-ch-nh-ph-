@@ -17,8 +17,8 @@
       "GitHub Actions"
     ],
     "description": "Văn phòng AI 3D chạy tại chỗ, chỉ đọc, giúp theo dõi phiên làm việc của đội AI (Claude Code, Codex, Antigravity) cùng sổ điều phối data/, kèm OS Controller riêng chạy lệnh, lượt AI và luồng tự động theo giao thức agent.md (hợp đồng giao tiếp, chạy song song backend/frontend, điều phối model, bộ skill, MCP trên máy, tra cứu Gemini) trong các workspace đã đăng ký, và điều khiển từ điện thoại đã ghép; không cần thư viện npm bên ngoài.",
-    "analyzedAt": "2026-11-19T20:16:08.472Z",
-    "gitCommitHash": "662681d2d34d292b987f4532a52cd4bd5af9a5f5"
+    "analyzedAt": "2026-11-20T04:32:31.008Z",
+    "gitCommitHash": "7629d85212331264ded8619a441e3a030aff6e98"
   },
   "nodes": [
     {

@@ -45,7 +45,7 @@ function main() {
   w();
   w(`Quy mô: ${domains.length} miền nghiệp vụ, ${flows.length} workflow, ${steps.length} bước · ${kg.nodes.length} node (${nt.file || 0} file, ${nt.function || 0} hàm, ${nt.endpoint || 0} route API, ${(nt.document || 0) + (nt.config || 0) + (nt.pipeline || 0)} tài liệu/cấu hình/CI) · ${kg.edges.length} quan hệ (${et.calls || 0} lời gọi, ${et.imports || 0} import, ${et.tested_by || 0} liên kết test) · ${kg.layers.length} lớp kiến trúc · lộ trình ${kg.tour.length} bước.`);
   w();
-  w("Mục lục: [1. Miền nghiệp vụ](#1-các-miền-nghiệp-vụ) · [2. Workflow trung tâm](#2-workflow-trung-tâm-ceo-giao-việc--đội-ai--ceo-duyệt) · [3. Từng workflow](#3-từng-workflow-từng-bước-trỏ-tới-mã) · [4. Lớp kiến trúc](#4-bản-đồ-hệ-thống-các-lớp-kiến-trúc) · [5. Lộ trình đọc mã](#5-lộ-trình-đọc-mã) · [6. Điểm cần anh rà](#6-điểm-phát-hiện-khi-vẽ--cần-anh-rà)");
+  w("Mục lục: [1. Miền nghiệp vụ](#1-các-miền-nghiệp-vụ) · [2. Workflow trung tâm](#2-workflow-trung-tâm-ceo-giao-việc--đội-ai--ceo-duyệt) · [3. Từng workflow](#3-từng-workflow-từng-bước-trỏ-tới-mã) · [4. Lớp kiến trúc](#4-bản-đồ-hệ-thống-các-lớp-kiến-trúc) · [5. Lộ trình đọc mã](#5-lộ-trình-đọc-mã) · [6. Điểm cần anh rà](#6-điểm-phát-hiện-khi-vẽ--đã-xử-lý)");
   w();
 
   // 1. Miền nghiệp vụ
@@ -184,18 +184,18 @@ flowchart TD
   M --> T["CEO phát hành: tag vX.Y.Z<br/>CI kiểm tag khớp package.json"] --> U["Máy người dùng: nút Cập nhật<br/>fast-forward, lỗi thì quay lại"]
 \`\`\``;
 
-const FINDINGS = `## 6. Điểm phát hiện khi vẽ — cần anh rà
+const FINDINGS = `## 6. Điểm phát hiện khi vẽ — đã xử lý
 
-Vẽ lại toàn bộ ngày 19/11/2026 (thêm miền "Năng lực & tài nguyên của đội AI" và 13 workflow mới: ghép và điều khiển từ điện thoại, dự án mới, hợp đồng giao tiếp, miễn hợp đồng, chạy song song Astra + Kakashi, điều phối model, tài khoản Antigravity, bộ skill, duyệt repo skill, Chrome DevTools, tra cứu Gemini, vẽ lại bản đồ). Bốn điểm phát hiện lần này đã sửa cùng ngày:
+Vẽ lại toàn bộ ngày 19/11/2026 (thêm miền "Năng lực & tài nguyên của đội AI" và 13 workflow mới: ghép và điều khiển từ điện thoại, dự án mới, hợp đồng giao tiếp, miễn hợp đồng, chạy song song Astra + Kakashi, điều phối model, tài khoản Antigravity, bộ skill, duyệt repo skill, Chrome DevTools, tra cứu Gemini, vẽ lại bản đồ). Các điểm phát hiện lần này đều đã sửa:
 
 1. **Nút "Phân việc ngoài lề (Đặc cách)" là thao tác giả — đã thay.** Trước đây nó chỉ hiện bong bóng và báo "đã ghi nhận vào sổ điều phối và hòm thư" mà không gửi gì. Nay là nút **"Giao việc riêng cho một AI"** (\`public/index.html\`): chọn AI, gõ việc, văn phòng mở chat của phòng đó và gửi thật qua \`/ctl/chat\` (chỉ đọc, đúng vai). Việc cần sửa file thì AI soạn prompt và nút **"Giao cả đội"** điền sẵn vào mục giao việc của bàn làm việc để anh tự bấm giao (luồng tự động). Không có quyền "đặc cách" vượt giao thức agent.md, vì runner và CI vẫn chặn lượt sai vai.
 2. **CLAUDE.md/AGENTS.md nay liệt kê đủ đường mạng ra ngoài** (hai file giống hệt nhau): tra cứu Gemini (\`ctl/tra-cuu.js\`); GitHub API và \`git push\` lên repo của CEO (\`ctl/github.js\`, \`ctl/nhanh.js\`, \`ctl/bo-kiem.js\`, \`ctl/xuat-ban.js\`); Claude CLI gợi ý tên repo (\`ctl/du-an-moi.js\`); \`git fetch\`/\`npm view\` khi duyệt skill (\`ctl/skill-duyet.js\`, \`ctl/skill.js\`); \`npm install\` MCP ghim bản (\`ctl/mcp-may.js\`). Thêm đường mới phải được CEO duyệt và ghi vào đó.
 3. **IP trong nhật ký điện thoại không còn tin tiêu đề do máy khác tự gửi.** \`ipOf\` (\`lib/dieu-khien-xa.js\`) chỉ đọc tiêu đề proxy khi yêu cầu nối từ chính máy (đường hầm chạy trên máy). Qua Tailscale nó lấy phần tử cuối của X-Forwarded-For (do \`tailscale serve\` thêm) và bỏ qua \`cf-*\`; qua Cloudflare nó lấy \`cf-connecting-ip\`; nối thẳng từ máy khác trong mạng thì lấy địa chỉ socket. Có test trong \`test/dieu-khien-xa.test.js\`. IP vẫn chỉ để xem lại, không dùng để xác thực.
 4. **README mục "Cấu trúc mã" đã liệt kê đủ module** của \`lib/\`, \`ctl/\` (chia nhóm), \`tools/\`, \`public/\` và \`scripts/\`.
+5. **README bảng "Các màn hình" đã viết lại theo các trang đang có** (sửa 20/11/2026): văn phòng 3D theo toà nhà hiện tại, bàn làm việc, giao việc riêng cho một AI, Tổng quan, Điều khiển máy, Kết nối, Repo & Skill, Cập nhật, Nội quy, Hòm thư, Đánh giá nhân sự, Tin nhắn, Nhân vật 3D, Điện thoại, App trên máy. Bỏ dòng "Sơ đồ 2D" (\`2d.html\` chỉ còn chuyển hướng) và các "màn trái/giữa/phải" cũ.
 
-Còn cần anh rà:
+Ghi nhận:
 
-5. **Bảng "Các màn hình" trong README còn dòng cũ.** Dòng "Sơ đồ 2D — bản nhẹ cho điện thoại yếu" trỏ tới \`2d.html\`, nay chỉ là trang chuyển hướng về văn phòng 3D. Dòng "Văn phòng 3D — 8 phòng… Robot đi lại" cũng chưa khớp toà nhà hiện tại (các phòng vai AI, có phòng Kakashi). Nên viết lại bảng theo các trang đang có: văn phòng 3D + bàn làm việc, Điều khiển, Kết nối, Repo & Skill, app điện thoại.
 6. **4 trang chuyển hướng** (\`2d.html\`, \`board.html\`, \`congviec.html\`, \`tongquan.html\`) giữ lại cho dấu trang cũ — đúng chủ đích, chỉ ghi nhận.
 
 Bốn điểm của lần vẽ trước (đường nhắn tin PIN cũ, ngoại lệ "văn phòng chỉ đọc", "Phát loa" giả, chữ hỏng mã hoá trong \`test/tat-ctl.test.js\`) đã xử lý ngày 17/11/2026; \`test/van-phong-sach.test.js\` giữ cho chúng không quay lại. Node \`isLocal\` trước đây trỏ \`lib/ctlbridge.js\` nay trỏ đúng \`lib/guard.js\`.`;

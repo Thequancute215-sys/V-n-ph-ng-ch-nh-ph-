@@ -114,18 +114,23 @@ Có thể đặt `"appStartPath": "/prototype.html#board"` trong `config.json` �
 
 | Màn | Có gì |
 |---|---|
-| **Văn phòng 3D** | 8 phòng: Giám đốc, Quản lý, Điều phối, Kiểm tra & duyệt, Studio Claude, Phòng DEV, Khu Codex, Phòng họp. Robot đi lại, tin bay giữa bàn, họp tự động. Trên cùng có ô **Cần anh** và **Tiền AI hôm nay**, kèm 3 màn hình lớn trên tường |
-| **Bảng điều hành** (màn giữa) | Đang làm / chờ / bị chặn / rảnh. Phòng DEV: ai giữ, bao lâu, dịch vụ khỏe không. Việc ưu tiên, lịch DEV hôm nay, hàng chờ, luồng tin, băng chữ chạy, dải "Cần anh làm", nhịp làm việc 3 giờ |
-| **Công việc & tiến độ** (màn trái) | Việc đang áp dụng theo thứ tự, nhật ký quyết định, tiến độ từng gói (mục "Đang dở"), DEV và việc chờ anh |
-| **Nội quy & đội ngũ** (màn phải) | Nội quy (mục mới đổi gắn nhãn MỚI), đội ngũ (chấm xanh khi phiên đang có mặt), cấp bậc, sổ tay gồm bài học, việc để sau, từ điển, SPEC |
-| **Tổng quan** | Việc gì, để làm gì, ai làm, tới đâu, nghẽn ở đâu (hạn quá thì đỏ). Từng bot đang làm gì, ai "rảnh mà còn việc", ai "im quá 2 giờ" |
-| **Hòm thư** | Mỗi vai: số tin chưa xong, chờ quá 1 giờ, đọc lại từ 3 lần mà chưa xong, chưa đọc, tin cũ nhất |
-| **Đánh giá nhân sự** | Token theo giờ và ngày, quỹ Codex tuần, xếp loại A/B/C/D theo việc xong, lỗi lệnh, lượt DEV, giờ làm, độ tiết kiệm |
-| **Tin nhắn** | Toàn bộ tin 24 giờ, lọc theo người |
-| **Sơ đồ 2D** | Bản nhẹ cho điện thoại yếu: mặt bằng, người, tin bay, cảnh báo, dòng thời gian |
-| **App trên máy** | Lối tắt Desktop / Start Menu, cửa sổ riêng, tự bật ngầm khi đăng nhập Windows (xem mục "Dùng như app trên máy") |
-| **Điều khiển máy** | CPU/RAM trực tiếp, phanh khẩn cấp, workspace, chạy lệnh (chờ duyệt nếu ngoài danh sách), lượt AI theo `agent.md` + duyệt chuyển lượt, sửa file, nhật ký kiểm toán. Chỉ mở được trên chính máy này |
-| **Hỏi một AI trong đội** | Bấm vào một nhân vật trên văn phòng 3D và gõ câu hỏi. AI đọc repo để trả lời (chỉ đọc, không sửa file, không chuyển lượt); việc cần sửa thì AI soạn sẵn lời giao việc. Chạy qua OS Controller (`/ctl/chat`), trên chính máy này hoặc trên điện thoại đã ghép. Muốn để lại việc trong hòm thư của một vai thì dùng `vp gui` |
+| **Văn phòng 3D** (`/`) | Toà nhà theo vai: phòng Giám đốc, Điều hành (Pain), Đặc tả & Design System (Hinata), Kiến trúc (Itachi), Lập trình (Sasuke), Frontend & UI/UX (Kakashi), Kiểm duyệt (Sakura), phòng họp hội chẩn, cùng gym, pantry, nhà vệ sinh và sảnh. Đi bằng WASD hoặc cần cảm ứng, nút đi thẳng tới từng phòng. Nhân vật hiện bận khi có lượt AI thật; dưới tên có model đang dùng, chạm để đổi. Trời và thời tiết theo giờ Hà Nội |
+| **Bàn làm việc** (thanh công cụ trong văn phòng 3D) | Nhật ký, Việc đang làm, Giao việc cho cả đội, Ý tưởng, Dự án (gồm tạo dự án mới), Hạn mức (tài khoản Antigravity, model theo phòng), Dự án đang ở đâu, Xuất bản; kèm lối tắt Kết nối, Repo & Skill, Điện thoại, Cập nhật. Trên điện thoại gom vào ngăn kéo ☰ |
+| **Hỏi hoặc giao việc riêng cho một AI** | Bấm vào một nhân vật, hoặc nút **⚡ Giao việc riêng cho một AI** trên thanh trên, rồi gõ. AI đọc repo để trả lời trong đúng vai của mình (chỉ đọc, không sửa file, không chuyển lượt). Việc cần sửa file thì AI soạn sẵn lời giao việc; nút **Giao cả đội** điền nó vào mục giao việc để anh bấm giao. Chạy qua OS Controller (`/ctl/chat`), trên chính máy này hoặc trên điện thoại đã ghép. Muốn để lại việc trong hòm thư của một vai thì dùng `vp gui` |
+| **Tổng quan** (`prototype.html`) | Các thẻ Văn phòng, Dự án, Hội chẩn, **Điều hành** (Phase, ai giữ lượt, blocker, giao việc tự động, báo cáo của Claude), Nhật ký trực tiếp, Hạn mức & tài khoản. Dấu trang cũ `board.html`, `congviec.html`, `tongquan.html` tự chuyển về đây |
+| **Điều khiển máy** (`dieukhien.html`) | CPU/RAM trực tiếp, phanh khẩn cấp, workspace, chạy lệnh (chờ duyệt nếu ngoài danh sách), lượt AI theo `agent.md` + duyệt chuyển lượt, sửa file, nhật ký kiểm toán. Chỉ mở được trên chính máy này |
+| **Kết nối** (`ket-noi.html`) | Kết nối MCP/app (Notion, Figma, Google Drive…) cho Claude, Codex, Antigravity; bật theo phòng; cài MCP chạy trên máy như Chrome DevTools |
+| **Repo & Skill** (`skill.html`) | Dán link repo GitHub bất kỳ: máy rà, Claude đội trưởng giải thích, anh duyệt cài skill/MCP hoặc giữ làm tham khảo; xem bộ skill đang dùng |
+| **Cập nhật** (`cap-nhat.html`) | Bản đang chạy, thay đổi và ghi chú của bản mới, nút cập nhật (xem mục "Cập nhật app") |
+| **Nội quy & đội ngũ** (`noiquy.html`) | Nội quy (mục mới đổi gắn nhãn MỚI), đội ngũ (chấm xanh khi phiên đang có mặt), cấp bậc, sổ tay gồm bài học, việc để sau, từ điển, SPEC |
+| **Hòm thư** (`hopthu.html`) | Mỗi vai: số tin chưa xong, chờ quá 1 giờ, đọc lại từ 3 lần mà chưa xong, chưa đọc, tin cũ nhất |
+| **Đánh giá nhân sự** (`hieusuat.html`) | Token theo giờ và ngày, quỹ Codex tuần, xếp loại A/B/C/D theo việc xong, lỗi lệnh, lượt DEV, giờ làm, độ tiết kiệm |
+| **Tin nhắn** (`tinnhan.html`) | Toàn bộ tin 24 giờ, lọc theo người |
+| **Nhân vật 3D** (`characters.html`, `anime-studio.html`) | Hồ sơ nhân vật của đội và vĩ thú; studio xem mẫu nhân vật và soạn prompt dựng nhân vật |
+| **Điện thoại** | `dieu-khien.html`: app điều khiển cài ra màn hình chính (Tình hình, Giao việc, Chờ duyệt, Hạn mức). `dien-thoai.html` (trên máy tính): tạo mã ghép, xem và thu hồi máy đã ghép. Văn phòng 3D cũng mở được trên điện thoại đã ghép. Xem mục "Xem trên điện thoại" |
+| **App trên máy** | Lối tắt Desktop / Start Menu, cửa sổ riêng, tự bật ngầm khi đăng nhập Windows (xem mục "Dùng như app trên máy"). Văn phòng tắt thì hiện trang báo "chưa chạy" và tự tải lại khi bật |
+
+`2d.html` (sơ đồ 2D cũ) nay chuyển thẳng về văn phòng 3D.
 
 ## Điều khiển máy (OS Controller)
 

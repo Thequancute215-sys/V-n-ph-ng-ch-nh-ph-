@@ -1,12 +1,12 @@
 # Bản đồ hệ thống Văn phòng AI — từ workflow tới mã nguồn
 
-> Sinh tự động bằng `node tools/ve-ban-do.js` từ `.ua/domain-graph.json` (workflow nghiệp vụ) và `.ua/knowledge-graph.json` (bản đồ hệ thống) do Understand Anything vẽ tại commit `662681d`. Mã đổi nhiều thì vẽ lại đồ thị (`/understand`, `/understand-domain`) rồi chạy lại lệnh trên; đừng sửa tay trang này.
+> Sinh tự động bằng `node tools/ve-ban-do.js` từ `.ua/domain-graph.json` (workflow nghiệp vụ) và `.ua/knowledge-graph.json` (bản đồ hệ thống) do Understand Anything vẽ tại commit `7629d85`. Mã đổi nhiều thì vẽ lại đồ thị (`/understand`, `/understand-domain`) rồi chạy lại lệnh trên; đừng sửa tay trang này.
 
 **Bản tương tác** (bấm vào từng node, xem quan hệ, đi theo lộ trình): trong repo chạy `/understand-dashboard` của plugin Understand Anything (Claude Code), hoặc lệnh `npx` trong README của dự án Understand Anything. Lệnh đó tải và chạy mã của bên thứ ba: chỉ chạy khi anh tin nguồn; đọc các sơ đồ dưới đây trên GitHub thì không cần.
 
 Quy mô: 8 miền nghiệp vụ, 52 workflow, 338 bước · 666 node (151 file, 439 hàm, 46 route API, 30 tài liệu/cấu hình/CI) · 2110 quan hệ (680 lời gọi, 282 import, 135 liên kết test) · 10 lớp kiến trúc · lộ trình 20 bước.
 
-Mục lục: [1. Miền nghiệp vụ](#1-các-miền-nghiệp-vụ) · [2. Workflow trung tâm](#2-workflow-trung-tâm-ceo-giao-việc--đội-ai--ceo-duyệt) · [3. Từng workflow](#3-từng-workflow-từng-bước-trỏ-tới-mã) · [4. Lớp kiến trúc](#4-bản-đồ-hệ-thống-các-lớp-kiến-trúc) · [5. Lộ trình đọc mã](#5-lộ-trình-đọc-mã) · [6. Điểm cần anh rà](#6-điểm-phát-hiện-khi-vẽ--cần-anh-rà)
+Mục lục: [1. Miền nghiệp vụ](#1-các-miền-nghiệp-vụ) · [2. Workflow trung tâm](#2-workflow-trung-tâm-ceo-giao-việc--đội-ai--ceo-duyệt) · [3. Từng workflow](#3-từng-workflow-từng-bước-trỏ-tới-mã) · [4. Lớp kiến trúc](#4-bản-đồ-hệ-thống-các-lớp-kiến-trúc) · [5. Lộ trình đọc mã](#5-lộ-trình-đọc-mã) · [6. Điểm cần anh rà](#6-điểm-phát-hiện-khi-vẽ--đã-xử-lý)
 
 ## 1. Các miền nghiệp vụ
 
@@ -2005,18 +2005,18 @@ Bộ node --test (48 tệp) chạy trong CI mỗi PR và trước khi phát hàn
 19. **Xuất bản dự án & cập nhật app** — Chặng cuối của chu trình luôn do CEO bấm: ctl/xuat-ban.js kiểm và build trên máy (repo sạch, Docker, test) rồi kích GitHub Actions bằng tag vX.Y.Z, nhờ ctl/github.js lấy credential trong bộ nhớ. Ở chiều ngược lại, nút Cập nhật cập nhật chính văn phòng: lib/cap-nhat.js chỉ áp bản mới kiểu fast-forward và tự quay về bản cũ nếu lỗi, ctl/cap-nhat.js chặn khi đang có việc AI chạy, còn scripts/cap-nhat.js chạy tách khỏi cây tiến trình để tắt, cập nhật rồi bật lại văn phòng. (`ctl/xuat-ban.js`, `ctl/github.js`, `lib/cap-nhat.js`, `ctl/cap-nhat.js`, `scripts/cap-nhat.js`)
 20. **Bản đồ hệ thống** — Đồ thị .ua do Understand Anything vẽ được dùng hai lần: tools/ve-ban-do.js sinh docs/BAN-DO-HE-THONG.md (test/ban-do.test.js giữ mọi liên kết file:dòng đúng), và ctl/muc-luc.js đọc đồ thị của repo dự án để đưa mục lục vào prompt mỗi lượt AI. Mã đổi nhiều thì vẽ lại đồ thị rồi chạy lại lệnh sinh trang. (`tools/ve-ban-do.js`, `test/ban-do.test.js`, `ctl/muc-luc.js`)
 
-## 6. Điểm phát hiện khi vẽ — cần anh rà
+## 6. Điểm phát hiện khi vẽ — đã xử lý
 
-Vẽ lại toàn bộ ngày 19/11/2026 (thêm miền "Năng lực & tài nguyên của đội AI" và 13 workflow mới: ghép và điều khiển từ điện thoại, dự án mới, hợp đồng giao tiếp, miễn hợp đồng, chạy song song Astra + Kakashi, điều phối model, tài khoản Antigravity, bộ skill, duyệt repo skill, Chrome DevTools, tra cứu Gemini, vẽ lại bản đồ). Bốn điểm phát hiện lần này đã sửa cùng ngày:
+Vẽ lại toàn bộ ngày 19/11/2026 (thêm miền "Năng lực & tài nguyên của đội AI" và 13 workflow mới: ghép và điều khiển từ điện thoại, dự án mới, hợp đồng giao tiếp, miễn hợp đồng, chạy song song Astra + Kakashi, điều phối model, tài khoản Antigravity, bộ skill, duyệt repo skill, Chrome DevTools, tra cứu Gemini, vẽ lại bản đồ). Các điểm phát hiện lần này đều đã sửa:
 
 1. **Nút "Phân việc ngoài lề (Đặc cách)" là thao tác giả — đã thay.** Trước đây nó chỉ hiện bong bóng và báo "đã ghi nhận vào sổ điều phối và hòm thư" mà không gửi gì. Nay là nút **"Giao việc riêng cho một AI"** (`public/index.html`): chọn AI, gõ việc, văn phòng mở chat của phòng đó và gửi thật qua `/ctl/chat` (chỉ đọc, đúng vai). Việc cần sửa file thì AI soạn prompt và nút **"Giao cả đội"** điền sẵn vào mục giao việc của bàn làm việc để anh tự bấm giao (luồng tự động). Không có quyền "đặc cách" vượt giao thức agent.md, vì runner và CI vẫn chặn lượt sai vai.
 2. **CLAUDE.md/AGENTS.md nay liệt kê đủ đường mạng ra ngoài** (hai file giống hệt nhau): tra cứu Gemini (`ctl/tra-cuu.js`); GitHub API và `git push` lên repo của CEO (`ctl/github.js`, `ctl/nhanh.js`, `ctl/bo-kiem.js`, `ctl/xuat-ban.js`); Claude CLI gợi ý tên repo (`ctl/du-an-moi.js`); `git fetch`/`npm view` khi duyệt skill (`ctl/skill-duyet.js`, `ctl/skill.js`); `npm install` MCP ghim bản (`ctl/mcp-may.js`). Thêm đường mới phải được CEO duyệt và ghi vào đó.
 3. **IP trong nhật ký điện thoại không còn tin tiêu đề do máy khác tự gửi.** `ipOf` (`lib/dieu-khien-xa.js`) chỉ đọc tiêu đề proxy khi yêu cầu nối từ chính máy (đường hầm chạy trên máy). Qua Tailscale nó lấy phần tử cuối của X-Forwarded-For (do `tailscale serve` thêm) và bỏ qua `cf-*`; qua Cloudflare nó lấy `cf-connecting-ip`; nối thẳng từ máy khác trong mạng thì lấy địa chỉ socket. Có test trong `test/dieu-khien-xa.test.js`. IP vẫn chỉ để xem lại, không dùng để xác thực.
 4. **README mục "Cấu trúc mã" đã liệt kê đủ module** của `lib/`, `ctl/` (chia nhóm), `tools/`, `public/` và `scripts/`.
+5. **README bảng "Các màn hình" đã viết lại theo các trang đang có** (sửa 20/11/2026): văn phòng 3D theo toà nhà hiện tại, bàn làm việc, giao việc riêng cho một AI, Tổng quan, Điều khiển máy, Kết nối, Repo & Skill, Cập nhật, Nội quy, Hòm thư, Đánh giá nhân sự, Tin nhắn, Nhân vật 3D, Điện thoại, App trên máy. Bỏ dòng "Sơ đồ 2D" (`2d.html` chỉ còn chuyển hướng) và các "màn trái/giữa/phải" cũ.
 
-Còn cần anh rà:
+Ghi nhận:
 
-5. **Bảng "Các màn hình" trong README còn dòng cũ.** Dòng "Sơ đồ 2D — bản nhẹ cho điện thoại yếu" trỏ tới `2d.html`, nay chỉ là trang chuyển hướng về văn phòng 3D. Dòng "Văn phòng 3D — 8 phòng… Robot đi lại" cũng chưa khớp toà nhà hiện tại (các phòng vai AI, có phòng Kakashi). Nên viết lại bảng theo các trang đang có: văn phòng 3D + bàn làm việc, Điều khiển, Kết nối, Repo & Skill, app điện thoại.
 6. **4 trang chuyển hướng** (`2d.html`, `board.html`, `congviec.html`, `tongquan.html`) giữ lại cho dấu trang cũ — đúng chủ đích, chỉ ghi nhận.
 
 Bốn điểm của lần vẽ trước (đường nhắn tin PIN cũ, ngoại lệ "văn phòng chỉ đọc", "Phát loa" giả, chữ hỏng mã hoá trong `test/tat-ctl.test.js`) đã xử lý ngày 17/11/2026; `test/van-phong-sach.test.js` giữ cho chúng không quay lại. Node `isLocal` trước đây trỏ `lib/ctlbridge.js` nay trỏ đúng `lib/guard.js`.
