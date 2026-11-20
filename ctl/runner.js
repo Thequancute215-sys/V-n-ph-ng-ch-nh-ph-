@@ -207,6 +207,19 @@ const FULL_NOTE = "\nBẠN ĐANG CHẠY TOÀN QUYỀN trên máy CEO (không san
 const RETRYABLE = /rate.?limit|\b429\b|overloaded|ECONNRESET|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|socket hang up/i;
 const err = (code, msg) => Object.assign(new Error(msg), { code });
 
+// Phần chương trình của một lệnh CLI (bỏ lệnh con và đối số), để chạy lệnh khác cùng chương trình (codex login, mcp list…).
+// Cắt ở lệnh con trước ("exec", "-p", "{prompt}"). Lệnh chạy qua node.exe kèm cờ của node (--preserve-symlinks… rồi mới
+// tới codex.js, cách vòng lỗi đường dẫn dài 17/11/2026) thì giữ nguyên các cờ đó: trước đây cắt ở dấu "-" đầu tiên nên chỉ
+// còn node.exe, "codex login" thành "node.exe login" (lỗi gặp thật 20/11/2026).
+function phanChuongTrinh(a) {
+  let cut = a.findIndex((x, i) => i > 0 && (x === "exec" || x === "{prompt}" || x === "-p" || x === "--print"));
+  if (cut < 0) {
+    const laNode = /^node(.exe)?$/i.test(path.basename(String(a[0] || "")));
+    const batDau = laNode ? a.findIndex((x, i) => i > 0 && !String(x).startsWith("-")) + 1 : 1;   // node: qua hết cờ node và file script
+    cut = a.findIndex((x, i) => i >= Math.max(1, batDau) && String(x).startsWith("-"));
+  }
+  return cut > 0 ? a.slice(0, cut) : a.length && /^node(.exe)?$/i.test(path.basename(String(a[0]))) ? a.slice() : [a[0]];
+}
 // Model trong lệnh (--model X, -m X, --model=X); null = lệnh không chỉ định.
 function modelTrong(argv) {
   for (let i = 0; i < argv.length; i++) {
@@ -552,12 +565,10 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
 
   // Phần chương trình của từng CLI (trước lệnh con/cờ), để chạy lệnh quản lý như `mcp list`.
   function cliOf(kind) {
-    const a = argvFor({ claude: "CLAUDE_AUDITOR", codex: "CODEX_ASTRA_DEV", agy: "SPEC_ARCHITECT" }[kind]);
-    const cut = a.findIndex((x, i) => i > 0 && (x === "exec" || x.startsWith("-") || x === "{prompt}"));
-    return cut > 0 ? a.slice(0, cut) : [a[0]];
+    return phanChuongTrinh(argvFor({ claude: "CLAUDE_AUDITOR", codex: "CODEX_ASTRA_DEV", agy: "SPEC_ARCHITECT" }[kind]));
   }
 
   return { run, report, dieuPhoi, webPrompt, applyWeb, chatArgv, cliOf, fullOn, CODEX_MODEL, DEFAULT_EFFORT, status, approve, answer, reject, ghiNhan, boLoi, conflicts, get: (id) => view(q.get.get(id)), pending: () => q.open.all().map(view), AGENTS };
 }
 
-module.exports = { createRunner, AGENTS, fullAccessArgs, withMcp, FULL_ROLES };
+module.exports = { createRunner, AGENTS, fullAccessArgs, withMcp, FULL_ROLES, phanChuongTrinh };

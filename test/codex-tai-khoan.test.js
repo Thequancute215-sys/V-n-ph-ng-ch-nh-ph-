@@ -153,3 +153,13 @@ test("bộ chạy việc: tiến trình nhận biến môi trường của tài 
   for (let i = 0; i < 100 && jobs.get(j2.id).status === "running"; i++) await new Promise((r) => setTimeout(r, 50));
   assert.match(jobs.rawLog(j2.id), /HOME=(none|.*\.codex)/);
 });
+
+test("phần chương trình của lệnh: Codex chạy qua node.exe kèm cờ node vẫn giữ đủ file codex.js (lỗi gặp thật 20/11/2026)", () => {
+  const { phanChuongTrinh: f } = require("../ctl/runner");
+  const N = "C:/node/node.exe";
+  assert.deepEqual(f([N, "--preserve-symlinks", "--preserve-symlinks-main", "C:/cx/codex.js", "exec", "--json", "{prompt}"]), [N, "--preserve-symlinks", "--preserve-symlinks-main", "C:/cx/codex.js"]);
+  assert.deepEqual(f(["codex", "exec", "--json", "{prompt}"]), ["codex"]);
+  assert.deepEqual(f(["C:/a/agy.exe", "-p", "{prompt}", "--mode", "plan"]), ["C:/a/agy.exe"]);
+  assert.deepEqual(f(["claude.exe", "-p", "{prompt}"]), ["claude.exe"]);
+  assert.deepEqual(f([N, "C:/x/codex.js"]), [N, "C:/x/codex.js"]);
+});
