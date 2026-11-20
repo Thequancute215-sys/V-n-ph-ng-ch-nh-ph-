@@ -19,7 +19,7 @@
   3. Mọi lệnh gọi LLM/API có Timeout, Retry/Fallback và kiểm tra Schema (Zod/Pydantic).
   4. Không hardcode secret/API key; 100% Zero-Leak chạy cục bộ tại Localhost, tự động che chuỗi nhạy cảm qua hàm mask().
   5. Không đổi tên trường API/Database khi chưa cập nhật Vùng [3].
-  6. Luật phân việc ngoài lệ (CEO Override): Mặc định GPT 6.1 Sol chỉ làm kiến trúc & hợp đồng Vùng [3], Codex làm code; CHỈ KHI Chủ Dự Án (CEO) trực tiếp ban hành lệnh đặc cách (qua nút "Phân việc ngoài lề" hoặc ghi Vùng [4.1]) thì GPT 6.1 Sol mới được phép viết mã nguồn trực tiếp (Bypass Codex).
+  6. Luật phân việc ngoài lệ (CEO Override): Mặc định GPT 6.1 Sol chỉ làm kiến trúc & hợp đồng Vùng [3], Codex làm code; CHỈ KHI Chủ Dự Án (CEO) trực tiếp ban hành lệnh đặc cách (ghi lệnh đặc cách vào Vùng [4.1]; nút ⚡ "Giao việc một vai" của văn phòng chỉ chạy lượt của vai đang giữ NEXT_OWNER, không cấp quyền này) thì GPT 6.1 Sol mới được phép viết mã nguồn trực tiếp (Bypass Codex).
 
 ## [2] ĐẶC TẢ SẢN PHẨM, AI AGENT & THIẾT KẾ FULLSTACK FRONTEND (UI/UX) (Chủ: SPEC_ARCHITECT)
 ### [2.1] SẢN PHẨM & PHẠM VI MVP
@@ -115,7 +115,7 @@
 
 ## [4] KHÓA LƯỢT & NHẬT KÝ
 - CURRENT_PHASE: Phase 7 - Vận hành hằng ngày
-- LAST_UPDATED_BY: CLAUDE_AUDITOR
+- LAST_UPDATED_BY: CEO
 - NEXT_OWNER (MUTEX LOCK): SPEC_ARCHITECT
 
 ### [4.1] NHẬT KÝ PHASE HIỆN TẠI (tối đa 25 dòng)
