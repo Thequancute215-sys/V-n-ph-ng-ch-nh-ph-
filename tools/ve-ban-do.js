@@ -193,10 +193,11 @@ Vẽ lại toàn bộ ngày 19/11/2026 (thêm miền "Năng lực & tài nguyên
 3. **IP trong nhật ký điện thoại không còn tin tiêu đề do máy khác tự gửi.** \`ipOf\` (\`lib/dieu-khien-xa.js\`) chỉ đọc tiêu đề proxy khi yêu cầu nối từ chính máy (đường hầm chạy trên máy). Qua Tailscale nó lấy phần tử cuối của X-Forwarded-For (do \`tailscale serve\` thêm) và bỏ qua \`cf-*\`; qua Cloudflare nó lấy \`cf-connecting-ip\`; nối thẳng từ máy khác trong mạng thì lấy địa chỉ socket. Có test trong \`test/dieu-khien-xa.test.js\`. IP vẫn chỉ để xem lại, không dùng để xác thực.
 4. **README mục "Cấu trúc mã" đã liệt kê đủ module** của \`lib/\`, \`ctl/\` (chia nhóm), \`tools/\`, \`public/\` và \`scripts/\`.
 5. **README bảng "Các màn hình" đã viết lại theo các trang đang có** (sửa 20/11/2026): văn phòng 3D theo toà nhà hiện tại, bàn làm việc, giao việc cả đội / một vai, Tổng quan, Điều khiển máy, Kết nối, Repo & Skill, Cập nhật, Nội quy, Hòm thư, Đánh giá nhân sự, Tin nhắn, Nhân vật 3D, Điện thoại, App trên máy. Bỏ dòng "Sơ đồ 2D" (\`2d.html\` chỉ còn chuyển hướng) và các "màn trái/giữa/phải" cũ.
+6. **Thông báo giả ở trang nhân vật (\`characters.html\`) đã bỏ (20/11/2026).** Hai nút "Duyệt tất cả" và "Duyệt tạo hình nhân vật này" chỉ hiện alert "đã duyệt, đã khóa vào hệ thống" mà không có sổ duyệt nào: đã bỏ. Nút "Yêu cầu chỉnh thêm chi tiết" trước báo "đã ghi nhận" mà không ghi gì, nay lưu thật thành ý tưởng của dự án đang chọn (\`POST /ctl/ideas\`) và báo đúng kết quả.
 
 Ghi nhận:
 
-6. **4 trang chuyển hướng** (\`2d.html\`, \`board.html\`, \`congviec.html\`, \`tongquan.html\`) giữ lại cho dấu trang cũ — đúng chủ đích, chỉ ghi nhận.
+7. **4 trang chuyển hướng** (\`2d.html\`, \`board.html\`, \`congviec.html\`, \`tongquan.html\`) giữ lại cho dấu trang cũ — đúng chủ đích, chỉ ghi nhận.
 
 Bốn điểm của lần vẽ trước (đường nhắn tin PIN cũ, ngoại lệ "văn phòng chỉ đọc", "Phát loa" giả, chữ hỏng mã hoá trong \`test/tat-ctl.test.js\`) đã xử lý ngày 17/11/2026; \`test/van-phong-sach.test.js\` giữ cho chúng không quay lại. Node \`isLocal\` trước đây trỏ \`lib/ctlbridge.js\` nay trỏ đúng \`lib/guard.js\`.`;
 
