@@ -114,18 +114,24 @@ Có thể đặt `"appStartPath": "/prototype.html#board"` trong `config.json` �
 
 | Màn | Có gì |
 |---|---|
-| **Văn phòng 3D** | 8 phòng: Giám đốc, Quản lý, Điều phối, Kiểm tra & duyệt, Studio Claude, Phòng DEV, Khu Codex, Phòng họp. Robot đi lại, tin bay giữa bàn, họp tự động. Trên cùng có ô **Cần anh** và **Tiền AI hôm nay**, kèm 3 màn hình lớn trên tường |
-| **Bảng điều hành** (màn giữa) | Đang làm / chờ / bị chặn / rảnh. Phòng DEV: ai giữ, bao lâu, dịch vụ khỏe không. Việc ưu tiên, lịch DEV hôm nay, hàng chờ, luồng tin, băng chữ chạy, dải "Cần anh làm", nhịp làm việc 3 giờ |
-| **Công việc & tiến độ** (màn trái) | Việc đang áp dụng theo thứ tự, nhật ký quyết định, tiến độ từng gói (mục "Đang dở"), DEV và việc chờ anh |
-| **Nội quy & đội ngũ** (màn phải) | Nội quy (mục mới đổi gắn nhãn MỚI), đội ngũ (chấm xanh khi phiên đang có mặt), cấp bậc, sổ tay gồm bài học, việc để sau, từ điển, SPEC |
-| **Tổng quan** | Việc gì, để làm gì, ai làm, tới đâu, nghẽn ở đâu (hạn quá thì đỏ). Từng bot đang làm gì, ai "rảnh mà còn việc", ai "im quá 2 giờ" |
-| **Hòm thư** | Mỗi vai: số tin chưa xong, chờ quá 1 giờ, đọc lại từ 3 lần mà chưa xong, chưa đọc, tin cũ nhất |
-| **Đánh giá nhân sự** | Token theo giờ và ngày, quỹ Codex tuần, xếp loại A/B/C/D theo việc xong, lỗi lệnh, lượt DEV, giờ làm, độ tiết kiệm |
-| **Tin nhắn** | Toàn bộ tin 24 giờ, lọc theo người |
-| **Sơ đồ 2D** | Bản nhẹ cho điện thoại yếu: mặt bằng, người, tin bay, cảnh báo, dòng thời gian |
-| **App trên máy** | Lối tắt Desktop / Start Menu, cửa sổ riêng, tự bật ngầm khi đăng nhập Windows (xem mục "Dùng như app trên máy") |
-| **Điều khiển máy** | CPU/RAM trực tiếp, phanh khẩn cấp, workspace, chạy lệnh (chờ duyệt nếu ngoài danh sách), lượt AI theo `agent.md` + duyệt chuyển lượt, sửa file, nhật ký kiểm toán. Chỉ mở được trên chính máy này |
+| **Văn phòng 3D** (`/`) | Toà nhà theo vai: phòng Giám đốc, Điều hành (Pain), Đặc tả & Design System (Hinata), Kiến trúc (Itachi), Lập trình (Sasuke), Frontend & UI/UX (Kakashi), Kiểm duyệt (Sakura), phòng họp hội chẩn, cùng gym, pantry, nhà vệ sinh và sảnh. Đi bằng WASD hoặc cần cảm ứng, nút đi thẳng tới từng phòng. Nhân vật hiện bận khi có lượt AI thật; dưới tên có model đang dùng, chạm để đổi. Trời và thời tiết theo giờ Hà Nội |
+| **Bàn làm việc** (thanh công cụ trong văn phòng 3D) | Nhật ký, Việc đang làm, Giao việc cho cả đội, Ý tưởng, Dự án (gồm tạo dự án mới), Hạn mức (tài khoản Antigravity, model theo phòng), Dự án đang ở đâu, Xuất bản; kèm lối tắt Kết nối, Repo & Skill, Điện thoại, Cập nhật. Trên điện thoại gom vào ngăn kéo ☰ |
 | **Hỏi một AI trong đội** | Bấm vào một nhân vật trên văn phòng 3D và gõ câu hỏi. AI đọc repo để trả lời (chỉ đọc, không sửa file, không chuyển lượt); việc cần sửa thì AI soạn sẵn lời giao việc. Chạy qua OS Controller (`/ctl/chat`), trên chính máy này hoặc trên điện thoại đã ghép. Muốn để lại việc trong hòm thư của một vai thì dùng `vp gui` |
+| **Giao việc cả đội / một vai** (thanh trên) | 📢 mở mục **Giao việc cho cả đội** của bàn làm việc (luồng tự động). ⚡ **Giao việc một vai** chạy đúng một lượt AI cho vai đang giữ `NEXT_OWNER` trong `agent.md` (`/ctl/ai/run`); vai khác không chọn được, lỗi của ctl hiện nguyên văn |
+| **Tổng quan** (`prototype.html`) | Các thẻ Văn phòng, Dự án, Hội chẩn, **Điều hành** (Phase, ai giữ lượt, blocker, giao việc tự động, báo cáo của Claude), Nhật ký trực tiếp, Hạn mức & tài khoản. Dấu trang cũ `board.html`, `congviec.html`, `tongquan.html` tự chuyển về đây |
+| **Điều khiển máy** (`dieukhien.html`) | CPU/RAM trực tiếp, phanh khẩn cấp, workspace, chạy lệnh (chờ duyệt nếu ngoài danh sách), lượt AI theo `agent.md` + duyệt chuyển lượt, sửa file, nhật ký kiểm toán. Chỉ mở được trên chính máy này |
+| **Kết nối** (`ket-noi.html`) | Kết nối MCP/app (Notion, Figma, Google Drive…) cho Claude, Codex, Antigravity; bật theo phòng; cài MCP chạy trên máy như Chrome DevTools |
+| **Repo & Skill** (`skill.html`) | Dán link repo GitHub bất kỳ: máy rà, Claude đội trưởng giải thích, anh duyệt cài skill/MCP hoặc giữ làm tham khảo; xem bộ skill đang dùng |
+| **Cập nhật** (`cap-nhat.html`) | Bản đang chạy, thay đổi và ghi chú của bản mới, nút cập nhật (xem mục "Cập nhật app") |
+| **Nội quy & đội ngũ** (`noiquy.html`) | Nội quy (mục mới đổi gắn nhãn MỚI), đội ngũ (chấm xanh khi phiên đang có mặt), cấp bậc, sổ tay gồm bài học, việc để sau, từ điển, SPEC |
+| **Hòm thư** (`hopthu.html`) | Mỗi vai: số tin chưa xong, chờ quá 1 giờ, đọc lại từ 3 lần mà chưa xong, chưa đọc, tin cũ nhất |
+| **Đánh giá nhân sự** (`hieusuat.html`) | Token theo giờ và ngày, quỹ Codex tuần, xếp loại A/B/C/D theo việc xong, lỗi lệnh, lượt DEV, giờ làm, độ tiết kiệm |
+| **Tin nhắn** (`tinnhan.html`) | Toàn bộ tin 24 giờ, lọc theo người |
+| **Nhân vật 3D** (`characters.html`, `anime-studio.html`) | Hồ sơ nhân vật của đội và vĩ thú; studio xem mẫu nhân vật và soạn prompt dựng nhân vật |
+| **Điện thoại** | `dieu-khien.html`: app điều khiển cài ra màn hình chính (Tình hình, Giao việc, Chờ duyệt, Hạn mức). `dien-thoai.html` (trên máy tính): tạo mã ghép, xem và thu hồi máy đã ghép. Văn phòng 3D cũng mở được trên điện thoại đã ghép. Xem mục "Xem trên điện thoại" |
+| **App trên máy** | Lối tắt Desktop / Start Menu, cửa sổ riêng, tự bật ngầm khi đăng nhập Windows (xem mục "Dùng như app trên máy"). Văn phòng tắt thì hiện trang báo "chưa chạy" và tự tải lại khi bật |
+
+`2d.html` (sơ đồ 2D cũ) nay chuyển thẳng về văn phòng 3D.
 
 ## Điều khiển máy (OS Controller)
 
@@ -456,19 +462,33 @@ Muốn thêm một lớp đăng nhập bằng email trước cả khóa xem: dù
 ```
 server.js              máy chủ: tìm phiên, đọc nhật ký + sổ, đẩy trạng thái mỗi giây
 lib/                   perf (token, điểm, tiền) · docs (sổ sách) · hopthu · tongquan · mailbox · config · dieu-khien-xa (điện thoại đã ghép)
-                       guard (chặn CSRF/DNS rebinding) · proc (dừng cây tiến trình) · keys · mask · ctlbridge (cầu nối tới ctl) · app (mở app, lối tắt)
-ctl/                   OS Controller: main (HTTP) · jobs · policy · workspaces · files · runner (lượt AI) · autopilot (giao việc tự động) · handoff · monitor · audit · db (tự nâng cấp sổ) · cap-nhat (nút Cập nhật) · dieu-phoi (chọn model/mức) · muc-luc (mục lục từ bản đồ)
+                       guard (chặn CSRF/DNS rebinding, nhận diện chính máy) · proc (dừng cây tiến trình) · keys · mask · ghi-file (ghi nguyên tử)
+                       ctlbridge (cầu nối tới ctl) · app (mở app, lối tắt) · cap-nhat · kiem-agent (bộ kiểm agent.md) · kiem-hop-dong (bộ kiểm hợp đồng)
+ctl/                   OS Controller: main (HTTP) · jobs · policy · workspaces · files · monitor · audit · db (tự nâng cấp sổ) · cap-nhat (nút Cập nhật)
+                       lượt AI: runner · handoff · autopilot (giao việc tự động) · nhanh (nhánh riêng) · ideas · du-an-moi (tạo dự án mới) · chat · nhat-ky · thongbao
+                       hợp đồng: song-song (Astra + Kakashi) · mien-hop-dong (CEO quyết miễn) · ra-soat (rà file trước khi toàn quyền)
+                       model & hạn mức: dieu-phoi (chọn model/mức) · muc-luc (mục lục từ bản đồ) · quotas · agy-tai-khoan (+ agy-dang-nhap.ps1)
+                       skill & kết nối: skill (+ skill-mac-dinh.json) · skill-duyet (duyệt repo từ link) · ket-noi · ket-noi-danh-muc · mcp-phong
+                                        mcp-may (MCP chạy trên máy) · chrome-devtools · tra-cuu + tra-cuu-mcp (Gemini)
+                       GitHub & phát hành: github · xuat-ban · bo-kiem (cài bộ kiểm vào repo dự án, mẫu trong khung/) · agent-template.md
 test/                  node --test (npm test)
 tools/vp.js            công cụ ghi sổ cho agent
 tools/kiem-agent.js    bộ kiểm chu trình agent.md (lib/kiem-agent.js), CI chạy trên mỗi PR
+tools/kiem-hop-dong.js bộ kiểm hợp đồng giao tiếp contract/api.json (lib/kiem-hop-dong.js)
+tools/cai-skill.js     cài / kiểm bộ skill mặc định cho Claude, Codex, Antigravity
+tools/cai-chrome-devtools.js  cài / kiểm Chrome DevTools MCP
+tools/ve-ban-do.js     sinh docs/BAN-DO-HE-THONG.md từ đồ thị trong .ua/
 setup.js               cài đặt (hỏi–đáp hoặc --yes cho agent)
 mau/                   khung mẫu sổ điều phối + đoạn luật đội cho AGENTS.md / CLAUDE.md
-public/                giao diện: index (3D), board, congviec, noiquy, tongquan, hopthu, hieusuat, tinnhan, 2d, dieukhien
-scripts/               mở đường hầm xem trên điện thoại · chay-tat-ca.js (npm run all) · mo-app / tat-app / cai-app (app trên máy) · cap-nhat.js (bộ cập nhật, lib/cap-nhat.js)
+public/                giao diện: index (3D) + office-desk (bàn làm việc) · dieukhien · ket-noi · skill (Repo & Skill) · cap-nhat · noiquy · hopthu
+                       hieusuat · tinnhan · prototype · characters · anime-studio · vanphong3d · offline
+                       điện thoại: dieu-khien (app điều khiển) · dien-thoai (ghép máy, trên máy tính) · trang chuyển hướng cũ: 2d, board, congviec, tongquan
+scripts/               mở đường vào cho điện thoại (xem-tren-dien-thoai: Cloudflare · dien-thoai-tailscale.ps1: Tailscale) · chay-tat-ca.js (npm run all)
+                       mo-app / tat-app / cai-app (app trên máy) · cap-nhat.js (bộ cập nhật, lib/cap-nhat.js)
 HUONG-DAN-CHO-AGENT.md hướng dẫn để agent tự cài từ link này
 docs/BAN-DO-HE-THONG.md bản đồ workflow → kiến trúc → mã (sinh bằng tools/ve-ban-do.js từ đồ thị Understand Anything trong .ua/)
 ```
 
-Bản đồ toàn hệ thống (7 miền nghiệp vụ, 39 workflow, từng bước trỏ tới file:dòng): [docs/BAN-DO-HE-THONG.md](docs/BAN-DO-HE-THONG.md). Mã đổi nhiều thì vẽ lại đồ thị bằng `/understand` và `/understand-domain` (plugin Understand Anything), rồi chạy `node tools/ve-ban-do.js`.
+Bản đồ toàn hệ thống (8 miền nghiệp vụ, 53 workflow, từng bước trỏ tới file:dòng): [docs/BAN-DO-HE-THONG.md](docs/BAN-DO-HE-THONG.md). Mã đổi nhiều thì vẽ lại đồ thị bằng `/understand` và `/understand-domain` (plugin Understand Anything), rồi chạy `node tools/ve-ban-do.js`.
 
 Giấy phép MIT.

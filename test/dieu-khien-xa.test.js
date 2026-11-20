@@ -7,7 +7,7 @@ const os = require("node:os");
 const path = require("node:path");
 const http = require("node:http");
 const guard = require("../lib/guard");
-const { createDieuKhienXa, handle, allowed } = require("../lib/dieu-khien-xa");
+const { createDieuKhienXa, handle, allowed, ipOf } = require("../lib/dieu-khien-xa");
 
 const tmp = (t) => { const d = fs.mkdtempSync(path.join(os.tmpdir(), "vp-dkx-")); t.after(() => fs.rmSync(d, { recursive: true, force: true })); return d; };
 
@@ -155,4 +155,17 @@ test("điện thoại: văn phòng 3D nhìn từ mắt nhân vật, không zoom,
   assert.ok(s.includes("controls.maxDistance = CAM_CHAM ? 0.05"), "camera ngay tại mắt");
   assert.ok(s.includes("if (CAM_CHAM) { controls.enableZoom = false;"), "chụm hai ngón không zoom");
   assert.ok(s.includes("hero.body.visible = false; heroLabel.visible = false;"), "ẩn thân và nhãn của chính mình");
+});
+
+test("IP trong nhật ký: không tin tiêu đề proxy do máy khác tự gửi; qua Tailscale lấy địa chỉ tailscale serve thêm vào cuối", () => {
+  const req = (addr, host, headers = {}) => ({ socket: { remoteAddress: addr }, headers: { host, ...headers } });
+  // Nối thẳng từ máy khác trong mạng: tiêu đề là do máy đó gửi → lấy địa chỉ socket.
+  assert.equal(ipOf(req("192.168.1.50", "192.168.1.10:7788", { "x-forwarded-for": "1.2.3.4", "cf-connecting-ip": "5.6.7.8" })), "192.168.1.50");
+  // Tailscale serve (Host *.ts.net, nối từ 127.0.0.1): phần tử cuối của X-Forwarded-For; cf-* do điện thoại tự gửi bị bỏ qua.
+  assert.equal(ipOf(req("127.0.0.1", "may.tail123.ts.net", { "x-forwarded-for": "9.9.9.9, 100.101.102.103", "cf-connecting-ip": "9.9.9.9" })), "100.101.102.103");
+  assert.equal(ipOf(req("127.0.0.1", "may.tail123.ts.net", { "tailscale-user-login": "ceo@example.com" })), "ceo@example.com");
+  // Cloudflare: cf-connecting-ip do Cloudflare ghi đè.
+  assert.equal(ipOf(req("::1", "abc.trycloudflare.com", { "cf-connecting-ip": "203.0.113.7", "x-forwarded-for": "9.9.9.9" })), "203.0.113.7");
+  // Chính máy, không qua proxy.
+  assert.equal(ipOf(req("127.0.0.1", "localhost:7788")), "127.0.0.1");
 });

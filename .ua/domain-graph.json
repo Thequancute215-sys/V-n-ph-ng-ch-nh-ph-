@@ -20,9 +20,9 @@
       "three.js",
       "GitHub Actions"
     ],
-    "description": "Quy trình nghiệp vụ của Văn phòng AI: cài đặt và vận hành app trên máy, theo dõi đội AI chỉ đọc, giao tiếp CEO với đội, sổ điều phối, chu trình giao việc tự động đa AI theo agent.md, điều khiển máy an toàn (OS Controller), chất lượng và phát hành.",
-    "analyzedAt": "2026-11-10T17:12:19.237Z",
-    "gitCommitHash": "72e9ac0eeb0bf2e07bcad13f97dd59c46a5ba10d"
+    "description": "Quy trình nghiệp vụ của Văn phòng AI: cài đặt và vận hành app (kể cả ghép điện thoại), theo dõi đội AI chỉ đọc, giao tiếp CEO với đội (kể cả điều khiển từ điện thoại), sổ điều phối, chu trình giao việc tự động đa AI theo agent.md (dự án mới, hợp đồng giao tiếp, chạy song song), năng lực của đội (model, tài khoản, skill, MCP, tra cứu), điều khiển máy an toàn (OS Controller), chất lượng và phát hành.",
+    "analyzedAt": "2026-11-20T05:30:46.536Z",
+    "gitCommitHash": "b239f2a05af8a9644e68bc8a0c6a3c31dfdd507e"
   },
   "nodes": [
     {
@@ -54,7 +54,8 @@
           "Không cập nhật khi còn việc AI/luồng tự động đang chạy (AI_BUSY) hoặc văn phòng không chạy bằng app (NOT_APP)",
           "Nâng cấp sổ ctl.db chỉ thêm bảng/cột/index, mỗi bước trong một giao dịch, lỗi thì ROLLBACK",
           "Khóa API lưu ở ~/.van-phong-ao/keys.json, không vào config.json, không trả về trình duyệt",
-          "Xem từ xa bắt buộc accessKey; OS Controller không bao giờ mở cho truy cập từ xa"
+          "Xem từ xa bắt buộc accessKey; OS Controller không bao giờ mở cho truy cập từ xa",
+          "Ghép điện thoại bằng mã 6 số tạo trên chính máy tính, dùng một lần, sống 5 phút; tối đa 5 máy, thu hồi được"
         ],
         "crossDomainInteractions": [
           "Bật OS Controller cạnh văn phòng (npm run all / npm run app) và kiểm /health của ctl khi cập nhật",
@@ -595,7 +596,7 @@
       "id": "flow:xem-dien-thoai",
       "type": "flow",
       "name": "Xem văn phòng trên điện thoại",
-      "summary": "Mở đường hầm Cloudflare tới văn phòng để xem trên điện thoại; bắt buộc khóa xem, cầu /ctl bị chặn khi truy cập từ xa. Muốn điều khiển từ điện thoại thì ghép thiết bị (khóa xem + khóa thiết bị + danh sách lệnh, đi qua /dkx).",
+      "summary": "Mở đường hầm Cloudflare tới văn phòng để xem trên điện thoại; bắt buộc khóa xem, cầu /ctl bị chặn khi truy cập từ xa. Muốn điều khiển thì dùng Tailscale (mạng riêng) và ghép thiết bị — xem workflow “Ghép điện thoại”.",
       "tags": [
         "tu-xa",
         "cloudflared",
@@ -791,7 +792,7 @@
         ],
         "businessRules": [
           "Chỉ đọc ~/.claude, ~/.codex, data/ và agent.md; không ghi vào dự án",
-          "Che khóa (maskSecrets/maskText) và PIN trước khi trả trình duyệt",
+          "Che khóa (maskSecrets/maskText) trước khi trả trình duyệt",
           "Mỗi file chỉ đọc lại khi mtime/size đổi; nhật ký đọc tăng dần theo offset",
           "Hạn mức đọc qua CLI cục bộ, không lộ dữ liệu tài khoản; lỗi từng hãng độc lập",
           "Blocker OPEN chỉ tính ở Vùng [5]"
@@ -1263,8 +1264,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        134,
-        155
+        140,
+        161
       ]
     },
     {
@@ -1311,8 +1312,8 @@
       "complexity": "simple",
       "filePath": "ctl/quotas.js",
       "lineRange": [
-        167,
-        252
+        170,
+        273
       ]
     },
     {
@@ -1328,7 +1329,7 @@
       "filePath": "ctl/quotas.js",
       "lineRange": [
         102,
-        163
+        165
       ]
     },
     {
@@ -1359,8 +1360,8 @@
       "complexity": "simple",
       "filePath": "ctl/quotas.js",
       "lineRange": [
-        167,
-        252
+        170,
+        273
       ]
     },
     {
@@ -1454,8 +1455,8 @@
       "complexity": "simple",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        427,
-        461
+        473,
+        507
       ]
     },
     {
@@ -1481,7 +1482,8 @@
           "Mỗi người tối đa 40 tin, chỉ một câu đang chờ trả lời",
           "Từ xa chỉ qua điện thoại đã ghép (khóa xem + khóa thiết bị + danh sách lệnh)",
           "Giao việc cả đội luôn đi qua luồng tự động thật; không có việc giả trong bộ nhớ",
-          "Phanh chỉ báo đã dừng khi ctl xác nhận PID đã mất"
+          "Phanh chỉ báo đã dừng khi ctl xác nhận PID đã mất",
+          "Điện thoại không được chạy lệnh tùy ý, đọc/ghi file, duyệt rà soát, xuất bản, đẩy nhánh hay cập nhật app"
         ],
         "crossDomainInteractions": [
           "Chat chạy CLI như job “cmd” của OS Controller; dừng việc chuyển lệnh kill sang ctl",
@@ -1516,8 +1518,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        236,
-        236
+        251,
+        251
       ]
     },
     {
@@ -1564,8 +1566,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        534,
-        543
+        544,
+        553
       ]
     },
     {
@@ -2144,13 +2146,55 @@
           "Chỉ CLAUDE_AUDITOR được hỏi CEO (ask_ceo), đặt effort cho Codex và xóa file",
           "Luồng giới hạn 1–12 lượt, ≤ 120 phút; thời gian chờ hạn mức và chờ rà soát không tính",
           "Không push/merge/release trong luồng; chỉ đẩy nhánh sau CEO duyệt, không --force",
-          "Diff có chuỗi giống khóa thì không commit; repo đang sửa dở thì từ chối giao việc (DIRTY_REPO)"
+          "Diff có chuỗi giống khóa thì không commit; repo đang sửa dở thì từ chối giao việc (DIRTY_REPO)",
+          "Hợp đồng trước, code sau: có backend/frontend thì Sol viết contract/api.json; lệch hợp đồng là lỗi bàn giao của đúng vai",
+          "Miễn hợp đồng chỉ CEO quyết; Sol ghi 'Không có API' mới là đề nghị",
+          "Chạy song song Astra + Kakashi chỉ khi hợp đồng đạt và hai thư mục không chồng nhau; mỗi bên chỉ sửa phần mình, văn phòng tự ghi agent.md sau khi gộp",
+          "Dự án mới chỉ tạo khi CEO bấm duyệt, repo luôn riêng tư"
         ],
         "crossDomainInteractions": [
           "Mỗi lượt là job của OS Controller, qua rà soát toàn quyền và kiểm toán",
           "Bộ kiểm agent.md chấm từng lượt; nhánh ai/… lên GitHub thành PR qua CI",
           "Hiện trên văn phòng 3D, bàn điều phối và nhật ký",
           "Dùng bộ theo dõi hạn mức để chờ và chọn người soạn master prompt"
+        ]
+      }
+    },
+    {
+      "id": "domain:nang-luc-doi",
+      "type": "domain",
+      "name": "Năng lực & tài nguyên của đội AI",
+      "summary": "Cho mỗi lượt AI đúng công cụ với chi phí hợp lý: điều phối model và mức suy nghĩ theo độ khó và hạn mức, mục lục từ bản đồ hệ thống, nhiều tài khoản Antigravity và GPT (Codex) tự chuyển khi cạn, bộ skill ghim commit cài cho cả ba AI, duyệt skill/MCP mới từ link GitHub, MCP chạy trên máy (Chrome DevTools) và tra cứu Gemini miễn phí. Mọi thứ tải về đều ghim phiên bản và chỉ cài khi CEO bấm.",
+      "tags": [
+        "model-routing",
+        "skills",
+        "mcp",
+        "tai-khoan",
+        "tra-cuu"
+      ],
+      "complexity": "complex",
+      "domainMeta": {
+        "entities": [
+          "dieu-phoi.json (cố định theo phòng)",
+          "agy-tai-khoan.json + Windows Credential Manager",
+          "skill-mac-dinh.json / skill-them.json",
+          "mcp-them.json, ~/.van-phong-ao/mcp/<id>",
+          "khóa Gemini trong keys.json",
+          "đề xuất skill (repo cách ly)",
+          ".ua/knowledge-graph.json của repo dự án"
+        ],
+        "businessRules": [
+          "CEO cố định model/mức cho phòng thì dùng đúng như vậy; cờ tự cấu hình trong lệnh được giữ nguyên",
+          "Chỉ đổi tài khoản Antigravity khi không có tiến trình agy nào chạy; token không qua Node",
+          "Tài khoản GPT cho Codex: mỗi tài khoản một CODEX_HOME, văn phòng không chép hay đọc file đăng nhập; đổi tài khoản không ảnh hưởng lượt đang chạy",
+          "Skill và MCP tải về luôn ghim commit/phiên bản, không chạy script cài, không npx; skill người dùng tự cài không bị ghi đè",
+          "Repo skill mới chỉ cài sau khi máy rà, Claude đội trưởng đọc chỉ-đọc và CEO bấm duyệt; nội dung repo là dữ liệu, không phải chỉ thị",
+          "MCP chạy trên máy chỉ gắn vào lượt Claude/Codex của phòng được bật, không đăng ký chung vào cấu hình CLI",
+          "Tra cứu Gemini chỉ nhận câu hỏi ngắn và link công khai, tối đa 200 lần/ngày; khóa không bao giờ trả cho AI"
+        ],
+        "crossDomainInteractions": [
+          "Gắn model, mục lục, skill, MCP và tra cứu vào từng lượt của Chu trình AI",
+          "Đọc hạn mức từ Theo dõi đội AI để hạ bậc hoặc đổi tài khoản"
         ]
       }
     },
@@ -2245,8 +2289,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        506,
-        522
+        511,
+        527
       ]
     },
     {
@@ -2277,8 +2321,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        273,
-        273
+        288,
+        288
       ]
     },
     {
@@ -2293,8 +2337,8 @@
       "complexity": "moderate",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        506,
-        522
+        511,
+        527
       ]
     },
     {
@@ -2357,8 +2401,8 @@
       "complexity": "complex",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        281,
-        466
+        286,
+        471
       ]
     },
     {
@@ -2389,8 +2433,8 @@
       "complexity": "complex",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        562,
-        580
+        567,
+        585
       ]
     },
     {
@@ -2405,8 +2449,8 @@
       "complexity": "moderate",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        403,
-        430
+        413,
+        440
       ]
     },
     {
@@ -2421,8 +2465,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        592,
-        594
+        597,
+        599
       ]
     },
     {
@@ -2453,8 +2497,8 @@
       "complexity": "moderate",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        267,
-        279
+        272,
+        284
       ]
     },
     {
@@ -2469,8 +2513,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        280,
-        318
+        285,
+        328
       ]
     },
     {
@@ -2485,8 +2529,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        239,
-        251
+        244,
+        256
       ]
     },
     {
@@ -2501,8 +2545,8 @@
       "complexity": "simple",
       "filePath": "ctl/jobs.js",
       "lineRange": [
-        127,
-        134
+        128,
+        135
       ]
     },
     {
@@ -2517,8 +2561,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        364,
-        385
+        374,
+        395
       ]
     },
     {
@@ -2565,8 +2609,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        331,
-        385
+        341,
+        395
       ]
     },
     {
@@ -2628,8 +2672,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        584,
-        590
+        589,
+        595
       ]
     },
     {
@@ -2644,8 +2688,8 @@
       "complexity": "simple",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        154,
-        178
+        158,
+        182
       ]
     },
     {
@@ -2660,8 +2704,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        275,
-        275
+        290,
+        290
       ]
     },
     {
@@ -2676,8 +2720,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        434,
-        446
+        444,
+        456
       ]
     },
     {
@@ -2692,8 +2736,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        656,
-        669
+        661,
+        674
       ]
     },
     {
@@ -2724,8 +2768,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        558,
-        560
+        563,
+        565
       ]
     },
     {
@@ -2741,7 +2785,7 @@
       "filePath": "ctl/autopilot.js",
       "lineRange": [
         175,
-        186
+        191
       ]
     },
     {
@@ -2756,8 +2800,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        188,
-        194
+        193,
+        199
       ]
     },
     {
@@ -2772,8 +2816,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        235,
-        250
+        240,
+        255
       ]
     },
     {
@@ -2788,8 +2832,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        197,
-        217
+        202,
+        222
       ]
     },
     {
@@ -2804,8 +2848,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        261,
-        279
+        266,
+        284
       ]
     },
     {
@@ -2820,8 +2864,8 @@
       "complexity": "moderate",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        728,
-        757
+        733,
+        762
       ]
     },
     {
@@ -2836,8 +2880,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        759,
-        770
+        764,
+        775
       ]
     },
     {
@@ -2868,8 +2912,8 @@
       "complexity": "complex",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        524,
-        607
+        529,
+        612
       ]
     },
     {
@@ -2884,8 +2928,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        494,
-        504
+        499,
+        509
       ]
     },
     {
@@ -2900,8 +2944,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        476,
-        487
+        486,
+        497
       ]
     },
     {
@@ -2948,8 +2992,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        671,
-        681
+        676,
+        686
       ]
     },
     {
@@ -3012,8 +3056,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        683,
-        697
+        688,
+        702
       ]
     },
     {
@@ -3156,8 +3200,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        476,
-        481
+        481,
+        486
       ]
     },
     {
@@ -3205,7 +3249,7 @@
       "filePath": "ctl/ket-noi.js",
       "lineRange": [
         43,
-        86
+        91
       ]
     },
     {
@@ -3236,8 +3280,8 @@
       "complexity": "simple",
       "filePath": "ctl/mcp-phong.js",
       "lineRange": [
-        41,
-        50
+        42,
+        51
       ]
     },
     {
@@ -3252,8 +3296,8 @@
       "complexity": "simple",
       "filePath": "ctl/ket-noi.js",
       "lineRange": [
-        87,
-        136
+        92,
+        142
       ]
     },
     {
@@ -3268,8 +3312,8 @@
       "complexity": "moderate",
       "filePath": "ctl/mcp-phong.js",
       "lineRange": [
-        57,
-        77
+        58,
+        78
       ]
     },
     {
@@ -3284,8 +3328,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        183,
-        196
+        188,
+        201
       ]
     },
     {
@@ -3370,8 +3414,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        303,
-        308
+        318,
+        323
       ]
     },
     {
@@ -3402,8 +3446,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        174,
-        174
+        180,
+        180
       ]
     },
     {
@@ -3434,8 +3478,8 @@
       "complexity": "moderate",
       "filePath": "ctl/jobs.js",
       "lineRange": [
-        75,
-        126
+        76,
+        127
       ]
     },
     {
@@ -3481,8 +3525,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        189,
-        189
+        195,
+        195
       ]
     },
     {
@@ -3497,8 +3541,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        776,
-        780
+        781,
+        785
       ]
     },
     {
@@ -3513,8 +3557,8 @@
       "complexity": "simple",
       "filePath": "ctl/jobs.js",
       "lineRange": [
-        159,
-        177
+        160,
+        178
       ]
     },
     {
@@ -3545,8 +3589,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        189,
-        189
+        195,
+        195
       ]
     },
     {
@@ -3561,8 +3605,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        342,
-        356
+        357,
+        371
       ]
     },
     {
@@ -3657,8 +3701,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        78,
-        95
+        83,
+        100
       ]
     },
     {
@@ -3785,8 +3829,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        403,
-        430
+        413,
+        440
       ]
     },
     {
@@ -3913,8 +3957,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        224,
-        228
+        229,
+        233
       ]
     },
     {
@@ -4009,8 +4053,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        239,
-        239
+        254,
+        254
       ]
     },
     {
@@ -4076,8 +4120,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        320,
-        328
+        330,
+        338
       ]
     },
     {
@@ -4092,8 +4136,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        329,
-        362
+        339,
+        372
       ]
     },
     {
@@ -4140,8 +4184,8 @@
       "complexity": "simple",
       "filePath": "ctl/autopilot.js",
       "lineRange": [
-        562,
-        580
+        567,
+        585
       ]
     },
     {
@@ -4156,8 +4200,8 @@
       "complexity": "simple",
       "filePath": "ctl/runner.js",
       "lineRange": [
-        403,
-        430
+        413,
+        440
       ]
     },
     {
@@ -4276,7 +4320,7 @@
       "id": "flow:cai-bo-kiem",
       "type": "flow",
       "name": "Cài bộ kiểm vào repo dự án",
-      "summary": "CEO bấm cài bộ kiểm chu trình cho repo dự án: ctl tạo nhánh vp/bo-kiem-chu-trinh-<giờ> từ nhánh chính trong một git worktree tạm, ghi tools/kiem-agent.js và workflow kiem-chu-trinh.yml, commit, đẩy lên GitHub và lưu link tạo PR; không đụng thư mục/nhánh đang làm.",
+      "summary": "CEO bấm cài bộ kiểm chu trình cho repo dự án: ctl tạo nhánh vp/bo-kiem-chu-trinh-<giờ> từ nhánh chính trong một git worktree tạm, ghi tools/kiem-agent.js, tools/kiem-hop-dong.js và workflow kiem-chu-trinh.yml, commit, đẩy lên GitHub và lưu link tạo PR; không đụng thư mục/nhánh đang làm.",
       "tags": [
         "bo-kiem",
         "worktree",
@@ -4316,8 +4360,8 @@
       "complexity": "simple",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        608,
-        614
+        678,
+        684
       ]
     },
     {
@@ -4444,8 +4488,8 @@
       "complexity": "simple",
       "filePath": "ctl/main.js",
       "lineRange": [
-        233,
-        233
+        248,
+        248
       ]
     },
     {
@@ -4714,38 +4758,8 @@
       "complexity": "simple",
       "filePath": "public/office-desk.js",
       "lineRange": [
-        574,
-        574
-      ]
-    },
-    {
-      "id": "step:giao-viec-ca-doi:mot-vai-doc-luot",
-      "type": "step",
-      "name": "Nút ⚡ đọc lượt hiện tại",
-      "summary": "Bấm ⚡ \"Giao việc một vai\": hộp thoại gọi desk.turnNow() (GET /ctl/workspaces, /ctl/ai/status) để hiện dự án, vai đang giữ NEXT_OWNER và lý do chưa chạy được (đang có lượt chạy, bàn giao chờ duyệt, vai chưa có CLI); chỉ vai giữ lượt chọn được. Không còn ô \"Bypass Codex\": quyền viết mã vượt vai theo đặc cách CEO ghi ở Vùng [4.1] của agent.md.",
-      "tags": [
-        "giao-viec-ca-doi"
-      ],
-      "complexity": "simple",
-      "filePath": "public/index.html",
-      "lineRange": [
-        819,
-        823
-      ]
-    },
-    {
-      "id": "step:giao-viec-ca-doi:mot-vai-chay",
-      "type": "step",
-      "name": "Chạy một lượt AI của vai giữ lượt",
-      "summary": "desk.runTurn(role, task) gọi POST /ctl/ai/run {workspace, role, task}; runner chặn NOT_YOUR_TURN, AI_BUSY, HANDOFF_PENDING, NO_CLI và lỗi được đưa nguyên lên hộp thoại, không báo thành công giả.",
-      "tags": [
-        "giao-viec-ca-doi"
-      ],
-      "complexity": "simple",
-      "filePath": "public/office-desk.js",
-      "lineRange": [
-        653,
-        659
+        620,
+        620
       ]
     },
     {
@@ -4792,6 +4806,1894 @@
         731,
         749
       ]
+    },
+    {
+      "id": "flow:ghep-dien-thoai",
+      "type": "flow",
+      "name": "Ghép điện thoại để điều khiển văn phòng",
+      "summary": "Mở đường vào cho điện thoại (Tailscale hoặc Cloudflare), rồi ghép điện thoại một lần bằng mã 6 số tạo trên chính máy tính; điện thoại nhận khóa thiết bị (cookie HttpOnly), máy tính xem và thu hồi được từng máy.",
+      "tags": [
+        "dien-thoai",
+        "ghep",
+        "bao-mat"
+      ],
+      "complexity": "moderate",
+      "domainMeta": {
+        "entryPoint": "Trang dien-thoai.html trên máy tính → POST /dkx/ma; điện thoại mở /dieu-khien.html → POST /dkx/ghep",
+        "entryType": "http"
+      }
+    },
+    {
+      "id": "step:ghep-dien-thoai:duong-vao",
+      "type": "step",
+      "name": "Mở đường vào bằng Tailscale",
+      "summary": "Script kiểm accessKey và Tailscale rồi tailscale serve cổng văn phòng qua HTTPS *.ts.net trong mạng riêng; Cloudflare (xem-tren-dien-thoai) là cách thay thế.",
+      "tags": [
+        "dien-thoai",
+        "ghep"
+      ],
+      "complexity": "simple",
+      "filePath": "scripts/dien-thoai-tailscale.ps1",
+      "lineRange": [
+        1,
+        25
+      ]
+    },
+    {
+      "id": "step:ghep-dien-thoai:can-khoa-xem",
+      "type": "step",
+      "name": "Bắt buộc khóa xem",
+      "summary": "Từ xa mà văn phòng chưa đặt accessKey thì /dkx không nhận gì, kể cả ghép.",
+      "tags": [
+        "dien-thoai",
+        "ghep"
+      ],
+      "complexity": "simple",
+      "filePath": "lib/dieu-khien-xa.js",
+      "lineRange": [
+        146,
+        147
+      ]
+    },
+    {
+      "id": "step:ghep-dien-thoai:tao-ma",
+      "type": "step",
+      "name": "Máy tính tạo mã ghép",
+      "summary": "Trang Điện thoại trên chính máy tính gọi POST /dkx/ma: mã 6 số sống 5 phút, chỉ trong bộ nhớ.",
+      "tags": [
+        "dien-thoai",
+        "ghep"
+      ],
+      "complexity": "simple",
+      "filePath": "lib/dieu-khien-xa.js",
+      "lineRange": [
+        69,
+        73
+      ]
+    },
+    {
+      "id": "step:ghep-dien-thoai:nhap-ma",
+      "type": "step",
+      "name": "Điện thoại nhập mã",
+      "summary": "App điều khiển chưa ghép thì hiện màn nhập mã và tên máy.",
+      "tags": [
+        "dien-thoai",
+        "ghep"
+      ],
+      "complexity": "simple",
+      "filePath": "public/dieu-khien.html",
+      "lineRange": [
+        116,
+        129
+      ]
+    },
+    {
+      "id": "step:ghep-dien-thoai:ghep",
+      "type": "step",
+      "name": "Ghép và cấp khóa thiết bị",
+      "summary": "Kiểm mã bằng timingSafeEqual, khóa ghép 15 phút sau 5 lần sai, tối đa 5 máy; khóa 256 bit chỉ lưu bản băm.",
+      "tags": [
+        "dien-thoai",
+        "ghep"
+      ],
+      "complexity": "simple",
+      "filePath": "lib/dieu-khien-xa.js",
+      "lineRange": [
+        75,
+        89
+      ]
+    },
+    {
+      "id": "step:ghep-dien-thoai:cookie",
+      "type": "step",
+      "name": "Đặt cookie vpd",
+      "summary": "Cookie HttpOnly, SameSite=Strict, Path=/dkx, sống 90 ngày; thêm Secure khi đi qua HTTPS.",
+      "tags": [
+        "dien-thoai",
+        "ghep"
+      ],
+      "complexity": "simple",
+      "filePath": "lib/dieu-khien-xa.js",
+      "lineRange": [
+        159,
+        163
+      ]
+    },
+    {
+      "id": "step:ghep-dien-thoai:quan-ly",
+      "type": "step",
+      "name": "Xem và thu hồi máy đã ghép",
+      "summary": "Máy tính liệt kê máy đã ghép, giờ dùng, IP, nhật ký lệnh và thu hồi máy mất.",
+      "tags": [
+        "dien-thoai",
+        "ghep"
+      ],
+      "complexity": "simple",
+      "filePath": "public/dien-thoai.html",
+      "lineRange": [
+        46,
+        62
+      ]
+    },
+    {
+      "id": "flow:dieu-khien-tu-dien-thoai",
+      "type": "flow",
+      "name": "Điều khiển văn phòng từ điện thoại đã ghép",
+      "summary": "Điện thoại đã ghép (app điều khiển hoặc văn phòng 3D mở qua Tailscale) xem tình hình, giao việc, duyệt/trả bàn giao, trả lời câu hỏi, phanh khẩn cấp, ghi ý tưởng, tạo dự án mới và đổi model/tài khoản; mọi lệnh đi qua /dkx/api và danh sách lệnh được phép.",
+      "tags": [
+        "dien-thoai",
+        "dieu-khien-xa",
+        "allowlist"
+      ],
+      "complexity": "moderate",
+      "domainMeta": {
+        "entryPoint": "dieu-khien.html (app màn hình chính) hoặc văn phòng 3D trên điện thoại → /dkx/api/*",
+        "entryType": "http"
+      }
+    },
+    {
+      "id": "step:dieu-khien-tu-dien-thoai:mo-app",
+      "type": "step",
+      "name": "Mở app điều khiển",
+      "summary": "Hỏi /dkx/trang-thai: đã ghép thì tải 4 thẻ Tình hình, Giao việc, Chờ duyệt, Hạn mức.",
+      "tags": [
+        "dien-thoai",
+        "dieu-khien-xa"
+      ],
+      "complexity": "simple",
+      "filePath": "public/dieu-khien.html",
+      "lineRange": [
+        104,
+        114
+      ]
+    },
+    {
+      "id": "step:dieu-khien-tu-dien-thoai:chon-duong",
+      "type": "step",
+      "name": "Văn phòng 3D chọn đường gọi",
+      "summary": "Bàn làm việc dùng /ctl trên máy tính, /dkx/api trên điện thoại đã ghép.",
+      "tags": [
+        "dien-thoai",
+        "dieu-khien-xa"
+      ],
+      "complexity": "simple",
+      "filePath": "public/office-desk.js",
+      "lineRange": [
+        19,
+        29
+      ]
+    },
+    {
+      "id": "step:dieu-khien-tu-dien-thoai:nhan-dien",
+      "type": "step",
+      "name": "Nhận diện chính máy hay từ xa",
+      "summary": "Loopback + Host loopback + không có tiêu đề proxy; đường hầm nối từ 127.0.0.1 vẫn là từ xa.",
+      "tags": [
+        "dien-thoai",
+        "dieu-khien-xa"
+      ],
+      "complexity": "simple",
+      "filePath": "lib/guard.js",
+      "lineRange": [
+        52,
+        55
+      ]
+    },
+    {
+      "id": "step:dieu-khien-tu-dien-thoai:xac-thuc",
+      "type": "step",
+      "name": "Xác thực khóa thiết bị",
+      "summary": "So bản băm khóa trong cookie vpd; không khớp thì 401 NOT_PAIRED.",
+      "tags": [
+        "dien-thoai",
+        "dieu-khien-xa"
+      ],
+      "complexity": "simple",
+      "filePath": "lib/dieu-khien-xa.js",
+      "lineRange": [
+        92,
+        102
+      ]
+    },
+    {
+      "id": "step:dieu-khien-tu-dien-thoai:danh-sach",
+      "type": "step",
+      "name": "Kiểm danh sách lệnh",
+      "summary": "Chỉ mở xem, giao việc, duyệt/trả bàn giao, trả lời, phanh, ý tưởng, dự án mới, đổi tài khoản/model; không mở /jobs, /fs, rà soát, xuất bản, đẩy nhánh.",
+      "tags": [
+        "dien-thoai",
+        "dieu-khien-xa"
+      ],
+      "complexity": "simple",
+      "filePath": "lib/dieu-khien-xa.js",
+      "lineRange": [
+        22,
+        42
+      ]
+    },
+    {
+      "id": "step:dieu-khien-tu-dien-thoai:ep-an-toan",
+      "type": "step",
+      "name": "Ép tham số an toàn",
+      "summary": "Repo tạo từ điện thoại luôn riêng tư; điều phối chỉ nhận model cố định theo phòng; thời gian chờ riêng cho lệnh chậm.",
+      "tags": [
+        "dien-thoai",
+        "dieu-khien-xa"
+      ],
+      "complexity": "simple",
+      "filePath": "lib/dieu-khien-xa.js",
+      "lineRange": [
+        175,
+        181
+      ]
+    },
+    {
+      "id": "step:dieu-khien-tu-dien-thoai:chuyen-ctl",
+      "type": "step",
+      "name": "Chuyển sang OS Controller",
+      "summary": "Gọi ctl bằng token trên máy qua ctlbridge.call; ctl tắt thì 503 CTL_OFFLINE.",
+      "tags": [
+        "dien-thoai",
+        "dieu-khien-xa"
+      ],
+      "complexity": "simple",
+      "filePath": "lib/ctlbridge.js",
+      "lineRange": [
+        24,
+        37
+      ]
+    },
+    {
+      "id": "step:dieu-khien-tu-dien-thoai:nhat-ky",
+      "type": "step",
+      "name": "Ghi nhật ký lệnh",
+      "summary": "Mỗi lệnh ghi (và lệnh bị chặn) ghi kèm thiết bị, tên máy, IP và kết quả vào dieu-khien-xa.log.",
+      "tags": [
+        "dien-thoai",
+        "dieu-khien-xa"
+      ],
+      "complexity": "simple",
+      "filePath": "lib/dieu-khien-xa.js",
+      "lineRange": [
+        64,
+        66
+      ]
+    },
+    {
+      "id": "flow:tao-du-an-moi",
+      "type": "flow",
+      "name": "Tạo dự án mới từ ý tưởng",
+      "summary": "CEO gõ ý tưởng; văn phòng gợi ý 3 tên repo và kiểm tên trống trên GitHub; CEO chọn/sửa rồi duyệt thì văn phòng tạo repo riêng tư, tải về, mở làm dự án với agent.md, lưu ý tưởng, cài bộ kiểm và giao Hinata đặc tả.",
+      "tags": [
+        "du-an-moi",
+        "github",
+        "khoi-dong"
+      ],
+      "complexity": "complex",
+      "domainMeta": {
+        "entryPoint": "Bàn làm việc → Dự án mới → POST /ctl/du-an-moi/goi-y rồi POST /ctl/du-an-moi",
+        "entryType": "http"
+      }
+    },
+    {
+      "id": "step:tao-du-an-moi:nhap-y-tuong",
+      "type": "step",
+      "name": "CEO gõ ý tưởng, xin gợi ý tên",
+      "summary": "Mục Dự án mới gửi ý tưởng, hiện 3 tên kèm mô tả và tên nào đã có.",
+      "tags": [
+        "du-an-moi",
+        "github"
+      ],
+      "complexity": "simple",
+      "filePath": "public/office-desk.js",
+      "lineRange": [
+        526,
+        545
+      ]
+    },
+    {
+      "id": "step:tao-du-an-moi:goi-y",
+      "type": "step",
+      "name": "Gợi ý 3 tên repo",
+      "summary": "Claude Haiku đề xuất; lỗi thì đặt tên theo quy tắc; mỗi lúc một lượt Claude.",
+      "tags": [
+        "du-an-moi",
+        "github"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/du-an-moi.js",
+      "lineRange": [
+        77,
+        83
+      ]
+    },
+    {
+      "id": "step:tao-du-an-moi:kiem-ten",
+      "type": "step",
+      "name": "Kiểm tên còn trống",
+      "summary": "Hỏi GitHub repo owner/tên đã có chưa.",
+      "tags": [
+        "du-an-moi",
+        "github"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/github.js",
+      "lineRange": [
+        153,
+        156
+      ]
+    },
+    {
+      "id": "step:tao-du-an-moi:duyet",
+      "type": "step",
+      "name": "CEO duyệt tên",
+      "summary": "Kiểm tên hợp lệ, chạy quy trình nền và trả mã theo dõi; repo luôn riêng tư.",
+      "tags": [
+        "du-an-moi",
+        "github"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/du-an-moi.js",
+      "lineRange": [
+        108,
+        121
+      ]
+    },
+    {
+      "id": "step:tao-du-an-moi:tao-repo",
+      "type": "step",
+      "name": "Tạo repo riêng tư",
+      "summary": "POST /user/repos với auto_init; quá giờ thì kiểm lại repo đã có chưa.",
+      "tags": [
+        "du-an-moi",
+        "github"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/github.js",
+      "lineRange": [
+        160,
+        174
+      ]
+    },
+    {
+      "id": "step:tao-du-an-moi:khoi-dong",
+      "type": "step",
+      "name": "Tải về, mở dự án, cài bộ kiểm, giao Hinata",
+      "summary": "Từng bước có trạng thái; bước lỗi thì dừng và giữ các bước đã xong.",
+      "tags": [
+        "du-an-moi",
+        "github"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/du-an-moi.js",
+      "lineRange": [
+        123,
+        175
+      ]
+    },
+    {
+      "id": "step:tao-du-an-moi:theo-doi",
+      "type": "step",
+      "name": "Theo dõi từng bước",
+      "summary": "Giao diện hỏi GET /du-an-moi/:id theo nhịp tới khi xong.",
+      "tags": [
+        "du-an-moi",
+        "github"
+      ],
+      "complexity": "simple",
+      "filePath": "public/office-desk.js",
+      "lineRange": [
+        546,
+        561
+      ]
+    },
+    {
+      "id": "flow:hop-dong-giao-tiep",
+      "type": "flow",
+      "name": "Chốt hợp đồng giao tiếp trước khi code",
+      "summary": "Giao thức v2.3: Sol viết contract/api.json (OpenAPI 3 dạng JSON) cùng Vùng [3]; sau mỗi lượt văn phòng kiểm cấu trúc hợp đồng và độ lệch giữa hợp đồng với mã backend/frontend của đúng vai; CI của repo dự án chặn chỗ lệch; smoke test kiểm phản hồi thật theo schema.",
+      "tags": [
+        "hop-dong",
+        "openapi",
+        "kiem-tra"
+      ],
+      "complexity": "complex",
+      "domainMeta": {
+        "entryPoint": "Lượt SOL_ARCHITECT_PLANNER trong luồng tự động; mỗi PR của repo dự án (kiem-chu-trinh.yml)",
+        "entryType": "event"
+      }
+    },
+    {
+      "id": "step:hop-dong-giao-tiep:luat",
+      "type": "step",
+      "name": "Luật hợp đồng trước, code sau",
+      "summary": "agent.md mẫu v2.3: [1].8 smoke test theo hợp đồng, [1].9 Backend/Frontend giao tiếp đúng contract/api.json.",
+      "tags": [
+        "hop-dong",
+        "openapi"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/agent-template.md",
+      "lineRange": [
+        24,
+        25
+      ]
+    },
+    {
+      "id": "step:hop-dong-giao-tiep:kiem-cau-truc",
+      "type": "step",
+      "name": "Kiểm cấu trúc hợp đồng",
+      "summary": "openapi 3.x, responses, $ref, required, example đúng kiểu, tham số đường dẫn.",
+      "tags": [
+        "hop-dong",
+        "openapi"
+      ],
+      "complexity": "simple",
+      "filePath": "lib/kiem-hop-dong.js",
+      "lineRange": [
+        121,
+        166
+      ]
+    },
+    {
+      "id": "step:hop-dong-giao-tiep:sau-luot",
+      "type": "step",
+      "name": "Kiểm sau mỗi lượt theo vai",
+      "summary": "Sol chưa tạo hợp đồng thì trả lại; lỗi lệch chỉ tính phần của vai (backend/frontend/cấu trúc).",
+      "tags": [
+        "hop-dong",
+        "openapi"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/runner.js",
+      "lineRange": [
+        357,
+        372
+      ]
+    },
+    {
+      "id": "step:hop-dong-giao-tiep:kiem-lech",
+      "type": "step",
+      "name": "Bắt lệch hợp đồng với mã",
+      "summary": "Backend thiếu đường dẫn/sự kiện của Phase hiện tại; frontend gọi ngoài hợp đồng.",
+      "tags": [
+        "hop-dong",
+        "openapi"
+      ],
+      "complexity": "simple",
+      "filePath": "lib/kiem-hop-dong.js",
+      "lineRange": [
+        235,
+        284
+      ]
+    },
+    {
+      "id": "step:hop-dong-giao-tiep:ci",
+      "type": "step",
+      "name": "CI của repo dự án",
+      "summary": "Workflow kiem-chu-trinh.yml chạy node tools/kiem-hop-dong.js --neu-co trên mỗi PR.",
+      "tags": [
+        "hop-dong",
+        "openapi"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/khung/kiem-chu-trinh.yml",
+      "lineRange": [
+        41,
+        42
+      ]
+    },
+    {
+      "id": "step:hop-dong-giao-tiep:smoke",
+      "type": "step",
+      "name": "Kiểm phản hồi thật",
+      "summary": "--kiem-mau so một phản hồi JSON thật với schema/sự kiện trong hợp đồng.",
+      "tags": [
+        "hop-dong",
+        "openapi"
+      ],
+      "complexity": "simple",
+      "filePath": "lib/kiem-hop-dong.js",
+      "lineRange": [
+        298,
+        302
+      ]
+    },
+    {
+      "id": "flow:mien-hop-dong",
+      "type": "flow",
+      "name": "Miễn hợp đồng giao tiếp: chỉ CEO quyết",
+      "summary": "Sol ghi “Không có API” ở Vùng [3] chỉ là đề nghị: luồng dừng hỏi CEO kèm nguyên văn và hệ quả; CEO đồng ý thì văn phòng ghi sổ miễn (AI không ghi được) và chạy tiếp, không đồng ý thì trả lại Sol tạo hợp đồng.",
+      "tags": [
+        "hop-dong",
+        "ceo-quyet"
+      ],
+      "complexity": "moderate",
+      "domainMeta": {
+        "entryPoint": "Bàn giao của Sol có lỗi hop-dong-mien → luồng tự động",
+        "entryType": "event"
+      }
+    },
+    {
+      "id": "step:mien-hop-dong:de-nghi",
+      "type": "step",
+      "name": "Phát hiện đề nghị miễn",
+      "summary": "Vùng [3] ghi 'Không có API' mà chưa có sổ miễn: bàn giao mang lỗi chờ CEO duyệt.",
+      "tags": [
+        "hop-dong",
+        "ceo-quyet"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/runner.js",
+      "lineRange": [
+        357,
+        372
+      ]
+    },
+    {
+      "id": "step:mien-hop-dong:hoi",
+      "type": "step",
+      "name": "Dừng luồng hỏi CEO",
+      "summary": "awaiting_answer với câu hỏi kèm dòng đề nghị, giải thích của Sol, hệ quả khi miễn; gửi thông báo.",
+      "tags": [
+        "hop-dong",
+        "ceo-quyet"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/autopilot.js",
+      "lineRange": [
+        615,
+        635
+      ]
+    },
+    {
+      "id": "step:mien-hop-dong:nguyen-van",
+      "type": "step",
+      "name": "Lấy nguyên văn đề nghị",
+      "summary": "Dòng Vùng [3] của Sol đưa nguyên vào câu hỏi.",
+      "tags": [
+        "hop-dong",
+        "ceo-quyet"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/mien-hop-dong.js",
+      "lineRange": [
+        26,
+        29
+      ]
+    },
+    {
+      "id": "step:mien-hop-dong:tra-loi",
+      "type": "step",
+      "name": "CEO chọn A/B",
+      "summary": "A: ghi miễn, bỏ lỗi chờ duyệt; B: trả lại Sol tạo contract/api.json.",
+      "tags": [
+        "hop-dong",
+        "ceo-quyet"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/autopilot.js",
+      "lineRange": [
+        636,
+        657
+      ]
+    },
+    {
+      "id": "step:mien-hop-dong:ghi-so",
+      "type": "step",
+      "name": "Ghi sổ miễn",
+      "summary": "Sổ nằm trong thư mục dữ liệu văn phòng, theo đường dẫn dự án.",
+      "tags": [
+        "hop-dong",
+        "ceo-quyet"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/mien-hop-dong.js",
+      "lineRange": [
+        10,
+        24
+      ]
+    },
+    {
+      "id": "step:mien-hop-dong:bo-loi",
+      "type": "step",
+      "name": "Bỏ lỗi đã được CEO quyết",
+      "summary": "Bàn giao xử lý tiếp như thường: đạt thì chuyển lượt.",
+      "tags": [
+        "hop-dong",
+        "ceo-quyet"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/runner.js",
+      "lineRange": [
+        469,
+        476
+      ]
+    },
+    {
+      "id": "flow:song-song-astra-kakashi",
+      "type": "flow",
+      "name": "Chạy song song Astra (backend) và Kakashi (frontend)",
+      "summary": "Tới lượt Astra mà hợp đồng đã đạt và khai đủ thư mục hai bên: văn phòng tạo hai worktree, chạy hai AI cùng lúc theo một hợp đồng, kiểm bàn giao và phạm vi từng bên (trả lại riêng bên sai một lần), rồi gộp vào nhánh luồng và ghi agent.md bằng hai commit đúng giao thức.",
+      "tags": [
+        "song-song",
+        "worktree",
+        "hop-dong"
+      ],
+      "complexity": "complex",
+      "domainMeta": {
+        "entryPoint": "Luồng tự động, khi NEXT_OWNER là CODEX_ASTRA_DEV",
+        "entryType": "event"
+      }
+    },
+    {
+      "id": "step:song-song-astra-kakashi:dieu-kien",
+      "type": "step",
+      "name": "Kiểm điều kiện song song",
+      "summary": "Hợp đồng đạt, x-thu-muc đủ backend + frontend không chồng nhau, repo sạch.",
+      "tags": [
+        "song-song",
+        "worktree"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/song-song.js",
+      "lineRange": [
+        28,
+        45
+      ]
+    },
+    {
+      "id": "step:song-song-astra-kakashi:bat-dau",
+      "type": "step",
+      "name": "Bắt đầu hai bên",
+      "summary": "Đủ 2 lượt trong giới hạn thì tạo worktree và chạy cả hai; không thì chạy lần lượt.",
+      "tags": [
+        "song-song",
+        "worktree"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/autopilot.js",
+      "lineRange": [
+        351,
+        361
+      ]
+    },
+    {
+      "id": "step:song-song-astra-kakashi:worktree",
+      "type": "step",
+      "name": "Tạo hai worktree tách rời",
+      "summary": "Cùng một mốc, HEAD tách rời, không tạo nhánh.",
+      "tags": [
+        "song-song",
+        "worktree"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/song-song.js",
+      "lineRange": [
+        49,
+        66
+      ]
+    },
+    {
+      "id": "step:song-song-astra-kakashi:chay-ben",
+      "type": "step",
+      "name": "Chạy lượt từng bên",
+      "summary": "Lời giao việc song song: chỉ sửa thư mục của mình, không sửa agent.md/hợp đồng, chạy kiểm hợp đồng trước khi bàn giao.",
+      "tags": [
+        "song-song",
+        "worktree"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/autopilot.js",
+      "lineRange": [
+        362,
+        389
+      ]
+    },
+    {
+      "id": "step:song-song-astra-kakashi:pham-vi",
+      "type": "step",
+      "name": "Kiểm phạm vi thư mục",
+      "summary": "File ngoài phần của bên đó (kể cả đổi tên, xoá) là lỗi bàn giao.",
+      "tags": [
+        "song-song",
+        "worktree"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/song-song.js",
+      "lineRange": [
+        69,
+        79
+      ]
+    },
+    {
+      "id": "step:song-song-astra-kakashi:theo-doi",
+      "type": "step",
+      "name": "Theo dõi và trả lại riêng bên sai",
+      "summary": "Bên sai được trả lại một lần; sai nữa hoặc lỗi khác thì dừng cả luồng và báo cáo.",
+      "tags": [
+        "song-song",
+        "worktree"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/autopilot.js",
+      "lineRange": [
+        404,
+        471
+      ]
+    },
+    {
+      "id": "step:song-song-astra-kakashi:gop",
+      "type": "step",
+      "name": "Gộp hai phần, ghi agent.md",
+      "summary": "Commit từng bên, gộp lần lượt (xung đột thì huỷ và báo CEO), hai commit agent.md chuyển lượt sang Sol.",
+      "tags": [
+        "song-song",
+        "worktree"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/song-song.js",
+      "lineRange": [
+        83,
+        140
+      ]
+    },
+    {
+      "id": "step:song-song-astra-kakashi:don",
+      "type": "step",
+      "name": "Dọn worktree",
+      "summary": "Gỡ worktree tạm; gộp lỗi thì giữ lại để CEO xem.",
+      "tags": [
+        "song-song",
+        "worktree"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/autopilot.js",
+      "lineRange": [
+        393,
+        403
+      ]
+    },
+    {
+      "id": "flow:dieu-phoi-model",
+      "type": "flow",
+      "name": "Chọn model và mức suy nghĩ cho từng lượt",
+      "summary": "Mỗi lượt AI được chấm độ khó, chọn model + mức suy nghĩ theo bảng của từng CLI, leo thang khi bị trả lại, hạ bậc khi sắp hết hạn mức, kèm mục lục file:dòng từ bản đồ hệ thống; CEO cố định được model cho từng phòng bằng cách chạm nhãn nhân vật.",
+      "tags": [
+        "model",
+        "effort",
+        "muc-luc"
+      ],
+      "complexity": "moderate",
+      "domainMeta": {
+        "entryPoint": "runner.run trước mỗi lượt; CEO chọn ở mục Hạn mức / ô ⚙ dưới tên nhân vật → POST /ctl/dieu-phoi",
+        "entryType": "event"
+      }
+    },
+    {
+      "id": "step:dieu-phoi-model:cham",
+      "type": "step",
+      "name": "Chấm độ khó lượt",
+      "summary": "Theo vai, chữ trong việc, blocker CRITICAL, lượt bị trả lại.",
+      "tags": [
+        "model",
+        "effort"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/dieu-phoi.js",
+      "lineRange": [
+        50,
+        62
+      ]
+    },
+    {
+      "id": "step:dieu-phoi-model:han-muc",
+      "type": "step",
+      "name": "Đọc hạn mức còn lại",
+      "summary": "% còn lại của AI sẽ chạy từ ảnh chụp hạn mức.",
+      "tags": [
+        "model",
+        "effort"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/dieu-phoi.js",
+      "lineRange": [
+        41,
+        47
+      ]
+    },
+    {
+      "id": "step:dieu-phoi-model:quyet",
+      "type": "step",
+      "name": "Quyết định model + mức",
+      "summary": "Cố định của CEO trước, rồi bảng theo độ khó; leo thang/hạ bậc; ghi lý do vào kiểm toán.",
+      "tags": [
+        "model",
+        "effort"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/dieu-phoi.js",
+      "lineRange": [
+        86,
+        98
+      ]
+    },
+    {
+      "id": "step:dieu-phoi-model:chen-co",
+      "type": "step",
+      "name": "Chèn cờ vào lệnh",
+      "summary": "--model/--effort, -c model_reasoning_effort, --model Gemini; giữ cờ tự cấu hình.",
+      "tags": [
+        "model",
+        "effort"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/dieu-phoi.js",
+      "lineRange": [
+        101,
+        114
+      ]
+    },
+    {
+      "id": "step:dieu-phoi-model:muc-luc",
+      "type": "step",
+      "name": "Đưa mục lục vào prompt",
+      "summary": "Chọn workflow/hàm khớp việc trong .ua của repo, kèm file:dòng và cảnh báo lệch commit.",
+      "tags": [
+        "model",
+        "effort"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/muc-luc.js",
+      "lineRange": [
+        49,
+        70
+      ]
+    },
+    {
+      "id": "step:dieu-phoi-model:ds-model",
+      "type": "step",
+      "name": "Danh sách model thật",
+      "summary": "Đọc model của 3 CLI (nhớ 6 giờ) cho bảng chọn.",
+      "tags": [
+        "model",
+        "effort"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/quotas.js",
+      "lineRange": [
+        255,
+        270
+      ]
+    },
+    {
+      "id": "step:dieu-phoi-model:ceo-chon",
+      "type": "step",
+      "name": "CEO chạm để chọn",
+      "summary": "Bảng chọn model dạng thẻ và mức suy nghĩ dạng nút cho một phòng.",
+      "tags": [
+        "model",
+        "effort"
+      ],
+      "complexity": "simple",
+      "filePath": "public/office-desk.js",
+      "lineRange": [
+        347,
+        375
+      ]
+    },
+    {
+      "id": "flow:doi-tai-khoan-agy",
+      "type": "flow",
+      "name": "Nhiều tài khoản Antigravity và tự chuyển khi cạn",
+      "summary": "CEO cất đăng nhập từng tài khoản Antigravity (family, Pro); văn phòng đọc hạn mức cả tài khoản đang nghỉ, tự chuyển trước lượt khi tài khoản đang dùng sắp cạn, và cho đổi tay một chạm — chỉ khi không có tiến trình agy nào chạy.",
+      "tags": [
+        "antigravity",
+        "tai-khoan",
+        "han-muc"
+      ],
+      "complexity": "complex",
+      "domainMeta": {
+        "entryPoint": "Mục Hạn mức / menu ☰ trên điện thoại → POST /ctl/agy-tai-khoan/*; runner trước lượt Antigravity",
+        "entryType": "http"
+      }
+    },
+    {
+      "id": "step:doi-tai-khoan-agy:cat",
+      "type": "step",
+      "name": "Cất đăng nhập",
+      "summary": "Chép đăng nhập đang dùng vào chỗ cất riêng của tài khoản (script PowerShell, chỉ trả email).",
+      "tags": [
+        "antigravity",
+        "tai-khoan"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/agy-tai-khoan.js",
+      "lineRange": [
+        112,
+        124
+      ]
+    },
+    {
+      "id": "step:doi-tai-khoan-agy:script",
+      "type": "step",
+      "name": "Script Credential Manager",
+      "summary": "luu/nap/xoa/email trên Windows Credential Manager; token không ra khỏi tiến trình.",
+      "tags": [
+        "antigravity",
+        "tai-khoan"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/agy-dang-nhap.ps1",
+      "lineRange": [
+        1,
+        60
+      ]
+    },
+    {
+      "id": "step:doi-tai-khoan-agy:doc-nghi",
+      "type": "step",
+      "name": "Đọc hạn mức tài khoản nghỉ",
+      "summary": "Mượn ~10 giây, đọc /usage rồi đổi về; tối đa 30 phút một lần, chỉ khi máy rảnh.",
+      "tags": [
+        "antigravity",
+        "tai-khoan"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/agy-tai-khoan.js",
+      "lineRange": [
+        276,
+        331
+      ]
+    },
+    {
+      "id": "step:doi-tai-khoan-agy:truoc-chay",
+      "type": "step",
+      "name": "Trả lại tài khoản đang mượn",
+      "summary": "Còn mượn để đọc hạn mức thì trả lại trước khi chạy agy.",
+      "tags": [
+        "antigravity",
+        "tai-khoan"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/agy-tai-khoan.js",
+      "lineRange": [
+        258,
+        272
+      ]
+    },
+    {
+      "id": "step:doi-tai-khoan-agy:tu-chuyen",
+      "type": "step",
+      "name": "Tự chuyển trước lượt",
+      "summary": "Tài khoản đang dùng dưới ngưỡng mà tài khoản kia còn nhiều hơn thì chuyển.",
+      "tags": [
+        "antigravity",
+        "tai-khoan"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/agy-tai-khoan.js",
+      "lineRange": [
+        215,
+        251
+      ]
+    },
+    {
+      "id": "step:doi-tai-khoan-agy:doi",
+      "type": "step",
+      "name": "Đổi tài khoản",
+      "summary": "Cất lại đăng nhập hiện tại, nạp bản đã cất, kiểm email; đang có agy chạy thì AGY_BUSY.",
+      "tags": [
+        "antigravity",
+        "tai-khoan"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/agy-tai-khoan.js",
+      "lineRange": [
+        151,
+        168
+      ]
+    },
+    {
+      "id": "step:doi-tai-khoan-agy:mot-cham",
+      "type": "step",
+      "name": "Đổi một chạm trên điện thoại",
+      "summary": "Khối tài khoản trong ngăn kéo ☰: đang dùng + % còn lại.",
+      "tags": [
+        "antigravity",
+        "tai-khoan"
+      ],
+      "complexity": "simple",
+      "filePath": "public/office-desk.js",
+      "lineRange": [
+        288,
+        302
+      ]
+    },
+    {
+      "id": "flow:bo-skill-mac-dinh",
+      "type": "flow",
+      "name": "Cài bộ skill mặc định cho cả ba AI",
+      "summary": "Văn phòng cài cùng một bộ skill ghim commit cho Claude, Codex và Antigravity, báo thiếu/cũ, không ghi đè skill người dùng tự cài, và nhắc mỗi lượt dùng skill khớp việc rồi khai trong bàn giao.",
+      "tags": [
+        "skill",
+        "ghim-commit"
+      ],
+      "complexity": "moderate",
+      "domainMeta": {
+        "entryPoint": "node tools/cai-skill.js cai / trang Repo & Skill; mỗi lượt AI (runner)",
+        "entryType": "cli"
+      }
+    },
+    {
+      "id": "step:bo-skill-mac-dinh:danh-muc",
+      "type": "step",
+      "name": "Đọc danh mục ghim commit",
+      "summary": "skill-mac-dinh.json + nguồn CEO duyệt thêm; nhóm A/B.",
+      "tags": [
+        "skill",
+        "ghim-commit"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/skill.js",
+      "lineRange": [
+        37,
+        45
+      ]
+    },
+    {
+      "id": "step:bo-skill-mac-dinh:lenh",
+      "type": "step",
+      "name": "Lệnh cài/kiểm",
+      "summary": "Không tham số thì báo thiếu/cũ; `cai` thì cài.",
+      "tags": [
+        "skill",
+        "ghim-commit"
+      ],
+      "complexity": "simple",
+      "filePath": "tools/cai-skill.js",
+      "lineRange": [
+        1,
+        23
+      ]
+    },
+    {
+      "id": "step:bo-skill-mac-dinh:tai",
+      "type": "step",
+      "name": "Tải đúng commit",
+      "summary": "git fetch --depth 1 đúng commit đã kiểm.",
+      "tags": [
+        "skill",
+        "ghim-commit"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/skill.js",
+      "lineRange": [
+        79,
+        89
+      ]
+    },
+    {
+      "id": "step:bo-skill-mac-dinh:cai",
+      "type": "step",
+      "name": "Chép cho 3 AI",
+      "summary": "Chép thư mục skill kèm dấu .vp-skill.json; không chạy file nào, không ghi đè skill của người dùng.",
+      "tags": [
+        "skill",
+        "ghim-commit"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/skill.js",
+      "lineRange": [
+        111,
+        139
+      ]
+    },
+    {
+      "id": "step:bo-skill-mac-dinh:nhac",
+      "type": "step",
+      "name": "Nhắc trong lời giao việc",
+      "summary": "Dùng skill nhóm A khớp việc của lượt.",
+      "tags": [
+        "skill",
+        "ghim-commit"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/skill.js",
+      "lineRange": [
+        158,
+        171
+      ]
+    },
+    {
+      "id": "step:bo-skill-mac-dinh:khai",
+      "type": "step",
+      "name": "Bàn giao khai skill_da_dung",
+      "summary": "Máy đã cài bộ skill thì bàn giao phải khai; rỗng phải có lý do.",
+      "tags": [
+        "skill",
+        "ghim-commit"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/skill.js",
+      "lineRange": [
+        177,
+        182
+      ]
+    },
+    {
+      "id": "flow:duyet-repo-skill",
+      "type": "flow",
+      "name": "Duyệt skill / MCP mới từ link GitHub",
+      "summary": "CEO dán link repo; văn phòng tải đúng một commit vào chỗ cách ly, máy rà, Claude đội trưởng đọc chỉ-đọc rồi giải thích và đề nghị; CEO duyệt mới cài (skill cho cả 3 AI, MCP vào máy) với commit/phiên bản đã xem, từ chối thì xoá bản tải.",
+      "tags": [
+        "skill",
+        "mcp",
+        "chuoi-cung-ung",
+        "duyet"
+      ],
+      "complexity": "complex",
+      "domainMeta": {
+        "entryPoint": "Trang Repo & Skill → POST /ctl/skill/de-xuat, POST /ctl/skill/de-xuat/:id/duyet|tu-choi|tham-khao",
+        "entryType": "http"
+      }
+    },
+    {
+      "id": "step:duyet-repo-skill:dan-link",
+      "type": "step",
+      "name": "CEO dán link",
+      "summary": "Chỉ nhận repo github.com, tách nhánh và thư mục.",
+      "tags": [
+        "skill",
+        "mcp"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/skill-duyet.js",
+      "lineRange": [
+        34,
+        47
+      ]
+    },
+    {
+      "id": "step:duyet-repo-skill:lay-commit",
+      "type": "step",
+      "name": "Tìm commit",
+      "summary": "git ls-remote nhánh hoặc HEAD.",
+      "tags": [
+        "skill",
+        "mcp"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/skill-duyet.js",
+      "lineRange": [
+        55,
+        65
+      ]
+    },
+    {
+      "id": "step:duyet-repo-skill:cach-ly",
+      "type": "step",
+      "name": "Tải vào chỗ cách ly",
+      "summary": "git init + fetch đúng commit; không chạy file nào.",
+      "tags": [
+        "skill",
+        "mcp"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/skill-duyet.js",
+      "lineRange": [
+        66,
+        74
+      ]
+    },
+    {
+      "id": "step:duyet-repo-skill:may-ra",
+      "type": "step",
+      "name": "Máy rà",
+      "summary": "Skill, script, hook, cấu hình MCP, gói npm, nhị phân, file dặn AI, tự chạy khi cài, điểm bất thường.",
+      "tags": [
+        "skill",
+        "mcp"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/skill-duyet.js",
+      "lineRange": [
+        82,
+        141
+      ]
+    },
+    {
+      "id": "step:duyet-repo-skill:npm",
+      "type": "step",
+      "name": "Tra gói npm của MCP",
+      "summary": "Phiên bản đủ tuổi, repo nguồn khớp, script cài.",
+      "tags": [
+        "skill",
+        "mcp"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/skill-duyet.js",
+      "lineRange": [
+        163,
+        192
+      ]
+    },
+    {
+      "id": "step:duyet-repo-skill:claude",
+      "type": "step",
+      "name": "Claude đội trưởng xem chỉ-đọc",
+      "summary": "Read/Grep/Glob, không MCP; giải thích và đề nghị nhóm A/B/không cài.",
+      "tags": [
+        "skill",
+        "mcp"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/skill-duyet.js",
+      "lineRange": [
+        280,
+        326
+      ]
+    },
+    {
+      "id": "step:duyet-repo-skill:hien",
+      "type": "step",
+      "name": "CEO xem kết quả",
+      "summary": "Trang Repo & Skill hiện máy rà, phần giải thích và nút quyết định.",
+      "tags": [
+        "skill",
+        "mcp"
+      ],
+      "complexity": "simple",
+      "filePath": "public/skill.html",
+      "lineRange": [
+        158,
+        182
+      ]
+    },
+    {
+      "id": "step:duyet-repo-skill:duyet",
+      "type": "step",
+      "name": "Duyệt cài skill",
+      "summary": "Ghim commit vào danh mục riêng, cài cho cả 3 AI bằng đúng bản đã tải.",
+      "tags": [
+        "skill",
+        "mcp"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/skill-duyet.js",
+      "lineRange": [
+        428,
+        448
+      ]
+    },
+    {
+      "id": "step:duyet-repo-skill:duyet-mcp",
+      "type": "step",
+      "name": "Duyệt cài MCP",
+      "summary": "Ghim gói/phiên bản vào mcp-them.json, cài vào máy, gắn phòng.",
+      "tags": [
+        "skill",
+        "mcp"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/skill-duyet.js",
+      "lineRange": [
+        386,
+        415
+      ]
+    },
+    {
+      "id": "step:duyet-repo-skill:tu-choi",
+      "type": "step",
+      "name": "Từ chối",
+      "summary": "Chỉ ghi nhận, xoá bản tải.",
+      "tags": [
+        "skill",
+        "mcp"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/skill-duyet.js",
+      "lineRange": [
+        450,
+        458
+      ]
+    },
+    {
+      "id": "flow:chrome-devtools-mcp",
+      "type": "flow",
+      "name": "Kiểm giao diện bằng Chrome thật (Chrome DevTools MCP)",
+      "summary": "CEO bấm Cài trên trang Kết nối (hoặc chạy tools/cai-chrome-devtools.js): văn phòng cài chrome-devtools-mcp đúng bản ghim vào thư mục dữ liệu; lượt Claude/Codex của phòng được bật (mặc định Sakura) nhận máy chủ MCP này với Chrome ẩn, hồ sơ tạm, không gửi thống kê.",
+      "tags": [
+        "mcp",
+        "chrome",
+        "kiem-thu-giao-dien"
+      ],
+      "complexity": "moderate",
+      "domainMeta": {
+        "entryPoint": "Trang Kết nối → POST /ctl/ket-noi/cai-may; bật cho phòng ở trang Kết nối",
+        "entryType": "http"
+      }
+    },
+    {
+      "id": "step:chrome-devtools-mcp:ghim",
+      "type": "step",
+      "name": "Ghim bản và cờ an toàn",
+      "summary": "chrome-devtools-mcp 1.12.0; --headless, --isolated, --no-usage-statistics, --no-performance-crux, --no-file-navigations…",
+      "tags": [
+        "mcp",
+        "chrome"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/chrome-devtools.js",
+      "lineRange": [
+        15,
+        19
+      ]
+    },
+    {
+      "id": "step:chrome-devtools-mcp:bam-cai",
+      "type": "step",
+      "name": "CEO bấm Cài trên máy",
+      "summary": "Trang Kết nối gọi /ket-noi/cai-may cho đúng kết nối này.",
+      "tags": [
+        "mcp",
+        "chrome"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/ket-noi.js",
+      "lineRange": [
+        120,
+        129
+      ]
+    },
+    {
+      "id": "step:chrome-devtools-mcp:npm",
+      "type": "step",
+      "name": "Cài từ npm không chạy script",
+      "summary": "npm install gói@phiên bản --ignore-scripts vào ~/.van-phong-ao/mcp/<id>.",
+      "tags": [
+        "mcp",
+        "chrome"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/mcp-may.js",
+      "lineRange": [
+        75,
+        88
+      ]
+    },
+    {
+      "id": "step:chrome-devtools-mcp:gan-luot",
+      "type": "step",
+      "name": "Gắn vào lượt của phòng được bật",
+      "summary": "Chỉ khi phòng bật và máy đã cài; Antigravity chưa nạp MCP nên không dùng.",
+      "tags": [
+        "mcp",
+        "chrome"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/runner.js",
+      "lineRange": [
+        147,
+        161
+      ]
+    },
+    {
+      "id": "step:chrome-devtools-mcp:lenh",
+      "type": "step",
+      "name": "Chạy bằng node + file của gói",
+      "summary": "Không npx; chưa cài thì lượt không có công cụ.",
+      "tags": [
+        "mcp",
+        "chrome"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/mcp-may.js",
+      "lineRange": [
+        68,
+        72
+      ]
+    },
+    {
+      "id": "step:chrome-devtools-mcp:cau-hinh",
+      "type": "step",
+      "name": "Đưa cấu hình cho CLI",
+      "summary": "Claude: file --mcp-config gộp theo phòng; Codex: cờ -c mcp_servers.*, tool_timeout_sec 180.",
+      "tags": [
+        "mcp",
+        "chrome"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/runner.js",
+      "lineRange": [
+        162,
+        184
+      ]
+    },
+    {
+      "id": "flow:tra-cuu-gemini",
+      "type": "flow",
+      "name": "Tra cứu miễn phí bằng Gemini",
+      "summary": "CEO lưu khóa Gemini AI Studio; từ đó lượt Claude/Codex có hai công cụ tim_kiem và doc_tai_lieu gọi Gemini thay cho tự đọc dài. Đầu vào bị chặn khóa, mã nguồn, chuỗi mã hóa và địa chỉ nội bộ; tối đa 200 lần/ngày.",
+      "tags": [
+        "gemini",
+        "tra-cuu",
+        "tiet-kiem-token",
+        "bao-mat"
+      ],
+      "complexity": "moderate",
+      "domainMeta": {
+        "entryPoint": "Thẻ Tài khoản AI → Lưu khóa Gemini (POST /api/accounts/save); AI gọi công cụ mcp__tra-cuu__*",
+        "entryType": "http"
+      }
+    },
+    {
+      "id": "step:tra-cuu-gemini:luu-khoa",
+      "type": "step",
+      "name": "Lưu khóa Gemini",
+      "summary": "Khóa AIza… lưu vào ~/.van-phong-ao/keys.json, không trả về trình duyệt.",
+      "tags": [
+        "gemini",
+        "tra-cuu"
+      ],
+      "complexity": "simple",
+      "filePath": "lib/keys.js",
+      "lineRange": [
+        17,
+        28
+      ]
+    },
+    {
+      "id": "step:tra-cuu-gemini:bat",
+      "type": "step",
+      "name": "Bật cho lượt khi có khóa",
+      "summary": "Có khóa và CEO không tắt thì gắn MCP tra-cuu.",
+      "tags": [
+        "gemini",
+        "tra-cuu"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/tra-cuu.js",
+      "lineRange": [
+        127,
+        130
+      ]
+    },
+    {
+      "id": "step:tra-cuu-gemini:mcp",
+      "type": "step",
+      "name": "Máy chủ MCP stdio",
+      "summary": "initialize, tools/list, tools/call cho tim_kiem / doc_tai_lieu.",
+      "tags": [
+        "gemini",
+        "tra-cuu"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/tra-cuu-mcp.js",
+      "lineRange": [
+        20,
+        36
+      ]
+    },
+    {
+      "id": "step:tra-cuu-gemini:chan-cau",
+      "type": "step",
+      "name": "Chặn câu hỏi",
+      "summary": "Dài quá, giống khóa/token, chuỗi mã hóa dài.",
+      "tags": [
+        "gemini",
+        "tra-cuu"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/tra-cuu.js",
+      "lineRange": [
+        29,
+        38
+      ]
+    },
+    {
+      "id": "step:tra-cuu-gemini:chan-link",
+      "type": "step",
+      "name": "Chặn link",
+      "summary": "Chỉ http(s) công khai; giải % từng lớp; chặn nội bộ, *.ts.net, tài khoản trong link.",
+      "tags": [
+        "gemini",
+        "tra-cuu"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/tra-cuu.js",
+      "lineRange": [
+        48,
+        72
+      ]
+    },
+    {
+      "id": "step:tra-cuu-gemini:goi",
+      "type": "step",
+      "name": "Gọi Gemini",
+      "summary": "Khóa qua header, có Google Search, ≤30 giây, thử lại khi bận; đếm 200 lần/ngày.",
+      "tags": [
+        "gemini",
+        "tra-cuu"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/tra-cuu.js",
+      "lineRange": [
+        84,
+        112
+      ]
+    },
+    {
+      "id": "flow:ve-ban-do",
+      "type": "flow",
+      "name": "Vẽ lại bản đồ hệ thống",
+      "summary": "Khi mã đổi nhiều: vẽ lại đồ thị bằng Understand Anything (/understand --full, /understand-domain, nội dung tiếng Việt, bỏ data/ và config.json), sinh docs/BAN-DO-HE-THONG.md bằng tools/ve-ban-do.js, kiểm mọi liên kết bằng test; repo dự án có đồ thị thì mỗi lượt AI nhận mục lục từ đó.",
+      "tags": [
+        "ban-do",
+        "tai-lieu",
+        "do-thi"
+      ],
+      "complexity": "simple",
+      "domainMeta": {
+        "entryPoint": "/understand --full, /understand-domain rồi node tools/ve-ban-do.js",
+        "entryType": "cli"
+      }
+    },
+    {
+      "id": "step:ve-ban-do:bo-qua",
+      "type": "step",
+      "name": "Bỏ dữ liệu riêng khỏi phân tích",
+      "summary": ".understandignore loại config.json, data/, scratch/ và chính kết quả .ua.",
+      "tags": [
+        "ban-do",
+        "tai-lieu"
+      ],
+      "complexity": "simple",
+      "filePath": ".ua/.understandignore",
+      "lineRange": [
+        1,
+        81
+      ]
+    },
+    {
+      "id": "step:ve-ban-do:sinh",
+      "type": "step",
+      "name": "Sinh trang bản đồ",
+      "summary": "Miền, workflow, bước trỏ file:dòng, lớp kiến trúc, lộ trình, điểm cần rà.",
+      "tags": [
+        "ban-do",
+        "tai-lieu"
+      ],
+      "complexity": "simple",
+      "filePath": "tools/ve-ban-do.js",
+      "lineRange": [
+        26,
+        158
+      ]
+    },
+    {
+      "id": "step:ve-ban-do:kiem",
+      "type": "step",
+      "name": "Kiểm liên kết và dữ liệu riêng",
+      "summary": "Mọi liên kết trỏ tới file/dòng có thật; đồ thị không trỏ vào data/ hay config.json.",
+      "tags": [
+        "ban-do",
+        "tai-lieu"
+      ],
+      "complexity": "simple",
+      "filePath": "test/ban-do.test.js",
+      "lineRange": [
+        1,
+        41
+      ]
+    },
+    {
+      "id": "step:ve-ban-do:muc-luc",
+      "type": "step",
+      "name": "Dùng trong lượt AI",
+      "summary": "Runner đưa mục lục từ đồ thị của repo dự án vào prompt; báo khi đồ thị lệch commit.",
+      "tags": [
+        "ban-do",
+        "tai-lieu"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/muc-luc.js",
+      "lineRange": [
+        81,
+        94
+      ]
+    },
+    {
+      "id": "step:mot-luot-ai:dieu-phoi",
+      "type": "step",
+      "name": "Chọn model, mức và mục lục",
+      "summary": "Runner hỏi bộ điều phối (model + mức theo độ khó, hạn mức), thêm mục lục từ bản đồ .ua, bộ skill, MCP theo phòng và MCP trên máy; đổi tài khoản Antigravity nếu cần.",
+      "tags": [
+        "runner",
+        "handoff"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/runner.js",
+      "lineRange": [
+        288,
+        312
+      ]
+    },
+    {
+      "id": "step:mot-luot-ai:hop-dong",
+      "type": "step",
+      "name": "Kiểm hợp đồng giao tiếp",
+      "summary": "Lỗi lệch hợp đồng thuộc phần của vai được cộng vào bàn giao.",
+      "tags": [
+        "runner",
+        "handoff"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/runner.js",
+      "lineRange": [
+        357,
+        372
+      ]
+    },
+    {
+      "id": "step:luong-tu-dong:song-song",
+      "type": "step",
+      "name": "Lượt Astra: chạy song song khi có hợp đồng",
+      "summary": "Hợp đồng đạt thì Astra + Kakashi chạy cùng lúc trong hai worktree rồi gộp.",
+      "tags": [
+        "autopilot",
+        "tick"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/autopilot.js",
+      "lineRange": [
+        351,
+        361
+      ]
+    },
+    {
+      "id": "step:theo-doi-han-muc:tai-khoan-agy",
+      "type": "step",
+      "name": "Hạn mức theo từng tài khoản Antigravity",
+      "summary": "Ghi hạn mức cho đúng tài khoản đang đăng nhập và đọc tài khoản nghỉ.",
+      "tags": [
+        "han-muc",
+        "quota"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/quotas.js",
+      "lineRange": [
+        202,
+        210
+      ]
+    },
+    {
+      "id": "step:ket-noi-mcp:mcp-may",
+      "type": "step",
+      "name": "MCP chạy trên máy",
+      "summary": "Chrome DevTools và MCP CEO duyệt thêm: cài đúng bản ghim, chỉ gắn vào lượt của phòng được bật.",
+      "tags": [
+        "mcp",
+        "ket-noi"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/ket-noi.js",
+      "lineRange": [
+        120,
+        129
+      ]
+    },
+    {
+      "id": "step:cai-bo-kiem:kiem-hop-dong",
+      "type": "step",
+      "name": "Kèm bộ kiểm hợp đồng",
+      "summary": "Chép lib/kiem-hop-dong.js thành tools/kiem-hop-dong.js; workflow chạy nó với --neu-co.",
+      "tags": [
+        "bo-kiem",
+        "worktree"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/bo-kiem.js",
+      "lineRange": [
+        18,
+        18
+      ]
+    },
+    {
+      "id": "flow:doi-tai-khoan-gpt",
+      "type": "flow",
+      "name": "Nhiều tài khoản GPT cho Codex và tự chuyển khi cạn",
+      "summary": "CEO thêm tài khoản GPT và tự đăng nhập bằng codex login văn phòng mở; mỗi tài khoản một CODEX_HOME dùng chung cấu hình với ~/.codex. Mỗi tiến trình Codex chạy bằng tài khoản đang chọn lúc khởi chạy; văn phòng đọc hạn mức mọi tài khoản, tự chuyển trước lượt khi sắp cạn và đổi ngay khi lượt báo hết hạn mức.",
+      "tags": [
+        "codex",
+        "tai-khoan",
+        "han-muc"
+      ],
+      "complexity": "complex",
+      "domainMeta": {
+        "entryPoint": "Mục Hạn mức / menu ☰ trên điện thoại → POST /ctl/codex-tai-khoan/*; runner trước lượt Codex",
+        "entryType": "http"
+      }
+    },
+    {
+      "id": "step:doi-tai-khoan-gpt:them",
+      "type": "step",
+      "name": "Thêm tài khoản",
+      "summary": "Tạo thư mục CODEX_HOME riêng; không chép file đăng nhập.",
+      "tags": [
+        "codex",
+        "tai-khoan"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/codex-tai-khoan.js",
+      "lineRange": [
+        74,
+        86
+      ]
+    },
+    {
+      "id": "step:doi-tai-khoan-gpt:dong-bo",
+      "type": "step",
+      "name": "Dùng chung cấu hình với ~/.codex",
+      "summary": "Chép config.toml, AGENTS.md; nối skills, plugins, sandbox.",
+      "tags": [
+        "codex",
+        "tai-khoan"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/codex-tai-khoan.js",
+      "lineRange": [
+        46,
+        63
+      ]
+    },
+    {
+      "id": "step:doi-tai-khoan-gpt:dang-nhap",
+      "type": "step",
+      "name": "CEO đăng nhập",
+      "summary": "Văn phòng mở codex login với CODEX_HOME đó, CEO bấm link trên trình duyệt.",
+      "tags": [
+        "codex",
+        "tai-khoan"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/codex-tai-khoan.js",
+      "lineRange": [
+        90,
+        115
+      ]
+    },
+    {
+      "id": "step:doi-tai-khoan-gpt:doc-han-muc",
+      "type": "step",
+      "name": "Đọc hạn mức mọi tài khoản",
+      "summary": "app-server với CODEX_HOME riêng từng tài khoản, kèm email/gói.",
+      "tags": [
+        "codex",
+        "tai-khoan"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/quotas.js",
+      "lineRange": [
+        187,
+        199
+      ]
+    },
+    {
+      "id": "step:doi-tai-khoan-gpt:truoc-luot",
+      "type": "step",
+      "name": "Tự chuyển trước lượt",
+      "summary": "Tài khoản đang dùng ≤ ngưỡng thì sang tài khoản còn nhiều nhất.",
+      "tags": [
+        "codex",
+        "tai-khoan"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/codex-tai-khoan.js",
+      "lineRange": [
+        201,
+        210
+      ]
+    },
+    {
+      "id": "step:doi-tai-khoan-gpt:env",
+      "type": "step",
+      "name": "Tiến trình nhận CODEX_HOME lúc khởi chạy",
+      "summary": "Bộ chạy việc thêm biến của tài khoản đang chọn khi spawn.",
+      "tags": [
+        "codex",
+        "tai-khoan"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/codex-tai-khoan.js",
+      "lineRange": [
+        66,
+        71
+      ]
+    },
+    {
+      "id": "step:doi-tai-khoan-gpt:het-han-muc",
+      "type": "step",
+      "name": "Hết hạn mức: đổi ngay",
+      "summary": "Đánh dấu cạn, đổi tài khoản; luồng tự động chạy lại lượt ở nhịp kế tiếp.",
+      "tags": [
+        "codex",
+        "tai-khoan"
+      ],
+      "complexity": "simple",
+      "filePath": "ctl/codex-tai-khoan.js",
+      "lineRange": [
+        213,
+        222
+      ]
+    },
+    {
+      "id": "step:doi-tai-khoan-gpt:mot-cham",
+      "type": "step",
+      "name": "Đổi một chạm",
+      "summary": "Bảng tài khoản GPT trong mục Hạn mức và menu điện thoại.",
+      "tags": [
+        "codex",
+        "tai-khoan"
+      ],
+      "complexity": "simple",
+      "filePath": "public/office-desk.js",
+      "lineRange": [
+        257,
+        281
+      ]
+    },
+    {
+      "id": "step:giao-viec-ca-doi:mot-vai-doc-luot",
+      "type": "step",
+      "name": "Nút ⚡ đọc lượt hiện tại",
+      "summary": "Bấm ⚡ “Giao việc một vai”: hộp thoại gọi desk.turnNow() (GET /ctl/workspaces, /ctl/ai/status) để hiện dự án, vai đang giữ NEXT_OWNER và lý do chưa chạy được (đang có lượt chạy, bàn giao chờ duyệt, vai chưa có CLI); chỉ vai giữ lượt chọn được. Quyền viết mã vượt vai theo đặc cách CEO ghi ở Vùng [4.1] của agent.md.",
+      "tags": [
+        "giao-viec",
+        "autopilot"
+      ],
+      "complexity": "simple",
+      "filePath": "public/index.html",
+      "lineRange": [
+        819,
+        823
+      ]
+    },
+    {
+      "id": "step:giao-viec-ca-doi:mot-vai-chay",
+      "type": "step",
+      "name": "Chạy một lượt AI của vai giữ lượt",
+      "summary": "desk.runTurn(role, task) gọi POST /ctl/ai/run {workspace, role, task}; runner chặn NOT_YOUR_TURN, AI_BUSY, HANDOFF_PENDING, NO_CLI và lỗi được đưa nguyên lên hộp thoại, không báo thành công giả.",
+      "tags": [
+        "giao-viec",
+        "autopilot"
+      ],
+      "complexity": "simple",
+      "filePath": "public/office-desk.js",
+      "lineRange": [
+        723,
+        729
+      ]
     }
   ],
   "edges": [
@@ -4799,6 +6701,1042 @@
       "source": "domain:cai-dat-van-hanh",
       "target": "flow:cai-dat-lan-dau",
       "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:cai-dat-van-hanh",
+      "target": "flow:mo-app",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:cai-dat-van-hanh",
+      "target": "flow:cap-nhat-app",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:cai-dat-van-hanh",
+      "target": "flow:nang-cap-so-ctl",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:cai-dat-van-hanh",
+      "target": "flow:xem-dien-thoai",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:cai-dat-van-hanh",
+      "target": "flow:ghep-dien-thoai",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:cai-dat-van-hanh",
+      "target": "flow:luu-khoa-tai-khoan",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:theo-doi-doi-ai",
+      "target": "flow:trang-thai-realtime",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:theo-doi-doi-ai",
+      "target": "flow:danh-gia-nhan-su",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:theo-doi-doi-ai",
+      "target": "flow:tong-quan-giam-doc",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:theo-doi-doi-ai",
+      "target": "flow:tien-do-du-an",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:theo-doi-doi-ai",
+      "target": "flow:theo-doi-han-muc",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:theo-doi-doi-ai",
+      "target": "flow:nhat-ky-van-phong",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:giao-tiep-ceo-doi",
+      "target": "flow:chat-nhan-vat",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:so-dieu-phoi",
+      "target": "flow:hom-thu",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:so-dieu-phoi",
+      "target": "flow:luot-dev",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:so-dieu-phoi",
+      "target": "flow:can-anh",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:so-dieu-phoi",
+      "target": "flow:viec-goi-tien-do",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:so-dieu-phoi",
+      "target": "flow:bai-hoc",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:chu-trinh-ai",
+      "target": "flow:giao-y-tuong",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:chu-trinh-ai",
+      "target": "flow:tao-du-an-moi",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:chu-trinh-ai",
+      "target": "flow:luong-tu-dong",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:chu-trinh-ai",
+      "target": "flow:mot-luot-ai",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:chu-trinh-ai",
+      "target": "flow:hop-dong-giao-tiep",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:chu-trinh-ai",
+      "target": "flow:mien-hop-dong",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:chu-trinh-ai",
+      "target": "flow:song-song-astra-kakashi",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:chu-trinh-ai",
+      "target": "flow:claude-hoi-ceo",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:chu-trinh-ai",
+      "target": "flow:het-han-muc",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:chu-trinh-ai",
+      "target": "flow:ngat-mach-bao-cao",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:chu-trinh-ai",
+      "target": "flow:duyet-day-nhanh",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:chu-trinh-ai",
+      "target": "flow:xoa-file-trong-luong",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:chu-trinh-ai",
+      "target": "flow:ket-noi-mcp",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:dieu-khien-may",
+      "target": "flow:chay-lenh",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:dieu-khien-may",
+      "target": "flow:phanh-khan-cap",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:dieu-khien-may",
+      "target": "flow:workspace-repo",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:dieu-khien-may",
+      "target": "flow:nap-repo-moi",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:dieu-khien-may",
+      "target": "flow:sua-file",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:dieu-khien-may",
+      "target": "flow:ra-soat-toan-quyen",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:chat-luong-phat-hanh",
+      "target": "flow:kiem-chu-trinh",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:chat-luong-phat-hanh",
+      "target": "flow:kiem-chu-trinh-ci",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:chat-luong-phat-hanh",
+      "target": "flow:cai-bo-kiem",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:chat-luong-phat-hanh",
+      "target": "flow:xuat-ban-du-an",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:chat-luong-phat-hanh",
+      "target": "flow:phat-hanh-app",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:chat-luong-phat-hanh",
+      "target": "flow:ve-ban-do",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:giao-tiep-ceo-doi",
+      "target": "flow:giao-viec-ca-doi",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:giao-tiep-ceo-doi",
+      "target": "flow:dieu-khien-tu-dien-thoai",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:nang-luc-doi",
+      "target": "flow:dieu-phoi-model",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:nang-luc-doi",
+      "target": "flow:doi-tai-khoan-agy",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:nang-luc-doi",
+      "target": "flow:doi-tai-khoan-gpt",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:nang-luc-doi",
+      "target": "flow:bo-skill-mac-dinh",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:nang-luc-doi",
+      "target": "flow:duyet-repo-skill",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:nang-luc-doi",
+      "target": "flow:chrome-devtools-mcp",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "domain:nang-luc-doi",
+      "target": "flow:tra-cuu-gemini",
+      "type": "contains_flow",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "flow:doi-tai-khoan-gpt",
+      "target": "step:doi-tai-khoan-gpt:them",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.13
+    },
+    {
+      "source": "flow:doi-tai-khoan-gpt",
+      "target": "step:doi-tai-khoan-gpt:dong-bo",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.25
+    },
+    {
+      "source": "flow:doi-tai-khoan-gpt",
+      "target": "step:doi-tai-khoan-gpt:dang-nhap",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.38
+    },
+    {
+      "source": "flow:doi-tai-khoan-gpt",
+      "target": "step:doi-tai-khoan-gpt:doc-han-muc",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "flow:doi-tai-khoan-gpt",
+      "target": "step:doi-tai-khoan-gpt:truoc-luot",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.63
+    },
+    {
+      "source": "flow:doi-tai-khoan-gpt",
+      "target": "step:doi-tai-khoan-gpt:env",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.75
+    },
+    {
+      "source": "flow:doi-tai-khoan-gpt",
+      "target": "step:doi-tai-khoan-gpt:het-han-muc",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.88
+    },
+    {
+      "source": "flow:doi-tai-khoan-gpt",
+      "target": "step:doi-tai-khoan-gpt:mot-cham",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "flow:ghep-dien-thoai",
+      "target": "step:ghep-dien-thoai:duong-vao",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.14
+    },
+    {
+      "source": "flow:ghep-dien-thoai",
+      "target": "step:ghep-dien-thoai:can-khoa-xem",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.29
+    },
+    {
+      "source": "flow:ghep-dien-thoai",
+      "target": "step:ghep-dien-thoai:tao-ma",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.43
+    },
+    {
+      "source": "flow:ghep-dien-thoai",
+      "target": "step:ghep-dien-thoai:nhap-ma",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.57
+    },
+    {
+      "source": "flow:ghep-dien-thoai",
+      "target": "step:ghep-dien-thoai:ghep",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.71
+    },
+    {
+      "source": "flow:ghep-dien-thoai",
+      "target": "step:ghep-dien-thoai:cookie",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.86
+    },
+    {
+      "source": "flow:ghep-dien-thoai",
+      "target": "step:ghep-dien-thoai:quan-ly",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "flow:tao-du-an-moi",
+      "target": "step:tao-du-an-moi:nhap-y-tuong",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.14
+    },
+    {
+      "source": "flow:tao-du-an-moi",
+      "target": "step:tao-du-an-moi:goi-y",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.29
+    },
+    {
+      "source": "flow:tao-du-an-moi",
+      "target": "step:tao-du-an-moi:kiem-ten",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.43
+    },
+    {
+      "source": "flow:tao-du-an-moi",
+      "target": "step:tao-du-an-moi:duyet",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.57
+    },
+    {
+      "source": "flow:tao-du-an-moi",
+      "target": "step:tao-du-an-moi:tao-repo",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.71
+    },
+    {
+      "source": "flow:tao-du-an-moi",
+      "target": "step:tao-du-an-moi:khoi-dong",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.86
+    },
+    {
+      "source": "flow:tao-du-an-moi",
+      "target": "step:tao-du-an-moi:theo-doi",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "flow:hop-dong-giao-tiep",
+      "target": "step:hop-dong-giao-tiep:luat",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.17
+    },
+    {
+      "source": "flow:hop-dong-giao-tiep",
+      "target": "step:hop-dong-giao-tiep:kiem-cau-truc",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.33
+    },
+    {
+      "source": "flow:hop-dong-giao-tiep",
+      "target": "step:hop-dong-giao-tiep:sau-luot",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "flow:hop-dong-giao-tiep",
+      "target": "step:hop-dong-giao-tiep:kiem-lech",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.67
+    },
+    {
+      "source": "flow:hop-dong-giao-tiep",
+      "target": "step:hop-dong-giao-tiep:ci",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.83
+    },
+    {
+      "source": "flow:hop-dong-giao-tiep",
+      "target": "step:hop-dong-giao-tiep:smoke",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "flow:mien-hop-dong",
+      "target": "step:mien-hop-dong:de-nghi",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.17
+    },
+    {
+      "source": "flow:mien-hop-dong",
+      "target": "step:mien-hop-dong:hoi",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.33
+    },
+    {
+      "source": "flow:mien-hop-dong",
+      "target": "step:mien-hop-dong:nguyen-van",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "flow:mien-hop-dong",
+      "target": "step:mien-hop-dong:tra-loi",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.67
+    },
+    {
+      "source": "flow:mien-hop-dong",
+      "target": "step:mien-hop-dong:ghi-so",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.83
+    },
+    {
+      "source": "flow:mien-hop-dong",
+      "target": "step:mien-hop-dong:bo-loi",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "flow:song-song-astra-kakashi",
+      "target": "step:song-song-astra-kakashi:dieu-kien",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.13
+    },
+    {
+      "source": "flow:song-song-astra-kakashi",
+      "target": "step:song-song-astra-kakashi:bat-dau",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.25
+    },
+    {
+      "source": "flow:song-song-astra-kakashi",
+      "target": "step:song-song-astra-kakashi:worktree",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.38
+    },
+    {
+      "source": "flow:song-song-astra-kakashi",
+      "target": "step:song-song-astra-kakashi:chay-ben",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "flow:song-song-astra-kakashi",
+      "target": "step:song-song-astra-kakashi:pham-vi",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.63
+    },
+    {
+      "source": "flow:song-song-astra-kakashi",
+      "target": "step:song-song-astra-kakashi:theo-doi",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.75
+    },
+    {
+      "source": "flow:song-song-astra-kakashi",
+      "target": "step:song-song-astra-kakashi:gop",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.88
+    },
+    {
+      "source": "flow:song-song-astra-kakashi",
+      "target": "step:song-song-astra-kakashi:don",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "flow:ve-ban-do",
+      "target": "step:ve-ban-do:bo-qua",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.25
+    },
+    {
+      "source": "flow:ve-ban-do",
+      "target": "step:ve-ban-do:sinh",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "flow:ve-ban-do",
+      "target": "step:ve-ban-do:kiem",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.75
+    },
+    {
+      "source": "flow:ve-ban-do",
+      "target": "step:ve-ban-do:muc-luc",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "flow:dieu-khien-tu-dien-thoai",
+      "target": "step:dieu-khien-tu-dien-thoai:mo-app",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.13
+    },
+    {
+      "source": "flow:dieu-khien-tu-dien-thoai",
+      "target": "step:dieu-khien-tu-dien-thoai:chon-duong",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.25
+    },
+    {
+      "source": "flow:dieu-khien-tu-dien-thoai",
+      "target": "step:dieu-khien-tu-dien-thoai:nhan-dien",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.38
+    },
+    {
+      "source": "flow:dieu-khien-tu-dien-thoai",
+      "target": "step:dieu-khien-tu-dien-thoai:xac-thuc",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "flow:dieu-khien-tu-dien-thoai",
+      "target": "step:dieu-khien-tu-dien-thoai:danh-sach",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.63
+    },
+    {
+      "source": "flow:dieu-khien-tu-dien-thoai",
+      "target": "step:dieu-khien-tu-dien-thoai:ep-an-toan",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.75
+    },
+    {
+      "source": "flow:dieu-khien-tu-dien-thoai",
+      "target": "step:dieu-khien-tu-dien-thoai:chuyen-ctl",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.88
+    },
+    {
+      "source": "flow:dieu-khien-tu-dien-thoai",
+      "target": "step:dieu-khien-tu-dien-thoai:nhat-ky",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "flow:dieu-phoi-model",
+      "target": "step:dieu-phoi-model:cham",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.14
+    },
+    {
+      "source": "flow:dieu-phoi-model",
+      "target": "step:dieu-phoi-model:han-muc",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.29
+    },
+    {
+      "source": "flow:dieu-phoi-model",
+      "target": "step:dieu-phoi-model:quyet",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.43
+    },
+    {
+      "source": "flow:dieu-phoi-model",
+      "target": "step:dieu-phoi-model:chen-co",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.57
+    },
+    {
+      "source": "flow:dieu-phoi-model",
+      "target": "step:dieu-phoi-model:muc-luc",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.71
+    },
+    {
+      "source": "flow:dieu-phoi-model",
+      "target": "step:dieu-phoi-model:ds-model",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.86
+    },
+    {
+      "source": "flow:dieu-phoi-model",
+      "target": "step:dieu-phoi-model:ceo-chon",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "flow:doi-tai-khoan-agy",
+      "target": "step:doi-tai-khoan-agy:cat",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.14
+    },
+    {
+      "source": "flow:doi-tai-khoan-agy",
+      "target": "step:doi-tai-khoan-agy:script",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.29
+    },
+    {
+      "source": "flow:doi-tai-khoan-agy",
+      "target": "step:doi-tai-khoan-agy:doc-nghi",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.43
+    },
+    {
+      "source": "flow:doi-tai-khoan-agy",
+      "target": "step:doi-tai-khoan-agy:truoc-chay",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.57
+    },
+    {
+      "source": "flow:doi-tai-khoan-agy",
+      "target": "step:doi-tai-khoan-agy:tu-chuyen",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.71
+    },
+    {
+      "source": "flow:doi-tai-khoan-agy",
+      "target": "step:doi-tai-khoan-agy:doi",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.86
+    },
+    {
+      "source": "flow:doi-tai-khoan-agy",
+      "target": "step:doi-tai-khoan-agy:mot-cham",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "flow:bo-skill-mac-dinh",
+      "target": "step:bo-skill-mac-dinh:danh-muc",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.17
+    },
+    {
+      "source": "flow:bo-skill-mac-dinh",
+      "target": "step:bo-skill-mac-dinh:lenh",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.33
+    },
+    {
+      "source": "flow:bo-skill-mac-dinh",
+      "target": "step:bo-skill-mac-dinh:tai",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "flow:bo-skill-mac-dinh",
+      "target": "step:bo-skill-mac-dinh:cai",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.67
+    },
+    {
+      "source": "flow:bo-skill-mac-dinh",
+      "target": "step:bo-skill-mac-dinh:nhac",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.83
+    },
+    {
+      "source": "flow:bo-skill-mac-dinh",
+      "target": "step:bo-skill-mac-dinh:khai",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "flow:duyet-repo-skill",
+      "target": "step:duyet-repo-skill:dan-link",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.1
+    },
+    {
+      "source": "flow:duyet-repo-skill",
+      "target": "step:duyet-repo-skill:lay-commit",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.2
+    },
+    {
+      "source": "flow:duyet-repo-skill",
+      "target": "step:duyet-repo-skill:cach-ly",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.3
+    },
+    {
+      "source": "flow:duyet-repo-skill",
+      "target": "step:duyet-repo-skill:may-ra",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.4
+    },
+    {
+      "source": "flow:duyet-repo-skill",
+      "target": "step:duyet-repo-skill:npm",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "flow:duyet-repo-skill",
+      "target": "step:duyet-repo-skill:claude",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "flow:duyet-repo-skill",
+      "target": "step:duyet-repo-skill:hien",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "flow:duyet-repo-skill",
+      "target": "step:duyet-repo-skill:duyet",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "flow:duyet-repo-skill",
+      "target": "step:duyet-repo-skill:duyet-mcp",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.9
+    },
+    {
+      "source": "flow:duyet-repo-skill",
+      "target": "step:duyet-repo-skill:tu-choi",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "flow:chrome-devtools-mcp",
+      "target": "step:chrome-devtools-mcp:ghim",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.17
+    },
+    {
+      "source": "flow:chrome-devtools-mcp",
+      "target": "step:chrome-devtools-mcp:bam-cai",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.33
+    },
+    {
+      "source": "flow:chrome-devtools-mcp",
+      "target": "step:chrome-devtools-mcp:npm",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "flow:chrome-devtools-mcp",
+      "target": "step:chrome-devtools-mcp:gan-luot",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.67
+    },
+    {
+      "source": "flow:chrome-devtools-mcp",
+      "target": "step:chrome-devtools-mcp:lenh",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.83
+    },
+    {
+      "source": "flow:chrome-devtools-mcp",
+      "target": "step:chrome-devtools-mcp:cau-hinh",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "flow:tra-cuu-gemini",
+      "target": "step:tra-cuu-gemini:luu-khoa",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.17
+    },
+    {
+      "source": "flow:tra-cuu-gemini",
+      "target": "step:tra-cuu-gemini:bat",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.33
+    },
+    {
+      "source": "flow:tra-cuu-gemini",
+      "target": "step:tra-cuu-gemini:mcp",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "flow:tra-cuu-gemini",
+      "target": "step:tra-cuu-gemini:chan-cau",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.67
+    },
+    {
+      "source": "flow:tra-cuu-gemini",
+      "target": "step:tra-cuu-gemini:chan-link",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.83
+    },
+    {
+      "source": "flow:tra-cuu-gemini",
+      "target": "step:tra-cuu-gemini:goi",
+      "type": "flow_step",
       "direction": "forward",
       "weight": 1
     },
@@ -4848,13 +7786,6 @@
       "source": "flow:cai-dat-lan-dau",
       "target": "step:cai-dat-lan-dau:kiem-state",
       "type": "flow_step",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "domain:cai-dat-van-hanh",
-      "target": "flow:mo-app",
-      "type": "contains_flow",
       "direction": "forward",
       "weight": 1
     },
@@ -4911,13 +7842,6 @@
       "source": "flow:mo-app",
       "target": "step:mo-app:tat-an-toan",
       "type": "flow_step",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "domain:cai-dat-van-hanh",
-      "target": "flow:cap-nhat-app",
-      "type": "contains_flow",
       "direction": "forward",
       "weight": 1
     },
@@ -4985,13 +7909,6 @@
       "weight": 1
     },
     {
-      "source": "domain:cai-dat-van-hanh",
-      "target": "flow:nang-cap-so-ctl",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "flow:nang-cap-so-ctl",
       "target": "step:nang-cap-so-ctl:mo-so",
       "type": "flow_step",
@@ -5027,13 +7944,6 @@
       "weight": 1
     },
     {
-      "source": "domain:cai-dat-van-hanh",
-      "target": "flow:xem-dien-thoai",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "flow:xem-dien-thoai",
       "target": "step:xem-dien-thoai:kiem-dieu-kien",
       "type": "flow_step",
@@ -5060,13 +7970,6 @@
       "type": "flow_step",
       "direction": "forward",
       "weight": 0.4
-    },
-    {
-      "source": "domain:cai-dat-van-hanh",
-      "target": "flow:luu-khoa-tai-khoan",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
     },
     {
       "source": "flow:luu-khoa-tai-khoan",
@@ -5100,13 +8003,6 @@
       "source": "flow:luu-khoa-tai-khoan",
       "target": "step:luu-khoa-tai-khoan:tra-trang-thai",
       "type": "flow_step",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "domain:theo-doi-doi-ai",
-      "target": "flow:trang-thai-realtime",
-      "type": "contains_flow",
       "direction": "forward",
       "weight": 1
     },
@@ -5167,13 +8063,6 @@
       "weight": 1
     },
     {
-      "source": "domain:theo-doi-doi-ai",
-      "target": "flow:danh-gia-nhan-su",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "flow:danh-gia-nhan-su",
       "target": "step:danh-gia-nhan-su:quet-nhat-ky",
       "type": "flow_step",
@@ -5212,13 +8101,6 @@
       "source": "flow:danh-gia-nhan-su",
       "target": "step:danh-gia-nhan-su:hien-bang",
       "type": "flow_step",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "domain:theo-doi-doi-ai",
-      "target": "flow:tong-quan-giam-doc",
-      "type": "contains_flow",
       "direction": "forward",
       "weight": 1
     },
@@ -5265,13 +8147,6 @@
       "weight": 1
     },
     {
-      "source": "domain:theo-doi-doi-ai",
-      "target": "flow:tien-do-du-an",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "flow:tien-do-du-an",
       "target": "step:tien-do-du-an:chon-du-an",
       "type": "flow_step",
@@ -5314,13 +8189,6 @@
       "weight": 1
     },
     {
-      "source": "domain:theo-doi-doi-ai",
-      "target": "flow:theo-doi-han-muc",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "flow:theo-doi-han-muc",
       "target": "step:theo-doi-han-muc:den-han",
       "type": "flow_step",
@@ -5356,13 +8224,6 @@
       "weight": 1
     },
     {
-      "source": "domain:theo-doi-doi-ai",
-      "target": "flow:nhat-ky-van-phong",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "flow:nhat-ky-van-phong",
       "target": "step:nhat-ky-van-phong:doc-log-job",
       "type": "flow_step",
@@ -5387,13 +8248,6 @@
       "source": "flow:nhat-ky-van-phong",
       "target": "step:nhat-ky-van-phong:hien-nhat-ky",
       "type": "flow_step",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "domain:giao-tiep-ceo-doi",
-      "target": "flow:chat-nhan-vat",
-      "type": "contains_flow",
       "direction": "forward",
       "weight": 1
     },
@@ -5440,13 +8294,6 @@
       "weight": 1
     },
     {
-      "source": "domain:so-dieu-phoi",
-      "target": "flow:hom-thu",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "flow:hom-thu",
       "target": "step:hom-thu:gui-tin",
       "type": "flow_step",
@@ -5478,13 +8325,6 @@
       "source": "flow:hom-thu",
       "target": "step:hom-thu:xem-nghen",
       "type": "flow_step",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "domain:so-dieu-phoi",
-      "target": "flow:luot-dev",
-      "type": "contains_flow",
       "direction": "forward",
       "weight": 1
     },
@@ -5524,13 +8364,6 @@
       "weight": 1
     },
     {
-      "source": "domain:so-dieu-phoi",
-      "target": "flow:can-anh",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "flow:can-anh",
       "target": "step:can-anh:ghi-cau-hoi",
       "type": "flow_step",
@@ -5555,13 +8388,6 @@
       "source": "flow:can-anh",
       "target": "step:can-anh:dong",
       "type": "flow_step",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "domain:so-dieu-phoi",
-      "target": "flow:viec-goi-tien-do",
-      "type": "contains_flow",
       "direction": "forward",
       "weight": 1
     },
@@ -5608,13 +8434,6 @@
       "weight": 1
     },
     {
-      "source": "domain:so-dieu-phoi",
-      "target": "flow:bai-hoc",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "flow:bai-hoc",
       "target": "step:bai-hoc:luat",
       "type": "flow_step",
@@ -5650,13 +8469,6 @@
       "weight": 1
     },
     {
-      "source": "domain:chu-trinh-ai",
-      "target": "flow:giao-y-tuong",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "flow:giao-y-tuong",
       "target": "step:giao-y-tuong:luu",
       "type": "flow_step",
@@ -5688,13 +8500,6 @@
       "source": "flow:giao-y-tuong",
       "target": "step:giao-y-tuong:bat-luong",
       "type": "flow_step",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "domain:chu-trinh-ai",
-      "target": "flow:luong-tu-dong",
-      "type": "contains_flow",
       "direction": "forward",
       "weight": 1
     },
@@ -5769,13 +8574,6 @@
       "weight": 1
     },
     {
-      "source": "domain:chu-trinh-ai",
-      "target": "flow:mot-luot-ai",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "flow:mot-luot-ai",
       "target": "step:mot-luot-ai:kiem-luot",
       "type": "flow_step",
@@ -5839,13 +8637,6 @@
       "weight": 1
     },
     {
-      "source": "domain:chu-trinh-ai",
-      "target": "flow:claude-hoi-ceo",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "flow:claude-hoi-ceo",
       "target": "step:claude-hoi-ceo:dat-cau-hoi",
       "type": "flow_step",
@@ -5884,13 +8675,6 @@
       "source": "flow:claude-hoi-ceo",
       "target": "step:claude-hoi-ceo:chay-tiep",
       "type": "flow_step",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "domain:chu-trinh-ai",
-      "target": "flow:het-han-muc",
-      "type": "contains_flow",
       "direction": "forward",
       "weight": 1
     },
@@ -5951,13 +8735,6 @@
       "weight": 1
     },
     {
-      "source": "domain:chu-trinh-ai",
-      "target": "flow:ngat-mach-bao-cao",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "flow:ngat-mach-bao-cao",
       "target": "step:ngat-mach-bao-cao:dieu-kien",
       "type": "flow_step",
@@ -5996,13 +8773,6 @@
       "source": "flow:ngat-mach-bao-cao",
       "target": "step:ngat-mach-bao-cao:ceo-dung",
       "type": "flow_step",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "domain:chu-trinh-ai",
-      "target": "flow:duyet-day-nhanh",
-      "type": "contains_flow",
       "direction": "forward",
       "weight": 1
     },
@@ -6049,13 +8819,6 @@
       "weight": 1
     },
     {
-      "source": "domain:chu-trinh-ai",
-      "target": "flow:xoa-file-trong-luong",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "flow:xoa-file-trong-luong",
       "target": "step:xoa-file-trong-luong:khai-bao",
       "type": "flow_step",
@@ -6098,13 +8861,6 @@
       "weight": 1
     },
     {
-      "source": "domain:chu-trinh-ai",
-      "target": "flow:ket-noi-mcp",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "flow:ket-noi-mcp",
       "target": "step:ket-noi-mcp:doc-trang-thai",
       "type": "flow_step",
@@ -6143,13 +8899,6 @@
       "source": "flow:ket-noi-mcp",
       "target": "step:ket-noi-mcp:chen-vao-luot",
       "type": "flow_step",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "domain:dieu-khien-may",
-      "target": "flow:chay-lenh",
-      "type": "contains_flow",
       "direction": "forward",
       "weight": 1
     },
@@ -6203,13 +8952,6 @@
       "weight": 1
     },
     {
-      "source": "domain:dieu-khien-may",
-      "target": "flow:phanh-khan-cap",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "flow:phanh-khan-cap",
       "target": "step:phanh-khan-cap:bam-phanh",
       "type": "flow_step",
@@ -6248,13 +8990,6 @@
       "source": "flow:phanh-khan-cap",
       "target": "step:phanh-khan-cap:tat-ctl",
       "type": "flow_step",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "domain:dieu-khien-may",
-      "target": "flow:workspace-repo",
-      "type": "contains_flow",
       "direction": "forward",
       "weight": 1
     },
@@ -6301,13 +9036,6 @@
       "weight": 1
     },
     {
-      "source": "domain:dieu-khien-may",
-      "target": "flow:nap-repo-moi",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "flow:nap-repo-moi",
       "target": "step:nap-repo-moi:dang-ky",
       "type": "flow_step",
@@ -6350,13 +9078,6 @@
       "weight": 1
     },
     {
-      "source": "domain:dieu-khien-may",
-      "target": "flow:sua-file",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "flow:sua-file",
       "target": "step:sua-file:liet-ke",
       "type": "flow_step",
@@ -6388,13 +9109,6 @@
       "source": "flow:sua-file",
       "target": "step:sua-file:ghi-nguyen-tu",
       "type": "flow_step",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "domain:dieu-khien-may",
-      "target": "flow:ra-soat-toan-quyen",
-      "type": "contains_flow",
       "direction": "forward",
       "weight": 1
     },
@@ -6448,13 +9162,6 @@
       "weight": 1
     },
     {
-      "source": "domain:chat-luong-phat-hanh",
-      "target": "flow:kiem-chu-trinh",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "flow:kiem-chu-trinh",
       "target": "step:kiem-chu-trinh:chup-truoc",
       "type": "flow_step",
@@ -6497,13 +9204,6 @@
       "weight": 1
     },
     {
-      "source": "domain:chat-luong-phat-hanh",
-      "target": "flow:kiem-chu-trinh-ci",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "flow:kiem-chu-trinh-ci",
       "target": "step:kiem-chu-trinh-ci:kich-hoat",
       "type": "flow_step",
@@ -6542,13 +9242,6 @@
       "source": "flow:kiem-chu-trinh-ci",
       "target": "step:kiem-chu-trinh-ci:chay-test",
       "type": "flow_step",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "domain:chat-luong-phat-hanh",
-      "target": "flow:cai-bo-kiem",
-      "type": "contains_flow",
       "direction": "forward",
       "weight": 1
     },
@@ -6609,13 +9302,6 @@
       "weight": 1
     },
     {
-      "source": "domain:chat-luong-phat-hanh",
-      "target": "flow:xuat-ban-du-an",
-      "type": "contains_flow",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
       "source": "flow:xuat-ban-du-an",
       "target": "step:xuat-ban-du-an:bat-dau",
       "type": "flow_step",
@@ -6661,13 +9347,6 @@
       "source": "flow:xuat-ban-du-an",
       "target": "step:xuat-ban-du-an:kich-github",
       "type": "flow_step",
-      "direction": "forward",
-      "weight": 1
-    },
-    {
-      "source": "domain:chat-luong-phat-hanh",
-      "target": "flow:phat-hanh-app",
-      "type": "contains_flow",
       "direction": "forward",
       "weight": 1
     },
@@ -6719,6 +9398,97 @@
       "type": "flow_step",
       "direction": "forward",
       "weight": 1
+    },
+    {
+      "source": "flow:giao-viec-ca-doi",
+      "target": "step:giao-viec-ca-doi:mo-ban-giao-viec",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.1
+    },
+    {
+      "source": "flow:giao-viec-ca-doi",
+      "target": "step:giao-viec-ca-doi:bat-luong-tu-dong",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.2
+    },
+    {
+      "source": "flow:giao-viec-ca-doi",
+      "target": "step:giao-viec-ca-doi:liet-ke",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.3
+    },
+    {
+      "source": "flow:giao-viec-ca-doi",
+      "target": "step:giao-viec-ca-doi:hien-canh-bao",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.4
+    },
+    {
+      "source": "flow:giao-viec-ca-doi",
+      "target": "step:giao-viec-ca-doi:dung-viec",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "flow:mot-luot-ai",
+      "target": "step:mot-luot-ai:dieu-phoi",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.25
+    },
+    {
+      "source": "flow:mot-luot-ai",
+      "target": "step:mot-luot-ai:hop-dong",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.95
+    },
+    {
+      "source": "flow:luong-tu-dong",
+      "target": "step:luong-tu-dong:song-song",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.65
+    },
+    {
+      "source": "flow:theo-doi-han-muc",
+      "target": "step:theo-doi-han-muc:tai-khoan-agy",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.7
+    },
+    {
+      "source": "flow:ket-noi-mcp",
+      "target": "step:ket-noi-mcp:mcp-may",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.75
+    },
+    {
+      "source": "flow:cai-bo-kiem",
+      "target": "step:cai-bo-kiem:kiem-hop-dong",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.85
+    },
+    {
+      "source": "flow:giao-viec-ca-doi",
+      "target": "step:giao-viec-ca-doi:mot-vai-doc-luot",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.21
+    },
+    {
+      "source": "flow:giao-viec-ca-doi",
+      "target": "step:giao-viec-ca-doi:mot-vai-chay",
+      "type": "flow_step",
+      "direction": "forward",
+      "weight": 0.22
     },
     {
       "source": "domain:cai-dat-van-hanh",
@@ -6817,60 +9587,44 @@
       "weight": 0.6
     },
     {
+      "source": "domain:nang-luc-doi",
+      "target": "domain:chu-trinh-ai",
+      "type": "cross_domain",
+      "direction": "forward",
+      "description": "mỗi lượt AI nhận model + mức suy nghĩ, mục lục từ bản đồ, bộ skill, MCP theo phòng/trên máy và công cụ tra cứu; tài khoản Antigravity đổi trước lượt khi cạn",
+      "weight": 0.6
+    },
+    {
+      "source": "domain:theo-doi-doi-ai",
+      "target": "domain:nang-luc-doi",
+      "type": "cross_domain",
+      "direction": "forward",
+      "description": "ảnh chụp hạn mức cho bộ điều phối hạ bậc model và cho tài khoản Antigravity tự chuyển",
+      "weight": 0.6
+    },
+    {
       "source": "domain:giao-tiep-ceo-doi",
-      "target": "flow:giao-viec-ca-doi",
-      "type": "contains_flow",
+      "target": "domain:chu-trinh-ai",
+      "type": "cross_domain",
       "direction": "forward",
-      "weight": 1.0
+      "description": "điện thoại đã ghép giao việc, duyệt/trả bàn giao, trả lời câu hỏi và tạo dự án mới qua /dkx/api → /autopilot, /handoffs, /du-an-moi",
+      "weight": 0.6
     },
     {
-      "source": "flow:giao-viec-ca-doi",
-      "target": "step:giao-viec-ca-doi:mo-ban-giao-viec",
-      "type": "flow_step",
+      "source": "domain:cai-dat-van-hanh",
+      "target": "domain:giao-tiep-ceo-doi",
+      "type": "cross_domain",
       "direction": "forward",
-      "weight": 0.1
+      "description": "đường vào Tailscale/Cloudflare và mã ghép cấp khóa thiết bị cho kênh điều khiển /dkx",
+      "weight": 0.6
     },
     {
-      "source": "flow:giao-viec-ca-doi",
-      "target": "step:giao-viec-ca-doi:bat-luong-tu-dong",
-      "type": "flow_step",
+      "source": "domain:chat-luong-phat-hanh",
+      "target": "domain:nang-luc-doi",
+      "type": "cross_domain",
       "direction": "forward",
-      "weight": 0.2
-    },
-    {
-      "source": "flow:giao-viec-ca-doi",
-      "target": "step:giao-viec-ca-doi:mot-vai-doc-luot",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.21
-    },
-    {
-      "source": "flow:giao-viec-ca-doi",
-      "target": "step:giao-viec-ca-doi:mot-vai-chay",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.22
-    },
-    {
-      "source": "flow:giao-viec-ca-doi",
-      "target": "step:giao-viec-ca-doi:liet-ke",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.3
-    },
-    {
-      "source": "flow:giao-viec-ca-doi",
-      "target": "step:giao-viec-ca-doi:hien-canh-bao",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.4
-    },
-    {
-      "source": "flow:giao-viec-ca-doi",
-      "target": "step:giao-viec-ca-doi:dung-viec",
-      "type": "flow_step",
-      "direction": "forward",
-      "weight": 0.5
+      "description": "bản đồ .ua vẽ lại là nguồn mục lục đưa vào prompt mỗi lượt AI",
+      "weight": 0.6
     }
   ],
   "layers": [],
