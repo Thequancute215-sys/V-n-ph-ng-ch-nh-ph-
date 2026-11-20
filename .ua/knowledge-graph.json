@@ -17,8 +17,8 @@
       "GitHub Actions"
     ],
     "description": "Văn phòng AI 3D chạy tại chỗ, chỉ đọc, giúp theo dõi phiên làm việc của đội AI (Claude Code, Codex, Antigravity) cùng sổ điều phối data/, kèm OS Controller riêng chạy lệnh, lượt AI và luồng tự động theo giao thức agent.md (hợp đồng giao tiếp, chạy song song backend/frontend, điều phối model, bộ skill, MCP trên máy, tra cứu Gemini) trong các workspace đã đăng ký, và điều khiển từ điện thoại đã ghép; không cần thư viện npm bên ngoài.",
-    "analyzedAt": "2026-11-20T04:34:19.517Z",
-    "gitCommitHash": "1fbe53ca856fbd62ce32f2360009a1582dd317c9"
+    "analyzedAt": "2026-11-20T05:30:46.536Z",
+    "gitCommitHash": "b239f2a05af8a9644e68bc8a0c6a3c31dfdd507e"
   },
   "nodes": [
     {
@@ -3401,7 +3401,7 @@
       "filePath": "public/office-desk.js",
       "lineRange": [
         49,
-        719
+        732
       ],
       "summary": "Dựng bàn điều phối: tạo toolbar và dialog, quản lý trạng thái (runs, jobs, handoffs, quotas, scan, publish, journal…), các hàm render từng mục, đồng bộ NPC, xử lý sự kiện duyệt/trả lời/đẩy nhánh/xuất bản/rà soát/mở repo GitHub; trả { syncTurn }.",
       "tags": [
@@ -6548,7 +6548,7 @@
       "type": "file",
       "name": "index.html",
       "filePath": "public/index.html",
-      "summary": "Màn hình chính “Văn phòng AI 3D” (phục vụ ở “/”): cảnh 3D đi WASD dựng bằng vanphong3d.js, office-desk.js và thoitiet.js (three@0.160.0 qua importmap), thanh trên, sidebar, nút 📢 “Giao việc cả đội” mở mục giao việc thật (/ctl/autopilot), task đang chạy có phanh, chat với nhân vật (qua /ctl hoặc /dkx tùy máy), thẻ tài khoản AI kèm ô khóa Gemini cho tra cứu, và nút “Giao việc riêng cho một AI” gửi việc thật qua chat của phòng đó (việc cần sửa file thì nút “Giao cả đội” điền prompt vào mục giao việc của bàn làm việc). Chạy toàn màn hình khi mở từ biểu tượng iPhone.",
+      "summary": "Màn hình chính “Văn phòng AI 3D” (phục vụ ở “/”): cảnh 3D đi WASD dựng bằng vanphong3d.js, office-desk.js và thoitiet.js (three@0.160.0 qua importmap), thanh trên, sidebar, nút 📢 “Giao việc cả đội” mở mục giao việc thật (/ctl/autopilot), task đang chạy có phanh, chat với nhân vật (qua /ctl hoặc /dkx tùy máy), thẻ tài khoản AI kèm ô khóa Gemini cho tra cứu, và nút ⚡ “Giao việc một vai” chạy đúng một lượt AI thật (/ctl/ai/run) cho vai đang giữ NEXT_OWNER. Chạy toàn màn hình khi mở từ biểu tượng iPhone.",
       "tags": [
         "entry-point",
         "giao-dien-3d",
@@ -6566,8 +6566,8 @@
       "name": "refreshRunningTasks",
       "filePath": "public/index.html",
       "lineRange": [
-        835,
-        890
+        860,
+        915
       ],
       "summary": "Đọc GET /api/running-tasks, đếm task trạng thái running, đổi màu nút cảnh báo khi có task chạy lâu (isWarning) và dựng danh sách task kèm nút dừng.",
       "tags": [
@@ -6583,8 +6583,8 @@
       "name": "renderChat",
       "filePath": "public/index.html",
       "lineRange": [
-        972,
-        991
+        997,
+        1016
       ],
       "summary": "Vẽ khung chat với nhân vật đang chọn từ chatState (tin nhắn, trạng thái bận, lỗi).",
       "tags": [

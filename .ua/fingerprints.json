@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "gitCommitHash": "1fbe53ca856fbd62ce32f2360009a1582dd317c9",
-  "generatedAt": "2026-11-20T04:34:19.517Z",
+  "gitCommitHash": "b239f2a05af8a9644e68bc8a0c6a3c31dfdd507e",
+  "generatedAt": "2026-11-20T05:30:46.536Z",
   "files": {
     ".gitattributes": {
       "filePath": ".gitattributes",
@@ -75,12 +75,12 @@
     },
     "README.md": {
       "filePath": "README.md",
-      "contentHash": "cb004da9279c09835fc301d2756966d5cf48265fd6b2db494d880793391ac90b",
+      "contentHash": "dd8f630459a47a5675a037b036161a0dce2a392a0a3c351d9c392ac36ab61d5b",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 494,
+      "totalLines": 495,
       "hasStructuralAnalysis": false
     },
     "YEU-CAU-SUA-LOI-CLAUDE.md": {
@@ -95,7 +95,7 @@
     },
     "agent.md": {
       "filePath": "agent.md",
-      "contentHash": "c3e6141f7a3533588888436bf108ca010220fea4be04c9b0c74f20f74dc5358c",
+      "contentHash": "91832c21be704b651a6d269358abe6f5cf2bbb3f0fbf1e3204e4bce43ff35fe3",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -4424,12 +4424,12 @@
     },
     "public/index.html": {
       "filePath": "public/index.html",
-      "contentHash": "2e7628e74e3679fce89757a89f196dd35cbb65719ae8fcaa2c8bafb756b29c8e",
+      "contentHash": "887f2a1ceaed9d2902d11aa69941bdf493251e43fb66b34c7daaa04d5341374c",
       "functions": [],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 1178,
+      "totalLines": 1194,
       "hasStructuralAnalysis": false
     },
     "public/ket-noi.html": {
@@ -4509,7 +4509,7 @@
     },
     "public/office-desk.js": {
       "filePath": "public/office-desk.js",
-      "contentHash": "5c901bce22e04ce748f001dfcfa7606477cbdbff54b8a38e40cb89f592574c7b",
+      "contentHash": "216c01214658b9bac555f44bd87fd7f4b08d3241c6822fe341e48341d89b9ede",
       "functions": [
         {
           "name": "$",
@@ -4587,13 +4587,13 @@
             "getOffice"
           ],
           "exported": false,
-          "lineCount": 671
+          "lineCount": 684
         }
       ],
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 720,
+      "totalLines": 733,
       "hasStructuralAnalysis": true
     },
     "public/offline.html": {
@@ -7609,7 +7609,7 @@
     },
     "test/van-phong-sach.test.js": {
       "filePath": "test/van-phong-sach.test.js",
-      "contentHash": "6439a0e5eb058e7d6150a616a74cdc7b87466a38bdc87ddc8950a11da5b95dd3",
+      "contentHash": "38adea3ca1c164d7c9c860998bd7a6d223248423c8849b8332083322a82cf099",
       "functions": [
         {
           "name": "read",
@@ -7656,7 +7656,7 @@
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 104,
+      "totalLines": 130,
       "hasStructuralAnalysis": true
     },
     "test/xuat-ban.test.js": {
@@ -7758,7 +7758,7 @@
     },
     "tools/ve-ban-do.js": {
       "filePath": "tools/ve-ban-do.js",
-      "contentHash": "cb2a364d43b963b91431cb7a6a4ced4f6cfc614dc43792f9ca6fc6ae42cc9be7",
+      "contentHash": "3e25ac61c9cea71c5b6809cdf651d23d8cf658d00d69a2c27f0f2cd244cc7dad",
       "functions": [
         {
           "name": "read",

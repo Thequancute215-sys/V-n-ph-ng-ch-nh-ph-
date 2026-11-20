@@ -1,6 +1,6 @@
 # Bản đồ hệ thống Văn phòng AI — từ workflow tới mã nguồn
 
-> Sinh tự động bằng `node tools/ve-ban-do.js` từ `.ua/domain-graph.json` (workflow nghiệp vụ) và `.ua/knowledge-graph.json` (bản đồ hệ thống) do Understand Anything vẽ tại commit `1fbe53c`. Mã đổi nhiều thì vẽ lại đồ thị (`/understand`, `/understand-domain`) rồi chạy lại lệnh trên; đừng sửa tay trang này.
+> Sinh tự động bằng `node tools/ve-ban-do.js` từ `.ua/domain-graph.json` (workflow nghiệp vụ) và `.ua/knowledge-graph.json` (bản đồ hệ thống) do Understand Anything vẽ tại commit `b239f2a`. Mã đổi nhiều thì vẽ lại đồ thị (`/understand`, `/understand-domain`) rồi chạy lại lệnh trên; đừng sửa tay trang này.
 
 **Bản tương tác** (bấm vào từng node, xem quan hệ, đi theo lộ trình): trong repo chạy `/understand-dashboard` của plugin Understand Anything (Claude Code), hoặc lệnh `npx` trong README của dự án Understand Anything. Lệnh đó tải và chạy mã của bên thứ ba: chỉ chạy khi anh tin nguồn; đọc các sơ đồ dưới đây trên GitHub thì không cần.
 
@@ -491,31 +491,31 @@ Các kênh Giám đốc nói chuyện với đội AI mà không phá khóa lư�
 flowchart TD
   subgraph flow_chat_nhan_vat["Chat với nhân vật AI"]
     direction LR
-    step_chat_nhan_vat_giao_rieng["1. Giao việc riêng cho một AI"]
-    step_chat_nhan_vat_gui_tin["2. CEO gửi tin cho một nhân vật"]
-    step_chat_nhan_vat_kiem_tin["3. Kiểm tin và trạng thái bận"]
-    step_chat_nhan_vat_dung_prompt["4. Dựng prompt theo phạm vi phòng"]
-    step_chat_nhan_vat_chay_cli["5. Chạy CLI chỉ đọc như job “cmd”"]
-    step_chat_nhan_vat_xu_ly_tra_loi["6. Xử lý câu trả lời hoặc lỗi"]
-    step_chat_nhan_vat_giao_ca_doi["7. Việc cần sửa file: giao cả đội"]
-    step_chat_nhan_vat_luu_lich_su["8. Lưu lịch sử chat.json"]
-    step_chat_nhan_vat_giao_rieng --> step_chat_nhan_vat_gui_tin
+    step_chat_nhan_vat_gui_tin["1. CEO gửi tin cho một nhân vật"]
+    step_chat_nhan_vat_kiem_tin["2. Kiểm tin và trạng thái bận"]
+    step_chat_nhan_vat_dung_prompt["3. Dựng prompt theo phạm vi phòng"]
+    step_chat_nhan_vat_chay_cli["4. Chạy CLI chỉ đọc như job “cmd”"]
+    step_chat_nhan_vat_xu_ly_tra_loi["5. Xử lý câu trả lời hoặc lỗi"]
+    step_chat_nhan_vat_luu_lich_su["6. Lưu lịch sử chat.json"]
     step_chat_nhan_vat_gui_tin --> step_chat_nhan_vat_kiem_tin
     step_chat_nhan_vat_kiem_tin --> step_chat_nhan_vat_dung_prompt
     step_chat_nhan_vat_dung_prompt --> step_chat_nhan_vat_chay_cli
     step_chat_nhan_vat_chay_cli --> step_chat_nhan_vat_xu_ly_tra_loi
-    step_chat_nhan_vat_xu_ly_tra_loi --> step_chat_nhan_vat_giao_ca_doi
-    step_chat_nhan_vat_giao_ca_doi --> step_chat_nhan_vat_luu_lich_su
+    step_chat_nhan_vat_xu_ly_tra_loi --> step_chat_nhan_vat_luu_lich_su
   end
-  subgraph flow_giao_viec_ca_doi["Giao việc cả đội & dừng việc đang chạy"]
+  subgraph flow_giao_viec_ca_doi["Giao việc cả đội hoặc một vai & dừng việc đang chạy"]
     direction LR
     step_giao_viec_ca_doi_mo_ban_giao_viec["1. Nút 📢 mở mục Giao việc cho cả đội"]
     step_giao_viec_ca_doi_bat_luong_tu_dong["2. Gửi việc vào luồng tự động thật"]
-    step_giao_viec_ca_doi_liet_ke["3. Liệt kê việc đang chạy thật"]
-    step_giao_viec_ca_doi_hien_canh_bao["4. Hiện danh sách và cảnh báo chạy lâu"]
-    step_giao_viec_ca_doi_dung_viec["5. Dừng một việc hoặc tất cả"]
+    step_giao_viec_ca_doi_mot_vai_doc_luot["3. Nút ⚡ đọc lượt hiện tại"]
+    step_giao_viec_ca_doi_mot_vai_chay["4. Chạy một lượt AI của vai giữ lượt"]
+    step_giao_viec_ca_doi_liet_ke["5. Liệt kê việc đang chạy thật"]
+    step_giao_viec_ca_doi_hien_canh_bao["6. Hiện danh sách và cảnh báo chạy lâu"]
+    step_giao_viec_ca_doi_dung_viec["7. Dừng một việc hoặc tất cả"]
     step_giao_viec_ca_doi_mo_ban_giao_viec --> step_giao_viec_ca_doi_bat_luong_tu_dong
-    step_giao_viec_ca_doi_bat_luong_tu_dong --> step_giao_viec_ca_doi_liet_ke
+    step_giao_viec_ca_doi_bat_luong_tu_dong --> step_giao_viec_ca_doi_mot_vai_doc_luot
+    step_giao_viec_ca_doi_mot_vai_doc_luot --> step_giao_viec_ca_doi_mot_vai_chay
+    step_giao_viec_ca_doi_mot_vai_chay --> step_giao_viec_ca_doi_liet_ke
     step_giao_viec_ca_doi_liet_ke --> step_giao_viec_ca_doi_hien_canh_bao
     step_giao_viec_ca_doi_hien_canh_bao --> step_giao_viec_ca_doi_dung_viec
   end
@@ -545,24 +545,24 @@ flowchart TD
 
 CEO bấm một nhân vật trong văn phòng 3D để hỏi; câu hỏi chạy CLI chỉ đọc theo phạm vi phòng, có thể gợi ý chuyển phòng hoặc soạn prompt giao việc. — *Kích hoạt:* `Bấm nhân vật trong văn phòng 3D → POST /ctl/chat` (http).
 
-1. **Giao việc riêng cho một AI** — Nút ⚡ trên thanh trên: chọn AI và gõ việc; văn phòng mở chat của phòng đó và gửi thật qua /ctl/chat (thay hộp “Đặc cách” giả). [`public/index.html:801`](../public/index.html#L801-L814)
-2. **CEO gửi tin cho một nhân vật** — index.html renderChat → POST /ctl/chat qua cầu /ctl (chỉ từ chính máy); trả 202. [`ctl/main.js:251`](../ctl/main.js#L251-L251)
-3. **Kiểm tin và trạng thái bận** — chat.send: tin ≤ 4000 ký tự, mỗi người chỉ một câu đang chờ. [`ctl/chat.js:85`](../ctl/chat.js#L85-L107)
-4. **Dựng prompt theo phạm vi phòng** — promptFor: vai, phạm vi, danh sách phòng, luật chỉ đọc, ba cách trả lời, dòng JSON kết thúc bắt buộc, 6 tin gần nhất làm ngữ cảnh. [`ctl/chat.js:32`](../ctl/chat.js#L32-L53)
-5. **Chạy CLI chỉ đọc như job “cmd”** — runner.chatArgv thay {prompt}; job không chặn lượt AI chính của workspace. [`ctl/runner.js:544`](../ctl/runner.js#L544-L553)
-6. **Xử lý câu trả lời hoặc lỗi** — finish: hết hạn mức/timeout/lỗi CLI thì báo kèm đuôi log đã che; ngược lại responseText + parseReply tách dòng JSON chuyen_phong/prompt (bỏ phòng lạ hoặc chuyển cho chính mình). [`ctl/chat.js:109`](../ctl/chat.js#L109-L129)
-7. **Việc cần sửa file: giao cả đội** — AI soạn prompt giao việc; nút “Giao cả đội” mở mục giao việc của bàn làm việc và điền sẵn để CEO tự bấm giao (luồng tự động). [`public/index.html:1020`](../public/index.html#L1020-L1028)
-8. **Lưu lịch sử chat.json** — Giữ tối đa 40 tin mỗi người; tin đang chờ khi app tắt thành lỗi lúc khởi động lại. [`ctl/chat.js:72`](../ctl/chat.js#L72-L140)
+1. **CEO gửi tin cho một nhân vật** — index.html renderChat → POST /ctl/chat qua cầu /ctl (chỉ từ chính máy); trả 202. [`ctl/main.js:251`](../ctl/main.js#L251-L251)
+2. **Kiểm tin và trạng thái bận** — chat.send: tin ≤ 4000 ký tự, mỗi người chỉ một câu đang chờ. [`ctl/chat.js:85`](../ctl/chat.js#L85-L107)
+3. **Dựng prompt theo phạm vi phòng** — promptFor: vai, phạm vi, danh sách phòng, luật chỉ đọc, ba cách trả lời, dòng JSON kết thúc bắt buộc, 6 tin gần nhất làm ngữ cảnh. [`ctl/chat.js:32`](../ctl/chat.js#L32-L53)
+4. **Chạy CLI chỉ đọc như job “cmd”** — runner.chatArgv thay {prompt}; job không chặn lượt AI chính của workspace. [`ctl/runner.js:544`](../ctl/runner.js#L544-L553)
+5. **Xử lý câu trả lời hoặc lỗi** — finish: hết hạn mức/timeout/lỗi CLI thì báo kèm đuôi log đã che; ngược lại responseText + parseReply tách dòng JSON chuyen_phong/prompt (bỏ phòng lạ hoặc chuyển cho chính mình). [`ctl/chat.js:109`](../ctl/chat.js#L109-L129)
+6. **Lưu lịch sử chat.json** — Giữ tối đa 40 tin mỗi người; tin đang chờ khi app tắt thành lỗi lúc khởi động lại. [`ctl/chat.js:72`](../ctl/chat.js#L72-L140)
 
-#### Giao việc cả đội & dừng việc đang chạy
+#### Giao việc cả đội hoặc một vai & dừng việc đang chạy
 
-Giám đốc giao một việc cho cả đội từ thanh trên của văn phòng 3D: nút 📢 mở mục giao việc thật của bàn làm việc (luồng tự động /ctl/autopilot); văn phòng liệt kê việc OS Controller đang chạy và cho dừng từng việc hoặc tất cả. — *Kích hoạt:* `Nút 📢 Giao việc cả đội trên index.html → mục Giao việc của bàn làm việc → POST /ctl/autopilot` (http).
+Giám đốc giao việc từ thanh trên của văn phòng 3D: nút 📢 mở mục giao việc thật của bàn làm việc (luồng tự động /ctl/autopilot); nút ⚡ chạy đúng một lượt AI cho vai đang giữ NEXT_OWNER (/ctl/ai/run); văn phòng liệt kê việc OS Controller đang chạy và cho dừng từng việc hoặc tất cả. — *Kích hoạt:* `Nút 📢 Giao việc cả đội → POST /ctl/autopilot; nút ⚡ Giao việc một vai → POST /ctl/ai/run (index.html)` (http).
 
-1. **Nút 📢 mở mục Giao việc cho cả đội** — Bấm 📢 "Giao việc cả đội" trên thanh trên: mở thẳng mục giao việc của bàn làm việc (nút data-desk="assign"), không còn hộp gợi ý theo từ khóa. [`public/index.html:820`](../public/index.html#L820-L823)
+1. **Nút 📢 mở mục Giao việc cho cả đội** — Bấm 📢 "Giao việc cả đội" trên thanh trên: mở thẳng mục giao việc của bàn làm việc (nút data-desk="assign"), không còn hộp gợi ý theo từ khóa. [`public/index.html:845`](../public/index.html#L845-L848)
 2. **Gửi việc vào luồng tự động thật** — Bàn làm việc gọi POST /ctl/autopilot {workspace, task}: đội Hinata → Sol → Astra → Claude làm trên nhánh riêng, Claude báo cáo cho CEO duyệt (xem workflow "Luồng tự động"). [`public/office-desk.js:620`](../public/office-desk.js#L620-L620)
-3. **Liệt kê việc đang chạy thật** — GET /api/running-tasks: chỉ các việc OS Controller đang chạy (lượt AI, lệnh), có pid; gắn cờ cảnh báo quá 10 phút. [`server.js:714`](../server.js#L714-L728)
-4. **Hiện danh sách và cảnh báo chạy lâu** — refreshRunningTasks đếm việc đang chạy, đổi màu nút cảnh báo, dựng danh sách có nút dừng từng việc. [`public/index.html:835`](../public/index.html#L835-L890)
-5. **Dừng một việc hoặc tất cả** — POST /api/kill-task: chuyển sang OS Controller dừng cả cây tiến trình; ctl không chạy thì báo 503, không giả vờ đã dừng. [`server.js:731`](../server.js#L731-L749)
+3. **Nút ⚡ đọc lượt hiện tại** — Bấm ⚡ “Giao việc một vai”: hộp thoại gọi desk.turnNow() (GET /ctl/workspaces, /ctl/ai/status) để hiện dự án, vai đang giữ NEXT_OWNER và lý do chưa chạy được (đang có lượt chạy, bàn giao chờ duyệt, vai chưa có CLI); chỉ vai giữ lượt chọn được. [`public/index.html:819`](../public/index.html#L819-L823)
+4. **Chạy một lượt AI của vai giữ lượt** — desk.runTurn(role, task) gọi POST /ctl/ai/run {workspace, role, task}; runner chặn NOT_YOUR_TURN, AI_BUSY, HANDOFF_PENDING, NO_CLI và lỗi được đưa nguyên lên hộp thoại, không báo thành công giả. [`public/office-desk.js:723`](../public/office-desk.js#L723-L729)
+5. **Liệt kê việc đang chạy thật** — GET /api/running-tasks: chỉ các việc OS Controller đang chạy (lượt AI, lệnh), có pid; gắn cờ cảnh báo quá 10 phút. [`server.js:714`](../server.js#L714-L728)
+6. **Hiện danh sách và cảnh báo chạy lâu** — refreshRunningTasks đếm việc đang chạy, đổi màu nút cảnh báo, dựng danh sách có nút dừng từng việc. [`public/index.html:860`](../public/index.html#L860-L915)
+7. **Dừng một việc hoặc tất cả** — POST /api/kill-task: chuyển sang OS Controller dừng cả cây tiến trình; ctl không chạy thì báo 503, không giả vờ đã dừng. [`server.js:731`](../server.js#L731-L749)
 
 #### Điều khiển văn phòng từ điện thoại đã ghép
 
@@ -2047,11 +2047,11 @@ Bộ node --test (49 tệp) chạy trong CI mỗi PR và trước khi phát hàn
 
 Vẽ lại toàn bộ ngày 19/11/2026 (thêm miền "Năng lực & tài nguyên của đội AI" và 14 workflow mới: ghép và điều khiển từ điện thoại, dự án mới, hợp đồng giao tiếp, miễn hợp đồng, chạy song song Astra + Kakashi, điều phối model, tài khoản Antigravity, tài khoản GPT cho Codex (vẽ thêm 20/11 sau khi PR #59 vào main), bộ skill, duyệt repo skill, Chrome DevTools, tra cứu Gemini, vẽ lại bản đồ). Các điểm phát hiện lần này đều đã sửa:
 
-1. **Nút "Phân việc ngoài lề (Đặc cách)" là thao tác giả — đã thay.** Trước đây nó chỉ hiện bong bóng và báo "đã ghi nhận vào sổ điều phối và hòm thư" mà không gửi gì. Nay là nút **"Giao việc riêng cho một AI"** (`public/index.html`): chọn AI, gõ việc, văn phòng mở chat của phòng đó và gửi thật qua `/ctl/chat` (chỉ đọc, đúng vai). Việc cần sửa file thì AI soạn prompt và nút **"Giao cả đội"** điền sẵn vào mục giao việc của bàn làm việc để anh tự bấm giao (luồng tự động). Không có quyền "đặc cách" vượt giao thức agent.md, vì runner và CI vẫn chặn lượt sai vai.
+1. **Nút "Phân việc ngoài lề (Đặc cách)" là thao tác giả — đã làm thật (PR #58).** Trước đây nó chỉ hiện bong bóng và báo "đã ghi nhận vào sổ điều phối và hòm thư" mà không gửi gì; ô "Bypass Codex" không có tác dụng. Nay nút ⚡ **"Giao việc một vai"** (`public/index.html`) đọc lượt thật từ ctl và chạy đúng một lượt AI qua `POST /ctl/ai/run` cho vai đang giữ NEXT_OWNER; ctl chặn vai sai lượt, lỗi hiện nguyên văn. Quyền viết mã vượt vai chỉ theo đặc cách CEO ghi ở Vùng [4.1] của agent.md; `test/van-phong-sach.test.js` chặn hộp giả quay lại.
 2. **CLAUDE.md/AGENTS.md nay liệt kê đủ đường mạng ra ngoài** (hai file giống hệt nhau): tra cứu Gemini (`ctl/tra-cuu.js`); GitHub API và `git push` lên repo của CEO (`ctl/github.js`, `ctl/nhanh.js`, `ctl/bo-kiem.js`, `ctl/xuat-ban.js`); Claude CLI gợi ý tên repo (`ctl/du-an-moi.js`); `git fetch`/`npm view` khi duyệt skill (`ctl/skill-duyet.js`, `ctl/skill.js`); `npm install` MCP ghim bản (`ctl/mcp-may.js`). Thêm đường mới phải được CEO duyệt và ghi vào đó.
 3. **IP trong nhật ký điện thoại không còn tin tiêu đề do máy khác tự gửi.** `ipOf` (`lib/dieu-khien-xa.js`) chỉ đọc tiêu đề proxy khi yêu cầu nối từ chính máy (đường hầm chạy trên máy). Qua Tailscale nó lấy phần tử cuối của X-Forwarded-For (do `tailscale serve` thêm) và bỏ qua `cf-*`; qua Cloudflare nó lấy `cf-connecting-ip`; nối thẳng từ máy khác trong mạng thì lấy địa chỉ socket. Có test trong `test/dieu-khien-xa.test.js`. IP vẫn chỉ để xem lại, không dùng để xác thực.
 4. **README mục "Cấu trúc mã" đã liệt kê đủ module** của `lib/`, `ctl/` (chia nhóm), `tools/`, `public/` và `scripts/`.
-5. **README bảng "Các màn hình" đã viết lại theo các trang đang có** (sửa 20/11/2026): văn phòng 3D theo toà nhà hiện tại, bàn làm việc, giao việc riêng cho một AI, Tổng quan, Điều khiển máy, Kết nối, Repo & Skill, Cập nhật, Nội quy, Hòm thư, Đánh giá nhân sự, Tin nhắn, Nhân vật 3D, Điện thoại, App trên máy. Bỏ dòng "Sơ đồ 2D" (`2d.html` chỉ còn chuyển hướng) và các "màn trái/giữa/phải" cũ.
+5. **README bảng "Các màn hình" đã viết lại theo các trang đang có** (sửa 20/11/2026): văn phòng 3D theo toà nhà hiện tại, bàn làm việc, giao việc cả đội / một vai, Tổng quan, Điều khiển máy, Kết nối, Repo & Skill, Cập nhật, Nội quy, Hòm thư, Đánh giá nhân sự, Tin nhắn, Nhân vật 3D, Điện thoại, App trên máy. Bỏ dòng "Sơ đồ 2D" (`2d.html` chỉ còn chuyển hướng) và các "màn trái/giữa/phải" cũ.
 
 Ghi nhận:
 
