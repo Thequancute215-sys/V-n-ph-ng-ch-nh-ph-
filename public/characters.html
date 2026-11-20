@@ -13,9 +13,9 @@ tailwind.config = {
   darkMode: 'class',
   theme: {
     extend: {
-      // Đo bằng trình duyệt: tiêu đề 530px + nhãn phụ 216px + 5 nút nhãn đầy đủ 1063px + lề ≈ 1940px.
-      // Hẹp hơn thì nút dùng nhãn ngắn / chỉ biểu tượng để đầu trang không bị ép xuống nhiều dòng (P7-M01).
-      screens: { wide: '1940px' },
+      // Đo bằng trình duyệt: khối tiêu đề (biểu tượng + tiêu đề + nhãn phụ) 812px + khoảng cách 16px + các nút nhãn đầy đủ 766px + lề 48px ≈ 1645px
+      // (đo lại 20/11/2026 sau khi bỏ nút "Duyệt tất cả"). Hẹp hơn thì nút dùng nhãn ngắn / chỉ biểu tượng để đầu trang không bị ép xuống nhiều dòng (P7-M01).
+      screens: { wide: '1645px' },
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'monospace'],
@@ -74,9 +74,6 @@ body { background: #040711; color: #f8fafc; font-family: "Plus Jakarta Sans", sa
     </button>
     <button onclick="location.href='index.html'" title="Về Văn Phòng 3D" aria-label="Về Văn Phòng 3D" class="whitespace-nowrap px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-200 border border-white/10 flex items-center gap-1.5 transition">
       <i data-lucide="arrow-left" class="w-4 h-4"></i> <span class="hidden wide:inline">Về Văn Phòng 3D</span><span class="hidden sm:inline wide:hidden">Văn phòng</span>
-    </button>
-    <button onclick="approveAll()" title="DUYỆT TẤT CẢ TẠO HÌNH NGUYÊN TÁC" aria-label="DUYỆT TẤT CẢ TẠO HÌNH NGUYÊN TÁC" class="whitespace-nowrap px-5 py-2 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-amber-400 hover:brightness-110 text-black text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-orange-500/25 transition">
-      <i data-lucide="check-check" class="w-4 h-4"></i> <span class="hidden wide:inline">DUYỆT TẤT CẢ TẠO HÌNH NGUYÊN TÁC</span><span class="hidden sm:inline wide:hidden">Duyệt tất cả</span>
     </button>
   </div>
 </header>
@@ -333,16 +330,16 @@ body { background: #040711; color: #f8fafc; font-family: "Plus Jakarta Sans", sa
       </div>
     </div>
 
-    <!-- Approval Action Box -->
-    <div class="pt-4 border-t border-white/10 space-y-2">
-      <button onclick="approveCurrentChar()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 hover:brightness-110 text-black font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 transition">
-        <i data-lucide="check" class="w-4 h-4"></i>
-        <span id="approveBtnText">Duyệt Tạo Hình Nhân Vật Này</span>
+    <!-- Yêu cầu chỉnh tạo hình: lưu thật thành ý tưởng của dự án đang chọn (POST /ctl/ideas).
+         (20/11/2026: bỏ hai nút "Duyệt" chỉ hiện alert "đã khóa vào hệ thống" mà không ghi gì; không hệ thống nào đọc việc duyệt tạo hình.) -->
+    <form id="editCharForm" class="pt-4 border-t border-white/10 space-y-2">
+      <label for="editCharText" class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">✏️ Yêu cầu chỉnh thêm chi tiết</label>
+      <textarea id="editCharText" rows="3" maxlength="2400" required placeholder="Ví dụ: thêm vết xước trên băng trán, chỉnh tone áo" class="w-full rounded-xl bg-white/5 border border-white/10 text-slate-200 text-xs p-2 focus:outline-none focus:border-amber-400/60"></textarea>
+      <button type="submit" id="editCharBtn" class="w-full py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold border border-white/10 transition disabled:opacity-50">
+        Lưu thành ý tưởng cho dự án đang chọn
       </button>
-      <button onclick="promptEditChar()" class="w-full py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold border border-white/10 transition">
-        ✏️ Yêu Cầu Chỉnh Thêm Chi Tiết
-      </button>
-    </div>
+      <p id="editCharStatus" class="text-[11px] text-slate-400" role="status" aria-live="polite">Lưu vào mục Ý tưởng của dự án đang chọn; CEO giao Hinata đặc tả từ bàn làm việc ở Văn phòng.</p>
+    </form>
   </aside>
 
 </main>
@@ -1711,19 +1708,33 @@ window.toggleActionAnim = (type) => {
   }, 3200);
 };
 
-window.approveCurrentChar = () => {
-  const d = CHAR_DATA[currentCharKey];
-  alert(`ĐÃ DUYỆT TẠO HÌNH NGUYÊN TÁC:\n${d.name}!\nChi tiết nét mặt và trang phục đã được khóa vào hệ thống.`);
-};
-
-window.approveAll = () => {
-  alert("XÁC NHẬN CỦA THẾ QUÂN CEO:\nĐã DUYỆT TOÀN BỘ 5 Nhẫn Giả Chuẩn Manga và 10 Vĩ Thú Subagents!\nMặt nét vẽ, trang phục và hiệu ứng Chakra đã đạt chuẩn cao nhất.");
-};
-
-window.promptEditChar = () => {
-  const req = prompt("Nhập thêm chi tiết trang phục hoặc nét mặt cần căn chỉnh:", "Thêm vết xước trên băng trán hoặc chỉnh tone áo");
-  if (req) alert(`Đã ghi nhận yêu cầu: "${req}". Kiến trúc sư Antigravity sẽ cập nhật ngay!`);
-};
+// Yêu cầu chỉnh tạo hình → ý tưởng thật của dự án đang chọn (POST /ctl/ideas). Chỉ báo "đã lưu" sau khi ctl trả về;
+// ctl tắt, chưa chọn dự án hay lỗi khác thì báo nguyên văn "Chưa lưu: …".
+async function ctlCall(path, body) {
+  let r;
+  try { r = await fetch("/ctl" + path, { cache: "no-store", method: body ? "POST" : "GET", headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(15000) }); }
+  catch (e) { throw new Error("Không kết nối được OS Controller (" + e.message + ")."); }
+  let j = null; try { j = await r.json(); } catch {}
+  if (!r.ok || !j || j.ok === false) throw new Error((j && j.error) || "Lỗi HTTP " + r.status);   // ctl tắt: cầu /ctl đã báo "OS Controller chưa chạy: …"
+  return j;
+}
+document.getElementById("editCharForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const d = CHAR_DATA[currentCharKey], box = document.getElementById("editCharText"), btn = document.getElementById("editCharBtn"), say = (t) => { document.getElementById("editCharStatus").textContent = t; };
+  const detail = box.value.trim();
+  if (!d || !detail) return;
+  btn.disabled = true; say("Đang lưu…");
+  try {
+    const { active } = await ctlCall("/workspaces");
+    if (!active) throw new Error("Chưa chọn dự án. Mở Văn phòng → Dự án để chọn trước.");
+    const title = ("Chỉnh tạo hình nhân vật: " + d.name).slice(0, 200);
+    const { idea } = await ctlCall("/ideas", { workspace: active, title, detail: `Nhân vật: ${d.name} (${d.role})\nYêu cầu của CEO: ${detail}` });
+    if (!idea || !idea.id) throw new Error("ctl không trả về ý tưởng vừa lưu.");
+    box.value = "";
+    say(`Đã lưu ý tưởng "${idea.title}" vào ${active}. Chưa ai làm: mở Văn phòng → Ý tưởng → "Giao Hinata đặc tả" để giao.`);
+  } catch (err) { say("Chưa lưu: " + err.message); }
+  finally { btn.disabled = false; }
+});
 
 // Render Loop
 function animate() {

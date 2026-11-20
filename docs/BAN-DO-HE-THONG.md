@@ -4,7 +4,7 @@
 
 **Bản tương tác** (bấm vào từng node, xem quan hệ, đi theo lộ trình): trong repo chạy `/understand-dashboard` của plugin Understand Anything (Claude Code), hoặc lệnh `npx` trong README của dự án Understand Anything. Lệnh đó tải và chạy mã của bên thứ ba: chỉ chạy khi anh tin nguồn; đọc các sơ đồ dưới đây trên GitHub thì không cần.
 
-Quy mô: 8 miền nghiệp vụ, 53 workflow, 346 bước · 679 node (153 file, 447 hàm, 49 route API, 30 tài liệu/cấu hình/CI) · 2146 quan hệ (693 lời gọi, 289 import, 139 liên kết test) · 10 lớp kiến trúc · lộ trình 20 bước.
+Quy mô: 8 miền nghiệp vụ, 53 workflow, 347 bước · 679 node (153 file, 447 hàm, 49 route API, 30 tài liệu/cấu hình/CI) · 2147 quan hệ (693 lời gọi, 289 import, 139 liên kết test) · 10 lớp kiến trúc · lộ trình 20 bước.
 
 Mục lục: [1. Miền nghiệp vụ](#1-các-miền-nghiệp-vụ) · [2. Workflow trung tâm](#2-workflow-trung-tâm-ceo-giao-việc--đội-ai--ceo-duyệt) · [3. Từng workflow](#3-từng-workflow-từng-bước-trỏ-tới-mã) · [4. Lớp kiến trúc](#4-bản-đồ-hệ-thống-các-lớp-kiến-trúc) · [5. Lộ trình đọc mã](#5-lộ-trình-đọc-mã) · [6. Điểm cần anh rà](#6-điểm-phát-hiện-khi-vẽ--đã-xử-lý)
 
@@ -728,11 +728,13 @@ Trái tim của OS Controller: CEO giao một việc (hoặc ý tưởng), các 
 flowchart TD
   subgraph flow_giao_y_tuong["Giao ý tưởng mới (bước 1 /bcc)"]
     direction LR
-    step_giao_y_tuong_luu["1. Lưu ý tưởng ngoài repo"]
-    step_giao_y_tuong_kiem_truoc["2. Kiểm trước khi giao"]
-    step_giao_y_tuong_ghi_de_luot["3. Sai lượt thì cần CEO xác nhận ghi đè"]
-    step_giao_y_tuong_commit_luot["4. Commit riêng agent.md khi ghi đè"]
-    step_giao_y_tuong_bat_luong["5. Bật luồng từ lượt SPEC_ARCHITECT"]
+    step_giao_y_tuong_nhan_vat["1. Yêu cầu chỉnh tạo hình từ trang Nhân vật 3D"]
+    step_giao_y_tuong_luu["2. Lưu ý tưởng ngoài repo"]
+    step_giao_y_tuong_kiem_truoc["3. Kiểm trước khi giao"]
+    step_giao_y_tuong_ghi_de_luot["4. Sai lượt thì cần CEO xác nhận ghi đè"]
+    step_giao_y_tuong_commit_luot["5. Commit riêng agent.md khi ghi đè"]
+    step_giao_y_tuong_bat_luong["6. Bật luồng từ lượt SPEC_ARCHITECT"]
+    step_giao_y_tuong_nhan_vat --> step_giao_y_tuong_luu
     step_giao_y_tuong_luu --> step_giao_y_tuong_kiem_truoc
     step_giao_y_tuong_kiem_truoc --> step_giao_y_tuong_ghi_de_luot
     step_giao_y_tuong_ghi_de_luot --> step_giao_y_tuong_commit_luot
@@ -954,13 +956,14 @@ flowchart TD
 
 #### Giao ý tưởng mới (bước 1 /bcc)
 
-CEO lưu ý tưởng rồi giao cho đội: luồng tự động bắt đầu từ lượt SPEC_ARCHITECT (Hinata) để đặc tả Vùng [2]; sổ đang tới lượt người khác thì CEO phải xác nhận ghi đè. — *Kích hoạt:* `Bàn CEO → Ý tưởng → POST /ctl/ideas, POST /ctl/ideas/:id/start` (http).
+CEO lưu ý tưởng rồi giao cho đội: luồng tự động bắt đầu từ lượt SPEC_ARCHITECT (Hinata) để đặc tả Vùng [2]; sổ đang tới lượt người khác thì CEO phải xác nhận ghi đè. — *Kích hoạt:* `Bàn CEO → Ý tưởng → POST /ctl/ideas, POST /ctl/ideas/:id/start; trang Nhân vật 3D → Yêu cầu chỉnh thêm chi tiết → POST /ctl/ideas` (http).
 
-1. **Lưu ý tưởng ngoài repo** — ideas.add: tên 1–200 ký tự, mô tả ≤ 2400, che khóa, lưu ideas.json ngoài repo; chỉ hiện ở đúng dự án. [`ctl/ideas.js:35`](../ctl/ideas.js#L35-L46)
-2. **Kiểm trước khi giao** — ideas.start: ý tưởng chưa chạy, agent.md đọc được, dự án rảnh, preflight (rà soát toàn quyền + repo sạch). [`ctl/ideas.js:58`](../ctl/ideas.js#L58-L84)
-3. **Sai lượt thì cần CEO xác nhận ghi đè** — NEXT_OWNER khác SPEC_ARCHITECT mà không có force thì từ chối; có force thì setTurn ghi đúng hai dòng LAST_UPDATED_BY/NEXT_OWNER. [`ctl/handoff.js:27`](../ctl/handoff.js#L27-L33)
-4. **Commit riêng agent.md khi ghi đè** — commitTurn chỉ commit khi agent.md được git theo dõi và có thay đổi; trả mã commit ngắn. [`ctl/ideas.js:47`](../ctl/ideas.js#L47-L55)
-5. **Bật luồng từ lượt SPEC_ARCHITECT** — Gọi autopilot.start với nhiệm vụ đặc tả Vùng [2]; trạng thái ý tưởng lấy từ luồng thật. [`ctl/autopilot.js:511`](../ctl/autopilot.js#L511-L527)
+1. **Yêu cầu chỉnh tạo hình từ trang Nhân vật 3D** — Ô "Yêu cầu chỉnh thêm chi tiết" đọc dự án đang chọn (GET /ctl/workspaces) rồi lưu ý tưởng "Chỉnh tạo hình nhân vật: …" qua POST /ctl/ideas; chưa chọn dự án hay ctl tắt thì báo "Chưa lưu". [`public/characters.html:1713`](../public/characters.html#L1713-L1737)
+2. **Lưu ý tưởng ngoài repo** — ideas.add: tên 1–200 ký tự, mô tả ≤ 2400, che khóa, lưu ideas.json ngoài repo; chỉ hiện ở đúng dự án. [`ctl/ideas.js:35`](../ctl/ideas.js#L35-L46)
+3. **Kiểm trước khi giao** — ideas.start: ý tưởng chưa chạy, agent.md đọc được, dự án rảnh, preflight (rà soát toàn quyền + repo sạch). [`ctl/ideas.js:58`](../ctl/ideas.js#L58-L84)
+4. **Sai lượt thì cần CEO xác nhận ghi đè** — NEXT_OWNER khác SPEC_ARCHITECT mà không có force thì từ chối; có force thì setTurn ghi đúng hai dòng LAST_UPDATED_BY/NEXT_OWNER. [`ctl/handoff.js:27`](../ctl/handoff.js#L27-L33)
+5. **Commit riêng agent.md khi ghi đè** — commitTurn chỉ commit khi agent.md được git theo dõi và có thay đổi; trả mã commit ngắn. [`ctl/ideas.js:47`](../ctl/ideas.js#L47-L55)
+6. **Bật luồng từ lượt SPEC_ARCHITECT** — Gọi autopilot.start với nhiệm vụ đặc tả Vùng [2]; trạng thái ý tưởng lấy từ luồng thật. [`ctl/autopilot.js:511`](../ctl/autopilot.js#L511-L527)
 
 #### Tạo dự án mới từ ý tưởng
 
@@ -1703,7 +1706,7 @@ flowchart TD
   layer_10_kiem_thu["<b>10 · Kiểm thử</b><br/>49 node"]
   layer_01_giao_dien ---|16| layer_02_van_phong
   layer_01_giao_dien ---|5| layer_03_so_dieu_phoi
-  layer_01_giao_dien ---|6| layer_04_os_controller
+  layer_01_giao_dien ---|7| layer_04_os_controller
   layer_01_giao_dien ---|7| layer_05_chu_trinh_ai
   layer_01_giao_dien ---|7| layer_10_kiem_thu
   layer_02_van_phong ---|19| layer_03_so_dieu_phoi
@@ -2052,9 +2055,10 @@ Vẽ lại toàn bộ ngày 19/11/2026 (thêm miền "Năng lực & tài nguyên
 3. **IP trong nhật ký điện thoại không còn tin tiêu đề do máy khác tự gửi.** `ipOf` (`lib/dieu-khien-xa.js`) chỉ đọc tiêu đề proxy khi yêu cầu nối từ chính máy (đường hầm chạy trên máy). Qua Tailscale nó lấy phần tử cuối của X-Forwarded-For (do `tailscale serve` thêm) và bỏ qua `cf-*`; qua Cloudflare nó lấy `cf-connecting-ip`; nối thẳng từ máy khác trong mạng thì lấy địa chỉ socket. Có test trong `test/dieu-khien-xa.test.js`. IP vẫn chỉ để xem lại, không dùng để xác thực.
 4. **README mục "Cấu trúc mã" đã liệt kê đủ module** của `lib/`, `ctl/` (chia nhóm), `tools/`, `public/` và `scripts/`.
 5. **README bảng "Các màn hình" đã viết lại theo các trang đang có** (sửa 20/11/2026): văn phòng 3D theo toà nhà hiện tại, bàn làm việc, giao việc cả đội / một vai, Tổng quan, Điều khiển máy, Kết nối, Repo & Skill, Cập nhật, Nội quy, Hòm thư, Đánh giá nhân sự, Tin nhắn, Nhân vật 3D, Điện thoại, App trên máy. Bỏ dòng "Sơ đồ 2D" (`2d.html` chỉ còn chuyển hướng) và các "màn trái/giữa/phải" cũ.
+6. **Trang Nhân vật 3D không còn nút duyệt giả** (sửa 20/11/2026). Trước đây "Duyệt tạo hình nhân vật này", "DUYỆT TẤT CẢ TẠO HÌNH NGUYÊN TÁC" và "Yêu cầu chỉnh thêm chi tiết" (`public/characters.html`) chỉ hiện alert "đã khóa vào hệ thống" / "đã ghi nhận yêu cầu" mà không ghi gì. Hai nút duyệt đã bỏ (không hệ thống nào đọc việc duyệt tạo hình); ô yêu cầu chỉnh nay lưu thật thành ý tưởng của dự án đang chọn qua `POST /ctl/ideas` (bước 1 của workflow "Giao ý tưởng mới"), chỉ báo "Đã lưu" sau khi ctl trả về. `test/van-phong-sach.test.js` chặn nút giả quay lại và chặn alert "đã duyệt/đã ghi nhận" ở mọi trang.
 
 Ghi nhận:
 
-6. **4 trang chuyển hướng** (`2d.html`, `board.html`, `congviec.html`, `tongquan.html`) giữ lại cho dấu trang cũ — đúng chủ đích, chỉ ghi nhận.
+7. **4 trang chuyển hướng** (`2d.html`, `board.html`, `congviec.html`, `tongquan.html`) giữ lại cho dấu trang cũ — đúng chủ đích, chỉ ghi nhận.
 
 Bốn điểm của lần vẽ trước (đường nhắn tin PIN cũ, ngoại lệ "văn phòng chỉ đọc", "Phát loa" giả, chữ hỏng mã hoá trong `test/tat-ctl.test.js`) đã xử lý ngày 17/11/2026; `test/van-phong-sach.test.js` giữ cho chúng không quay lại. Node `isLocal` trước đây trỏ `lib/ctlbridge.js` nay trỏ đúng `lib/guard.js`.

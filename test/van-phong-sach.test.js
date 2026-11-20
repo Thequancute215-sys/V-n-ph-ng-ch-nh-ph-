@@ -6,6 +6,8 @@
 //  - mọi /api/… mà giao diện gọi phải có trên máy chủ; không còn chữ tiếng Việt hỏng mã hoá trong repo.
 //  - nút ⚡ "Phân việc ngoài lề (Đặc cách)" giả (19/11/2026: chỉ hiện bong bóng, báo "đã ghi nhận vào sổ điều phối và hòm thư"
 //    mà không ghi gì, ô "Bypass Codex" không tác dụng) nay chạy đúng một lượt AI thật qua /ctl/ai/run cho vai giữ NEXT_OWNER.
+//  - trang Nhân vật 3D (20/11/2026): bỏ hai nút "Duyệt tạo hình" / "Duyệt tất cả" chỉ hiện alert "đã khóa vào hệ thống";
+//    "Yêu cầu chỉnh thêm chi tiết" nay lưu thật thành ý tưởng của dự án đang chọn qua POST /ctl/ideas.
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert");
@@ -111,6 +113,29 @@ test("nút ⚡ Giao việc một vai: chạy lượt AI thật qua /ai/run, khô
   assert.match(read("ctl/runner.js"), /turn\.nextOwner !== role\) throw err\("NOT_YOUR_TURN"/, "ctl phải chặn vai không giữ lượt");
   // Quyền viết mã vượt vai (Sol thay Codex) không do nút cấp: hộp thoại chỉ dẫn CEO ghi đặc cách vào Vùng [4.1] của agent.md
   assert.match(idx, /Vùng \[4\.1\]<\/b> của agent\.md/);
+});
+
+test("trang Nhân vật 3D: không còn nút duyệt giả; yêu cầu chỉnh tạo hình lưu thật thành ý tưởng qua /ctl/ideas", () => {
+  const html = read("public/characters.html");
+  const code = html.replace(/<!--[\s\S]*?-->/g, "").replace(/^\s*\/\/.*$/gm, "");   // bỏ chú thích (chú thích có kể lại nút cũ)
+  assert.ok(!/approveCurrentChar|approveAll|promptEditChar|approveBtnText/.test(code), "characters.html còn nút/hàm duyệt giả");
+  assert.ok(!/DUYỆT TẤT CẢ|ĐÃ DUYỆT|Đã DUYỆT|khóa vào hệ thống|Đã ghi nhận yêu cầu|sẽ cập nhật ngay/i.test(code), "characters.html còn lời báo đã duyệt/đã ghi nhận giả");
+  assert.ok(!/\bprompt\(/.test(code), "yêu cầu chỉnh phải nhập trong ô của trang, không qua prompt()");
+  // Biểu mẫu thật: đọc dự án đang chọn rồi POST /ctl/ideas; chỉ báo "Đã lưu" sau khi ctl trả về ý tưởng, lỗi hiện "Chưa lưu: …"
+  assert.match(code, /id="editCharForm"/); assert.match(code, /id="editCharStatus"[^>]*role="status"/);
+  const i = code.indexOf('getElementById("editCharForm").addEventListener("submit"'), h = code.slice(i, code.indexOf("\n});", i));
+  assert.ok(i > 0, "thiếu xử lý biểu mẫu yêu cầu chỉnh");
+  const ws = h.indexOf('await ctlCall("/workspaces")'), post = h.indexOf('await ctlCall("/ideas", { workspace: active'), ok = h.indexOf("Đã lưu ý tưởng");
+  assert.ok(ws > 0 && post > ws && ok > post, "chỉ được báo đã lưu sau khi POST /ctl/ideas trả về");
+  assert.match(h, /if \(!active\) throw/, "chưa chọn dự án thì phải báo, không lưu bừa");
+  assert.match(h, /catch \(err\) \{ say\("Chưa lưu: " \+ err\.message\)/, "lỗi của ctl phải hiện ra");
+  assert.ok(!/alert\(/.test(h), "không dùng alert báo thành công");
+  assert.match(code, /fetch\("\/ctl" \+ path/, "phải gọi qua cầu /ctl của văn phòng");
+  // ctl thật có đường POST /ideas nhận { workspace, title, detail }
+  assert.match(read("ctl/main.js"), /\["POST", "\/ideas", \(p, qs, b\) => \[201, \{ idea: ideas\.add\(\{ workspace: wsOf\(b\.workspace\), title: b\.title, detail: b\.detail \}\) \}\]\]/);
+  // Không trang nào còn alert báo "đã duyệt"/"đã ghi nhận" (những thao tác như vậy phải đi qua máy chủ và báo theo kết quả thật)
+  for (const f of fs.readdirSync(path.join(ROOT, "public")).filter((x) => /\.(html|js)$/.test(x)))
+    for (const [m] of read(path.join("public", f)).matchAll(/alert\([^)]*\)/g)) assert.ok(!/đã duyệt|đã ghi nhận|khóa vào hệ thống/i.test(m), `${f} còn alert giả: ${m.slice(0, 80)}`);
 });
 
 test("không còn chữ tiếng Việt hỏng mã hoá (UTF-8 bị đọc nhầm thành cp1252) trong mã, test và tài liệu", () => {
