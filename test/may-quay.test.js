@@ -137,7 +137,8 @@ test("trạm Flow: mở Chrome hồ sơ riêng không cờ tự động hoá; nh
   ghi(path.join(entry, "build/src/bin/chrome-devtools-mcp.js"), "");
   const sinh = [], viec = [];
   let moCong = new Set();
-  const jobs = { start: (o) => { viec.push(o); return { id: "j" + viec.length }; }, rawLog: () => '{"type":"result","result":"Đã tải.\\n{\\"ket_qua\\":\\"xong\\",\\"ghi_chu\\":\\"ok\\"}"}' };
+  let ketQua = { ket_qua: "xong", ghi_chu: "ok", credit_con_lai: 870 };
+  const jobs = { start: (o) => { viec.push(o); return { id: "j" + viec.length }; }, rawLog: () => JSON.stringify({ type: "result", result: "Đã xong.\n" + JSON.stringify(ketQua) }) };
   const flow = createTramFlow({ dir: d, goc, jobs, cliClaude: () => ["claude"], env: { ProgramFiles: path.join(d, "pf") },
     spawnImpl: (p, a) => { sinh.push([p, a]); return { unref() {} }; }, thu: async (cong) => moCong.has(cong) });
   ghi(path.join(d, "pf", "Google", "Chrome", "Application", "chrome.exe"), "");
@@ -164,7 +165,19 @@ test("trạm Flow: mở Chrome hồ sơ riêng không cờ tự động hoá; nh
   let tt = await flow.trangThai();
   assert.equal(tt.nhipDang, null);
   assert.equal(tt.ketQuaCuoi.ket_qua, "xong");
+  // Hạn mức: credit Opus đọc trên trang được lưu theo tài khoản
+  let phu = tt.taiKhoan.find((x) => x.id === "phu");
+  assert.equal(phu.credit.conLai, 870); assert.ok(phu.credit.lucDoc); assert.equal(phu.credit.luotTaoThang, 0);
+  assert.equal(tt.taiKhoan.find((x) => x.id === "chinh").credit.conLai, null, "tài khoản kia chưa đọc");
+  // Nhịp tạo xong: đếm lượt tạo trong tháng; không đọc được credit thì giữ số cũ
+  ketQua = { ket_qua: "xong", ghi_chu: "đã tạo", credit_con_lai: null };
+  await flow.nhip(root, { canh: "C02", taiKhoan: "phu", buoc: "tao" });
+  viec[1].onExit({ id: "j2" });
+  phu = (await flow.trangThai()).taiKhoan.find((x) => x.id === "phu");
+  assert.equal(phu.credit.luotTaoThang, 1); assert.equal(phu.credit.conLai, 870);
+  viec.splice(1, 1);
   // Nhịp tải về: clip .mp4 mới xuất hiện trong thư mục tải của hồ sơ → take của cảnh
+  ketQua = { ket_qua: "xong", ghi_chu: "đã tải", credit_con_lai: "0 credits" };
   await flow.nhip(root, { canh: "C02", taiKhoan: "phu", buoc: "tai-ve" });
   ghi(path.join(goc, "flow", "phu-tai-ve", "flow_video.mp4"), "FLOWCLIP");
   viec[1].onExit({ id: "j2" });
@@ -173,7 +186,9 @@ test("trạm Flow: mở Chrome hồ sơ riêng không cờ tự động hoá; nh
   assert.equal(fs.readFileSync(path.join(root, "media", "quay", "C02-t1.mp4"), "utf8"), "FLOWCLIP");
   assert.deepEqual(docPhim(root).canh[1].take, ["media/quay/C02-t1.mp4"]);
   const so = JSON.parse(fs.readFileSync(path.join(root, "media", "so-chi.json"), "utf8")).muc;
-  assert.deepEqual(so.map((m) => [m.loai, m.buoc, m.usd]), [["flow", "chuan-bi", 0], ["flow", "tai-ve", 0]]);
+  assert.deepEqual(so.map((m) => [m.loai, m.buoc, m.usd]), [["flow", "chuan-bi", 0], ["flow", "tao", 0], ["flow", "tai-ve", 0]]);
+  // Đọc được hết credit: chặn nhịp tạo trên tài khoản đó, gợi ý đổi tài khoản
+  await assert.rejects(flow.nhip(root, { canh: "C02", taiKhoan: "phu", buoc: "tao" }), (e) => e.code === "NO_QUOTA" && /tài khoản khác/.test(e.message));
   // Trần lượt tạo: so_take_toi_da mặc định 2
   ghi(path.join(root, "media", "so-chi.json"), JSON.stringify({ muc: [1, 2].map(() => ({ loai: "flow", buoc: "tao", canh: "C02", ketQua: "xong" })) }));
   await assert.rejects(flow.nhip(root, { canh: "C02", taiKhoan: "phu", buoc: "tao" }), (e) => e.code === "TOI_DA_TAKE");

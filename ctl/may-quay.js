@@ -13,7 +13,7 @@
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
-const { kiem } = require("../lib/phim");
+const { kiem, MAY_QUAY_MAC_DINH } = require("../lib/phim");
 const { writeAtomic } = require("../lib/ghi-file");
 const { khoaGemini } = require("./tra-cuu");
 
@@ -120,7 +120,7 @@ function createMayQuay({ dir, audit = { log() {} }, khoa = () => khoaGemini(dir)
     if (!kq.ok) throw err("PHIM_LOI", "Hồ sơ phim còn lỗi, sửa trước khi quay: " + kq.loi.map((l) => l.chiTiet).join(" · ").slice(0, 400));
     const c = (phim.canh || []).find((x) => x.ma === canh);
     if (!c) throw err("NOT_FOUND", "Không có cảnh " + canh);
-    const may = c.may_quay || phim.may_quay_mac_dinh || "omni-flash";
+    const may = c.may_quay || phim.may_quay_mac_dinh || MAY_QUAY_MAC_DINH;
     if (loai === "video" && may !== "omni-flash") throw err("NOT_SUPPORTED", c.ma + ": máy quay " + may + (may === "flow" ? " dùng trạm Google Flow." : " chưa nối (P2 chỉ có Gemini Omni)."));
     if (loai === "video" && (c.take || []).length >= (c.so_take_toi_da || 2)) throw err("TOI_DA_TAKE", c.ma + ": đã quay đủ " + (c.so_take_toi_da || 2) + " take tối đa. Nâng so_take_toi_da nếu cần quay thêm.");
     const yc = dungYeuCau(root, phim, c, { loai, soPhuongAn, doPhanGiai });

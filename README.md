@@ -436,6 +436,8 @@ Bộ kiểm `lib/phim.js` (lệnh `node tools/phim.js kiem`, trong lượt AI l�
 
 Trang **🎬 Xưởng phim** (nút trên thanh chức năng) là nơi anh bấm mọi việc tốn tiền. Chọn phim, đặt ngân sách, đánh dấu người thật đã đồng ý, rồi với từng cảnh:
 
+Máy quay **mặc định là Google Flow**: dùng credit của gói Google AI (Pro/Ultra) anh đã trả hằng tháng, không tốn tiền API. Credit gói và tiền Gemini API là hai túi riêng; mã không dùng được credit gói, nên Flow đi qua trạm do Opus thao tác. Gemini API là phương án phụ (tự động hoàn toàn, hoặc khi hết credit cả hai tài khoản).
+
 - **Máy quay Gemini** (`ctl/may-quay.js`, cảnh `may_quay: "omni-flash"`):
   - **Tạo khung** bằng `gemini-nano-banana-2.1` (~$0,034/ảnh 1K, kèm ảnh tham chiếu nhân vật). Anh chọn một khung.
   - **Quay video** bằng `gemini-omni-1.2-flash` (~$0,07/giây 720p, 3–15 giây, có tiếng). Khung anh chọn là ảnh đầu.
@@ -447,6 +449,7 @@ Trang **🎬 Xưởng phim** (nút trên thanh chức năng) là nơi anh bấm 
   - Mỗi cảnh ba nhịp, anh bấm từng nhịp: **1. Chuẩn bị** (Opus tải ảnh, dán prompt, dừng trước nút tạo), **2. Tạo** (bấm tạo đúng một lần), **3. Tải về** (văn phòng gắn clip vào cảnh).
   - Opus chỉ có công cụ điều khiển đúng cửa sổ Chrome đó, thao tác từng bước như người. Gặp CAPTCHA, xác minh, đăng nhập lại, cảnh báo tài khoản hay hết credit thì dừng và báo anh, không tự vượt.
   - Mỗi cảnh không tạo quá `so_take_toi_da` lượt.
+  - **Hạn mức:** mỗi nhịp Opus đọc số credit còn lại hiện trên Flow (không có API để hỏi Google). Trang hiện theo từng tài khoản: credit còn, đọc lúc nào, số lượt đã tạo trong tháng (`~/.van-phong-ao/flow-credit.json`). Tài khoản đọc được 0 credit thì nhịp Tạo bị chặn, trang gợi ý đổi tài khoản.
 - Ảnh khung và clip xem ngay trên trang (đường `/phim/media`, chỉ đọc file trong `media/` của dự án phim đã đăng ký).
 
 ## Xem trên điện thoại

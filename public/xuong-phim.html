@@ -71,6 +71,12 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
   const msg = (t, loi) => { $("msg").innerHTML = t ? `<div class="msg${loi ? " err" : ""}">${esc(t)}</div>` : ""; };
   const media = (rel) => "/ctl/phim/media?workspace=" + encodeURIComponent(ws) + "&path=" + encodeURIComponent(rel);
   const usd = (x) => "$" + (Math.round((Number(x) || 0) * 100) / 100).toFixed(2);
+  // Hạn mức Flow: số credit Opus đọc trên trang ở nhịp gần nhất (không phải số trực tiếp) + lượt tạo trong tháng.
+  const creditText = (c) => {
+    if (!c) return "";
+    const luc = c.lucDoc ? new Date(c.lucDoc).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }) : "";
+    return (c.conLai === null ? "Credit: chưa đọc (chạy một nhịp Chuẩn bị)" : `Credit còn <b class="${c.conLai === 0 ? "bad" : "tien"}">${esc(c.conLai)}</b> · đọc lúc ${esc(luc)}`) + ` · tháng này đã tạo ${esc(c.luotTaoThang)} lượt`;
+  };
 
   function render() {
     if (!data) { $("tong").hidden = true; $("flow").hidden = true; $("ds").innerHTML = ""; return; }
@@ -87,18 +93,19 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
       ((p.nguoi_that || []).length ? `<div><b>Người thật trong phim</b> (chỉ đánh dấu khi người đó đã đồng ý cho dùng hình):<br>` +
         p.nguoi_that.map((n) => `<label style="display:inline-flex;gap:6px;margin-right:14px"><input type="checkbox" data-dong-y="${esc(n.ma)}" ${n.dong_y ? "checked" : ""}> ${esc(n.ma)} đã đồng ý</label>`).join("") + "</div>" : "");
 
-    const coFlow = (p.canh || []).some((c) => (c.may_quay || p.may_quay_mac_dinh) === "flow");
+    const coFlow = (p.canh || []).some((c) => (c.may_quay || p.may_quay_mac_dinh || "flow") === "flow");
     $("flow").hidden = !coFlow || !flow;
     if (coFlow && flow) {
       $("flow").innerHTML = `<h2>Trạm Google Flow</h2><p class="mute" style="margin:0">Mỗi tài khoản một cửa sổ Chrome riêng. Lần đầu: bấm Mở, tự đăng nhập Google trong cửa sổ đó. Văn phòng không gõ mật khẩu. Opus chỉ làm đúng nhịp anh bấm; gặp màn xác minh thì dừng và báo anh.</p>` +
-        `<div class="row">${flow.taiKhoan.map((t) => `<span><b>${esc(t.nhan)}</b> ${t.dangMo ? '<span class="ok">● đang mở</span>' : '<span class="mute">○ tắt</span>'} <button type="button" data-mo-flow="${esc(t.id)}">Mở trình duyệt</button></span>`).join(" ")}</div>` +
+        `<div class="row">${flow.taiKhoan.map((t) => `<span><b>${esc(t.nhan)}</b> ${t.dangMo ? '<span class="ok">● đang mở</span>' : '<span class="mute">○ tắt</span>'} <button type="button" data-mo-flow="${esc(t.id)}">Mở trình duyệt</button>` +
+          `<br><span class="mute">${creditText(t.credit)}</span></span>`).join(" ")}</div>` +
         (!flow.mcp ? `<div class="warn">⚠ Chưa cài Chrome DevTools MCP (trang Kết nối): Opus chưa lái được Flow.</div>` : "") +
         (flow.nhipDang ? `<div class="warn">⏳ Opus đang làm nhịp ${esc(NHIP[flow.nhipDang.buoc])} cảnh ${esc(flow.nhipDang.canh)} (${esc(flow.nhipDang.taiKhoan)})…</div>` : "") +
         (flow.ketQuaCuoi ? `<div class="${flow.ketQuaCuoi.ket_qua === "xong" ? "ok" : "warn"}">Nhịp vừa xong · ${esc(NHIP[flow.ketQuaCuoi.buoc])} cảnh ${esc(flow.ketQuaCuoi.canh)}: <b>${esc(flow.ketQuaCuoi.ket_qua)}</b> — ${esc(flow.ketQuaCuoi.ghi_chu)}</div>` : "");
     }
 
     $("ds").innerHTML = (p.canh || []).map((c) => {
-      const may = c.may_quay || p.may_quay_mac_dinh || "omni-flash";
+      const may = c.may_quay || p.may_quay_mac_dinh || "flow";
       const khung = (c.khung || []).map((f) => `<figure><img src="${esc(media(f))}" alt="Khung ${esc(f)}" class="${c.khung_chon === f ? "chon" : ""}" loading="lazy"><button type="button" data-chon-khung="${esc(c.ma)}" data-file="${esc(f)}">${c.khung_chon === f ? "✓ Đã chọn" : "Chọn khung này"}</button></figure>`).join("");
       const take = (c.take || []).map((f) => `<figure><video src="${esc(media(f))}" controls preload="metadata"></video><button type="button" data-chon-take="${esc(c.ma)}" data-file="${esc(f)}">${c.take_chon === f ? "✓ Take đã chọn" : "Chọn take này"}</button></figure>`).join("");
       let nut = "";

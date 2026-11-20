@@ -14,4 +14,4 @@
 
 | Cảnh | Câu | Khung hình | Nhân vật | Máy quay |
 |---|---|---|---|---|
-| C01 | 1 | | | omni-flash |
+| C01 | 1 | | | flow |
