@@ -68,10 +68,13 @@ const boDau = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").re
 // ---------- phiên nào thuộc dự án của bạn ----------
 const normP = (p) => path.resolve(String(p || "")).replace(/\\/g, "/").replace(/\/+$/, "").toLowerCase();
 const PROJECTS = (CFG.projects || []).filter(Boolean);
-const inProject = (cwd) => !PROJECTS.length || PROJECTS.some((p) => { const a = normP(cwd), b = normP(p); return a === b || a.startsWith(b + "/"); });
+// Dự án đã chuyển ổ bằng junction (C:\Users\…\Projects\X -> D:\Projects\X): phiên mở ở đường dẫn nào cũng là phiên của dự án,
+// nên so khớp với cả đường dẫn đã cấu hình lẫn đường dẫn thật của nó. Chỉ dùng để so; vẫn hiện đường dẫn đã cấu hình.
+const PROJ_MATCH = [...new Set(PROJECTS.flatMap((p) => { let r = p; try { r = fs.realpathSync(path.resolve(p)); } catch {} return [p, r]; }))];
+const inProject = (cwd) => !PROJECTS.length || PROJ_MATCH.some((p) => { const a = normP(cwd), b = normP(p); return a === b || a.startsWith(b + "/"); });
 // Claude Code đặt tên thư mục nhật ký theo đường dẫn dự án: mọi ký tự không phải chữ/số thành "-".
 const encDir = (p) => path.resolve(p).replace(/[^a-zA-Z0-9]/g, "-").toLowerCase();
-const claudeDirOk = (d) => !PROJECTS.length || PROJECTS.some((p) => { const e = encDir(p), x = d.toLowerCase(); return x === e || x.startsWith(e + "-"); });
+const claudeDirOk = (d) => !PROJECTS.length || PROJ_MATCH.some((p) => { const e = encDir(p), x = d.toLowerCase(); return x === e || x.startsWith(e + "-"); });
 const hidden = new Set(CFG.hide || []);
 
 // ---------- nhân viên ----------
