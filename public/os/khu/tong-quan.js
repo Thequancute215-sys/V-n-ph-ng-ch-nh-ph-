@@ -46,12 +46,12 @@ export async function mo(vung, { kho }) {
     const muc = [];
     for (const a of (s && s.asks) || []) muc.push({ t: a.since, tieu: cat(a.text, 220), nguon: ten(a.who) + (a.guess ? " (máy đoán từ câu cuối)" : ""), nut: `<a class="nut nho" href="#/tin-nhan?ai=${encodeURIComponent(a.who || "")}">Xem tin</a>` });
     for (const h of handoffs || []) { const p = h.payload || {}; muc.push({ t: h.createdAt || h.created_at, tieu: cat(p.giai_thich || p.tom_tat || h.summary || "Bàn giao chờ duyệt", 220), nguon: "Bàn giao của " + (h.role || p.vai || "AI") + (p.next_owner ? " cho " + p.next_owner : ""), nut: `<a class="nut nho" href="#/code/dieu-khien">Duyệt</a>` }); }
-    for (const r of runs || []) if (CHO_ANH.has(r.status)) muc.push({ t: r.updatedAt, tieu: cat(r.question && r.question.text ? r.question.text : r.task, 220), nguon: "Luồng tự chạy: " + TT_LUONG[r.status], nut: `<a class="nut-chinh" href="#/code/du-an">Mở luồng</a>` });
+    for (const r of runs || []) if (CHO_ANH.has(r.status)) muc.push({ t: r.updatedAt, tieu: cat(r.question && r.question.text ? r.question.text : r.task, 220), nguon: "Luồng tự chạy: " + TT_LUONG[r.status], nut: `<a class="nut-chinh" href="#/code/dieu-khien">Mở luồng</a>` });
     muc.sort((x, y) => (y.t || 0) - (x.t || 0));
     $("soCanAnh").textContent = muc.length ? muc.length + " việc" : "";
     $("canAnh").innerHTML = (loiCtl ? loi("Chưa đọc được bàn giao và luồng: " + loiCtl) : "") + (muc.length
       ? muc.map((m) => `<div class="dong"><div><div class="tieu">${esc(m.tieu)}</div><div class="chi-tiet">${esc(m.nguon)}${m.t ? ", " + esc(luc(m.t)) : ""}</div></div>${m.nut}</div>`).join("")
-      : rong("Không có việc nào chờ anh", "Câu hỏi của AI, bàn giao chờ duyệt và luồng cần anh trả lời sẽ hiện ở đây.", `<a class="nut" href="#/code/du-an">Giao việc mới</a>`));
+      : rong("Không có việc nào chờ anh", "Câu hỏi của AI, bàn giao chờ duyệt và luồng cần anh trả lời sẽ hiện ở đây.", `<a class="nut" href="#/code/giao-viec">Giao việc mới</a>`));
   }
 
   function veDoi() {
@@ -70,7 +70,7 @@ export async function mo(vung, { kho }) {
     const ds = runs.slice().sort((x, y) => (y.updatedAt || 0) - (x.updatedAt || 0)).slice(0, 6);
     $("luong").innerHTML = ds.length ? ds.map((r) => `<div class="dong"><div><div class="tieu">${esc(cat(r.task, 160))}</div><div class="chi-tiet">${esc((r.workspace || "").split(/[\\/]/).pop())}, ${r.steps ? r.steps.length : 0} lượt, ${esc(luc(r.updatedAt))}</div></div>` +
       `<span class="${CHO_ANH.has(r.status) ? "canh-bao" : r.status === "running" ? "song" : "mo"}">${esc(TT_LUONG[r.status] || r.status)}</span></div>`).join("")
-      : rong("Chưa có luồng nào", "Giao một việc cho cả đội, văn phòng chạy lần lượt Hinata, Sol, Astra rồi Claude duyệt.", `<a class="nut" href="#/code/du-an">Giao việc</a>`);
+      : rong("Chưa có luồng nào", "Giao một việc cho cả đội, văn phòng chạy lần lượt Hinata, Sol, Astra rồi Claude duyệt.", `<a class="nut" href="#/code/giao-viec">Giao việc</a>`);
   }
 
   function veHanMuc(q, loiQ) {

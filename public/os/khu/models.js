@@ -7,6 +7,7 @@ import { esc, luc, dangTai, rong, loi, VAI, TEN_NEN } from "../ui.js";
 
 const MUC = [["doc", "Đề xuất (chỉ đọc)", "Chỉ đọc repo, trả đề xuất; không sửa file nào."], ["nhap", "Tự làm (ghi nháp)", "Sửa file trong repo, lệnh giới hạn; không cài, không bỏ qua sandbox."],
   ["toan", "Toàn quyền", "Chạy không giới hạn trên máy để kiểm thử thật; vẫn qua cổng rà soát file chữ của dự án."]];
+const TEN_MUC = { low: "nhẹ (low)", medium: "vừa (medium)", high: "kỹ (high)", xhigh: "rất kỹ (xhigh)", max: "tối đa (max)", ultra: "cực đại (ultra)" };
 const PHONG = [...new Map(VAI.map((v) => [v.phong, v])).values()];   // mỗi phòng một dòng model (Itachi làm hai vai, chung model)
 
 export async function mo(vung, { ctl, bao }) {
@@ -40,7 +41,7 @@ export async function mo(vung, { ctl, bao }) {
     $("nutTuDong").hidden = false;
     $("nutTuDong").textContent = dp.tuDong === false ? "Bật tự chọn theo độ khó" : "Tắt tự chọn theo độ khó";
     $("tuDongMo").textContent = dp.tuDong === false ? "Đang tắt tự chọn: phòng không cố định dùng model mặc định của vai." : "Phòng không cố định: văn phòng tự chọn model và mức theo độ khó từng lượt.";
-    $("bangModel").innerHTML = `<table class="bang"><thead><tr><th>Phòng</th><th>AI</th><th>Model</th><th>Mức suy nghĩ</th><th></th></tr></thead><tbody>${PHONG.map((v) => {
+    $("bangModel").innerHTML = `<table class="bang"><thead><tr><th>Phòng</th><th>AI</th><th>Model</th><th>Mức suy nghĩ</th></tr></thead><tbody>${PHONG.map((v) => {
       const ds = (models && models[v.nen] && models[v.nen].models) || [], co = (dp.coDinh || {})[v.phong] || null;
       const chon = co && co.model, mucChon = co && co.effort, m = ds.find((x) => x.id === chon), efforts = (m && m.efforts) || ["low", "medium", "high", "xhigh", "max"];
       return `<tr data-phong="${esc(v.phong)}"><td>${esc(v.ten.replace(/ \(.*\)$/, ""))}<div class="mo" style="font-size:var(--text-xs)">${esc(VAI.filter((x) => x.phong === v.phong).map((x) => x.viec).join("; "))}</div></td>
@@ -48,11 +49,10 @@ export async function mo(vung, { ctl, bao }) {
         <td><label class="visually-hidden" for="m-${esc(v.phong)}">Model của ${esc(v.ten)}</label><select class="o" id="m-${esc(v.phong)}" data-model>
           <option value="">${dp.tuDong === false ? "Mặc định của vai" : "Tự chọn theo độ khó"}</option>
           ${ds.map((x) => `<option value="${esc(x.id)}"${x.id === chon ? " selected" : ""}>${esc(x.name || x.id)}</option>`).join("")}
-          ${chon && !m ? `<option value="${esc(chon)}" selected>${esc(chon)} (không thấy trong CLI)</option>` : ""}</select></td>
+          ${chon && !m ? `<option value="${esc(chon)}" selected>${esc(chon)} (phần mềm trên máy chưa có)</option>` : ""}</select></td>
         <td><label class="visually-hidden" for="e-${esc(v.phong)}">Mức suy nghĩ của ${esc(v.ten)}</label><select class="o" id="e-${esc(v.phong)}" data-effort${chon ? "" : " disabled"}>
-          <option value="">mặc định</option>${efforts.map((e) => `<option${e === mucChon ? " selected" : ""}>${esc(e)}</option>`).join("")}</select></td>
-        <td><button type="button" class="nut nho" data-luu-model>Lưu</button></td></tr>`; }).join("")}</tbody></table>
-      ${models ? `<p class="mo" style="font-size:var(--text-xs)">Danh sách model đọc từ CLI trên máy ${models.checkedAt ? esc(luc(models.checkedAt)) : ""}. Model không thấy ở đây là CLI trên máy chưa hỗ trợ.</p>` : '<p class="canh-bao">Chưa đọc được danh sách model từ CLI.</p>'}`;
+          <option value="">mặc định</option>${efforts.map((e) => `<option value="${esc(e)}"${e === mucChon ? " selected" : ""}>${esc(TEN_MUC[e] || e)}</option>`).join("")}</select></td></tr>`; }).join("")}</tbody></table>
+      ${models ? `<p class="mo" style="font-size:var(--text-xs)">Danh sách model đọc từ phần mềm AI cài trên máy ${models.checkedAt ? esc(luc(models.checkedAt)) : ""}. Model không có ở đây là phần mềm trên máy chưa hỗ trợ.</p>` : '<p class="canh-bao">Chưa đọc được danh sách model từ phần mềm AI trên máy.</p>'}`;
   }
 
   function veQuyen(l) {
@@ -69,7 +69,7 @@ export async function mo(vung, { ctl, bao }) {
     const ps = q.providers || [];
     $("hanMuc").innerHTML = ps.length ? `<table class="bang"><thead><tr><th>AI</th><th>Khung</th><th class="so">Còn</th><th>Đặt lại</th></tr></thead><tbody>${ps.flatMap((p) => (p.buckets || []).map((b, i) =>
       `<tr><td>${i ? "" : esc(p.name || p.id)}${!i && p.error ? `<div class="hong" style="font-size:var(--text-xs)">${esc(p.error)}</div>` : ""}</td><td>${esc((b.group && b.group !== p.id ? b.group + " · " : "") + b.label)}</td>
-       <td class="so ${b.remainingPercent < 15 ? "hong" : b.remainingPercent < 35 ? "canh-bao" : ""}">${b.remainingPercent == null ? "?" : Math.round(b.remainingPercent) + "%"}</td>
+       <td class="so ${b.remainingPercent == null ? "" : b.remainingPercent < 15 ? "hong" : b.remainingPercent < 35 ? "canh-bao" : ""}">${b.remainingPercent == null ? "?" : Math.round(b.remainingPercent) + "%"}</td>
        <td class="mo">${b.resetAt ? esc(new Date(b.resetAt).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })) : esc(b.resetLabel || "")}</td></tr>`)).join("")}</tbody></table>`
       : rong("Chưa có hạn mức", "Văn phòng chưa đọc được hạn mức của AI nào.");
   }
@@ -83,13 +83,22 @@ export async function mo(vung, { ctl, bao }) {
 
   vung.addEventListener("click", async (e) => {
     const t = e.target;
-    const l = t.closest("[data-luu-model]"); if (l) return luuModel(l.closest("tr"));
     if (t.closest("#nutTuDong")) { try { await ctl("/dieu-phoi", { tuDong: dp.tuDong === false }); bao("Đã đổi chế độ tự chọn."); tai(); } catch (err) { bao(err.message, true); } return; }
     if (t.closest("[data-thu-lai]")) tai();
   });
   vung.addEventListener("change", async (e) => {
     const t = e.target;
-    if (t.matches("[data-model]")) { const ef = t.closest("tr").querySelector("[data-effort]"); ef.disabled = !t.value; return; }
+    // Đổi model thì nạp lại đúng các mức suy nghĩ model đó có, rồi lưu luôn (giống bảng quyền: chọn là lưu, không có nút Lưu ẩn ý).
+    if (t.matches("[data-model]") || t.matches("[data-effort]")) {
+      const tr = t.closest("tr"), ef = tr.querySelector("[data-effort]");
+      if (t.matches("[data-model]")) {
+        const v = PHONG.find((x) => x.phong === tr.dataset.phong), m = ((models && models[v.nen] && models[v.nen].models) || []).find((x) => x.id === t.value);
+        const ds = (m && m.efforts) || ["low", "medium", "high", "xhigh", "max"], cu = ef.value;
+        ef.innerHTML = `<option value="">mặc định</option>` + ds.map((e) => `<option value="${esc(e)}"${e === cu ? " selected" : ""}>${esc(TEN_MUC[e] || e)}</option>`).join("");
+        ef.disabled = !t.value;
+      }
+      return luuModel(tr);
+    }
     if (t.matches("input[type=radio][data-role]")) {
       const role = t.dataset.role, muc = t.value;
       if (muc === "toan" && !confirm("Cho " + (VAI.find((v) => v.role === role) || {}).ten + " toàn quyền trên máy (không sandbox)?")) { veQuyen(""); return; }

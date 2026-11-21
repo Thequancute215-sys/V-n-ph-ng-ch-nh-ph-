@@ -30,7 +30,8 @@ export async function mo(vung, { kho, ctl }) {
     quyen = q.status === "fulfilled" ? q.value.quyen : null;
     tongQuan = o.status === "fulfilled" && o.value ? o.value.overview || o.value : null;
     jobs = j.status === "fulfilled" ? j.value.jobs || [] : null;
-    loiCtl = d.status === "rejected" ? d.reason.message : "";
+    // Gom lỗi của cả ba nguồn (điều phối, quyền, lượt AI) để không im lặng khi một nguồn hỏng.
+    loiCtl = [["điều phối model", d], ["mức quyền", q], ["lượt AI", j]].filter(([, x]) => x.status === "rejected").map(([t, x]) => t + ": " + x.reason.message).join("; ");
     ve();
   }
 
@@ -60,11 +61,11 @@ export async function mo(vung, { kho, ctl }) {
     $("team").innerHTML = p
       ? `<ol class="dai-team" style="list-style:none;margin:0;padding:0">${CHU_TRINH.map((r, i) => { const v = VAI.find((x) => x.role === r);
           return `${i ? '<li class="mui" aria-hidden="true">›</li>' : ""}<li class="buoc"${r === giu ? ' aria-current="step"' : ""}><b>${esc(v.ten)}</b><small>${esc(v.viec)}</small>${r === giu ? '<small class="song">đang giữ lượt</small>' : ""}</li>`; }).join("")}</ol>
-         ${p.openBlockers && p.openBlockers.length ? `<p class="canh-bao">Còn ${p.openBlockers.length} lỗi chặn (Vùng [5]) chưa đóng.</p>` : ""}`
+         ${p.openBlockers && p.openBlockers.length ? `<p class="canh-bao">Còn ${p.openBlockers.length} lỗi chặn chưa đóng: đội phải sửa xong mới sang giai đoạn sau.</p>` : ""}`
       : tongQuan === null && kho.duAn ? loi("Chưa đọc được agent.md của dự án đang chọn.", false) : rong("Chưa có chu trình", "Chọn một dự án có agent.md ở thanh trên.");
 
     if (!jobs && !dieuPhoi) { $("dsCs").innerHTML = loiCtl ? loi(loiCtl) : dangTai(4); return; }
-    $("dsCs").innerHTML = (loiCtl ? loi("Chưa đọc được điều phối model: " + loiCtl) : "") + VAI.map((v) => {
+    $("dsCs").innerHTML = (loiCtl ? loi("Chưa đọc được " + loiCtl) : "") + VAI.map((v) => {
       const h = hoatDong(v.role), chay = h && h.chay, cuoi = h && h.cuoi;
       const nhan = !h ? ["chưa đọc được", ""] : chay ? ["đang làm", "song"] : ["rảnh", ""];
       const dong = chay ? `Đang chạy lượt ở ${tenDuAn(chay.workspace)}${chay.runningS ? `, đã ${Math.max(1, Math.round(chay.runningS / 60))} phút` : ""}.`
@@ -86,6 +87,7 @@ export async function mo(vung, { kho, ctl }) {
     if (!chon) { box.hidden = true; return; }
     const v = VAI.find((x) => x.role === chon);
     box.hidden = false;
+    box.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "nearest" });
     box.innerHTML = `<div class="dau-hang"><h2 class="dau">${esc(v.ten)}: mô tả công việc</h2><a class="nut nho" href="#/doi/bo-nao?p=${encodeURIComponent("cong-su/" + v.role + ".md")}">Sửa trong Bộ não</a></div>${dangTai(4)}`;
     try {
       const d = await ctl("/bo-nao/doc?p=" + encodeURIComponent("cong-su/" + v.role + ".md"));

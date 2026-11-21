@@ -2,7 +2,7 @@
 // Bảng việc gộp ba nguồn thật của ctl: lượt AI và lệnh (/jobs), luồng tự chạy (/autopilot), bàn giao chờ duyệt (/handoffs).
 // Lịch chạy (/lich-chay, ctl/lich-chay.js): giao việc cho đội hoặc hỏi một AI theo nhịp; mặc định TẮT, CEO bật từng lịch.
 // ctl tự bỏ qua lần chạy khi lần trước chưa xong, dự án đang bận hay hạn mức AI dưới 15%, và không chạy bù khi máy tắt.
-import { esc, cat, luc, dangTai, rong, loi } from "../ui.js";
+import { esc, cat, luc, dangTai, rong, loi, VAI } from "../ui.js";
 
 const TT_LUONG = { running: "đang chạy", reporting: "đang viết báo cáo", awaiting_answer: "chờ anh trả lời", awaiting_approval: "chờ anh duyệt báo cáo",
   attention: "cần anh xem", waiting_quota: "chờ hạn mức", awaiting_scan: "chờ anh duyệt rà soát", stopped: "đã dừng", approved: "anh đã duyệt",
@@ -13,6 +13,11 @@ const NGAY = 24 * 3600 * 1000;
 const THU = ["", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ nhật"];
 const HOI = { pain: "Pain (Claude)", hinata: "Hinata (Antigravity)", itachi: "Itachi (Sol)", sasuke: "Sasuke (Astra)", kakashi: "Kakashi (Antigravity)", sakura: "Sakura (Claude)" };
 const tenDuAn = (p) => String(p || "").split(/[\\/]/).pop();
+// Tên cộng sự thay cho mã vai (CODEX_ASTRA_DEV → Sasuke (Astra)); lượt phụ (báo cáo, chat…) ghi theo việc.
+const PHU = { CLAUDE_REPORTER: "Pain viết báo cáo", CLAUDE_CHAT: "Hỏi Claude", CODEX_CHAT: "Hỏi Codex", AGY_CHAT: "Hỏi Antigravity",
+  CLAUDE_WEB_PROMPT: "Claude soạn prompt web", CODEX_WEB_PROMPT: "Codex soạn prompt web", AGY_WEB_PROMPT: "Antigravity soạn prompt web" };
+const tenViec = (j) => { const v = VAI.find((x) => x.role === j.agent); return v ? "Lượt của " + v.ten : PHU[j.agent] || (j.agent ? j.agent : "Lệnh " + (j.kind || "")); };
+const TEN_VAI_BG = (r) => (VAI.find((x) => x.role === r) || {}).ten || r || "AI";
 
 export async function mo(vung, { kho, ctl, bao }) {
   vung.innerHTML = `<div class="vung">
@@ -57,13 +62,13 @@ export async function mo(vung, { kho, ctl, bao }) {
       else if (bay - (r.updatedAt || 0) < NGAY) cot.xong.push([r.updatedAt, the(cat(r.task, 140), ct)]);
     }
     for (const h of handoffs || []) { const p = h.payload || {};
-      cot.canAnh.push([h.createdAt || 0, the(cat(p.giai_thich || p.tom_tat || "Bàn giao chờ duyệt", 140), `Bàn giao của ${h.role || "AI"}${p.next_owner ? " cho " + p.next_owner : ""} · ${tenDuAn(h.workspace)}`, `<a class="nut nho" href="#/code/dieu-khien">Duyệt</a>`)]); }
+      cot.canAnh.push([h.createdAt || 0, the(cat(p.giai_thich || p.tom_tat || "Bàn giao chờ duyệt", 140), `Bàn giao của ${TEN_VAI_BG(h.role)}${p.next_owner ? " cho " + TEN_VAI_BG(p.next_owner) : ""} · ${tenDuAn(h.workspace)}`, `<a class="nut nho" href="#/code/dieu-khien">Duyệt</a>`)]); }
     for (const j of jobs || []) {
-      const ct = `${j.agent || j.kind} · ${tenDuAn(j.workspace)}${j.started_at ? " · " + luc(j.started_at) : ""}`;
-      if (j.status === "running") cot.chay.push([j.started_at, the(j.agent ? "Lượt " + j.agent : "Lệnh " + j.kind, ct + (j.runningS ? ` · đã chạy ${Math.round(j.runningS / 60)} phút` : ""))]);
-      else if (j.status === "pending_approval") cot.canAnh.push([j.started_at, the("Lệnh chờ anh duyệt", ct, `<a class="nut nho" href="#/code/dieu-khien">Duyệt</a>`)]);
-      else if (j.status === "queued") cot.cho.push([j.started_at, the(j.agent || j.kind, ct)]);
-      else if (bay - (j.ended_at || j.started_at || 0) < NGAY) cot.xong.push([j.ended_at || j.started_at, the(`${j.agent || j.kind}: ${j.status === "done" ? "xong" : j.status === "rejected" ? "anh từ chối" : j.status}`, ct)]);
+      const ct = `${tenDuAn(j.workspace)}${j.started_at ? " · " + luc(j.started_at) : ""}`;
+      if (j.status === "running") cot.chay.push([j.started_at, the(tenViec(j), ct + (j.runningS ? ` · đã chạy ${Math.round(j.runningS / 60)} phút` : ""))]);
+      else if (j.status === "pending_approval") cot.canAnh.push([j.started_at, the(tenViec(j) + ": chờ anh duyệt", ct, `<a class="nut nho" href="#/code/dieu-khien">Duyệt</a>`)]);
+      else if (j.status === "queued") cot.cho.push([j.started_at, the(tenViec(j), ct)]);
+      else if (bay - (j.ended_at || j.started_at || 0) < NGAY) cot.xong.push([j.ended_at || j.started_at, the(`${tenViec(j)}: ${j.status === "done" ? "xong" : j.status === "rejected" ? "anh từ chối" : j.status}`, ct)]);
     }
     const sx = (a) => a.sort((x, y) => (y[0] || 0) - (x[0] || 0)).map((x) => x[1]);
     $("kpi").innerHTML = [["Đang chạy", cot.chay.length], ["Đang chờ", cot.cho.length], ["Cần anh xử lý", cot.canAnh.length], ["Xong trong 24 giờ", cot.xong.length]]
@@ -79,7 +84,7 @@ export async function mo(vung, { kho, ctl, bao }) {
   function veLich() {
     if (lich === null) { $("dsLich").innerHTML = loi(loiLich ? "Chưa đọc được lịch chạy: " + loiLich : "Chưa đọc được lịch chạy."); return; }
     if (!lich.length) { $("dsLich").innerHTML = rong("Chưa có lịch nào", "Ví dụ: mỗi sáng 8:00 hỏi Pain tóm tắt tiến độ các dự án; mỗi thứ Hai giao đội rà lỗi chặn còn mở."); return; }
-    $("dsLich").innerHTML = lich.map((x) => { const cuoi = (x.lichSu || [])[0] || (x.lichSu || []).at?.(-1);
+    $("dsLich").innerHTML = lich.map((x) => { const cuoi = (x.lichSu || [])[0];   // ctl giữ lịch sử mới nhất ở đầu
       return `<div class="dong"><div>
         <div class="tieu">${esc(x.ten)} <span class="nhan ${x.bat ? "song" : ""}">${x.bat ? "đang bật" : "tắt"}</span></div>
         <div class="chi-tiet">${esc(x.loai === "hoi" ? "Hỏi " + (HOI[x.vai] || x.vai || "AI") : "Giao việc cho đội")} · ${esc(tenDuAn(x.workspace))} · ${esc(moTaNhip(x.nhip))}${x.bat && x.lanToi ? " · lần tới " + esc(new Date(x.lanToi).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })) : ""}</div>
@@ -108,7 +113,7 @@ export async function mo(vung, { kho, ctl, bao }) {
       <label data-chi="gio">Giờ<input class="o" name="gio" type="time" value="${esc(n.gio || "08:00")}"></label>
       <label data-chi="phut">Mỗi bao nhiêu phút (ít nhất 30)<input class="o" name="phut" type="number" min="30" step="5" value="${esc(n.phut || 120)}"></label>
       <label class="rong-het">Mỗi lần chạy làm đúng việc này<textarea class="o" name="moTa" required maxlength="4000" placeholder="Ví dụ: Đọc agent.md và git log 24 giờ qua, tóm tắt 5 dòng: Phase, ai giữ lượt, lỗi chặn còn mở, việc cần anh.">${esc(x ? x.moTa : "")}</textarea></label>
-    </div><div class="hang"><button type="submit" class="nut-chinh">${x ? "Lưu" : "Tạo lịch (đang tắt)"}</button><button type="button" class="nut" id="nutDongBm">Huỷ</button><span class="mo" id="loiBm" role="alert"></span></div>`;
+    </div><div class="hang"><button type="submit" class="nut-chinh">${x ? "Lưu" : "Tạo lịch (đang tắt)"}</button><button type="button" class="nut" id="nutDongBm">Huỷ</button><span class="hong" id="loiBm" role="alert"></span></div>`;
     hienTruong(); f.querySelector("[name=ten]").focus();
   }
   function hienTruong() {
@@ -123,14 +128,19 @@ export async function mo(vung, { kho, ctl, bao }) {
     const f = $("bieuMau"), g = (n) => f.querySelector(`[name=${n}]`).value.trim(), kieu = g("kieu");
     const nhip = kieu === "moi-phut" ? { kieu, phut: Number(g("phut")) } : kieu === "hang-tuan" ? { kieu, thu: Number(g("thu")), gio: g("gio") } : { kieu, gio: g("gio") };
     const body = { ...(sua ? { id: sua.id, bat: sua.bat } : {}), ten: g("ten"), loai: g("loai"), workspace: g("workspace"), moTa: g("moTa"), nhip, ...(g("loai") === "hoi" ? { vai: g("vai") } : {}) };
-    const thieu = !body.ten ? "Nhập tên." : !body.moTa ? "Nhập việc mỗi lần chạy làm." : !body.workspace ? "Chọn dự án." : kieu === "moi-phut" && !(nhip.phut >= 30) ? "Nhịp ít nhất 30 phút để giữ hạn mức." : "";
-    if (thieu) { f.querySelector("#loiBm").textContent = thieu; return; }
+    f.querySelectorAll("[aria-invalid]").forEach((o) => o.removeAttribute("aria-invalid"));
+    const [truong, thieu] = !body.ten ? ["ten", "Nhập tên."] : !body.moTa ? ["moTa", "Nhập việc mỗi lần chạy làm."] : !body.workspace ? ["workspace", "Chọn dự án."]
+      : kieu === "moi-phut" && !(nhip.phut >= 30) ? ["phut", "Nhịp ít nhất 30 phút để giữ hạn mức."] : [null, ""];
+    if (thieu) { const o = f.querySelector(`[name=${truong}]`); o.setAttribute("aria-invalid", "true"); o.focus(); f.querySelector("#loiBm").textContent = thieu; return; }
     const nut = f.querySelector("[type=submit]"); nut.setAttribute("aria-busy", "true"); nut.disabled = true;
     try { await ctl("/lich-chay", body); bao(sua ? "Đã lưu lịch." : "Đã tạo lịch (đang tắt). Bấm Bật khi sẵn sàng."); f.hidden = true; sua = null; tai(); }
     catch (err) { f.querySelector("#loiBm").textContent = err.message; nut.removeAttribute("aria-busy"); nut.disabled = false; }
   }
-  async function hanhDong(duongDan, body, xong) {
-    try { await ctl(duongDan, body); bao(xong); tai(); } catch (e) { bao(e.message, true); }
+  // nut: khoá nút trong lúc ctl xử lý (Chạy ngay có thể mất cả phút khi phải giao việc), tránh bấm hai lần.
+  async function hanhDong(duongDan, body, xong, nut = null) {
+    if (nut) { nut.disabled = true; nut.setAttribute("aria-busy", "true"); }
+    try { await ctl(duongDan, body, { timeout: 180000 }); bao(xong); tai(); }
+    catch (e) { bao(e.message, true); if (nut) { nut.disabled = false; nut.removeAttribute("aria-busy"); } }
   }
 
   vung.addEventListener("click", (e) => {
@@ -138,7 +148,7 @@ export async function mo(vung, { kho, ctl, bao }) {
     if (t.closest("#nutThemLich")) return moBieuMau();
     if (t.closest("#nutDongBm")) { $("bieuMau").hidden = true; sua = null; return; }
     const b = t.closest("[data-bat]"); if (b) { const x = lich.find((y) => y.id === b.dataset.bat); return hanhDong(`/lich-chay/${encodeURIComponent(x.id)}/bat`, { bat: !x.bat }, x.bat ? "Đã tắt lịch." : "Đã bật lịch."); }
-    const c = t.closest("[data-chay]"); if (c) return hanhDong(`/lich-chay/${encodeURIComponent(c.dataset.chay)}/chay-ngay`, {}, "Đã chạy ngay (xem kết quả ở dòng lịch).");
+    const c = t.closest("[data-chay]"); if (c) { c.textContent = "Đang chạy…"; return hanhDong(`/lich-chay/${encodeURIComponent(c.dataset.chay)}/chay-ngay`, {}, "Đã chạy (xem kết quả ở dòng lịch).", c); }
     const s = t.closest("[data-sua]"); if (s) return moBieuMau(lich.find((y) => y.id === s.dataset.sua));
     const x = t.closest("[data-xoa]"); if (x && confirm("Xoá lịch này?")) return hanhDong(`/lich-chay/${encodeURIComponent(x.dataset.xoa)}/xoa`, {}, "Đã xoá lịch.");
     if (t.closest("[data-thu-lai]")) return tai();

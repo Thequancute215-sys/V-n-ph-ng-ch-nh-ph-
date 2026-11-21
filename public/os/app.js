@@ -97,7 +97,8 @@ document.getElementById("chonDuAn").addEventListener("change", async (e) => {
 
 // ---------- nền sáng/tối ----------
 const nutNen = document.getElementById("doiNen");
-const veNutNen = () => { const sang = document.documentElement.dataset.theme === "light"; nutNen.textContent = sang ? "Nền tối" : "Nền sáng"; nutNen.setAttribute("aria-pressed", String(sang)); };
+// Nút bật/tắt: nhãn cố định "Nền sáng", aria-pressed cho biết đang bật hay không (đổi nhãn kèm aria-pressed thì trình đọc màn hình nói ngược nghĩa).
+const veNutNen = () => { const sang = document.documentElement.dataset.theme === "light"; nutNen.textContent = "Nền sáng"; nutNen.setAttribute("aria-pressed", String(sang)); };
 nutNen.addEventListener("click", () => {
   const moi = document.documentElement.dataset.theme === "light" ? "dark" : "light";
   document.documentElement.dataset.theme = moi; try { localStorage.setItem("tqos-theme", moi); } catch {}
@@ -140,8 +141,12 @@ async function moKhu() {
   try {
     const m = await import(k.mod);
     if (mine !== phien) return;
-    vung.innerHTML = "";
-    dong = (await m.mo(vung, { kho, ctl, bao })) || null;
+    // Mỗi lần mở khu dùng một khung con MỚI: khu gắn bộ nghe sự kiện lên khung được giao, nên khung cũ bị thay là bộ nghe
+    // cũ đi theo. (Trước đây giao thẳng #vung — phần tử sống suốt phiên — nên đổi khu vài lần thì một cú bấm Lưu chạy vài lần.)
+    const khung = document.createElement("div");
+    khung.className = "khung-khu";
+    vung.replaceChildren(khung);
+    dong = (await m.mo(khung, { kho, ctl, bao })) || null;
   } catch (e) {
     if (mine !== phien) return;
     vung.innerHTML = `<div class="vung"><div class="loi" role="alert"><span>Không mở được khu ${esc(k.ten)}: ${esc(e.message)}</span></div></div>`;

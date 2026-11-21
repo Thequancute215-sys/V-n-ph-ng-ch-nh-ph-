@@ -68,3 +68,11 @@ test("OS-2: máy tính không vào được văn phòng 3D; điện thoại vẫ
   assert.equal(chay("Mozilla/5.0 (iPhone; CPU iPhone OS 19_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148"), null);
   assert.equal(chay("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Safari/605.1.15", 5), null, "iPad tự xưng Macintosh nhưng có cảm ứng");
 });
+
+test("OS-2: mỗi lần mở khu giao cho khu một khung con mới, không giao thẳng #vung (bộ nghe sự kiện không chồng lên nhau)", () => {
+  const app = doc("os/app.js");
+  const mo = app.slice(app.indexOf("async function moKhu()"));
+  assert.match(mo, /vung\.replaceChildren\(khung\)/, "thay khung cũ bằng khung mới");
+  assert.match(mo, /m\.mo\(khung,/, "khu nhận khung mới");
+  assert.doesNotMatch(mo, /m\.mo\(vung,/, "không giao #vung sống suốt phiên cho khu");
+});

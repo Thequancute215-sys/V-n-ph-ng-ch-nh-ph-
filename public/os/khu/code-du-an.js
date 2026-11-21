@@ -39,14 +39,14 @@ export async function mo(vung, { kho, ctl, bao }) {
         : o.loi ? `<span class="hong">${esc(cat(o.loi, 120))}</span>`
         : `<span class="hang">${p ? `<span class="nhan">${esc(cat(p.phase || "chưa rõ Phase", 40))}</span><span class="nhan ${p.nextOwner ? "song" : ""}">lượt: ${esc(TEN_VAI[p.nextOwner] || p.nextOwner || "chưa rõ")}</span>
             ${p.openBlockers && p.openBlockers.length ? `<span class="nhan hong">${p.openBlockers.length} lỗi chặn</span>` : '<span class="nhan">0 lỗi chặn</span>'}`
-            : `<span class="nhan canh-bao">${esc(o.agentMd === false || (o.agentMd && o.agentMd.exists === false) ? "chưa có agent.md" : cat(o.progressReason || "chưa đọc được agent.md", 50))}</span>`}
-            ${r && r.branch ? `<span class="nhan">nhánh ${esc(cat(r.branch, 32))}</span>` : o.isRepo === false ? '<span class="nhan canh-bao">không phải repo git</span>' : ""}</span>
+            : `<span class="nhan canh-bao">${esc(o.agentMd === false || (o.agentMd && o.agentMd.exists === false) ? "chưa có sổ dự án (agent.md)" : cat(o.progressReason || "chưa đọc được agent.md", 50))}</span>`}
+            ${r && r.branch ? `<span class="nhan">nhánh ${esc(cat(r.branch, 32))}</span>` : o.isRepo === false ? '<span class="nhan canh-bao">chưa quản lý bằng git</span>' : ""}</span>
           ${p && p.nextStep ? `<span class="dang">${esc(cat(p.nextStep, 180))}</span>` : ""}`;
       return `<div class="the-cs" style="cursor:default"${dang ? ' aria-current="true"' : ""}>
         <span class="ten">${esc(w.name || w.path.split(/[\\/]/).pop())}${dang ? '<span class="nhan song" style="margin-left:auto">đang làm</span>' : ""}</span>
         <span class="viec" title="${esc(w.path)}">${esc(cat(w.path, 70))}${o && o.readAt ? " · đọc " + esc(luc(o.readAt)) : ""}</span>
         ${trangThai}
-        <span class="hang">${dang ? "" : `<button type="button" class="nut nho" data-chon="${esc(w.path)}">Làm dự án này</button>`}<a class="nut nho" href="#/code/dieu-khien">Luồng và bàn giao</a></span>
+        <span class="hang">${dang ? "" : `<button type="button" class="nut nho" data-chon="${esc(w.path)}">Làm dự án này</button>`}<button type="button" class="nut nho" data-luong="${esc(w.path)}">Luồng và bàn giao</button></span>
       </div>`;
     }).join("");
   }
@@ -54,6 +54,9 @@ export async function mo(vung, { kho, ctl, bao }) {
   vung.addEventListener("click", async (e) => {
     const c = e.target.closest("[data-chon]");
     if (c) { try { await ctl("/workspaces/switch", { path: c.dataset.chon }); kho.duAn = c.dataset.chon; const sel = document.getElementById("chonDuAn"); if (sel) sel.value = c.dataset.chon; kho.bao(); bao("Đã chuyển dự án đang làm."); ve(); } catch (err) { bao(err.message, true); } return; }
+    // Xem luồng của dự án khác: chuyển dự án đang làm trước, để trang luồng không hiện nhầm dự án cũ.
+    const l = e.target.closest("[data-luong]");
+    if (l) { if (l.dataset.luong !== kho.duAn) { try { await ctl("/workspaces/switch", { path: l.dataset.luong }); kho.duAn = l.dataset.luong; const sel = document.getElementById("chonDuAn"); if (sel) sel.value = l.dataset.luong; kho.bao(); } catch (err) { bao(err.message, true); return; } } location.hash = "#/code/dieu-khien"; return; }
     if (e.target.closest("[data-thu-lai]")) tai();
   });
   await tai();

@@ -159,11 +159,14 @@ table.bang td.so, table.bang th.so { text-align: right; }
 .nhan.canh-bao { border-color: color-mix(in oklab, var(--color-warn) 55%, var(--color-rule)); }
 .nhan.hong { border-color: color-mix(in oklab, var(--color-error) 55%, var(--color-rule)); }
 
+/* Thông báo trạng thái (đang tải, rỗng, lỗi) nằm trong lưới nhiều cột thì chiếm trọn hàng, không chen vào một ô. */
+.luoi-the > .loi, .luoi-the > .rong, .luoi-the > .dang-tai, .bang-viec > .loi, .bang-viec > .rong, .bang-viec > .dang-tai, .so-kpi > .dang-tai { grid-column: 1 / -1; }
+
 /* ---------- cộng sự ---------- */
 .luoi-the { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-sm); }
 .the-cs { border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); background: var(--color-paper-2); padding: var(--space-md); display: flex; flex-direction: column; gap: var(--space-xs); min-width: 0; text-align: left; color: inherit; font: inherit; cursor: pointer; transition: border-color var(--dur-micro) var(--ease-out); }
 .the-cs:hover { border-color: var(--color-rule-2); }
-.the-cs[aria-pressed="true"] { border-color: var(--color-accent-text); }
+.the-cs[aria-pressed="true"], .the-cs[aria-current="true"] { border-color: var(--color-accent-text); }
 .the-cs .ten { display: flex; align-items: center; gap: var(--space-xs); font-weight: 600; color: var(--color-ink); }
 .the-cs .viec { color: var(--color-muted); font-size: var(--text-sm); }
 .the-cs .dang { color: var(--color-ink-2); font-size: var(--text-sm); overflow-wrap: anywhere; }
@@ -215,6 +218,11 @@ textarea.o.o-sua { width: 100%; min-height: 360px; font-family: var(--font-mono)
   .tin-khung > aside { position: static; }
   .loc-nguoi { flex-direction: row; flex-wrap: wrap; }
   .cong-hang, .so-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .thanh-tren { flex-wrap: wrap; padding: var(--space-xs) var(--space-md); }
+  .bang-viec { grid-template-columns: minmax(0, 1fr); }
+  /* Thanh bên gập (trượt ra ngoài màn): không cho Tab lọt vào các mục đang ẩn. */
+  .os:not(.mo-ben) .thanh-ben { visibility: hidden; transition: transform var(--dur-short) var(--ease-out), visibility 0s linear var(--dur-short); }
+  .os.mo-ben .thanh-ben { visibility: visible; }
   .nao-khung { grid-template-columns: minmax(0, 1fr); }
   .vung { padding: var(--space-md); }
 }

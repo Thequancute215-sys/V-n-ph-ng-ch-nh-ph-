@@ -38,21 +38,25 @@ export async function mo(vung, { ctl, bao }) {
   }
 
   async function moFile(p) {
-    if (dang && dang.sua && dang.p !== p && !confirm("File đang sửa chưa lưu. Bỏ thay đổi?")) return;
+    if (dang && dang.p !== p && !boDangSua()) return;
     dang = { p, noiDung: "", ma: null, sua: false }; veCay();
     $("hFile").textContent = p; $("maFile").textContent = ""; $("thanFile").innerHTML = dangTai(6);
     try {
       const d = await ctl("/bo-nao/doc?p=" + encodeURIComponent(p));
       if (!conSong || !dang || dang.p !== p) return;
       dang.noiDung = d.noiDung || ""; dang.ma = d.ma || null; veFile(); taiLs(p);
-    } catch (e) { if (dang && dang.p === p) $("thanFile").innerHTML = loi(e.message); }
+    } catch (e) { if (dang && dang.p === p) $("thanFile").innerHTML = loi(e.message, false) + `<div class="hang"><button type="button" class="nut nho" data-doc-lai="${esc(p)}">Thử đọc lại</button></div>`; }
+  }
+  const boDangSua = () => !dang || !dang.sua || confirm("File đang sửa chưa lưu. Bỏ thay đổi?");
+  function veTrong(tieu = "Chọn một file", moTa = "Trí nhớ, wiki, nguồn và mô tả công việc của từng cộng sự. Mỗi lần lưu là một bản ghi có mã, hoàn tác được.") {
+    dang = null; $("hFile").textContent = tieu; $("maFile").textContent = ""; $("thanFile").innerHTML = rong("Bộ não chung của văn phòng", moTa); veCay();
   }
   function veFile() {
     const md = window.MD ? window.MD.render(dang.noiDung) : `<pre class="van-ban">${esc(dang.noiDung)}</pre>`;
-    $("maFile").textContent = dang.ma ? "mã nội dung " + dang.ma.slice(0, 7) : "file mới";
+    $("maFile").textContent = dang.ma ? "bản " + dang.ma.slice(0, 7) : "file mới";
     $("thanFile").innerHTML = dang.sua
       ? `<label class="visually-hidden" for="oSua">Nội dung ${esc(dang.p)}</label><textarea class="o o-sua" id="oSua" spellcheck="false">${esc(dang.noiDung)}</textarea>
-         <div class="hang"><input class="o" id="lyDo" placeholder="Lý do sửa (ghi vào lịch sử)" style="flex:1;min-width:200px" maxlength="160">
+         <div class="hang"><label class="visually-hidden" for="lyDo">Lý do sửa</label><input class="o" id="lyDo" placeholder="Lý do sửa (ghi vào lịch sử)" style="flex:1;min-width:200px" maxlength="160">
          <button type="button" class="nut-chinh" id="nutLuu">Lưu</button><button type="button" class="nut" id="nutHuy">Huỷ</button>
          ${dang.ma && !/README\.md$/i.test(dang.p) ? '<button type="button" class="nut nguy" id="nutXoa">Xoá file</button>' : ""}</div>`
       : `<div class="md-xem">${md || '<p class="mo">File trống.</p>'}</div><div class="hang"><button type="button" class="nut" id="nutSua">Sửa</button></div>`;
@@ -78,13 +82,26 @@ export async function mo(vung, { ctl, bao }) {
       $("hFile").textContent = "Chọn một file"; $("maFile").textContent = ""; $("thanFile").innerHTML = rong("Đã xoá file", "Hoàn tác ở Lịch sử nếu xoá nhầm."); taiCay(); taiLs(); }
     catch (e) { bao(e.message, true); }
   }
+  // File mới: chọn ngăn + gõ tên thường (không bắt gõ đường dẫn). Tên được đổi thành tên file an toàn: bỏ dấu, chữ thường, gạch nối.
   function fileMoi() {
-    const p = prompt("Đường dẫn file mới (trong tri-nho/, wiki/, nguon/ hoặc cong-su/), ví dụ: tri-nho/khach-hang.md");
-    if (!p) return;
-    const sach = p.trim().replace(/\\/g, "/").replace(/^\/+/, "");
-    if (!/\.md$/i.test(sach) || !/^(tri-nho|wiki|nguon|cong-su)\//.test(sach)) { bao("File phải là .md và nằm trong tri-nho/, wiki/, nguon/ hoặc cong-su/.", true); return; }
-    dang = { p: sach, noiDung: "# " + sach.split("/").pop().replace(/\.md$/i, "") + "\n\n", ma: null, sua: true };
-    $("hFile").textContent = sach; veCay(); veFile();
+    if (!boDangSua()) return;
+    dang = null; veCay();
+    $("hFile").textContent = "Ghi chú mới"; $("maFile").textContent = "";
+    $("thanFile").innerHTML = `<form id="fMoi" class="bieu-mau" novalidate>
+      <label>Ngăn<select class="o" name="ngan">${Object.entries(TEN_THU_MUC).map(([k, t]) => `<option value="${k}">${esc(t)}</option>`).join("")}</select></label>
+      <label>Tên ghi chú<input class="o" name="ten" required maxlength="80" placeholder="Ví dụ: Khách hàng quen"></label>
+      <div class="hang rong-het"><button type="submit" class="nut-chinh">Tạo và viết</button><button type="button" class="nut" id="nutHuyMoi">Huỷ</button><span class="hong" id="loiMoi" role="alert"></span></div></form>`;
+    $("fMoi").querySelector("[name=ten]").focus();
+  }
+  function taoTuForm(e) {
+    e.preventDefault();
+    const f = $("fMoi"), o = f.querySelector("[name=ten]"), ten = o.value.trim();
+    const slug = ten.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
+    if (!slug) { o.setAttribute("aria-invalid", "true"); $("loiMoi").textContent = "Nhập tên ghi chú (có chữ hoặc số)."; o.focus(); return; }
+    const p = f.querySelector("[name=ngan]").value + "/" + slug + ".md";
+    if (ds.some((x) => duongDan(x) === p)) { o.setAttribute("aria-invalid", "true"); $("loiMoi").textContent = "Đã có ghi chú tên này: mở nó ở danh sách bên trái."; o.focus(); return; }
+    dang = { p, noiDung: "# " + ten + "\n\n", ma: null, sua: true };
+    $("hFile").textContent = p; veCay(); veFile();
   }
 
   async function taiLs(p) {
@@ -95,7 +112,7 @@ export async function mo(vung, { ctl, bao }) {
       if (!conSong) return;
       const ls = d.lichSu || [];
       $("ls").innerHTML = ls.length ? ls.map((c) => `<div class="dong"><div><div class="tieu">${esc(c.thongDiep)}</div><div class="chi-tiet"><code>${esc(c.commit)}</code> · ${esc(luc(c.luc))}${c.file && c.file.length ? " · " + esc(c.file.slice(0, 4).join(", ")) : ""}</div></div>
-        <div class="hang">${p ? `<button type="button" class="nut nho" data-xem="${esc(c.commit)}">Xem bản này</button>` : ""}<button type="button" class="nut nho" data-hoan-tac="${esc(c.commit)}">Hoàn tác</button></div></div>`).join("")
+        <div class="hang">${p ? `<button type="button" class="nut nho" data-xem="${esc(c.commit)}">Xem bản này</button>` : ""}${/khởi tạo$/.test(c.thongDiep) ? "" : `<button type="button" class="nut nho" data-hoan-tac="${esc(c.commit)}">Hoàn tác</button>`}</div></div>`).join("")
         : rong("Chưa có lịch sử", "Lần lưu đầu tiên sẽ hiện ở đây.");
     } catch (e) { if (conSong) $("ls").innerHTML = loi(e.message, false); }
   }
@@ -116,7 +133,9 @@ export async function mo(vung, { ctl, bao }) {
     const f = t.closest(".cay button[data-p]"); if (f) return moFile(f.dataset.p);
     if (t.closest("#nutMoi")) return fileMoi();
     if (t.closest("#nutSua")) { dang.sua = true; return veFile(); }
-    if (t.closest("#nutHuy")) { if (!dang.ma) { dang = null; $("hFile").textContent = "Chọn một file"; $("thanFile").innerHTML = ""; veCay(); return; } dang.sua = false; return veFile(); }
+    if (t.closest("#nutHuyMoi")) return veTrong();
+    if (t.closest("#nutHuy")) { if (!dang.ma) return veTrong(); dang.sua = false; return veFile(); }
+    const dl = t.closest("[data-doc-lai]"); if (dl) { dang = null; return moFile(dl.dataset.docLai); }
     if (t.closest("#nutLuu")) return luu();
     if (t.closest("#nutXoa")) return xoa();
     if (t.closest("#nutVeBanMoi")) return veFile();
@@ -124,7 +143,8 @@ export async function mo(vung, { ctl, bao }) {
     const h = t.closest("[data-hoan-tac]"); if (h) return hoanTac(h.dataset.hoanTac);
     if (t.closest("[data-thu-lai]")) return taiCay();
   });
-  vung.addEventListener("input", (e) => { if (e.target.id === "oSua" && dang) dang.sua = true; });
+  vung.addEventListener("input", (e) => { if (e.target.id === "oSua" && dang) dang.sua = true; if (e.target.closest("#fMoi")) e.target.removeAttribute("aria-invalid"); });
+  vung.addEventListener("submit", (e) => { if (e.target.id === "fMoi") taoTuForm(e); });
 
   await taiCay();
   // Mở thẳng một file khi đến từ khu khác (#/doi/bo-nao?p=cong-su/X.md).
