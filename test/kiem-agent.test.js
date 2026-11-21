@@ -166,7 +166,9 @@ test("văn phòng: lượt sửa sai vùng bị trả lại kèm lý do, sửa x
     fs.writeFileSync('agent.md',a);
     console.log(JSON.stringify({result:'Xong.\\n'+JSON.stringify({role,next_owner:'CLAUDE_AUDITOR',files:['src/app.js'],claim_fixed:[],giai_thich:${JSON.stringify(GOOD)}})}));`);
   const ROLES = ["SPEC_ARCHITECT", "SOL_ARCHITECT_PLANNER", "CODEX_ASTRA_DEV", "CLAUDE_AUDITOR", "CLAUDE_REPORTER"];
-  fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify(Object.fromEntries(ROLES.map((r) => [r, [process.execPath, fake, r, "{prompt}"]]))));
+  const reporter = path.join(temp, "claude.js");
+  fs.writeFileSync(reporter, `process.argv.splice(2, process.argv.length, ...${JSON.stringify(["CLAUDE_REPORTER"])}, process.argv.at(-1)); require(${JSON.stringify(fake)});`);
+  fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify(Object.fromEntries(ROLES.map((r) => [r, r === "CLAUDE_REPORTER" ? [process.execPath, reporter, "-p", "{prompt}"] : [process.execPath, fake, r, "{prompt}"]]))));
   const ctl = createCtl({ dir });
   ctl.ws.add(root);
   t.after(async () => { await ctl.close(); fs.rmSync(temp, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); });

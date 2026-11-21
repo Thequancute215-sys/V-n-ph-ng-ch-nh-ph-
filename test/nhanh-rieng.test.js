@@ -35,7 +35,9 @@ async function fixture(t, { owner = "SOL_ARCHITECT_PLANNER", mode = "ok" } = {})
       fs.mkdirSync('src',{recursive:true});fs.writeFileSync('src/app.js','module.exports = 1;\\n'+(mode==='secret'?'const k = "sk-ant-'+'a'.repeat(30)+'";\\n':''));}
     if(role==='SOL_ARCHITECT_PLANNER') fs.writeFileSync('KE-HOACH.md','# Kế hoạch\\n');
     console.log(JSON.stringify({result:'Xong.\\n'+JSON.stringify({role,next_owner:next[role],files:[],claim_fixed:[],giai_thich:[{van_de:'Vấn đề của lượt thử nghiệm',da_lam:'Đã làm phần việc thử nghiệm',vi_sao:'Vì đây là CLI giả dùng cho test',phuong_an_khac:[]}],...(role==='CLAUDE_AUDITOR'?{done:true}:{})})}));`);
-  fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify(Object.fromEntries(ROLES.map((r) => [r, [process.execPath, fake, r, mode, "{prompt}"]]))));
+  const reporter = path.join(temp, "claude.js");
+  fs.writeFileSync(reporter, `process.argv.splice(2, process.argv.length, ...${JSON.stringify(["CLAUDE_REPORTER", mode])}, process.argv.at(-1)); require(${JSON.stringify(fake)});`);
+  fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify(Object.fromEntries(ROLES.map((r) => [r, r === "CLAUDE_REPORTER" ? [process.execPath, reporter, "-p", "{prompt}"] : [process.execPath, fake, r, mode, "{prompt}"]]))));
   const notes = [];
   const ctl = createCtl({ dir });
   ctl.autopilot.close();   // thay bằng bộ tự động có bộ thu thông báo để kiểm
