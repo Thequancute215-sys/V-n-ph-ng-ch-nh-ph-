@@ -3,6 +3,7 @@
 // (việc ưu tiên, gói việc, hòm thư, lượt DEV, cần anh, nội quy…; ghi bằng công cụ tools/vp.js). Mỗi giây đẩy trạng thái lên trình duyệt.
 // Chỉ ghi vài file trạng thái của chính nó: data/.task-seen.json (ở đây), data/.noiquy-seen.json (lib/docs.js),
 // ~/.van-phong-ao/keys.json khi CEO lưu khóa (lib/keys.js), ~/.van-phong-ao/dieu-khien-xa.json + .log (lib/dieu-khien-xa.js).
+// Sổ tin nhắn lâu dài: data/tin-nhan/*.jsonl (CEO duyệt 21/11/2026).
 // Không gửi dữ liệu ra ngoài, không sửa file nào của Claude/Codex, che mọi chuỗi giống khóa trước khi hiện.
 "use strict";
 const http = require("http");
@@ -21,11 +22,13 @@ const keys = require("./lib/keys");
 const ctlbridge = require("./lib/ctlbridge");
 const dieuKhienXa = require("./lib/dieu-khien-xa");
 const dkx = dieuKhienXa.createDieuKhienXa();
+const { createSoTinNhan } = require("./lib/so-tin-nhan");
 
 const ROOT = __dirname;
 const CFG = loadConfig(ROOT);
 if (!CFG) { console.error("Chưa có config.json. Chạy trước: npm run setup"); process.exit(1); }
 const DATA = CFG.dataDir;
+const so = createSoTinNhan({ dataDir: DATA });
 const PORT = Number(process.env.PORT || CFG.port);
 const KEEP = CFG.keepHours * 3600000;
 const FIRST_READ = 8_000_000; // lần đầu chỉ đọc 8 MB cuối mỗi nhật ký
@@ -203,6 +206,7 @@ function pushEvent(e) {
   const key = `${e.kind}|${e.from}|${e.to}|${e.title.slice(0, 60)}`, b = Math.floor(e.t / 60000);
   if (seenEvt.has(key + b) || seenEvt.has(key + (b - 1))) return;
   seenEvt.add(key + b); if (seenEvt.size > 20000) seenEvt.clear();
+  so.ghi(e);
   events.push(e); events.sort((x, y) => x.t - y.t);
   if (events.length > 500) events.splice(0, events.length - 500);
 }
@@ -763,6 +767,25 @@ http.createServer((req, res) => {
   }
   if (url.pathname === "/events") return sse(req, res, clients, snapshot());
   if (url.pathname === "/state") return json(res, snapshot());
+  if (url.pathname === "/tin-nhan" && req.method === "GET") {
+    const options = {};
+    for (const name of ["ai", "tu", "toi", "q", "truoc", "gioiHan"]) {
+      const values = url.searchParams.getAll(name);
+      if (!values.length) continue;
+      const value = values[0];
+      if (values.length !== 1 || value.length > (name === "q" ? 120 : 80)) {
+        return json(res, { ok: false, error: "Tham số " + name + " không hợp lệ" }, 400);
+      }
+      if (name === "truoc" || name === "gioiHan") {
+        const n = Number(value);
+        if (!value.trim() || !Number.isFinite(n) || (name === "gioiHan" && !Number.isInteger(n))) {
+          return json(res, { ok: false, error: "Tham số " + name + " phải là số hợp lệ" }, 400);
+        }
+        options[name] = n;
+      } else options[name] = value;
+    }
+    return json(res, { ok: true, ...so.doc(options) });
+  }
   if (url.pathname === "/perf-events") return sse(req, res, perfClients, perfNow());
   if (url.pathname === "/perf") return json(res, perfNow());
   if (url.pathname === "/hopthu") return json(res, hopthuNow());
