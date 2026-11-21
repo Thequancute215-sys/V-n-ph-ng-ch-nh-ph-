@@ -115,7 +115,7 @@
 
 ## [4] KHÓA LƯỢT & NHẬT KÝ
 - CURRENT_PHASE: Phase 7 - Vận hành hằng ngày
-- LAST_UPDATED_BY: CEO
+- LAST_UPDATED_BY: CLAUDE_AUDITOR
 - NEXT_OWNER (MUTEX LOCK): SPEC_ARCHITECT
 
 ### [4.1] NHẬT KÝ PHASE HIỆN TẠI (tối đa 25 dòng)
@@ -146,6 +146,8 @@
 - Chỉ thị CEO (02/11/2026): bổ sung theo dõi hạn mức từng AI. File/luồng -> ba60392: ctl/quotas.js + main.js (API cache bất đồng bộ, độc lập từng hãng, timeout/dừng cây tiến trình đọc); prototype.html/css/js (hạn mức còn/đã dùng, reset, cảnh báo 80%/95%, số liệu cũ/thiếu); README và test/quotas.test.js. Nguồn thật: Codex app-server account/rateLimits/read; Claude và agy /usage JSON, xác minh num_turns=0, không gọi mô hình, không đọc/chép credential trong bộ theo dõi.
 - Kiểm hạn mức: npm test 91/91; CLI thật trả 2 cửa sổ Codex, 2 Claude, 4 Antigravity; reset Claude đổi múi giờ đúng (02:49 Asia/Bangkok trong bản đọc), không gộp Claude/GPT bên Antigravity vào gói Claude/Codex. Edge 390–1920px không tràn ngang, 0 lỗi JS, thử dữ liệu cũ/thiếu/reset đã qua không suy đoán phục hồi; theo dõi không gửi yêu cầu AI. App Windows đã tải lại và mở tab hạn mức. Không mua thêm lượt/không dùng reset credit, không push; NEXT_OWNER giữ CLAUDE_AUDITOR.
 - CEO quyết (02/11/2026: "Claude gộp hết"): CLAUDE_AUDITOR gộp PR #8 + nhánh Codex (codex/windows-app-verification, 10 commit) + nhánh Claude (agy, ask_ceo) trên claude/gop-tat-ca. Hai bộ máy tự hành chồng nhau → giữ ctl/autopilot.js (Codex: lưu đĩa, báo cáo cuối, giới hạn thời gian) làm bộ máy duy nhất, chuyển vào đó các ngắt mạch của Claude (lộ khóa, xung đột git, Codex sửa quá 2 lần, done) và awaiting_answer/ask_ceo; bỏ autoDispatch cấp runner + /settings. Ghi chú dòng trên "repo thiếu agent.md… không tự khởi tạo" không còn đúng: nạp repo nay tự sinh agent.md (PR #9). npm test 100/100 Windows.
+- FORCE_OVERRIDE (CEO, 21/11/2026): CLAUDE_AUDITOR và CODEX_ASTRA_DEV (Codex, tài khoản GPT Business 2) làm Thế Quân OS phần OS-1 trên nhánh claude/the-quan-os: Codex viết sổ tin nhắn lâu dài (lib/so-tin-nhan.js, server.js, CLAUDE.md/AGENTS.md), Claude viết giao diện public/os* và duyệt bài Codex trước khi commit. NEXT_OWNER giữ SPEC_ARCHITECT.
+- Ghi nhận hồi tố (CEO xác nhận cùng lệnh trên): xưởng phim P0–P3 (PR #63–#68) do Claude làm theo lệnh trực tiếp của CEO khi lượt đang thuộc SPEC_ARCHITECT, chưa ghi FORCE_OVERRIDE lúc đó.
 
 ### [4.2] LƯU TRỮ PHASE ĐÃ XONG (tối đa 5 dòng, 1 dòng/Phase)
 - Phase 1: Hoàn tất đặc tả Vùng [2] và Interactive Prototype Chibi Edition (SPEC_ARCHITECT).
