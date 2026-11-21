@@ -58,7 +58,7 @@
 </style>
 </head>
 <body>
-<header><h1>Điều khiển văn phòng</h1><span id="who" class="muted"></span><button type="button" data-cai-app hidden>Cài app</button><a class="btn3d" id="mo3d" href="/" hidden>Văn phòng 3D</a></header>
+<header><h1>Điều khiển văn phòng</h1><span id="who" class="muted"></span><button type="button" data-cai-app hidden>Cài app</button><a class="btn3d" id="mo3d" href="/" hidden>Văn phòng 3D</a><a class="btn3d" id="moPhim" href="xuong-phim.html" hidden>Xưởng phim</a></header>
 <main id="app"><div class="skeleton"></div><div class="skeleton"></div></main>
 <div id="msg" role="status" aria-live="polite"></div>
 <nav class="tabs" id="tabs" hidden aria-label="Mục điều khiển">
@@ -108,6 +108,7 @@ async function start() {
     $("who").textContent = s.thietBi ? s.thietBi.ten : "";
     $("tabs").hidden = false;
     $("mo3d").hidden = false;   // đã ghép: văn phòng 3D dùng được các nút (gọi qua /dkx/api)
+    $("moPhim").hidden = false; // xưởng phim: xem bản dựng, chọn take, duyệt 4 cổng (P3)
     await load();
     timer = setInterval(() => { if (document.visibilityState === "visible" && !busy) load(true); }, 10000);
   } catch (e) { $("app").innerHTML = `<div class="card"><h3>Không vào được</h3><p>${esc(e.message)}</p><div class="row"><button type="button" onclick="location.reload()">Thử lại</button></div></div>`; }

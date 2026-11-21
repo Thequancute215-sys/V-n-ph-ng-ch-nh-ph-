@@ -14,7 +14,7 @@ const os = require("os");
 const path = require("path");
 const http = require("http");
 const { spawn } = require("child_process");
-const { kiem, MAY_QUAY_MAC_DINH } = require("../lib/phim");
+const { kiem, MAY_QUAY_MAC_DINH, congDaDuyet } = require("../lib/phim");
 const { writeAtomic } = require("../lib/ghi-file");
 const mcpMay = require("./mcp-may");
 const cdt = require("./chrome-devtools");
@@ -179,6 +179,9 @@ function createTramFlow({ dir, goc, audit = { log() {} }, jobs, cliClaude, spawn
     const giong = (() => { try { return JSON.parse(fs.readFileSync(path.join(root, "media", "giong", "voice.json"), "utf8")); } catch { return null; } })();
     const kq = kiem(phim, { giong });
     if (!kq.ok) throw err("PHIM_LOI", "Hồ sơ phim còn lỗi: " + kq.loi.map((l) => l.chiTiet).join(" · ").slice(0, 300));
+    // Cổng CEO (P3): chuẩn bị cần cổng 1 (kịch bản); tạo (tốn credit) cần cả cổng 2. Tải về không cần (clip đã tạo rồi).
+    if (buoc === "tao" && !congDaDuyet(phim, 2)) throw err("CHUA_DU_DIEU_KIEN", "Chưa tạo được: anh duyệt cổng 1 (kịch bản) và cổng 2 (khoản quay) trên trang Xưởng phim trước.");
+    if (buoc === "chuan-bi" && !congDaDuyet(phim, 1)) throw err("CHUA_DU_DIEU_KIEN", "Chưa chuẩn bị được: anh duyệt cổng 1 (kịch bản) trên trang Xưởng phim trước.");
     const c = (phim.canh || []).find((x) => x.ma === canh);
     if (!c) throw err("NOT_FOUND", "Không có cảnh " + canh);
     if ((c.may_quay || phim.may_quay_mac_dinh || MAY_QUAY_MAC_DINH) !== "flow") throw err("BAD_REQUEST", c.ma + ": cảnh không dùng máy quay flow.");

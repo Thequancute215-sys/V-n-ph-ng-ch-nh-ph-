@@ -62,7 +62,7 @@ button { min-height: 36px; }
 <main>
   <div class="box">
     <div class="row"><label for="chonPhim"><b>Phim</b></label><select id="chonPhim"><option value="">Đang tải…</option></select><button type="button" id="taiLai">Tải lại</button></div>
-    <p class="mute" style="margin:0">Mọi lần quay tốn tiền đều do anh bấm, có hiện số tiền trước. Máy quay Gemini trừ vào ngân sách; Google Flow dùng credit gói Google, Opus làm từng nhịp anh duyệt.</p>
+    <p class="mute" style="margin:0" id="ghiChuMay">Mọi lần quay tốn tiền đều do anh bấm, có hiện số tiền trước. Máy quay Gemini trừ vào ngân sách; Google Flow dùng credit gói Google, Opus làm từng nhịp anh duyệt.</p>
   </div>
   <div id="msg" role="status" aria-live="polite"></div>
   <div id="tong" class="box" hidden></div>
@@ -76,16 +76,27 @@ button { min-height: 36px; }
   const $ = (id) => document.getElementById(id);
   const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   let ws = "", data = null, flow = null, ban = false, hen = null;
+  // Máy tính gọi ctl qua /ctl; điện thoại đã ghép gọi qua /dkx/api (lib/dieu-khien-xa.js chỉ mở lệnh xem, chọn take, cổng, dựng).
+  // Trên điện thoại ẩn mọi nút tốn tiền và ngân sách/đồng ý người thật: những việc đó làm trên máy tính.
+  let base = "/ctl", dienThoai = false;
+  async function chonKenh() {
+    if (/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)) return;
+    let d = null;
+    try { const r = await fetch("/dkx/trang-thai", { cache: "no-store", signal: AbortSignal.timeout(8000) }); if (r.status === 404) return; d = await r.json(); } catch {}
+    if (d && d.local) return;
+    base = "/dkx/api"; dienThoai = true;
+    if (d && !d.ghep) throw new Error("Điện thoại chưa ghép với văn phòng: mở trang Điều khiển (dieu-khien.html), nhập mã ghép tạo trên máy tính rồi quay lại.");
+  }
   const TT = { viet: "đang viết", co_khung: "có khung", cho_quay: "chờ quay", da_quay: "đã quay", da_chon: "đã chọn take" };
   const NHIP = { "chuan-bi": "1. Chuẩn bị", tao: "2. Tạo", "tai-ve": "3. Tải về" };
   async function req(p, body) {
-    const r = await fetch("/ctl" + p, { cache: "no-store", method: body ? "POST" : "GET", headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(60000) });
+    const r = await fetch(base + p, { cache: "no-store", method: body ? "POST" : "GET", headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(60000) });
     let d; try { d = await r.json(); } catch { throw new Error("Controller chưa trả JSON (OS Controller có đang chạy không?)"); }
     if (!r.ok || d.ok === false) throw new Error(d.error || "Lỗi HTTP " + r.status);
     return d;
   }
   const msg = (t, loi) => { $("msg").innerHTML = t ? `<div class="msg${loi ? " err" : ""}">${esc(t)}</div>` : ""; };
-  const media = (rel) => "/ctl/phim/media?workspace=" + encodeURIComponent(ws) + "&path=" + encodeURIComponent(rel);
+  const media = (rel) => base + "/phim/media?workspace=" + encodeURIComponent(ws) + "&path=" + encodeURIComponent(rel);
   const usd = (x) => "$" + (Math.round((Number(x) || 0) * 100) / 100).toFixed(2);
   // Hạn mức Flow: số credit Opus đọc trên trang ở nhịp gần nhất (không phải số trực tiếp) + lượt tạo trong tháng.
   const creditText = (c) => {
@@ -103,7 +114,7 @@ button { min-height: 36px; }
     const pt = (x) => ngan > 0 ? Math.min(100, Math.round((x / ngan) * 100)) : (x > 0 ? 100 : 0);
     $("tong").hidden = false;
     $("tong").innerHTML = `<div class="row"><h2>${esc(p.ten || "(chưa đặt tên)")}</h2><span class="tag">${esc((p.ti_le || []).join(", "))}</span><span class="tag">${esc(p.ngon_ngu)}</span></div>` +
-      `<div class="row"><span>Đã chi máy quay Gemini: <span class="tien">${usd(mq.daChi)}</span> / ngân sách</span><input type="number" id="nganSach" min="0" max="1000" step="1" value="${esc(p.ngan_sach_usd)}" style="width:90px" aria-label="Ngân sách USD"><button type="button" id="luuNS">Lưu ngân sách</button>` +
+      `<div class="row"><span>Đã chi máy quay Gemini: <span class="tien">${usd(mq.daChi)}</span> / ngân sách</span>${dienThoai ? `<b>${usd(ngan)}</b>` : `<input type="number" id="nganSach" min="0" max="1000" step="1" value="${esc(p.ngan_sach_usd)}" style="width:90px" aria-label="Ngân sách USD"><button type="button" id="luuNS">Lưu ngân sách</button>`}` +
       `<span class="mute">Chi phí tối đa ước tính cả phim: ${usd(toiDa)}${k.chiPhi && k.chiPhi.luotFlow ? " · " + k.chiPhi.luotFlow + " lượt Flow" : ""}</span></div>` +
       `<div class="thanh" role="img" aria-label="Đã chi ${usd(mq.daChi)}, tối đa ước tính ${usd(toiDa)}, ngân sách ${usd(ngan)}"><i class="uoc" style="width:${pt(toiDa)}%"></i><i class="chi" style="width:${pt(mq.daChi)}%"></i></div>` +
       (mq.coKhoa ? "" : `<div class="warn">⚠ Chưa có khóa Gemini API (bậc trả phí): dán khóa ở màn Tài khoản AI để dùng máy quay Gemini.</div>`) +
@@ -112,7 +123,7 @@ button { min-height: 36px; }
       (k.loi.length ? `<div class="bad"><b>Hồ sơ còn lỗi, chưa quay được:</b><br>${k.loi.map((l) => "✖ " + esc(l.chiTiet)).join("<br>")}</div>` : `<div class="ok">✓ Hồ sơ phim hợp lệ</div>`) +
       (k.canhBao.length ? `<div class="mute">${k.canhBao.map((w) => "⚠ " + esc(w.chiTiet)).join("<br>")}</div>` : "") +
       ((p.nguoi_that || []).length ? `<div><b>Người thật trong phim</b> (chỉ đánh dấu khi người đó đã đồng ý cho dùng hình):<br>` +
-        p.nguoi_that.map((n) => `<label style="display:inline-flex;gap:6px;margin-right:14px"><input type="checkbox" data-dong-y="${esc(n.ma)}" ${n.dong_y ? "checked" : ""}> ${esc(n.ma)} đã đồng ý</label>`).join("") + "</div>" : "");
+        p.nguoi_that.map((n) => dienThoai ? `<span style="margin-right:14px">${esc(n.ma)}: ${n.dong_y ? '<span class="ok">đã đồng ý</span>' : '<span class="bad">chưa đồng ý</span>'}</span>` : `<label style="display:inline-flex;gap:6px;margin-right:14px"><input type="checkbox" data-dong-y="${esc(n.ma)}" ${n.dong_y ? "checked" : ""}> ${esc(n.ma)} đã đồng ý</label>`).join("") + "</div>" : "");
 
     // Bốn cổng CEO duyệt, theo thứ tự. Bỏ duyệt một cổng thì các cổng sau cũng bỏ.
     $("cong").hidden = !bd;
@@ -143,7 +154,7 @@ button { min-height: 36px; }
     $("flow").hidden = !coFlow || !flow;
     if (coFlow && flow) {
       $("flow").innerHTML = `<h2>Trạm Google Flow</h2><p class="mute" style="margin:0">Mỗi tài khoản một cửa sổ Chrome riêng. Lần đầu: bấm Mở, tự đăng nhập Google trong cửa sổ đó. Văn phòng không gõ mật khẩu. Opus chỉ làm đúng nhịp anh bấm; gặp màn xác minh thì dừng và báo anh.</p>` +
-        `<div class="row">${flow.taiKhoan.map((t) => `<span><b>${esc(t.nhan)}</b> ${t.dangMo ? '<span class="ok">● đang mở</span>' : '<span class="mute">○ tắt</span>'} <button type="button" data-mo-flow="${esc(t.id)}">Mở trình duyệt</button>` +
+        `<div class="row">${flow.taiKhoan.map((t) => `<span><b>${esc(t.nhan)}</b> ${t.dangMo ? '<span class="ok">● đang mở</span>' : '<span class="mute">○ tắt</span>'} ${dienThoai ? "" : `<button type="button" data-mo-flow="${esc(t.id)}">Mở trình duyệt</button>`}` +
           `<br><span class="mute">${creditText(t.credit)}</span></span>`).join(" ")}</div>` +
         (!flow.mcp ? `<div class="warn">⚠ Chưa cài Chrome DevTools MCP (trang Kết nối): Opus chưa lái được Flow.</div>` : "") +
         (flow.nhipDang ? `<div class="warn">⏳ Opus đang làm nhịp ${esc(NHIP[flow.nhipDang.buoc])} cảnh ${esc(flow.nhipDang.canh)} (${esc(flow.nhipDang.taiKhoan)})…</div>` : "") +
@@ -155,7 +166,8 @@ button { min-height: 36px; }
       const khung = (c.khung || []).map((f) => `<figure><img src="${esc(media(f))}" alt="Khung ${esc(f)}" class="${c.khung_chon === f ? "chon" : ""}" loading="lazy"><button type="button" data-chon-khung="${esc(c.ma)}" data-file="${esc(f)}">${c.khung_chon === f ? "✓ Đã chọn" : "Chọn khung này"}</button></figure>`).join("");
       const take = (c.take || []).map((f) => `<figure><video src="${esc(media(f))}" controls preload="metadata"></video><button type="button" data-chon-take="${esc(c.ma)}" data-file="${esc(f)}">${c.take_chon === f ? "✓ Take đã chọn" : "Chọn take này"}</button></figure>`).join("");
       let nut = "";
-      if (may === "omni-flash") nut = `<button type="button" data-quay="${esc(c.ma)}" data-loai="khung">Tạo ${c.so_phuong_an_khung || 3} khung</button>` +
+      if (dienThoai && (may === "omni-flash" || may === "flow")) nut = `<span class="mute">Quay trên máy tính (có hỏi số tiền).</span>`;
+      else if (may === "omni-flash") nut = `<button type="button" data-quay="${esc(c.ma)}" data-loai="khung">Tạo ${c.so_phuong_an_khung || 3} khung</button>` +
         `<button type="button" class="chinh" data-quay="${esc(c.ma)}" data-loai="video">Quay video (Gemini)</button>`;
       else if (may === "flow" && flow) nut = `<select data-tk="${esc(c.ma)}" aria-label="Tài khoản Flow cho ${esc(c.ma)}">${flow.taiKhoan.map((t) => `<option value="${esc(t.id)}">${esc(t.nhan)}</option>`).join("")}</select>` +
         Object.entries(NHIP).map(([b, t]) => `<button type="button" data-nhip="${esc(c.ma)}" data-buoc="${b}">${t}</button>`).join("");
@@ -228,6 +240,8 @@ button { min-height: 36px; }
 
   (async () => {
     try {
+      await chonKenh();
+      if (dienThoai) $("ghiChuMay").textContent = "Đang mở trên điện thoại: xem phim, chọn take, duyệt cổng và dựng bản xem thử. Quay, ngân sách và đồng ý dùng hình làm trên máy tính.";
       const ds = (await req("/phim/du-an")).duAn;
       let nho = ""; try { nho = localStorage.getItem("vp-xuong-phim") || ""; } catch {}
       $("chonPhim").innerHTML = ds.length ? ds.map((d) => `<option value="${esc(d.path)}">${esc(d.ten)}</option>`).join("") : `<option value="">Chưa có dự án phim (tạo ở Dự án mới → 🎬 Phim AI)</option>`;
