@@ -2,7 +2,7 @@
 // Sinh docs/BAN-DO-HE-THONG.md (bản đồ workflow → kiến trúc → mã) từ đồ thị của Understand Anything trong .ua/:
 //   .ua/domain-graph.json     miền nghiệp vụ → workflow → từng bước (trỏ tới file:dòng)
 //   .ua/knowledge-graph.json  node file/hàm/route, quan hệ, 10 lớp kiến trúc, lộ trình đọc mã
-// Chạy: node tools/ve-ban-do.js  (sau khi vẽ lại đồ thị bằng /understand và /understand-domain).
+// Chạy: node tools/ve-ban-do.js  (tools/cap-nhat-ban-do.js tự gọi sau khi Codex vẽ lại đồ thị).
 // Mục "Workflow trung tâm" và "Điểm cần anh rà" viết tay ở dưới (đã đối chiếu mã); phần còn lại sinh từ đồ thị. Không thư viện ngoài.
 "use strict";
 const fs = require("fs");
@@ -39,7 +39,7 @@ function main() {
 
   w("# Bản đồ hệ thống Văn phòng AI — từ workflow tới mã nguồn");
   w();
-  w(`> Sinh tự động bằng \`node tools/ve-ban-do.js\` từ \`.ua/domain-graph.json\` (workflow nghiệp vụ) và \`.ua/knowledge-graph.json\` (bản đồ hệ thống) do Understand Anything vẽ tại commit \`${String(kg.project.gitCommitHash || "").slice(0, 7)}\`. Mã đổi nhiều thì vẽ lại đồ thị (\`/understand\`, \`/understand-domain\`) rồi chạy lại lệnh trên; đừng sửa tay trang này.`);
+  w(`> Sinh tự động bằng \`node tools/ve-ban-do.js\` từ \`.ua/domain-graph.json\` (workflow nghiệp vụ) và \`.ua/knowledge-graph.json\` (bản đồ hệ thống) do Understand Anything vẽ tại commit \`${String(kg.project.gitCommitHash || "").slice(0, 7)}\`. Bản đồ tự cập nhật sau mỗi commit/merge: \`node tools/cap-nhat-ban-do.js\` giao Codex vẽ lại phần đổi rồi chạy lại lệnh trên (xem bản đồ có cũ không: \`node tools/cap-nhat-ban-do.js --kiem\`); đừng sửa tay trang này.`);
   w();
   w("**Bản tương tác** (bấm vào từng node, xem quan hệ, đi theo lộ trình): trong repo chạy `/understand-dashboard` của plugin Understand Anything (Claude Code), hoặc lệnh `npx` trong README của dự án Understand Anything. Lệnh đó tải và chạy mã của bên thứ ba: chỉ chạy khi anh tin nguồn; đọc các sơ đồ dưới đây trên GitHub thì không cần.");
   w();
