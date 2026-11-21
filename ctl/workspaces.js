@@ -63,18 +63,19 @@ const err = (code, msg) => Object.assign(new Error(msg), { code });
 const realOf = (p) => { try { return fs.realpathSync(p); } catch { return p; } };
 // Thư mục cấu hình ẩn trong thư mục người dùng (~/.ssh, ~/.claude, ~/.van-phong-ao…) chứa khóa đăng nhập. Kiểm cả đường dẫn gõ vào
 // lẫn đường dẫn thật, và cả đích của thư mục ẩn đã chuyển ổ bằng junction (~/.claude trỏ sang D:): chỉ kiểm đường dẫn thật thì lọt.
-function sensitive(...paths) {
+// Chặn cả đích, thư mục con LẪN thư mục cha của đích (đăng ký D:\DuLieuTuC là đọc được claude\.credentials.json bên trong).
+function isSensitive(...paths) {
   const home = os.homedir();
   const hiddenIn = (x) => inside(home, x) && !same(x, home) && path.relative(home, x).split(path.sep)[0].startsWith(".");
   if (paths.some(hiddenIn)) return true;
-  let moved = [];
+  let movedHiddenTargets;
   try {
     // lstat (không dùng Dirent): Windows báo junction là symbolic link qua lstat.
     const isLink = (f) => { try { return fs.lstatSync(f).isSymbolicLink(); } catch { return false; } };
-    moved = fs.readdirSync(home).filter((n) => n.startsWith(".")).map((n) => path.join(home, n)).filter(isLink)
-      .map(realOf).filter((t) => !inside(home, t));
-  } catch {}
-  return paths.some((x) => moved.some((t) => inside(t, x)));
+    movedHiddenTargets = fs.readdirSync(home).filter((n) => n.startsWith(".")).map((n) => path.join(home, n)).filter(isLink)
+      .map(realOf).filter((t) => !inside(t, home)); // đích là chính home hay thư mục chứa nó: TOO_BROAD đã chặn
+  } catch { return true; } // không đọc được thư mục người dùng thì không biết đích nào nhạy cảm: từ chối, không đoán
+  return paths.some((x) => movedHiddenTargets.some((t) => inside(t, x) || inside(x, t)));
 }
 // Lệnh git chỉ đọc; lỗi (không phải repo, chưa có commit…) trả null để báo "không có", không đoán.
 const gitRead = (root, args) => {
@@ -92,10 +93,13 @@ function createWorkspaces(db, audit) {
   };
   let active = null;
 
+  // Dòng đã lưu ứng với một đường dẫn thật: khớp theo đường dẫn đã lưu, hoặc theo đường dẫn thật của nó (đã chuyển ổ bằng junction).
+  const storedFor = (real) => q.all.all().find((w) => same(w.path, real) || same(realOf(w.path), real));
+
   // Chặn cả ổ đĩa, thư mục người dùng và mọi thư mục chứa nó (C:\Users…), và thư mục cấu hình ẩn.
   function checkScope(typed, real) {
     if (same(real, path.parse(real).root) || inside(real, os.homedir())) throw err("TOO_BROAD", "Không đăng ký cả ổ đĩa hay cả thư mục người dùng");
-    if (sensitive(typed, real)) throw err("TOO_SENSITIVE", "Không đăng ký thư mục cấu hình ẩn (.ssh, .claude, .codex…)");
+    if (isSensitive(typed, real)) throw err("TOO_SENSITIVE", "Không đăng ký thư mục cấu hình ẩn (.ssh, .claude, .codex…)");
   }
 
   function list() { return q.all.all().map((w) => ({ ...w, active: !!active && same(w.path, active) })); }
@@ -107,7 +111,7 @@ function createWorkspaces(db, audit) {
     checkScope(path.resolve(String(p || "")), real);
     // Windows không phân biệt hoa/thường và realpath giữ nguyên cách gõ; thư mục đã chuyển ổ bằng junction thì đường dẫn đã lưu
     // khác đường dẫn thật. Dùng lại dòng đã lưu để không sinh 2 dòng cho 1 thư mục.
-    const dup = q.all.all().find((w) => same(w.path, real) || same(realOf(w.path), real));
+    const dup = storedFor(real);
     if (dup) real = dup.path;
     const agentMd = initAgentMd(real, actor);
     q.add.run(real, path.basename(real), Date.now());
@@ -140,7 +144,7 @@ function createWorkspaces(db, audit) {
     try { real = fs.realpathSync(path.resolve(String(p || ""))); } catch { throw err("WORKSPACE_DENIED", "Workspace không tồn tại: " + p); }
     // Khớp theo đường dẫn đã lưu hoặc đường dẫn thật của nó (dự án đã chuyển ổ bằng junction). Trả về dòng đã lưu, để lịch sử
     // lượt, ý tưởng, nhật ký gắn với đường dẫn cũ vẫn đúng.
-    const w = q.all.all().find((x) => same(x.path, real) || same(realOf(x.path), real));
+    const w = storedFor(real);
     if (!w) throw err("WORKSPACE_DENIED", "Chưa đăng ký workspace " + real);
     // Đích của junction có thể bị đổi sau khi đăng ký: kiểm lại phạm vi trên đường dẫn thật hiện tại.
     if (!same(w.path, real)) {

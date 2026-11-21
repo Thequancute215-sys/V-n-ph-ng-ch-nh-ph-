@@ -13,6 +13,8 @@ const { createWorkspaces } = require("../ctl/workspaces");
 const link = (target, at) => fs.symlinkSync(target, at, "junction");
 
 function fixture(t) {
+  try { const a = fs.mkdtempSync(path.join(os.tmpdir(), "vp-link-")); link(a, a + "-l"); fs.rmSync(a + "-l"); fs.rmSync(a, { recursive: true }); }
+  catch { t.skip("máy này không tạo được junction/symlink"); return null; }
   const tmp = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "vp-junction-")));
   const home = path.join(tmp, "home"); fs.mkdirSync(home);
   const cu = path.join(tmp, "o-c", "repo"), moi = path.join(tmp, "o-d", "repo");
@@ -39,7 +41,8 @@ function fixture(t) {
 }
 
 test("dự án đã chuyển ổ bằng junction: nhận qua đường cũ lẫn đường mới, trả về dòng đã lưu", (t) => {
-  const { ws, cu, moi } = fixture(t);
+  const f = fixture(t); if (!f) return;
+  const { ws, cu, moi } = f;
   assert.equal(ws.find(cu).path, cu);
   assert.equal(ws.find(moi).path, cu);
   assert.equal(ws.switchTo(moi).path, cu);
@@ -50,7 +53,8 @@ test("dự án đã chuyển ổ bằng junction: nhận qua đường cũ lẫn
 });
 
 test("dự án đã chuyển ổ: đọc/ghi file trong dự án được, vẫn chặn đi ra ngoài", (t) => {
-  const { tmp, ws, cu, moi } = fixture(t);
+  const f = fixture(t); if (!f) return;
+  const { tmp, ws, cu, moi } = f;
   const r = ws.resolve(cu, "src/a.txt");
   assert.equal(r.rel, "src/a.txt");
   assert.equal(fs.readFileSync(r.real, "utf8"), "A");
@@ -68,16 +72,19 @@ test("dự án đã chuyển ổ: đọc/ghi file trong dự án được, vẫn
 });
 
 test("thư mục ẩn của người dùng đã chuyển ổ bằng junction vẫn không đăng ký được", (t) => {
-  const { tmp, home, ws } = fixture(t);
+  const f = fixture(t); if (!f) return;
+  const { tmp, home, ws } = f;
   const dich = path.join(tmp, "o-d", "claude"); fs.mkdirSync(path.join(dich, "projects"), { recursive: true });
   link(dich, path.join(home, ".claude")); // như ~/.claude -> D:\DuLieuTuC\claude
-  for (const p of [path.join(home, ".claude"), dich, path.join(dich, "projects")]) {
+  // Cả thư mục CHỨA đích (như đăng ký D:\DuLieuTuC: đọc được claude\.credentials.json bên trong).
+  for (const p of [path.join(home, ".claude"), dich, path.join(dich, "projects"), path.dirname(dich)]) {
     assert.throws(() => ws.add(p), (e) => e.code === "TOO_SENSITIVE", p);
   }
 });
 
 test("junction của dự án bị đổi sang thư mục ẩn sau khi đăng ký: từ chối, không mở rộng phạm vi", (t) => {
-  const { tmp, home, ws, cu } = fixture(t);
+  const f = fixture(t); if (!f) return;
+  const { tmp, home, ws, cu } = f;
   const dich = path.join(tmp, "o-d", "ssh"); fs.mkdirSync(dich);
   link(dich, path.join(home, ".ssh"));
   fs.rmSync(cu); // gỡ junction (không đụng nội dung đích)
