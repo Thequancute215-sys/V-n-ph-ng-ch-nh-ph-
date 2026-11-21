@@ -26,6 +26,7 @@ const { createConnectors } = require("./ket-noi");
 const { createXuongPhim } = require("./xuong-phim");
 const { createMayQuay } = require("./may-quay");
 const { createTramFlow } = require("./tram-flow");
+const { createBanDung } = require("./ban-dung");
 const libPhim = require("../lib/phim");
 const { createJournal } = require("./nhat-ky");
 const { createChat } = require("./chat");
@@ -54,6 +55,7 @@ const HTTP_CODE = {
   CHAT_BUSY: 409, PUBLISH_BUSY: 409, NOT_READY: 409, NO_RELEASE_WORKFLOW: 422, NOT_ON_MAIN: 409, TAG_EXISTS: 409, DIRTY_REPO: 409, NEEDS_SCAN_APPROVAL: 409, NO_COMMIT: 409, NO_QUOTA: 409, NO_GIT: 422, NO_REMOTE: 422, GIT_PUSH: 502,
   UPDATE_BUSY: 409, NOT_APP: 409, UPDATE_FAILED: 500, GIT_BRANCH: 409,
   AGY_BUSY: 409, XUONG_BUSY: 409, CAI_LOI: 500, NO_KEY: 409, MAY_QUAY_BAN: 409, VUOT_NGAN_SACH: 409, TOI_DA_TAKE: 409, PHIM_LOI: 422, MAY_QUAY_LOI: 502, BAD_URL: 400, AGY_UNSAVED: 409, SKILL_BUSY: 409, SKILL_DA_CO: 409, BAD_CATALOG: 422, SONG_SONG: 409, AGY_CRED: 502, NO_LOGIN: 409, NOT_SUPPORTED: 501,
+  CHUA_DUNG_DUOC: 422, DANG_DUNG: 409, THIEU_FFMPEG: 409, THIEU_THU_MUC: 409, DUNG_LOI: 500, CHUA_DU_DIEU_KIEN: 409,
 };
 
 function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {}, quotaOptions = {}, updaterOptions = {}, agyOptions = {}, autopilotOptions = {}, notify = false } = {}) {
@@ -86,6 +88,8 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
   // Xưởng phim P2: máy quay API (Gemini) và trạm Google Flow. Chỉ CEO bấm trên trang Xưởng phim; AI không gọi được.
   const mayQuay = createMayQuay({ dir, audit });
   const tramFlow = createTramFlow({ dir, goc: () => xuongPhim.duongDan.goc, audit, jobs, cliClaude: () => runner.cliOf("claude") });
+  // Xưởng phim P3: bàn dựng (FFmpeg trên máy, miễn phí) và 4 cổng CEO duyệt. Thư mục tạm ở thư mục gốc của xưởng (ổ có chỗ).
+  const banDung = createBanDung({ audit, ffmpeg: () => xuongPhim.envAi().XUONG_PHIM_FFMPEG || null, tam: () => path.join(xuongPhim.duongDan.goc, "tmp") });
   const phimRoot = (v) => ws.find(v).path;
   const docHoSo = (root) => { const doc = (f, mac) => { try { return JSON.parse(fs.readFileSync(path.join(root, f), "utf8").replace(/^\uFEFF/, "")); } catch { return mac; } };
     const phim = doc("phim.json", null); if (!phim) throw Object.assign(new Error("Dự án không có phim.json"), { code: "NOT_FOUND" });
@@ -231,10 +235,13 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     // Xưởng phim P0: kiểm FFmpeg, Python chung, giọng đọc; cài chạy nền khi CEO bấm (trang Kết nối hỏi lại tới khi xong).
     // Xưởng phim P2: hồ sơ, ước tính, quay (chạy nền), phần của CEO, trạm Flow.
     ["GET", "/phim/du-an", () => ({ duAn: ws.list().filter((w) => fs.existsSync(path.join(w.path, "phim.json"))).map((w) => ({ path: w.path, ten: path.basename(w.path) })) })],
-    ["GET", "/phim", (p, qs) => { const root = phimRoot(qs.get("workspace")); return { ...docHoSo(root), mayQuay: mayQuay.trangThai(root) }; }],
+    ["GET", "/phim", (p, qs) => { const root = phimRoot(qs.get("workspace")); return { ...docHoSo(root), mayQuay: mayQuay.trangThai(root), banDung: banDung.trangThai(root) }; }],
     ["POST", "/phim/uoc-tinh", (p, qs, b) => ({ uocTinh: mayQuay.uocTinh(phimRoot(b.workspace), { canh: b.canh, loai: b.loai, soPhuongAn: b.soPhuongAn, doPhanGiai: b.doPhanGiai }) })],
     ["POST", "/phim/quay", (p, qs, b) => [202, { mayQuay: mayQuay.batDauQuay(phimRoot(b.workspace), { canh: b.canh, loai: b.loai, soPhuongAn: b.soPhuongAn, doPhanGiai: b.doPhanGiai }) }]],
     ["POST", "/phim/ceo", (p, qs, b) => ({ phim: mayQuay.suaCeo(phimRoot(b.workspace), { canh: b.canh, khungChon: b.khungChon, takeChon: b.takeChon, nguoiThat: b.nguoiThat, nganSach: b.nganSach }) })],
+    ["POST", "/phim/dung", (p, qs, b) => [202, { banDung: banDung.batDauDung(phimRoot(b.workspace)) }]],
+    ["POST", "/phim/cong", (p, qs, b) => ({ cong: banDung.duyetCong(phimRoot(b.workspace), { cong: b.cong, duyet: b.duyet }) })],
+    ["POST", "/phim/quay-lai", (p, qs, b) => banDung.quayLai(phimRoot(b.workspace), { canh: b.canh })],
     ["GET", "/flow", async () => ({ flow: await tramFlow.trangThai() })],
     ["POST", "/flow/:id/mo", async (p) => ({ flow: await tramFlow.mo(p.id) })],
     ["POST", "/flow/nhip", async (p, qs, b) => [202, { flow: await tramFlow.nhip(phimRoot(b.workspace), { canh: b.canh, taiKhoan: b.taiKhoan, buoc: b.buoc }) }]],
