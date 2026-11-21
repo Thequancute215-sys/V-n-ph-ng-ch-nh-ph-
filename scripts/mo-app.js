@@ -18,7 +18,8 @@ const background = process.argv.includes("--nen");
   const port = Number(process.env.PORT || cfg.port);
   const host = app.officeHost(cfg);
   const baseUrl = host === "127.0.0.1" ? `http://localhost:${port}/` : `http://${host.includes(":") ? `[${host}]` : host}:${port}/`;
-  const target = new URL(String(cfg.appStartPath || "/"), baseUrl);
+  // Thế Quân OS (CEO chọn 21/11/2026): app trên máy tính mở thẳng OS; văn phòng 3D ở nút riêng. appStartPath trong config đè được.
+  const target = new URL(String(cfg.appStartPath || "/os.html"), baseUrl);
   const url = target.origin === new URL(baseUrl).origin ? target.href : baseUrl;
 
   if (await app.isUp(port, { host })) {
