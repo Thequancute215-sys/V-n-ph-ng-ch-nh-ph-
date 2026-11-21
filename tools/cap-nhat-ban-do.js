@@ -8,9 +8,10 @@
 //     (hooks/auto-update-prompt.md; plugin tự chuyển sang vẽ lại toàn bộ khi đổi quá nhiều), rồi vẽ lại trang bản đồ;
 //   - chạy nền, có khoá (.ua/tmp/cap-nhat-ban-do.lock) để không chạy chồng; xong mà HEAD đã đi tiếp thì chạy thêm một lần.
 // Chỉ ghi trong .ua/ và docs/BAN-DO-HE-THONG.md; không commit (người/AI đang làm commit cùng thay đổi của mình).
-// Chạy: node tools/cap-nhat-ban-do.js [--cho] [--kiem] [--model <tên>] [--muc <low|medium|high>]
+// Chạy: node tools/cap-nhat-ban-do.js [--cho] [--kiem] [--ep] [--model <tên>] [--muc <low|medium|high>]
 //   --kiem   chỉ báo bản đồ có cũ không (mã thoát 0 = mới, 1 = cũ), không chạy gì
 //   --cho    chạy ở tiền cảnh và chờ xong (mặc định: tách nền rồi thoát ngay)
+//   --ep     chạy cả khi lần trước bị cổng kiểm ký hiệu của plugin chặn (xem ghiChan bên dưới)
 "use strict";
 const fs = require("fs");
 const os = require("os");
@@ -22,6 +23,8 @@ const UA = path.join(ROOT, ".ua");
 const TMP = path.join(UA, "tmp");
 const KHOA = path.join(TMP, "cap-nhat-ban-do.lock");
 const LOG = path.join(TMP, "cap-nhat-ban-do.log");
+const CHAN = path.join(TMP, "cap-nhat-ban-do.chan.json");
+const BAO_CAO_KY_HIEU = path.join(UA, "intermediate", "incremental-symbol-report.json");
 const lay = (k, macDinh) => { const i = process.argv.indexOf(k); return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : macDinh; };
 const MODEL = lay("--model", "gpt-6.1-sol"), MUC = lay("--muc", "medium");
 
@@ -77,6 +80,31 @@ function timPlugin() {
   } catch {}
   return null;
 }
+// Cổng kiểm ký hiệu của plugin (skills/understand/validate-incremental-symbols.mjs, bản 2.9.7) chỉ nhận hàm khai báo ở cấp
+// ngoài cùng file .js. Hàm lồng trong hàm tạo (ctl/runner.js, public/office-desk.js) và JS trong <script> của HTML mà lần vẽ
+// đầy đủ đã đưa vào đồ thị thì nó không bao giờ xác minh được: mỗi lần cập nhật tăng dần chạm các file đó đều bị chặn, kể cả
+// sau lượt sửa duy nhất plugin cho phép (thử thật 21/11/2026: 3 lượt, ~7 triệu token, cùng 22 hàm vẫn còn trong mã).
+// CEO quyết 21/11/2026 giữ bản đồ cũ: ghi nhớ mốc bị chặn, các lần sau bỏ qua (không gọi Codex) tới khi bản đồ đổi mốc,
+// plugin đổi bản, hoặc chạy với --ep.
+const banPlugin = (plugin) => (plugin ? path.basename(plugin) : null);
+function ghiChan(baoCao, ve, plugin, tep = CHAN) {
+  try {
+    const r = JSON.parse(fs.readFileSync(baoCao, "utf8"));
+    if (r.ok !== false || !ve || r.baseCommit !== ve) return null;
+    const c = { ve, plugin: banPlugin(plugin), files: r.unresolvedFiles || [], luc: new Date().toISOString() };
+    fs.mkdirSync(path.dirname(tep), { recursive: true });
+    fs.writeFileSync(tep, JSON.stringify(c, null, 2));
+    return c;
+  } catch { return null; }
+}
+function kiemChan(ve, plugin, tep = CHAN) {
+  try {
+    const c = JSON.parse(fs.readFileSync(tep, "utf8"));
+    return c.ve === ve && c.plugin === banPlugin(plugin) ? c : null;
+  } catch { return null; }
+}
+const loiChan = (c) => `Bỏ qua cập nhật bản đồ: lần trước cổng kiểm ký hiệu của plugin Understand Anything ${c.plugin || ""} chặn ở ${(c.files || []).join(", ") || "?"} (hàm lồng/JS trong HTML không kiểm được). Bản đồ giữ ở ${String(c.ve).slice(0, 7)} theo quyết định CEO 21/11/2026; tự chạy lại khi nâng plugin, hoặc thêm --ep để thử.`;
+
 function loiGiao(plugin) {
   return `Bạn cập nhật bản đồ hệ thống (đồ thị Understand Anything) cho repo ở thư mục hiện tại: ${ROOT}. KHÔNG đổi nhánh, KHÔNG commit, KHÔNG push, không gọi mạng, không cài gói.
 PLUGIN_ROOT = ${plugin} (chỉ đọc). Làm ĐÚNG ${plugin}/hooks/auto-update-prompt.md (cập nhật tăng dần; nếu kế hoạch là FULL_UPDATE thì làm đường phân tích đầy đủ trong ${plugin}/skills/understand/SKILL.md, bỏ qua bước hỏi .understandignore vì CEO đã duyệt). Bạn không có subagent: tự đóng các vai trong ${plugin}/agents/*.md (file-analyzer, architecture-analyzer, tour-builder, domain-analyzer…), đọc kỹ định nghĩa và làm đúng schema đầu ra. Script ở ${plugin}/skills/understand/ (node; python là Python 3).
@@ -89,6 +117,8 @@ function chay() {
   if (!s.cu) { console.log("Bản đồ đã mới (vẽ ở " + (s.ve || "").slice(0, 7) + ")."); return 0; }
   const plugin = timPlugin();
   if (!plugin) { console.error("Không thấy plugin Understand Anything trong ~/.claude/plugins: cài plugin rồi chạy lại."); return 2; }
+  const chan = !process.argv.includes("--ep") && kiemChan(s.ve, plugin);
+  if (chan) { console.log(loiChan(chan)); return 0; }
   fs.mkdirSync(TMP, { recursive: true });
   try {
     const k = JSON.parse(fs.readFileSync(KHOA, "utf8"));
@@ -114,6 +144,8 @@ function chay() {
     if (trangThai().cu) { await new Promise((r) => setTimeout(r, 30000)); await lan(2); }
     const s2 = trangThai();
     const code = s2.cu ? 1 : 0;
+    const chan2 = s2.cu ? ghiChan(BAO_CAO_KY_HIEU, s2.ve, plugin) : (fs.rmSync(CHAN, { force: true }), null);
+    if (chan2) fs.writeSync(log, `\n----- cổng kiểm ký hiệu của plugin chặn ở ${chan2.files.join(", ")}: các lần sau bỏ qua tới khi bản đồ đổi mốc, plugin đổi bản, hoặc chạy với --ep.\n`);
     fs.writeSync(log, s2.cu ? `\n===== CHƯA cập nhật được: bản đồ vẫn vẽ ở ${(s2.ve || "—").slice(0, 7)}, HEAD ${s2.head.slice(0, 7)}. Xem lỗi ở trên.\n` : `\n===== Xong: bản đồ đã tới ${s2.head.slice(0, 7)}.\n`);
     try { fs.unlinkSync(KHOA); } catch {}
     fs.closeSync(log);
@@ -123,15 +155,22 @@ function chay() {
   })();
 }
 
-if (process.argv.includes("--kiem")) {
+module.exports = { ghiChan, kiemChan };
+if (require.main !== module) {
+  // Được require (test): chỉ dùng các hàm ở trên, không chạy gì.
+} else if (process.argv.includes("--kiem")) {
   const s = trangThai();
-  console.log(s.cu ? `Bản đồ CŨ: vẽ ở ${(s.ve || "—").slice(0, 7)}, HEAD ${s.head.slice(0, 7)}, ${s.doi ?? "?"} file mã đã đổi${s.ly ? " (" + s.ly + ")" : ""}.` : "Bản đồ mới.");
+  const chan = s.cu && kiemChan(s.ve, timPlugin());
+  console.log(s.cu ? `Bản đồ CŨ: vẽ ở ${(s.ve || "—").slice(0, 7)}, HEAD ${s.head.slice(0, 7)}, ${s.doi ?? "?"} file mã đã đổi${s.ly ? " (" + s.ly + ")" : ""}.${chan ? " " + loiChan(chan) : ""}` : "Bản đồ mới.");
   process.exitCode = s.cu ? 1 : 0;
 } else if (process.argv.includes("--cho") || process.env.VP_CAP_NHAT_BAN_DO_NEN === "1") {
   Promise.resolve(chay()).then((c) => { process.exitCode = c; });
 } else {
   // Tách nền: phiên gọi (Claude, CEO) làm việc tiếp, Codex vẽ ở sau; xem tiến độ ở .ua/tmp/cap-nhat-ban-do.log
-  if (!trangThai().cu) { console.log("Bản đồ đã mới."); }
+  const s = trangThai();
+  const chan = s.cu && !process.argv.includes("--ep") && kiemChan(s.ve, timPlugin());
+  if (!s.cu) { console.log("Bản đồ đã mới."); }
+  else if (chan) { console.log(loiChan(chan)); }
   else {
     fs.mkdirSync(TMP, { recursive: true });
     const p = spawn(process.execPath, [__filename, ...process.argv.slice(2)], { cwd: ROOT, detached: true, stdio: "ignore", windowsHide: true, env: { ...process.env, VP_CAP_NHAT_BAN_DO_NEN: "1" } });
