@@ -13,7 +13,7 @@
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
-const { kiem, MAY_QUAY_MAC_DINH } = require("../lib/phim");
+const { kiem, MAY_QUAY_MAC_DINH, congDaDuyet } = require("../lib/phim");
 const { writeAtomic } = require("../lib/ghi-file");
 const { khoaGemini } = require("./tra-cuu");
 
@@ -118,6 +118,8 @@ function createMayQuay({ dir, audit = { log() {} }, khoa = () => khoaGemini(dir)
     const giong = docJson(path.join(root, "media", "giong", "voice.json"), null);
     const kq = kiem(phim, { giong });
     if (!kq.ok) throw err("PHIM_LOI", "Hồ sơ phim còn lỗi, sửa trước khi quay: " + kq.loi.map((l) => l.chiTiet).join(" · ").slice(0, 400));
+    if (loai === "video" && !congDaDuyet(phim, 2)) throw err("CHUA_DU_DIEU_KIEN", "Chưa quay được: anh duyệt cổng 1 (kịch bản) và cổng 2 (khung + khoản quay) trên trang Xưởng phim trước.");
+    if (loai !== "video" && !congDaDuyet(phim, 1)) throw err("CHUA_DU_DIEU_KIEN", "Chưa tạo khung được: anh duyệt cổng 1 (kịch bản) trên trang Xưởng phim trước.");
     const c = (phim.canh || []).find((x) => x.ma === canh);
     if (!c) throw err("NOT_FOUND", "Không có cảnh " + canh);
     const may = c.may_quay || phim.may_quay_mac_dinh || MAY_QUAY_MAC_DINH;

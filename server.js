@@ -707,7 +707,7 @@ http.createServer((req, res) => {
   if (deny) { res.writeHead(403, { "Content-Type": "application/json; charset=utf-8" }); return res.end(JSON.stringify({ ok: false, error: deny })); }
 
   // Điều khiển từ điện thoại: khóa xem + khóa thiết bị đã ghép + danh sách lệnh được phép (lib/dieu-khien-xa.js)
-  if (url.pathname === "/dkx" || url.pathname.startsWith("/dkx/")) return dieuKhienXa.handle(dkx, req, res, url, { local: ctlbridge.isLocal(req), hasKey: !!KEY, call: ctlbridge.call, readJson: guard.readJson });
+  if (url.pathname === "/dkx" || url.pathname.startsWith("/dkx/")) return dieuKhienXa.handle(dkx, req, res, url, { local: ctlbridge.isLocal(req), hasKey: !!KEY, call: ctlbridge.call, readJson: guard.readJson, stream: ctlbridge.streamGet });
   // Bảng điều khiển máy (OS Controller): chỉ trên chính máy này, xem lib/ctlbridge.js
   if (url.pathname === "/ctl" || url.pathname.startsWith("/ctl/")) return ctlbridge.proxy(req, res);
 

@@ -18,6 +18,7 @@ function duAn(d, sua = (p) => p) {
   ghi(path.join(d, "media", "khung", "C01-1.jpg"), "JPG");
   const phim = sua({
     ten: "Thử", ti_le: ["9:16"], ngon_ngu: "vi", ngan_sach_usd: 5, may_quay_mac_dinh: "omni-flash",
+    cong: { 1: { luc: "2026-11-21T00:00:00Z" }, 2: { luc: "2026-11-21T00:00:00Z" } },   // P3: quay cần cổng 1–2
     nguoi_that: [], nhan_vat: [{ ma: "co", tham_chieu: ["media/tham-chieu/co-1.png"] }],
     canh: [{ ma: "C01", giay: 4.2, khung_hinh: "Cô giáo cầm hoa trước cổng trường", nhan_vat: ["co"], khung: ["media/khung/C01-1.jpg"], khung_chon: "media/khung/C01-1.jpg" },
       { ma: "C02", giay: 3, khung_hinh: "Cận cảnh bó hoa", may_quay: "flow" }],
@@ -251,4 +252,29 @@ test("xem media qua ctl: chỉ file trong media/ của workspace đã đăng ký
   assert.equal((await goi("/phim/media?workspace=" + encodeURIComponent(d) + "&path=media/quay/C01-t1.mp4")).status, 403, "workspace chưa đăng ký");
   const ds = JSON.parse((await goi("/phim/du-an")).body).duAn;
   assert.deepEqual(ds.map((x) => x.ten), ["phim"]);
+});
+
+test("cổng CEO (P3): tạo khung cần cổng 1, quay video và lượt tạo Flow cần cổng 2, chưa duyệt thì chặn trước khi tốn tiền", async (t) => {
+  const { f, goi } = giaFetch(() => video());
+  const chuaDuyet = duAn(tmp(t), (p) => ({ ...p, cong: {} }));
+  const mq = createMayQuay({ dir: chuaDuyet, khoa: () => KHOA, fetchImpl: f });
+  assert.throws(() => mq.batDauQuay(chuaDuyet, { canh: "C01", loai: "khung", soPhuongAn: 1 }), (e) => e.code === "CHUA_DU_DIEU_KIEN" && /cổng 1/.test(e.message));
+  const motCong = duAn(tmp(t), (p) => ({ ...p, cong: { 1: { luc: "x" } } }));
+  assert.throws(() => mq.batDauQuay(motCong, { canh: "C01", loai: "video" }), (e) => e.code === "CHUA_DU_DIEU_KIEN" && /cổng 2/.test(e.message));
+  // Cổng 2 ghi mà thiếu cổng 1 (sửa tay) cũng không tính.
+  const lech = duAn(tmp(t), (p) => ({ ...p, cong: { 2: { luc: "x" } } }));
+  assert.throws(() => mq.batDauQuay(lech, { canh: "C01", loai: "video" }), (e) => e.code === "CHUA_DU_DIEU_KIEN");
+  assert.equal(goi.length, 0, "không gọi Gemini khi chưa qua cổng");
+
+  const d = tmp(t), goc = path.join(d, "xp");
+  ghi(path.join(goc, ".keep"), "");
+  const cdt = require("../ctl/chrome-devtools");
+  const entry = path.join(d, "mcp", cdt.ID, "node_modules", cdt.GOI);
+  ghi(path.join(entry, "package.json"), JSON.stringify({ name: cdt.GOI, version: cdt.PHIEN_BAN, bin: { [cdt.GOI]: "./build/src/bin/chrome-devtools-mcp.js" } }));
+  ghi(path.join(entry, "build/src/bin/chrome-devtools-mcp.js"), "");
+  const viec = [];
+  const flow = createTramFlow({ dir: d, goc, jobs: { start: (o) => { viec.push(o); return { id: "j" }; }, rawLog: () => "" }, cliClaude: () => ["claude"], thu: async () => true });
+  await assert.rejects(flow.nhip(chuaDuyet, { canh: "C02", taiKhoan: "phu", buoc: "chuan-bi" }), (e) => e.code === "CHUA_DU_DIEU_KIEN" && /cổng 1/.test(e.message));
+  await assert.rejects(flow.nhip(motCong, { canh: "C02", taiKhoan: "phu", buoc: "tao" }), (e) => e.code === "CHUA_DU_DIEU_KIEN" && /cổng 2/.test(e.message));
+  assert.equal(viec.length, 0, "không giao Opus lượt nào khi chưa qua cổng");
 });
