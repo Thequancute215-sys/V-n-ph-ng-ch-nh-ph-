@@ -397,6 +397,61 @@ Giao thức [8] và [9] (CEO duyệt 16/11/2026): chốt hợp đồng trước,
 - **Chạy thật và nghiệm thu:** dự án có backend phải có `npm run smoke`, nên có `npm run perf`. Mỗi Phase ghi "Kiểm tay của Chủ Dự Án" và cập nhật `docs/TICH-HOP.md`. Thiếu thì Claude không cho đóng Phase.
 - **Bàn giao sai mẫu** (thiếu dòng JSON, `next_owner` trùng vai…) được trả lại đúng lượt đó sửa một lần thay vì dừng cả luồng.
 
+## Xưởng phim AI (đang xây, P0)
+
+Văn phòng đang được mở rộng để tự làm phim ngắn AI (bản thiết kế "Xưởng Phim AI", CEO duyệt 20/11/2026). P0 sửa nền máy để mọi phòng dùng chung một bộ công cụ:
+
+- **Thư mục gốc của xưởng**: mặc định `~/.van-phong-ao/xuong-phim`. Phim chiếm nhiều GB, nên máy có ổ rộng hơn thì ghi `{ "thuMuc": "D:\\VanPhongAI\\xuong-phim" }` vào `~/.van-phong-ao/xuong-phim.json` (máy CEO đặt ở ổ D từ 20/11/2026). Thư mục tạm và bộ đệm pip khi cài cũng nằm trong thư mục gốc.
+- Bấm **Cài xưởng phim** ở trang **Kết nối** để cài cả ba thứ dưới đây vào thư mục gốc:
+  - **Python chung** `<gốc>/venv` có edge-tts, kokoro-onnx, soundfile đúng bản ghim ở `tools/xuong-phim/requirements.txt`; pip chỉ nhận gói đóng sẵn, không chạy script cài.
+  - **Model Kokoro** (giọng Anh chạy trên máy, ~340 MB) ở `<gốc>/models`: chép từ bản đã có (chỗ cũ hoặc bản Antigravity) nếu khớp mã băm SHA-256 đã ghim, không có thì tải từ release GitHub cố định rồi kiểm mã băm.
+  - **FFmpeg** bản Gyan qua winget vào `<gốc>/ffmpeg`. FFmpeg đã có trên PATH thì dùng luôn.
+- **Script đọc lời dẫn** `tools/xuong-phim/tts_sync.py`: giọng Việt/Anh (Edge-TTS, cần mạng) và giọng Anh offline (Kokoro), xuất `.mp3`, `.srt`, `.json` có mốc từng câu. Lỗi mạng thì thử lại, không để lại file rỗng.
+
+Mỗi lượt AI nhận biến `XUONG_PHIM_PYTHON`, `XUONG_PHIM_TTS`, `XUONG_PHIM_MODELS`, `XUONG_PHIM_FFMPEG`, `XUONG_PHIM_FFPROBE` (chỉ đường dẫn, không khóa). Ví dụ đọc lời dẫn:
+
+```powershell
+& $env:XUONG_PHIM_PYTHON $env:XUONG_PHIM_TTS --text "Xin chào các bạn" --voice vi-nu --output media/giong/voice
+```
+
+Trang **Kết nối** hiện khối **🎬 Xưởng phim**: FFmpeg, giọng Việt, giọng Anh offline, script đã sẵn sàng hay còn thiếu, kèm cách sửa.
+
+### Hồ sơ phim (P1)
+
+**Dự án mới** có thêm loại **🎬 Phim AI**. Văn phòng tạo repo như dự án phần mềm, rồi đặt khuôn hồ sơ phim (không ghi đè file có sẵn):
+
+- `phim.json`: hợp đồng duy nhất giữa các phòng. Gồm tên, tỉ lệ khung, ngôn ngữ, ngân sách, người thật (kèm đồng ý dùng hình), nhân vật, và danh sách cảnh (lời dẫn, khung hình, máy quay, số câu giọng đọc, take). Hướng dẫn chi tiết cho AI ở `PHIM.md` trong repo phim.
+- `kich-ban.md`: bản đọc cho người. `.gitignore` loại `media/` (giọng, ảnh, clip không vào git).
+- Việc giao Hinata là viết kịch bản và chia cảnh, không phải đặc tả phần mềm.
+
+Bộ kiểm `lib/phim.js` (lệnh `node tools/phim.js kiem`, trong lượt AI là `node $env:XUONG_PHIM_CONG_CU kiem`) chặn ba lỗi đắt nhất trước khi tốn tiền quay:
+
+1. tổng thời lượng cảnh lệch giọng đọc quá 0,5 giây;
+2. cảnh dùng người thật chưa được đồng ý;
+3. chi phí tối đa ước tính (mọi cảnh quay đủ số take) vượt ngân sách.
+
+`node tools/phim.js dong-bo` chốt thời lượng từng cảnh theo `media/giong/voice.json`, nên tổng luôn khớp giọng đọc.
+
+### Máy quay và trạm Google Flow (P2)
+
+Trang **🎬 Xưởng phim** (nút trên thanh chức năng) là nơi anh bấm mọi việc tốn tiền. Chọn phim, đặt ngân sách, đánh dấu người thật đã đồng ý, rồi với từng cảnh:
+
+Máy quay **mặc định là Google Flow**: dùng credit của gói Google AI (Pro/Ultra) anh đã trả hằng tháng, không tốn tiền API. Credit gói và tiền Gemini API là hai túi riêng; mã không dùng được credit gói, nên Flow đi qua trạm do Opus thao tác. Gemini API là phương án phụ (tự động hoàn toàn, hoặc khi hết credit cả hai tài khoản).
+
+- **Máy quay Gemini** (`ctl/may-quay.js`, cảnh `may_quay: "omni-flash"`):
+  - **Tạo khung** bằng `gemini-nano-banana-2.1` (~$0,034/ảnh 1K, kèm ảnh tham chiếu nhân vật). Anh chọn một khung.
+  - **Quay video** bằng `gemini-omni-1.2-flash` (~$0,07/giây 720p, 3–15 giây, có tiếng). Khung anh chọn là ảnh đầu.
+  - Trước khi bấm, trang hiện số tiền, đã chi và còn lại. Vượt ngân sách thì dừng cứng.
+  - Mỗi lần quay ghi vào sổ chi `media/so-chi.json` của phim và nhật ký kiểm toán. Bộ đệm `media/bo-dem/` chặn trả tiền hai lần cho cùng một lần quay.
+  - Cần khóa Gemini API bậc trả phí ở màn Tài khoản AI. Khóa chỉ mô-đun máy quay đọc; AI không thấy.
+- **Trạm Google Flow** (`ctl/tram-flow.js`, cảnh `may_quay: "flow"`):
+  - Mỗi tài khoản Google (chính, phụ) một hồ sơ Chrome riêng ở `<thư mục xưởng phim>/flow/<id>`. Bấm **Mở trình duyệt** rồi tự đăng nhập Google một lần; văn phòng không gõ mật khẩu.
+  - Mỗi cảnh ba nhịp, anh bấm từng nhịp: **1. Chuẩn bị** (Opus tải ảnh, dán prompt, dừng trước nút tạo), **2. Tạo** (bấm tạo đúng một lần), **3. Tải về** (văn phòng gắn clip vào cảnh).
+  - Opus chỉ có công cụ điều khiển đúng cửa sổ Chrome đó, thao tác từng bước như người. Gặp CAPTCHA, xác minh, đăng nhập lại, cảnh báo tài khoản hay hết credit thì dừng và báo anh, không tự vượt.
+  - Mỗi cảnh không tạo quá `so_take_toi_da` lượt.
+  - **Hạn mức:** mỗi nhịp Opus đọc số credit còn lại hiện trên Flow (không có API để hỏi Google). Trang hiện theo từng tài khoản: credit còn, đọc lúc nào, số lượt đã tạo trong tháng (`~/.van-phong-ao/flow-credit.json`). Tài khoản đọc được 0 credit thì nhịp Tạo bị chặn, trang gợi ý đổi tài khoản.
+- Ảnh khung và clip xem ngay trên trang (đường `/phim/media`, chỉ đọc file trong `media/` của dự án phim đã đăng ký).
+
 ## Xem trên điện thoại
 
 - **Cùng Wi-Fi:** đặt `"host": "0.0.0.0"` và `accessKey` trong `config.json`, rồi mở `http://<IP máy>:7788`.
@@ -469,7 +524,7 @@ ctl/                   OS Controller: main (HTTP) · jobs · policy · workspace
                        hợp đồng: song-song (Astra + Kakashi) · mien-hop-dong (CEO quyết miễn) · ra-soat (rà file trước khi toàn quyền)
                        model & hạn mức: dieu-phoi (chọn model/mức) · muc-luc (mục lục từ bản đồ) · quotas · agy-tai-khoan (+ agy-dang-nhap.ps1)
                        skill & kết nối: skill (+ skill-mac-dinh.json) · skill-duyet (duyệt repo từ link) · ket-noi · ket-noi-danh-muc · mcp-phong
-                                        mcp-may (MCP chạy trên máy) · chrome-devtools · tra-cuu + tra-cuu-mcp (Gemini)
+                                        mcp-may (MCP chạy trên máy) · chrome-devtools · tra-cuu + tra-cuu-mcp (Gemini) · xuong-phim (FFmpeg, Python chung, giọng đọc)
                        GitHub & phát hành: github · xuat-ban · bo-kiem (cài bộ kiểm vào repo dự án, mẫu trong khung/) · agent-template.md
 test/                  node --test (npm test)
 tools/vp.js            công cụ ghi sổ cho agent
@@ -477,6 +532,10 @@ tools/kiem-agent.js    bộ kiểm chu trình agent.md (lib/kiem-agent.js), CI c
 tools/kiem-hop-dong.js bộ kiểm hợp đồng giao tiếp contract/api.json (lib/kiem-hop-dong.js)
 tools/cai-skill.js     cài / kiểm bộ skill mặc định cho Claude, Codex, Antigravity
 tools/cai-chrome-devtools.js  cài / kiểm Chrome DevTools MCP
+tools/xuong-phim/       tts_sync.py (đọc lời dẫn + phụ đề) và requirements.txt (thư viện ghim)
+tools/phim.js           kiểm hồ sơ phim / chốt thời lượng cảnh theo giọng đọc (lib/phim.js); khuôn ở ctl/khung/phim/
+ctl/may-quay.js         máy quay Gemini (khung + video), sổ chi, bộ đệm, trần ngân sách; ctl/tram-flow.js trạm Google Flow
+public/xuong-phim.html  trang Xưởng phim: ngân sách, đồng ý dùng hình, khung, take, nhịp Flow
 tools/ve-ban-do.js     sinh docs/BAN-DO-HE-THONG.md từ đồ thị trong .ua/
 setup.js               cài đặt (hỏi–đáp hoặc --yes cho agent)
 mau/                   khung mẫu sổ điều phối + đoạn luật đội cho AGENTS.md / CLAUDE.md

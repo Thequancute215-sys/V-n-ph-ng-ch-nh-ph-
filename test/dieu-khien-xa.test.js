@@ -169,3 +169,60 @@ test("IP trong nhật ký: không tin tiêu đề proxy do máy khác tự gửi
   // Chính máy, không qua proxy.
   assert.equal(ipOf(req("127.0.0.1", "localhost:7788")), "127.0.0.1");
 });
+
+test("xưởng phim trên điện thoại: xem, chọn take, cổng, dựng được; lệnh tốn tiền, ngân sách, đồng ý người thật thì không", () => {
+  for (const [m, p] of [["GET", "/phim/du-an"], ["GET", "/phim?workspace=D%3A%2Fphim"], ["GET", "/phim/media?workspace=x&path=media%2Fxuat%2F9x16.mp4"], ["GET", "/flow"],
+    ["POST", "/phim/ceo"], ["POST", "/phim/cong"], ["POST", "/phim/dung"], ["POST", "/phim/quay-lai"]]) assert.ok(allowed(m, p), m + " " + p);
+  for (const [m, p] of [["POST", "/phim/quay"], ["POST", "/phim/uoc-tinh"], ["POST", "/flow/nhip"], ["POST", "/flow/phu/mo"], ["POST", "/xuong-phim/cai"], ["GET", "/phim/media/../x"]])
+    assert.ok(!allowed(m, p), m + " " + p);
+});
+
+test("HTTP xưởng phim: media chuyển nguyên luồng qua stream (không qua call), /phim/ceo từ điện thoại chỉ giữ chọn khung/take", async (t) => {
+  const dir = tmp(t), calls = [], streams = [];
+  const dkx = createDieuKhienXa({ home: () => dir });
+  const srv = http.createServer((req, res) => handle(dkx, req, res, new URL(req.url, "http://x"), { local: req.headers["x-test-local"] === "1", hasKey: true, readJson: guard.readJson,
+    call: async (m, p, b) => { calls.push([m, p, b]); return { status: 200, json: { ok: true } }; },
+    stream: (rq, rs, target) => { streams.push([target, rq.headers.range]); rs.writeHead(206, { "Content-Type": "video/mp4" }); rs.end("MP4"); } }));
+  await new Promise((r) => srv.listen(0, "127.0.0.1", r));
+  t.after(() => srv.close());
+  const base = "http://127.0.0.1:" + srv.address().port + "/dkx";
+  const { ma } = await (await fetch(base + "/ma", { method: "POST", headers: { "x-test-local": "1", "content-type": "application/json" }, body: "{}" })).json();
+  const cookie = (await fetch(base + "/ghep", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ma }) })).headers.get("set-cookie").split(";")[0];
+
+  const r = await fetch(base + "/api/phim/media?workspace=w&path=media%2Fxuat%2F9x16.mp4", { headers: { cookie, range: "bytes=0-1" } });
+  assert.equal(r.status, 206);
+  assert.equal(await r.text(), "MP4");
+  assert.deepEqual(streams, [["/phim/media?workspace=w&path=media%2Fxuat%2F9x16.mp4", "bytes=0-1"]]);
+  assert.equal((await fetch(base + "/phim/media?path=media/x.mp4")).status, 404, "ngoài /api thì không có");
+  const chua = await fetch(base + "/api/phim/media?workspace=w&path=media%2Fx.mp4");
+  assert.equal((await chua.json()).code, "NOT_PAIRED", "chưa ghép thì không xem được clip");
+
+  await fetch(base + "/api/phim/ceo", { method: "POST", headers: { cookie, "content-type": "application/json" },
+    body: JSON.stringify({ workspace: "w", canh: "C01", takeChon: "media/quay/C01-t2.mp4", nganSach: 999, nguoiThat: { ma: "co", dongY: true } }) });
+  assert.deepEqual(calls.at(-1), ["POST", "/phim/ceo", { workspace: "w", canh: "C01", khungChon: undefined, takeChon: "media/quay/C01-t2.mp4" }]);
+  const quay = await (await fetch(base + "/api/phim/quay", { method: "POST", headers: { cookie, "content-type": "application/json" }, body: JSON.stringify({ workspace: "w", canh: "C01", loai: "video" }) })).json();
+  assert.equal(quay.code, "NOT_ALLOWED");
+});
+
+test("ctlbridge.streamGet: chuyển GET kèm Range và token tới ctl, trả nguyên 206 và tiêu đề video", async (t) => {
+  const home = tmp(t);
+  fs.writeFileSync(path.join(home, "ctl-token"), "tok-thu");
+  const seen = [];
+  const ctl = http.createServer((req, res) => { seen.push([req.method, req.url, req.headers.authorization, req.headers.range, req.headers.cookie]);
+    res.writeHead(206, { "Content-Type": "video/mp4", "Content-Range": "bytes 0-1/10", "Content-Length": 2, "Accept-Ranges": "bytes", "Set-Cookie": "khong=chuyen" }); res.end("MP"); });
+  await new Promise((r) => ctl.listen(0, "127.0.0.1", r));
+  t.after(() => ctl.close());
+  const cu = { home: process.env.VP_HOME, port: process.env.CTL_PORT };
+  process.env.VP_HOME = home; process.env.CTL_PORT = String(ctl.address().port);
+  t.after(() => { if (cu.home === undefined) delete process.env.VP_HOME; else process.env.VP_HOME = cu.home; if (cu.port === undefined) delete process.env.CTL_PORT; else process.env.CTL_PORT = cu.port; });
+  const { streamGet } = require("../lib/ctlbridge");
+  const vao = http.createServer((req, res) => streamGet(req, res, "/phim/media?workspace=w&path=media%2Fa.mp4"));
+  await new Promise((r) => vao.listen(0, "127.0.0.1", r));
+  t.after(() => vao.close());
+  const r = await fetch("http://127.0.0.1:" + vao.address().port + "/", { headers: { range: "bytes=0-1", cookie: "vpd=bi-mat" } });
+  assert.equal(r.status, 206);
+  assert.equal(r.headers.get("content-range"), "bytes 0-1/10");
+  assert.equal(r.headers.get("set-cookie"), null, "không chuyển tiêu đề lạ từ ctl");
+  assert.equal(await r.text(), "MP");
+  assert.deepEqual(seen, [["GET", "/phim/media?workspace=w&path=media%2Fa.mp4", "Bearer tok-thu", "bytes=0-1", undefined]], "không chuyển cookie của điện thoại tới ctl");
+});

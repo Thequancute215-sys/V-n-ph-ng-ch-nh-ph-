@@ -40,7 +40,9 @@ async function fixture(t, mode, nextOwner = CLAUDE) {
   git("add", "agent.md"); git("commit", "-qm", "init");
   const fake = path.join(temp, "cli.cjs");
   fs.writeFileSync(fake, FAKE);
-  fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify(Object.fromEntries([SPEC, SOL, DEV, CLAUDE, "CLAUDE_REPORTER"].map((role) => [role, [process.execPath, fake, role, mode, counts, "{prompt}"]]))));
+  const reporter = path.join(temp, "claude.js");
+  fs.writeFileSync(reporter, `process.argv.splice(2, process.argv.length, ...${JSON.stringify(["CLAUDE_REPORTER", mode, counts])}, process.argv.at(-1)); require(${JSON.stringify(fake)});`);
+  fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify(Object.fromEntries([SPEC, SOL, DEV, CLAUDE, "CLAUDE_REPORTER"].map((role) => [role, role === "CLAUDE_REPORTER" ? [process.execPath, reporter, "-p", "{prompt}"] : [process.execPath, fake, role, mode, counts, "{prompt}"]]))));
   const ctl = createCtl({ dir });
   await new Promise((r) => ctl.server.listen(0, "127.0.0.1", r));
   ctl.ws.add(repo);

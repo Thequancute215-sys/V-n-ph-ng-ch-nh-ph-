@@ -62,6 +62,31 @@ function goiYClaude(yTuong) {
   });
 }
 
+// Dự án phim (Xưởng phim AI, P1): sau khi tải repo về, đặt khuôn hồ sơ phim. Không ghi đè file đã có trong repo;
+// .gitignore đã có thì chỉ thêm dòng media/ (ảnh, giọng, clip nặng không vào git).
+const LOAI = ["phan-mem", "phim"];
+const KHUNG_PHIM = path.join(__dirname, "khung", "phim");
+const VIEC_PHIM = "DỰ ÁN PHIM (Xưởng phim AI). Đọc PHIM.md trước. Việc của lượt này: viết kịch bản vào kich-ban.md và chia cảnh vào phim.json " +
+  "(lời dẫn, khung hình, nhân vật, máy quay, số câu từng cảnh); người thật trong phim khai ở nguoi_that với dong_y: false để CEO xác nhận. " +
+  "Chạy `node $env:XUONG_PHIM_CONG_CU kiem` trước khi bàn giao.\n\nÝ TƯỞNG CỦA CEO:\n";
+function datKhungPhim(root, ten) {
+  const da = [];
+  for (const f of ["phim.json", "kich-ban.md", "PHIM.md"]) {
+    const dich = path.join(root, f);
+    if (fs.existsSync(dich)) continue;
+    let noiDung = fs.readFileSync(path.join(KHUNG_PHIM, f), "utf8");
+    if (f === "phim.json") { const j = JSON.parse(noiDung); j.ten = ten; noiDung = JSON.stringify(j, null, 2) + "\n"; }
+    fs.writeFileSync(dich, noiDung);
+    da.push(f);
+  }
+  const gi = path.join(root, ".gitignore");
+  const cu = fs.existsSync(gi) ? fs.readFileSync(gi, "utf8") : null;
+  if (cu === null) { fs.copyFileSync(path.join(KHUNG_PHIM, "gitignore.txt"), gi); da.push(".gitignore"); }
+  else if (!/^\/?media\/?\s*$/m.test(cu)) { fs.appendFileSync(gi, (cu.endsWith("\n") || !cu ? "" : "\n") + "media/\n"); da.push(".gitignore (thêm media/)"); }
+  fs.mkdirSync(path.join(root, "media", "giong"), { recursive: true });
+  return { da };
+}
+
 function createDuAnMoi({ github, ideas, boKiem, dir = null, audit = { log() {} }, goiYAi = goiYClaude, cho = (ms) => new Promise((r) => setTimeout(r, ms)), now = Date.now }) {
   const ops = new Map();
   // Repo văn phòng đã tạo (lưu xuống đĩa để còn sau khi ctl khởi động lại): bước sau lỗi thì duyệt lại cùng tên sẽ làm tiếp
@@ -101,21 +126,23 @@ function createDuAnMoi({ github, ideas, boKiem, dir = null, audit = { log() {} }
     return { login, goiY: goi, nguon, ghiChu };
   }
 
-  const BUOC = [["repo", "Tạo repo riêng tư trên GitHub"], ["tai-ve", "Tải về máy và mở làm dự án (agent.md)"], ["y-tuong", "Lưu ý tưởng vào dự án"],
+  const BUOC = [["repo", "Tạo repo riêng tư trên GitHub"], ["tai-ve", "Tải về máy và mở làm dự án (agent.md)"], ["khung-phim", "Đặt khuôn hồ sơ phim (phim.json, kịch bản)"], ["y-tuong", "Lưu ý tưởng vào dự án"],
     ["bo-kiem", "Cài bộ kiểm chu trình CI (mở nhánh, chờ anh merge)"], ["hinata", "Giao Hinata viết đặc tả (bước 1 của chu trình)"]];
 
   // Quy trình khởi động sau khi CEO bấm duyệt. Trả ngay phiên làm việc; giao diện hỏi lại GET /du-an-moi/:id.
-  function tao({ ten, moTa = "", yTuong = "", rieng = true, caiBoKiem = true, giaoHinata = true } = {}, actor = "ceo") {
+  function tao({ ten, moTa = "", yTuong = "", rieng = true, caiBoKiem = true, giaoHinata = true, loai = "phan-mem" } = {}, actor = "ceo") {
     const t = chuanTen(ten);
     if (!t || t !== String(ten).trim()) throw err("BAD_REQUEST", "Tên repo chỉ gồm chữ thường không dấu, số và gạch ngang, 3–40 ký tự.");
+    if (!LOAI.includes(loai)) throw err("BAD_REQUEST", "Loại dự án phải là " + LOAI.join(" hoặc ") + ".");
     yTuong = String(yTuong || "").trim();
     if (yTuong.length < 10 || yTuong.length > 2000) throw err("BAD_REQUEST", "Ý tưởng dài 10–2000 ký tự.");
     if ([...ops.values()].some((o) => o.trangThai === "dang")) throw err("AI_BUSY", "Đang tạo một dự án khác. Chờ xong rồi tạo tiếp.");
     if (ops.size >= 20) ops.delete(ops.keys().next().value);
-    const op = { id: "da-" + Date.now().toString(36) + "-" + crypto.randomBytes(3).toString("hex"), ten: t, rieng: rieng !== false, trangThai: "dang", batDau: new Date().toISOString(),
-      buoc: BUOC.map(([id, ten]) => ({ id, ten, trangThai: (id === "bo-kiem" && !caiBoKiem) || (id === "hinata" && !giaoHinata) ? "bo-qua" : "cho", ghiChu: "" })) };
+    const op = { id: "da-" + Date.now().toString(36) + "-" + crypto.randomBytes(3).toString("hex"), ten: t, loai, rieng: rieng !== false, trangThai: "dang", batDau: new Date().toISOString(),
+      buoc: BUOC.filter(([id]) => id !== "khung-phim" || loai === "phim")   // dự án phần mềm không hiện bước khuôn phim
+        .map(([id, ten]) => ({ id, ten, trangThai: (id === "bo-kiem" && !caiBoKiem) || (id === "hinata" && !giaoHinata) ? "bo-qua" : "cho", ghiChu: "" })) };
     ops.set(op.id, op);
-    audit.log(actor, "du_an_moi.duyet", t, { rieng: op.rieng, caiBoKiem, giaoHinata }, "approved");
+    audit.log(actor, "du_an_moi.duyet", t, { loai, rieng: op.rieng, caiBoKiem, giaoHinata }, "approved");
     chay(op, { moTa: String(moTa || "").slice(0, 350), yTuong }).catch(() => {});
     return view(op);
   }
@@ -124,7 +151,7 @@ function createDuAnMoi({ github, ideas, boKiem, dir = null, audit = { log() {} }
     const b = (id) => op.buoc.find((x) => x.id === id);
     const lam = async (id, fn) => {
       const s = b(id);
-      if (s.trangThai === "bo-qua") return null;
+      if (!s || s.trangThai === "bo-qua") return null;
       s.trangThai = "dang";
       try { const r = await fn(s); s.trangThai = "xong"; return r; }
       catch (e) { s.trangThai = "loi"; s.ghiChu = String(e.message).slice(0, 300); throw e; }
@@ -162,7 +189,10 @@ function createDuAnMoi({ github, ideas, boKiem, dir = null, audit = { log() {} }
         op.workspace = o.workspace;
         return o.workspace;
       });
-      const idea = await lam("y-tuong", async () => ideas.add({ workspace: root, title: op.ten + ": " + yTuong.split(/\r?\n/)[0].slice(0, 150), detail: yTuong }));
+      await lam("khung-phim", async (s) => { const r = datKhungPhim(root, op.ten); s.ghiChu = r.da.length ? "Đã đặt: " + r.da.join(", ") : "Repo đã có đủ khuôn, không ghi đè"; });
+      const phim = op.loai === "phim";
+      const idea = await lam("y-tuong", async () => ideas.add({ workspace: root, title: (phim ? "🎬 " : "") + op.ten + ": " + yTuong.split(/\r?\n/)[0].slice(0, 150),
+        detail: phim ? VIEC_PHIM + yTuong : yTuong }));
       try {
         await lam("bo-kiem", async (s) => { const r = boKiem.install(root, "ceo"); s.ghiChu = r && r.last && r.last.compareUrl ? "Mở PR: " + r.last.compareUrl : "Đã đẩy nhánh bộ kiểm"; });
       } catch { /* thiếu bộ kiểm không chặn việc giao Hinata: ghi lỗi ở bước, làm tiếp */ }
@@ -179,4 +209,4 @@ function createDuAnMoi({ github, ideas, boKiem, dir = null, audit = { log() {} }
   return { goiY, tao, get };
 }
 
-module.exports = { createDuAnMoi, slug, chuanTen, goiYQuyTac, goiYClaude };
+module.exports = { createDuAnMoi, slug, chuanTen, goiYQuyTac, goiYClaude, datKhungPhim, LOAI };

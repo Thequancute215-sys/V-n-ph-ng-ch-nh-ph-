@@ -26,8 +26,16 @@ async function fixture(t, { webMode = "ok" } = {}) {
     const next={SOL_ARCHITECT_PLANNER:'CODEX_ASTRA_DEV',CODEX_ASTRA_DEV:'CLAUDE_AUDITOR',CLAUDE_AUDITOR:'SPEC_ARCHITECT'}[role];
     console.log(JSON.stringify({result:'Xong lượt.\\n'+JSON.stringify({role,next_owner:next,files:[],claim_fixed:[],giai_thich:[{van_de:'Vấn đề của lượt thử nghiệm',da_lam:'Đã làm phần việc thử nghiệm',vi_sao:'Vì đây là CLI giả dùng cho test',phuong_an_khac:[]}]})}));`);
   // SPEC_ARCHITECT cấu hình như agy thật (chương trình rồi "-p"): AGY_WEB_PROMPT phải tự lấy chương trình từ đó.
-  const agents = Object.fromEntries([sol, dev, claude, "CLAUDE_REPORTER", "CLAUDE_WEB_PROMPT"].map((role) => [role, [process.execPath, fake, role, webMode, "{prompt}"]]));
-  agents[spec] = [process.execPath, fake, "-p", "{prompt}", "--mode", "accept-edits"];
+  const agents = Object.fromEntries([sol, dev, claude].map((role) => [role, [process.execPath, fake, role, webMode, "{prompt}"]]));
+  for (const [folder, role] of [["report", "CLAUDE_REPORTER"], ["prompt", "CLAUDE_WEB_PROMPT"]]) {
+    fs.mkdirSync(path.join(temp, folder));
+    const cli = path.join(temp, folder, "claude.js");
+    fs.writeFileSync(cli, `process.argv.splice(2, process.argv.length, ...${JSON.stringify([role, webMode])}, process.argv.at(-1)); require(${JSON.stringify(fake)});`);
+    agents[role] = [process.execPath, cli, "-p", "{prompt}"];
+  }
+  const agy = path.join(temp, "agy.js");
+  fs.writeFileSync(agy, `process.argv.splice(2, process.argv.length, "-p", process.argv.at(-1)); require(${JSON.stringify(fake)});`);
+  agents[spec] = [process.execPath, agy, "-p", "{prompt}", "--mode", "accept-edits"];
   fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify(agents));
   const ctl = createCtl({ dir });
   await new Promise((r) => ctl.server.listen(0, "127.0.0.1", r));

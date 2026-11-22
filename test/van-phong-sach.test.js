@@ -113,6 +113,18 @@ test("nút ⚡ Giao việc một vai: chạy lượt AI thật qua /ai/run, khô
   assert.match(idx, /Vùng \[4\.1\]<\/b> của agent\.md/);
 });
 
+test("trang nhân vật: không còn nút duyệt giả; yêu cầu chỉnh lưu thật thành ý tưởng qua /ctl/ideas", () => {
+  const html = read("public/characters.html"), code = html.replace(/^\s*\/\/.*$/gm, "");
+  assert.ok(!/approveAll|approveCurrentChar|ĐÃ DUYỆT TẠO HÌNH|DUYỆT TOÀN BỘ|Đã ghi nhận yêu cầu|khóa vào hệ thống/.test(code), "characters.html còn nút duyệt hoặc lời báo giả");
+  const i = code.indexOf("window.promptEditChar"), h = code.slice(i, code.indexOf("\n};", i));
+  assert.ok(i > 0, "thiếu xử lý nút Yêu cầu chỉnh");
+  const save = h.indexOf('await ctlCall("/ideas"'), ok = h.indexOf("Đã lưu ý tưởng");
+  assert.ok(save > 0 && ok > save, "chỉ được báo đã lưu sau khi /ctl/ideas trả về");
+  assert.ok(!/alert\(/.test(h), "không dùng alert báo thành công");
+  assert.match(h, /catch \(e\) \{ say\("Chưa lưu: "/, "lỗi phải hiện ra");
+  assert.match(read("ctl/main.js"), /\["POST", "\/ideas"/, "ctl phải có POST /ideas");
+});
+
 test("không còn chữ tiếng Việt hỏng mã hoá (UTF-8 bị đọc nhầm thành cp1252) trong mã, test và tài liệu", () => {
   const MOJIBAKE = /Ã[\u0080-\u00BF]|á»|áº|Æ°|Ä‘|â†’/;
   const bad = [];

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thế Quân OS</title>
+<meta name="description" content="Bảng điều khiển văn phòng AI: xưởng code, xưởng phim, tin nhắn của đội.">
+<link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<script>
+  // Đặt chế độ sáng/tối trước khi vẽ để không chớp màu. Không đọc được bộ nhớ thì theo máy.
+  (() => { let t = null; try { t = localStorage.getItem("tqos-theme"); } catch {}
+    if (!t) t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+    document.documentElement.dataset.theme = t; })();
+</script>
+<link rel="stylesheet" href="os/os.css">
+<script src="app.js" defer></script>
+<script src="md.js" defer></script>
+<script type="module" src="os/app.js"></script>
+</head>
+<body>
+<div class="os" id="os">
+  <nav class="thanh-ben" id="thanhBen" aria-label="Các khu">
+    <a class="ten-os" href="#/"><b>Thế Quân</b> OS<span>văn phòng AI</span></a>
+    <div id="dsKhu"></div>
+    <div class="chan-ben">
+      <!-- Văn phòng 3D chỉ còn trên điện thoại (CEO quyết 21/11/2026): máy tính dùng OS, không có lối vào 3D. -->
+      <span id="trangThaiMay" class="mo">Đang nối văn phòng…</span>
+    </div>
+  </nav>
+  <div class="chinh">
+    <header class="thanh-tren">
+      <button type="button" class="nut mo-menu" id="moMenu" aria-controls="thanhBen" aria-expanded="false">Menu</button>
+      <h1 class="tieu-de" id="tieuDe">Tổng quan</h1>
+      <label class="visually-hidden" for="chonDuAn">Dự án đang làm</label>
+      <select class="o" id="chonDuAn" title="Dự án đang làm"><option>Đang tải dự án…</option></select>
+      <button type="button" class="nut" id="doiNen" aria-pressed="false">Nền sáng</button>
+    </header>
+    <main id="vung" tabindex="-1">
+      <noscript><div class="vung"><p>Thế Quân OS cần bật JavaScript.</p></div></noscript>
+    </main>
+  </div>
+</div>
+<div class="bao" id="bao" role="status" aria-live="polite"></div>
+</body>
+</html>

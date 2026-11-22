@@ -3,6 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+  // Văn phòng 3D chỉ dành cho điện thoại (CEO quyết 21/11/2026); máy tính dùng Thế Quân OS.
+  // Nhận điện thoại/máy tính bảng theo trình duyệt (cả iPad tự xưng Macintosh nhưng có màn cảm ứng), không theo bề rộng cửa sổ:
+  // cửa sổ máy tính kéo hẹp vẫn là máy tính. Chạy trước mọi thứ để máy tính không tải 3D rồi mới chuyển.
+  (() => { const ua = navigator.userAgent || "";
+    const dienThoai = /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    if (!dienThoai) location.replace("os.html" + location.hash); })();
+</script>
 <title>Văn phòng AI 3D</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">

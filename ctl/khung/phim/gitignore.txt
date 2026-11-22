@@ -1,0 +1,2 @@
+# Ảnh, giọng đọc, clip quay và bản xuất nặng: giữ trên máy, không đưa vào git.
+media/

@@ -53,7 +53,9 @@ async function fixture(t, astra) {
     if(!missing)h.giai_thich=${good};
     if(!missing&&n>1&&!prompt.includes('LƯỢT TRƯỚC CỦA BẠN BỊ TRẢ LẠI'))h.giai_thich=[];
     console.log(JSON.stringify({result:'Xong.\\n'+JSON.stringify(h)}));`);
-  fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify(Object.fromEntries(ROLES.map((r) => [r, [process.execPath, fake, r, "{prompt}"]]))));
+  const reporter = path.join(temp, "claude.js");
+  fs.writeFileSync(reporter, `process.argv.splice(2, process.argv.length, ...${JSON.stringify(["CLAUDE_REPORTER"])}, process.argv.at(-1)); require(${JSON.stringify(fake)});`);
+  fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify(Object.fromEntries(ROLES.map((r) => [r, r === "CLAUDE_REPORTER" ? [process.execPath, reporter, "-p", "{prompt}"] : [process.execPath, fake, r, "{prompt}"]]))));
   const ctl = createCtl({ dir });
   ctl.ws.add(repo);
   t.after(async () => { await ctl.close(); fs.rmSync(temp, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); });

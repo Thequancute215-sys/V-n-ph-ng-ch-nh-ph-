@@ -69,6 +69,9 @@ test("chu trình tự chạy: Astra làm backend → Kakashi làm giao diện �
     if(role==='FRONTEND_UIUX_DEV')fs.writeFileSync('BangTin.html','<main>bảng tin</main>');
     console.log(JSON.stringify({result:'Xong lượt '+role+'.\\n'+JSON.stringify({role,next_owner:h,files:[],claim_fixed:[],...extra,giai_thich:[{van_de:'Vấn đề của lượt thử nghiệm',da_lam:'Đã làm phần việc thử nghiệm',vi_sao:'Vì đây là CLI giả dùng cho test',phuong_an_khac:[]}]})}));`);
   const cfg = Object.fromEntries(["SOL_ARCHITECT_PLANNER", "CODEX_ASTRA_DEV", "CLAUDE_AUDITOR", "CLAUDE_REPORTER"].map((r) => [r, [process.execPath, fake, "--role=" + r, "{prompt}"]]));
+  const reporter = path.join(temp, "claude.js");
+  fs.writeFileSync(reporter, `process.argv.splice(2, process.argv.length, "--role=CLAUDE_REPORTER", process.argv.at(-1)); require(${JSON.stringify(fake)});`);
+  cfg.CLAUDE_REPORTER = [process.execPath, reporter, "-p", "{prompt}"];
   cfg.SPEC_ARCHITECT = [process.execPath, fake, "-p", "{prompt}"];   // không khai FRONTEND_UIUX_DEV: phải mượn chương trình của Hinata
   fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify(cfg));
   const ctl = createCtl({ dir });

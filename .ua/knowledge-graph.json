@@ -7028,7 +7028,7 @@
       "type": "file",
       "name": "characters.html",
       "filePath": "public/characters.html",
-      "summary": "Trang hồ sơ nhân vật 3D: các nhân vật đội (Naruto CEO, Hinata, Pain, Itachi, Sasuke, Sakura) và 10 Vĩ Thú dựng thủ tục bằng three.js (texture vẽ canvas), có OrbitControls, nạp model .glb/.gltf của Meshy.ai bằng kéo-thả, và nút duyệt chỉ hiện alert. Dùng Tailwind CDN, lucide và three@0.160.0 qua importmap; không gọi API máy chủ.",
+      "summary": "Trang hồ sơ nhân vật 3D: các nhân vật đội (Naruto CEO, Hinata, Pain, Itachi, Sasuke, Sakura) và 10 Vĩ Thú dựng thủ tục bằng three.js (texture vẽ canvas), có OrbitControls, nạp model .glb/.gltf của Meshy.ai bằng kéo-thả, và nút \"Yêu cầu chỉnh thêm chi tiết\" lưu thành ý tưởng của dự án đang chọn (POST /ctl/ideas qua cầu /ctl; không còn nút duyệt giả). Dùng Tailwind CDN, lucide và three@0.160.0 qua importmap.",
       "tags": [
         "giao-dien-3d",
         "nhan-vat",
@@ -7044,8 +7044,8 @@
       "name": "makeFaceTexture",
       "filePath": "public/characters.html",
       "lineRange": [
-        462,
-        693
+        457,
+        688
       ],
       "summary": "Vẽ texture khuôn mặt nhân vật lên canvas theo loại (mắt, tóc, dấu đặc trưng) để gắn vào đầu mô hình 3D.",
       "tags": [
@@ -7061,8 +7061,8 @@
       "name": "build3DCharacter",
       "filePath": "public/characters.html",
       "lineRange": [
-        1046,
-        1575
+        1041,
+        1570
       ],
       "summary": "Dựng mô hình 3D thủ tục cho nhân vật hoặc Vĩ Thú từ CHAR_DATA (thân, áo choàng, phụ kiện, đuôi), hoặc dùng model .glb đã nạp nếu có, rồi thêm vào scene.",
       "tags": [
@@ -7078,8 +7078,8 @@
       "name": "loadGlbFile",
       "filePath": "public/characters.html",
       "lineRange": [
-        1578,
-        1625
+        1573,
+        1620
       ],
       "summary": "Đọc file .glb/.gltf người dùng chọn bằng GLTFLoader qua object URL, gắn vào nhân vật hiện tại và báo lỗi bằng alert khi file hỏng.",
       "tags": [

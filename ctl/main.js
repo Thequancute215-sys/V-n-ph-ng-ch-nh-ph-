@@ -23,8 +23,16 @@ const { createQuotas } = require("./quotas");
 const { createIdeas } = require("./ideas");
 const { createPublisher } = require("./xuat-ban");
 const { createConnectors } = require("./ket-noi");
+const { createXuongPhim } = require("./xuong-phim");
+const { createMayQuay } = require("./may-quay");
+const { createTramFlow } = require("./tram-flow");
+const { createBanDung } = require("./ban-dung");
+const libPhim = require("../lib/phim");
 const { createJournal } = require("./nhat-ky");
 const { createChat } = require("./chat");
+const { createBoNao } = require("./bo-nao");
+const { createLichChay } = require("./lich-chay");
+const { ROLES_LAM_VIEC } = require("./quyen");
 const { createNotifier } = require("./thongbao");
 const { createScanner } = require("./ra-soat");
 const { createUpdater } = require("./cap-nhat");
@@ -44,12 +52,13 @@ const LOOPBACK = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i;
 const HTTP_CODE = {
   BAD_REQUEST: 400, NOT_DIR: 400, NOT_FILE: 400, BAD_CONFIG: 400, NO_AGENT_MD: 422, BAD_AGENT_MD: 422, INVALID_HANDOFF: 422, NO_CLI: 422,
   WORKSPACE_DENIED: 403, PATH_ESCAPE: 403, PATH_DENIED: 403, TOO_BROAD: 403, TOO_SENSITIVE: 403, COMMAND_DENIED: 403,
-  NOT_FOUND: 404, TOO_LARGE: 413,
+  NOT_FOUND: 404, CONFLICT: 409, TOO_LARGE: 413, SECRET: 422,
   GITHUB_AUTH: 401, GITHUB_LIMIT: 429, GITHUB_OFFLINE: 502, GITHUB_CLONE: 502,
   CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_WAITING: 409, NEEDS_SPEC_TURN: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409, HANDOFF_PENDING: 409, NEEDS_ANSWER: 409, NO_QUESTION: 422, BAD_OPTION: 400,
   CHAT_BUSY: 409, PUBLISH_BUSY: 409, NOT_READY: 409, NO_RELEASE_WORKFLOW: 422, NOT_ON_MAIN: 409, TAG_EXISTS: 409, DIRTY_REPO: 409, NEEDS_SCAN_APPROVAL: 409, NO_COMMIT: 409, NO_QUOTA: 409, NO_GIT: 422, NO_REMOTE: 422, GIT_PUSH: 502,
   UPDATE_BUSY: 409, NOT_APP: 409, UPDATE_FAILED: 500, GIT_BRANCH: 409,
-  AGY_BUSY: 409, AGY_UNSAVED: 409, SKILL_BUSY: 409, SKILL_DA_CO: 409, BAD_CATALOG: 422, SONG_SONG: 409, AGY_CRED: 502, NO_LOGIN: 409, NOT_SUPPORTED: 501,
+  AGY_BUSY: 409, XUONG_BUSY: 409, CAI_LOI: 500, NO_KEY: 409, MAY_QUAY_BAN: 409, VUOT_NGAN_SACH: 409, TOI_DA_TAKE: 409, PHIM_LOI: 422, MAY_QUAY_LOI: 502, BAD_URL: 400, AGY_UNSAVED: 409, SKILL_BUSY: 409, SKILL_DA_CO: 409, BAD_CATALOG: 422, SONG_SONG: 409, AGY_CRED: 502, NO_LOGIN: 409, NOT_SUPPORTED: 501,
+  CHUA_DUNG_DUOC: 422, DANG_DUNG: 409, THIEU_FFMPEG: 409, THIEU_THU_MUC: 409, DUNG_LOI: 500, CHUA_DU_DIEU_KIEN: 409,
 };
 
 function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {}, quotaOptions = {}, updaterOptions = {}, agyOptions = {}, autopilotOptions = {}, notify = false } = {}) {
@@ -58,7 +67,9 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
   // Nhiều tài khoản GPT cho Codex (ctl/codex-tai-khoan.js): mỗi tiến trình Codex mở ra nhận CODEX_HOME của tài khoản đang chọn.
   let runnerRef = null, quotasRef = null;
   const codexTk = createCodexTaiKhoan({ dir, audit, cli: () => (runnerRef ? runnerRef.cliOf("codex") : ["codex"]), khiDangNhapXong: () => { if (quotasRef) quotasRef.docGpt(true).catch(() => {}); } });
-  const jobs = createJobs(db, audit, path.join(dir, "logs"), { envFor: (j) => { try { return kindOf(JSON.parse(j.argv)) === "codex" ? codexTk.env() : {}; } catch { return {}; } } });
+  // Xưởng phim (ctl/xuong-phim.js): mọi tiến trình nhận XUONG_PHIM_* (Python chung, script giọng đọc, FFmpeg) — chỉ đường dẫn, không khóa.
+  const xuongPhim = createXuongPhim({ dir, audit });
+  const jobs = createJobs(db, audit, path.join(dir, "logs"), { envFor: (j) => { let xp = {}; try { xp = xuongPhim.envAi(); } catch {} try { return { ...xp, ...(kindOf(JSON.parse(j.argv)) === "codex" ? codexTk.env() : {}) }; } catch { return xp; } } });
   const ws = createWorkspaces(db, audit);
   const activeFile = path.join(dir, "active-workspace.json");
   try { ws.switchTo(JSON.parse(fs.readFileSync(activeFile, "utf8")).path, "ctl-restore"); } catch (e) { if (e.code !== "ENOENT") audit.log("ctl", "workspace.restore_skipped", null, e.message); }
@@ -77,6 +88,15 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
   const chat = createChat({ jobs, ws, runner, audit, dir });
   const skillDuyet = createSkillDuyet({ dir, jobs, runner, audit });   // CEO dán link repo skill → Claude đội trưởng xem → CEO duyệt cài
   const connectors = createConnectors({ runner, audit, dir });   // trang Kết nối (MCP) của đội
+  // Xưởng phim P2: máy quay API (Gemini) và trạm Google Flow. Chỉ CEO bấm trên trang Xưởng phim; AI không gọi được.
+  const mayQuay = createMayQuay({ dir, audit });
+  const tramFlow = createTramFlow({ dir, goc: () => xuongPhim.duongDan.goc, audit, jobs, cliClaude: () => runner.cliOf("claude") });
+  // Xưởng phim P3: bàn dựng (FFmpeg trên máy, miễn phí) và 4 cổng CEO duyệt. Thư mục tạm ở thư mục gốc của xưởng (ổ có chỗ).
+  const banDung = createBanDung({ audit, ffmpeg: () => xuongPhim.envAi().XUONG_PHIM_FFMPEG || null, tam: () => path.join(xuongPhim.duongDan.goc, "tmp") });
+  const phimRoot = (v) => ws.find(v).path;
+  const docHoSo = (root) => { const doc = (f, mac) => { try { return JSON.parse(fs.readFileSync(path.join(root, f), "utf8").replace(/^\uFEFF/, "")); } catch { return mac; } };
+    const phim = doc("phim.json", null); if (!phim) throw Object.assign(new Error("Dự án không có phim.json"), { code: "NOT_FOUND" });
+    return { phim, kiem: libPhim.kiem(phim, { giong: doc("media/giong/voice.json", null) }) }; };
   const journal = createJournal({ jobs, autopilot });           // Nhật ký: ai làm gì, lúc nào
   const boKiem = createBoKiem({ dir, audit });   // cài bộ kiểm chu trình (CI) vào repo dự án
   const updater = createUpdater({ root: path.join(__dirname, ".."), audit, jobs, autopilot, ...updaterOptions });   // nút Cập nhật app
@@ -105,6 +125,9 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
   const duAnMoi = createDuAnMoi({ github, ideas, boKiem, audit, dir, ...duAnOptions });
   const quotas = createQuotas({ ...quotaOptions, dir, agyTk, codexTk });
   quotasRef = quotas;
+  const quyenView = () => { const s = runner.quyen.doc(); return { ...s, roles: ROLES_LAM_VIEC, muc: Object.fromEntries(ROLES_LAM_VIEC.map((r) => [r, runner.quyen.mucCua(r, s)])) }; };
+  const boNao = createBoNao({ dir, audit });
+  const lichChay = createLichChay({ dir, audit, autopilot, chat, quota: quotas.snapshot, ws, workspaceBusy: jobs.aiBusy });
   const monitor = createMonitor();
   const tokenBuf = Buffer.from(token);
   const streams = new Set();
@@ -204,7 +227,7 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     // Ý tưởng của CEO: bước 1 chu trình, giao Hinata (SPEC_ARCHITECT) đặc tả
     ["GET", "/ideas", (p, qs) => ({ ideas: ideas.list(wsOf(qs.get("workspace"))) })],
     ["POST", "/du-an-moi/goi-y", async (p, qs, b) => ({ duAnMoi: await duAnMoi.goiY(b.yTuong) })],
-    ["POST", "/du-an-moi", (p, qs, b) => [202, { duAnMoi: duAnMoi.tao({ ten: b.ten, moTa: b.moTa, yTuong: b.yTuong, rieng: true /* luôn riêng tư: công khai chỉ khi CEO tự đổi trên GitHub */, caiBoKiem: b.caiBoKiem !== false, giaoHinata: b.giaoHinata !== false }) }]],
+    ["POST", "/du-an-moi", (p, qs, b) => [202, { duAnMoi: duAnMoi.tao({ ten: b.ten, moTa: b.moTa, yTuong: b.yTuong, loai: b.loai || "phan-mem", rieng: true /* luôn riêng tư: công khai chỉ khi CEO tự đổi trên GitHub */, caiBoKiem: b.caiBoKiem !== false, giaoHinata: b.giaoHinata !== false }) }]],
     ["GET", "/du-an-moi/:id", (p) => ({ duAnMoi: duAnMoi.get(p.id) })],
     ["POST", "/ideas", (p, qs, b) => [201, { idea: ideas.add({ workspace: wsOf(b.workspace), title: b.title, detail: b.detail }) }]],
     ["POST", "/ideas/:id/start", (p, qs, b) => ({ idea: ideas.start(p.id, { force: b.force === true }) })],
@@ -215,6 +238,21 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
   ["POST", "/ket-noi/phong", async (p, qs, b) => ({ ketNoi: await connectors.setPhong(String(b.room || ""), b.ids) })],
     // Cài MCP chạy trên máy (Chrome DevTools) đúng phiên bản đã ghim; tải từ npm nên chỉ khi CEO bấm.
     ["POST", "/ket-noi/cai-may", async (p, qs, b) => ({ ketNoi: await connectors.caiMay(String(b.id || "")) })],
+    // Xưởng phim P0: kiểm FFmpeg, Python chung, giọng đọc; cài chạy nền khi CEO bấm (trang Kết nối hỏi lại tới khi xong).
+    // Xưởng phim P2: hồ sơ, ước tính, quay (chạy nền), phần của CEO, trạm Flow.
+    ["GET", "/phim/du-an", () => ({ duAn: ws.list().filter((w) => fs.existsSync(path.join(w.path, "phim.json"))).map((w) => ({ path: w.path, ten: path.basename(w.path) })) })],
+    ["GET", "/phim", (p, qs) => { const root = phimRoot(qs.get("workspace")); return { ...docHoSo(root), mayQuay: mayQuay.trangThai(root), banDung: banDung.trangThai(root) }; }],
+    ["POST", "/phim/uoc-tinh", (p, qs, b) => ({ uocTinh: mayQuay.uocTinh(phimRoot(b.workspace), { canh: b.canh, loai: b.loai, soPhuongAn: b.soPhuongAn, doPhanGiai: b.doPhanGiai }) })],
+    ["POST", "/phim/quay", (p, qs, b) => [202, { mayQuay: mayQuay.batDauQuay(phimRoot(b.workspace), { canh: b.canh, loai: b.loai, soPhuongAn: b.soPhuongAn, doPhanGiai: b.doPhanGiai }) }]],
+    ["POST", "/phim/ceo", (p, qs, b) => ({ phim: mayQuay.suaCeo(phimRoot(b.workspace), { canh: b.canh, khungChon: b.khungChon, takeChon: b.takeChon, nguoiThat: b.nguoiThat, nganSach: b.nganSach }) })],
+    ["POST", "/phim/dung", (p, qs, b) => [202, { banDung: banDung.batDauDung(phimRoot(b.workspace)) }]],
+    ["POST", "/phim/cong", (p, qs, b) => ({ cong: banDung.duyetCong(phimRoot(b.workspace), { cong: b.cong, duyet: b.duyet }) })],
+    ["POST", "/phim/quay-lai", (p, qs, b) => banDung.quayLai(phimRoot(b.workspace), { canh: b.canh })],
+    ["GET", "/flow", async () => ({ flow: await tramFlow.trangThai() })],
+    ["POST", "/flow/:id/mo", async (p) => ({ flow: await tramFlow.mo(p.id) })],
+    ["POST", "/flow/nhip", async (p, qs, b) => [202, { flow: await tramFlow.nhip(phimRoot(b.workspace), { canh: b.canh, taiKhoan: b.taiKhoan, buoc: b.buoc }) }]],
+    ["GET", "/xuong-phim", async (p, qs) => ({ xuongPhim: await xuongPhim.kiem({ fresh: qs.get("fresh") === "1" }) })],
+    ["POST", "/xuong-phim/cai", () => [202, { xuongPhim: xuongPhim.batDauCai() }]],
     ["GET", "/dieu-phoi", () => ({ dieuPhoi: runner.dieuPhoi.status() })],
     ["GET", "/agy-tai-khoan", () => ({ taiKhoan: agyTk.trangThai() })],
     // Cất xong thì đọc luôn danh sách model của tài khoản vừa cất (mỗi tài khoản thấy model khác nhau).
@@ -250,6 +288,22 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     ["GET", "/chat", (p, qs) => ({ chat: chat.get(wsOf(qs.get("workspace")), String(qs.get("who") || "")) })],
     ["POST", "/chat", (p, qs, b) => [202, { chat: chat.send({ workspace: wsOf(b.workspace), who: String(b.who || ""), text: b.text }) }]],
     ["POST", "/chat/clear", (p, qs, b) => ({ chat: chat.clear(wsOf(b.workspace), String(b.who || "")) })],
+    ["GET", "/bo-nao", () => ({ cay: boNao.cay() })],
+    ["GET", "/bo-nao/doc", (p, qs) => boNao.doc(qs.get("p"))],
+    ["POST", "/bo-nao/ghi", (p, qs, b) => boNao.ghi(b, "ceo")],
+    ["POST", "/bo-nao/xoa", (p, qs, b) => boNao.xoa(b, "ceo")],
+    ["GET", "/bo-nao/lich-su", (p, qs) => ({ lichSu: boNao.lichSu(qs.get("p")) })],
+    ["GET", "/bo-nao/ban", (p, qs) => boNao.ban(qs.get("p"), qs.get("commit"))],
+    ["POST", "/bo-nao/hoan-tac", (p, qs, b) => boNao.hoanTac(b.commit, "ceo")],
+    // Ba mức quyền theo vai (ctl/quyen.js, CEO duyệt 21/11/2026). Trả thêm "muc" = mức đang áp thật của từng vai
+    // (kể cả vai chưa đặt riêng, theo công tắc chung) để giao diện không phải tự suy.
+    ["GET", "/quyen", () => ({ quyen: quyenView() })],
+    ["POST", "/quyen", (p, qs, b) => { runner.quyen.dat(b, "ceo"); return { quyen: quyenView() }; }],
+    ["GET", "/lich-chay", () => ({ lichChay: lichChay.list() })],
+    ["POST", "/lich-chay", (p, qs, b) => ({ lich: lichChay.luu(b, "ceo") })],
+    ["POST", "/lich-chay/:id/bat", (p, qs, b) => ({ lich: lichChay.batTat(p.id, b.bat, "ceo") })],
+    ["POST", "/lich-chay/:id/xoa", (p) => lichChay.xoa(p.id, "ceo")],
+    ["POST", "/lich-chay/:id/chay-ngay", async (p) => ({ ketQua: await lichChay.chayNgay(p.id, "ceo") })],
     ["GET", "/scan", (p, qs) => { const root = ws.find(wsOf(qs.get("workspace"))).path; return { scan: scanner.status(root, { fresh: qs.get("fresh") === "1" }), fullAccess: runner.fullOn() }; }],
     ["POST", "/scan/approve", (p, qs, b) => { const root = ws.find(wsOf(b.workspace)).path; const scan = scanner.approve(root, String(b.fingerprint || "")); return { scan, resumed: autopilot.resumeScan(root) }; }],
     ["GET", "/github/repos", (p, qs) => github.list(qs.get("page") || 1)],
@@ -315,6 +369,26 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     return params;
   };
 
+  const MIME_MEDIA = { ".mp4": "video/mp4", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".mp3": "audio/mpeg", ".wav": "audio/wav" };
+  function guiMedia(req, res, url) {
+    const rel = String(url.searchParams.get("path") || "");
+    if (!/^media\//.test(rel) || !libPhim.duongDanHopLe(rel)) return fail(res, 403, "PATH_DENIED", "Chỉ xem được file trong media/ của phim");
+    const loai = MIME_MEDIA[path.extname(rel).toLowerCase()];
+    if (!loai) return fail(res, 403, "PATH_DENIED", "Loại file không xem được");
+    const { real } = ws.resolve(phimRoot(url.searchParams.get("workspace")), rel);
+    const size = fs.statSync(real).size;
+    const m = /^bytes=(\d*)-(\d*)$/.exec(String(req.headers.range || ""));
+    if (m && size) {
+      const start = m[1] === "" ? Math.max(0, size - Number(m[2])) : Number(m[1]);
+      const end = m[1] !== "" && m[2] !== "" ? Math.min(Number(m[2]), size - 1) : size - 1;
+      if (start > end || start >= size) { res.writeHead(416, { "Content-Range": "bytes */" + size }); return res.end(); }
+      res.writeHead(206, { "Content-Type": loai, "Content-Length": end - start + 1, "Content-Range": `bytes ${start}-${end}/${size}`, "Accept-Ranges": "bytes", "Cache-Control": "no-store" });
+      return fs.createReadStream(real, { start, end }).pipe(res);
+    }
+    res.writeHead(200, { "Content-Type": loai, "Content-Length": size, "Accept-Ranges": "bytes", "Cache-Control": "no-store" });
+    fs.createReadStream(real).pipe(res);
+  }
+
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, "http://x");
     if (!LOOPBACK.test(String(req.headers.host || ""))) return fail(res, 403, "HOST_DENIED", "Chỉ nhận yêu cầu tới localhost");
@@ -336,6 +410,8 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
         res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", "X-Next-Offset": String(l.next), "X-Size": String(l.size) });
         return res.end(l.text);
       }
+      // Ảnh/giọng/clip của phim cho trang Xưởng phim xem: chỉ trong media/ của workspace đã đăng ký, có Range để tua video.
+      if (req.method === "GET" && url.pathname === "/phim/media") return guiMedia(req, res, url);
       for (const [method, pattern, fn] of routes) {
         if (method !== req.method) continue;
         const params = match(pattern, url.pathname);
@@ -355,6 +431,7 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
   });
 
   async function close() {
+    lichChay.dung();
     await Promise.allSettled([...background]);
     github.close();
     autopilot.close();
@@ -367,7 +444,7 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     db.close();
   }
 
-  return { server, jobs, ws, files, runner, autopilot, scanner, publisher, chat, connectors, journal, github, quotas, agyTk, codexTk, updater, boKiem, audit, token, close };
+  return { server, jobs, ws, files, xuongPhim, mayQuay, tramFlow, runner, autopilot, scanner, publisher, chat, connectors, journal, github, quotas, agyTk, codexTk, updater, boKiem, audit, token, close };
 }
 
 if (require.main === module) {
