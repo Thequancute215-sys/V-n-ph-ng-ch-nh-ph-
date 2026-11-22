@@ -57,7 +57,20 @@ const P = {
   noi: "M9 7V3M15 7V3M7 7h10v4a5 5 0 01-10 0zM12 16v5",
   moi: "M4 12a8 8 0 0114-5l2-2v6h-6l2-2a5 5 0 10.9 6",
   dt: "M8 2h8v20H8zM11 18h2",
+  lich: "M4 6h16v14H4zM4 10h16M8 3v5M16 3v5M8 14h3",
+  nao: "M9 4a3 3 0 00-3 3 3 3 0 00-2 5 3 3 0 002 5 3 3 0 006 1V4zM15 4a3 3 0 013 3 3 3 0 012 5 3 3 0 01-2 5 3 3 0 01-6 1",
+  khoa: "M6 11h12v9H6zM9 11V8a3 3 0 016 0v3M12 15v2",
 };
+// Vai trong agent.md ↔ phòng (khóa của ctl/dieu-phoi + ctl/chat) ↔ người trong văn phòng; nền = AI chạy vai đó.
+export const VAI = [
+  { role: "SPEC_ARCHITECT", phong: "hinata", ten: "Hinata", viec: "Đặc tả và thiết kế giao diện", nen: "agy" },
+  { role: "SOL_ARCHITECT_PLANNER", phong: "itachi", ten: "Itachi (Sol)", viec: "Kiến trúc, kế hoạch, hợp đồng API", nen: "codex" },
+  { role: "CLAUDE_AUDITOR", phong: "sakura", ten: "Sakura (Claude)", viec: "Đội trưởng: duyệt, chốt chặn", nen: "claude" },
+  { role: "CODEX_ASTRA_DEV", phong: "sasuke", ten: "Sasuke (Astra)", viec: "Backend, API, dữ liệu", nen: "codex" },
+  { role: "FRONTEND_UIUX_DEV", phong: "kakashi", ten: "Kakashi", viec: "Dựng giao diện", nen: "agy" },
+  { role: "SOL_ARCHITECT_ADVISOR", phong: "itachi", ten: "Itachi (cố vấn)", viec: "Đối chiếu code với kế hoạch", nen: "codex" },
+];
+export const TEN_NEN = { claude: "Claude", codex: "Codex", agy: "Antigravity" };
 export const icon = (ten) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${P[ten] || P.nha}"/></svg>`;
 
 // Thông báo nhỏ góc dưới.

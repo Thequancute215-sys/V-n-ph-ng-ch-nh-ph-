@@ -30,7 +30,9 @@ async function fixture(t) {
     }
     const next={SOL_ARCHITECT_PLANNER:'CLAUDE_AUDITOR',CLAUDE_AUDITOR:'SPEC_ARCHITECT'}[role];
     console.log(JSON.stringify({result:'Xong.'+String.fromCharCode(10)+JSON.stringify({role,next_owner:next,files,claim_fixed:[],done:role==='CLAUDE_AUDITOR'?true:undefined,giai_thich:[{van_de:'Dự án không có API vì chạy dòng lệnh',da_lam:'Đã làm phần việc thử nghiệm',vi_sao:'Vì công cụ không có máy chủ hay sự kiện mạng',phuong_an_khac:[]}]})}));`);
-  fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify(Object.fromEntries(["SOL_ARCHITECT_PLANNER", "CLAUDE_AUDITOR", "CLAUDE_REPORTER", "SPEC_ARCHITECT"].map((r) => [r, [process.execPath, fake, r, "{prompt}"]]))));
+  const reporter = path.join(temp, "claude.js");
+  fs.writeFileSync(reporter, `process.argv.splice(2, process.argv.length, ...${JSON.stringify(["CLAUDE_REPORTER"])}, process.argv.at(-1)); require(${JSON.stringify(fake)});`);
+  fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify(Object.fromEntries(["SOL_ARCHITECT_PLANNER", "CLAUDE_AUDITOR", "CLAUDE_REPORTER", "SPEC_ARCHITECT"].map((r) => [r, r === "CLAUDE_REPORTER" ? [process.execPath, reporter, "-p", "{prompt}"] : [process.execPath, fake, r, "{prompt}"]]))));
   fs.writeFileSync(path.join(dir, "quyen.json"), JSON.stringify({ toanQuyen: false }));
   const ctl = createCtl({ dir });
   await new Promise((r) => ctl.server.listen(0, "127.0.0.1", r));

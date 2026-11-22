@@ -50,7 +50,10 @@ test("lệnh chat mặc định luôn chỉ đọc kể cả khi bật toàn quy
   assert.equal(sol[sol.indexOf("-m") + 1], "gpt-6.1-sol");
   assert.equal(astra[astra.indexOf("-m") + 1], "gpt-6-astra");
   assert.deepEqual(agy.slice(agy.indexOf("--mode"), agy.indexOf("--mode") + 2), ["--mode", "plan"]);
-  assert.match(agy[agy.indexOf("--settings") + 1], /Get-ChildItem/, "Antigravity được lệnh chỉ đọc để không bị chặn trả lời rỗng");
+  const quyenAgy = JSON.parse(agy[agy.indexOf("--settings") + 1]).permissions;
+  assert.ok(quyenAgy.deny.includes("write_file(*)"), "chat với Antigravity không ghi được file");
+  // agy chạy nền tự từ chối công cụ chưa được cho phép, kể cả đọc file → trả lời rỗng. Phải cho phép rõ công cụ đọc.
+  assert.ok(quyenAgy.allow.includes("read_file(*)") && quyenAgy.allow.some((r) => /Get-ChildItem/.test(r)), "Antigravity được công cụ đọc để không bị chặn trả lời rỗng");
   for (const a of [claude, sol, astra, agy]) assert.ok(!a.some((x) => /dangerously/.test(x)), a.join(" "));
   assert.throws(() => ctl.runner.chatArgv("pain"), /Không có AI để chat/);
 });
@@ -76,7 +79,12 @@ async function fixture(t) {
       if(kind==='CODEX_CHAT'){console.log(JSON.stringify({type:'thread.started'}));console.log(JSON.stringify({type:'item.completed',item:{type:'agent_message',text:out}}));}
       else console.log(JSON.stringify({result:out}));
     }, slow?800:50);`);
-  fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify(Object.fromEntries(["CLAUDE_CHAT", "CODEX_CHAT", "AGY_CHAT"].map((r) => [r, [process.execPath, fake, r, "{prompt}"]]))));
+  const agents = Object.fromEntries(["claude", "codex", "agy"].map((kind) => {
+    const cli = path.join(temp, kind + ".js"), role = kind.toUpperCase() + "_CHAT";
+    fs.writeFileSync(cli, `process.argv.splice(2, process.argv.length, ${JSON.stringify(role)}, process.argv.at(-1)); require(${JSON.stringify(fake)});`);
+    return [role, [process.execPath, cli, kind === "codex" ? "exec" : "-p", "{prompt}"]];
+  }));
+  fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify(agents));
   const ctl = createCtl({ dir });
   ctl.ws.add(repo);
   t.after(async () => { await ctl.close(); fs.rmSync(temp, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); });

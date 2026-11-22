@@ -20,6 +20,8 @@
   --tracking-display: -0.02em; --display-weight: 400;
   --color-accent-text: var(--color-accent);
   --color-claude: oklch(78% 0.12 50); --color-codex: oklch(78% 0.1 240); --color-gemini: oklch(78% 0.12 300); --color-warn: oklch(82% 0.13 80); --sidebar-w: 236px;
+  /* Màu nhận diện hai xưởng (OS-2): code xanh ngọc, phim hổ phách. Chỉ dùng cho vạch, nhãn, chữ nhỏ; không làm nền khối lớn. */
+  --color-xuong-code: oklch(80% 0.11 195); --color-xuong-phim: oklch(82% 0.13 65);
 }
 
 /* Chế độ sáng (CEO bật ở thanh trên, nhớ trong máy): giấy xanh xám nhạt, mực xanh đen; chanh chỉ làm nền nút,
@@ -34,4 +36,5 @@
   --color-error: oklch(52% 0.18 27); --color-success: oklch(48% 0.14 150); --color-warn: oklch(52% 0.13 70);
   --color-slot: oklch(94% 0.006 235);
   --color-claude: oklch(50% 0.13 50); --color-codex: oklch(45% 0.12 240); --color-gemini: oklch(45% 0.14 300);
+  --color-xuong-code: oklch(46% 0.1 200); --color-xuong-phim: oklch(50% 0.12 60);
 }

@@ -28,6 +28,9 @@
     { "repo": "usestrix/strix", "commit": "685bbc8138d35fc9fe378ac37ec0d9198b9c46a3", "nhom": "B", "giay_phep": "Apache-2.0",
       "duong_dan": "skills", "nhieu": true, "dung_cho": "kiểm thử xâm nhập app CỦA MÌNH (cần Docker + khóa riêng; không cài bằng curl | bash)" },
     { "repo": "morluto/rea", "commit": "0e88049d59124abfab0bf1bc57b5ee32d0430afb", "nhom": "B", "giay_phep": "MIT",
-      "duong_dan": ".agents/skills/reverse-engineer-anything", "dung_cho": "dịch ngược phần mềm khi có lý do hợp pháp (app của mình, tương thích)" }
+      "duong_dan": ".agents/skills/reverse-engineer-anything", "dung_cho": "dịch ngược phần mềm khi có lý do hợp pháp (app của mình, tương thích)" },
+    { "repo": "Jakeschincariol/replica-skill", "commit": "77c9436fb3d18c3d58169efb8caf4fe906b0dc51", "nhom": "B", "giay_phep": "MIT",
+      "duong_dan": ".", "nhieu": true,
+      "dung_cho": "học tính năng và luồng của app khác kiểu phòng sạch (recon, kiến trúc, design token, dựng, test, chấm độ giống, đổi thương hiệu): không chép mã, logo, chữ, nội dung; chỉ nguồn công khai; KHÔNG tự chạy npx playwright hay triển khai (CEO duyệt 21/11/2026)" }
   ]
 }

@@ -22,7 +22,9 @@ async function fixture(t, owner, mode = "ok") {
     if(role==='CLAUDE_REPORTER'){console.log(JSON.stringify({result:'Claude báo cáo.'}));return;}
     const next={SPEC_ARCHITECT:'SOL_ARCHITECT_PLANNER',SOL_ARCHITECT_PLANNER:'CODEX_ASTRA_DEV',CODEX_ASTRA_DEV:'CLAUDE_AUDITOR',CLAUDE_AUDITOR:'SPEC_ARCHITECT'}[role];
     console.log(JSON.stringify({result:'Xong.\\n'+JSON.stringify({role,next_owner:next,files:[],claim_fixed:[],giai_thich:[{van_de:'Vấn đề của lượt thử nghiệm',da_lam:'Đã làm phần việc thử nghiệm',vi_sao:'Vì đây là CLI giả dùng cho test',phuong_an_khac:[]}],...(role==='CLAUDE_AUDITOR'?{done:true}:{})})}));`);
-  fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify(Object.fromEntries(ROLES.map((r) => [r, [process.execPath, fake, r, mode, "{prompt}"]]))));
+  const reporter = path.join(temp, "claude.js");
+  fs.writeFileSync(reporter, `process.argv.splice(2, process.argv.length, ...${JSON.stringify(["CLAUDE_REPORTER", mode])}, process.argv.at(-1)); require(${JSON.stringify(fake)});`);
+  fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify(Object.fromEntries(ROLES.map((r) => [r, r === "CLAUDE_REPORTER" ? [process.execPath, reporter, "-p", "{prompt}"] : [process.execPath, fake, r, mode, "{prompt}"]]))));
   const ctl = createCtl({ dir });
   await new Promise((r) => ctl.server.listen(0, "127.0.0.1", r));
   ctl.ws.add(repo);

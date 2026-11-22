@@ -30,6 +30,9 @@ const { createBanDung } = require("./ban-dung");
 const libPhim = require("../lib/phim");
 const { createJournal } = require("./nhat-ky");
 const { createChat } = require("./chat");
+const { createBoNao } = require("./bo-nao");
+const { createLichChay } = require("./lich-chay");
+const { ROLES_LAM_VIEC } = require("./quyen");
 const { createNotifier } = require("./thongbao");
 const { createScanner } = require("./ra-soat");
 const { createUpdater } = require("./cap-nhat");
@@ -49,7 +52,7 @@ const LOOPBACK = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i;
 const HTTP_CODE = {
   BAD_REQUEST: 400, NOT_DIR: 400, NOT_FILE: 400, BAD_CONFIG: 400, NO_AGENT_MD: 422, BAD_AGENT_MD: 422, INVALID_HANDOFF: 422, NO_CLI: 422,
   WORKSPACE_DENIED: 403, PATH_ESCAPE: 403, PATH_DENIED: 403, TOO_BROAD: 403, TOO_SENSITIVE: 403, COMMAND_DENIED: 403,
-  NOT_FOUND: 404, TOO_LARGE: 413,
+  NOT_FOUND: 404, CONFLICT: 409, TOO_LARGE: 413, SECRET: 422,
   GITHUB_AUTH: 401, GITHUB_LIMIT: 429, GITHUB_OFFLINE: 502, GITHUB_CLONE: 502,
   CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_WAITING: 409, NEEDS_SPEC_TURN: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409, HANDOFF_PENDING: 409, NEEDS_ANSWER: 409, NO_QUESTION: 422, BAD_OPTION: 400,
   CHAT_BUSY: 409, PUBLISH_BUSY: 409, NOT_READY: 409, NO_RELEASE_WORKFLOW: 422, NOT_ON_MAIN: 409, TAG_EXISTS: 409, DIRTY_REPO: 409, NEEDS_SCAN_APPROVAL: 409, NO_COMMIT: 409, NO_QUOTA: 409, NO_GIT: 422, NO_REMOTE: 422, GIT_PUSH: 502,
@@ -122,6 +125,9 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
   const duAnMoi = createDuAnMoi({ github, ideas, boKiem, audit, dir, ...duAnOptions });
   const quotas = createQuotas({ ...quotaOptions, dir, agyTk, codexTk });
   quotasRef = quotas;
+  const quyenView = () => { const s = runner.quyen.doc(); return { ...s, roles: ROLES_LAM_VIEC, muc: Object.fromEntries(ROLES_LAM_VIEC.map((r) => [r, runner.quyen.mucCua(r, s)])) }; };
+  const boNao = createBoNao({ dir, audit });
+  const lichChay = createLichChay({ dir, audit, autopilot, chat, quota: quotas.snapshot, ws, workspaceBusy: jobs.aiBusy });
   const monitor = createMonitor();
   const tokenBuf = Buffer.from(token);
   const streams = new Set();
@@ -282,6 +288,22 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     ["GET", "/chat", (p, qs) => ({ chat: chat.get(wsOf(qs.get("workspace")), String(qs.get("who") || "")) })],
     ["POST", "/chat", (p, qs, b) => [202, { chat: chat.send({ workspace: wsOf(b.workspace), who: String(b.who || ""), text: b.text }) }]],
     ["POST", "/chat/clear", (p, qs, b) => ({ chat: chat.clear(wsOf(b.workspace), String(b.who || "")) })],
+    ["GET", "/bo-nao", () => ({ cay: boNao.cay() })],
+    ["GET", "/bo-nao/doc", (p, qs) => boNao.doc(qs.get("p"))],
+    ["POST", "/bo-nao/ghi", (p, qs, b) => boNao.ghi(b, "ceo")],
+    ["POST", "/bo-nao/xoa", (p, qs, b) => boNao.xoa(b, "ceo")],
+    ["GET", "/bo-nao/lich-su", (p, qs) => ({ lichSu: boNao.lichSu(qs.get("p")) })],
+    ["GET", "/bo-nao/ban", (p, qs) => boNao.ban(qs.get("p"), qs.get("commit"))],
+    ["POST", "/bo-nao/hoan-tac", (p, qs, b) => boNao.hoanTac(b.commit, "ceo")],
+    // Ba mức quyền theo vai (ctl/quyen.js, CEO duyệt 21/11/2026). Trả thêm "muc" = mức đang áp thật của từng vai
+    // (kể cả vai chưa đặt riêng, theo công tắc chung) để giao diện không phải tự suy.
+    ["GET", "/quyen", () => ({ quyen: quyenView() })],
+    ["POST", "/quyen", (p, qs, b) => { runner.quyen.dat(b, "ceo"); return { quyen: quyenView() }; }],
+    ["GET", "/lich-chay", () => ({ lichChay: lichChay.list() })],
+    ["POST", "/lich-chay", (p, qs, b) => ({ lich: lichChay.luu(b, "ceo") })],
+    ["POST", "/lich-chay/:id/bat", (p, qs, b) => ({ lich: lichChay.batTat(p.id, b.bat, "ceo") })],
+    ["POST", "/lich-chay/:id/xoa", (p) => lichChay.xoa(p.id, "ceo")],
+    ["POST", "/lich-chay/:id/chay-ngay", async (p) => ({ ketQua: await lichChay.chayNgay(p.id, "ceo") })],
     ["GET", "/scan", (p, qs) => { const root = ws.find(wsOf(qs.get("workspace"))).path; return { scan: scanner.status(root, { fresh: qs.get("fresh") === "1" }), fullAccess: runner.fullOn() }; }],
     ["POST", "/scan/approve", (p, qs, b) => { const root = ws.find(wsOf(b.workspace)).path; const scan = scanner.approve(root, String(b.fingerprint || "")); return { scan, resumed: autopilot.resumeScan(root) }; }],
     ["GET", "/github/repos", (p, qs) => github.list(qs.get("page") || 1)],
@@ -409,6 +431,7 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
   });
 
   async function close() {
+    lichChay.dung();
     await Promise.allSettled([...background]);
     github.close();
     autopilot.close();

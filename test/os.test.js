@@ -31,3 +31,55 @@ test("os.css không viết thẳng mã màu; token có đủ nền tối và n�
   }
   assert.match(tok, /:root\[data-theme="light"\]/, "có bảng màu nền sáng");
 });
+
+// OS-2 (CEO 21/11/2026): máy tính chỉ dùng OS, văn phòng 3D chỉ trên điện thoại; hai xưởng tách hẳn nhau.
+test("OS-2: Xưởng code và Xưởng phim là hai nhóm riêng, mọi mục của nhóm mang đúng nhãn xưởng", () => {
+  const app = doc("os/app.js");
+  const khu = app.slice(app.indexOf("const KHU = ["), app.indexOf("];", app.indexOf("const KHU = [")));
+  const dong = khu.split("\n").filter((l) => /^\s*\{/.test(l));
+  let nhom = null;
+  for (const l of dong) {
+    const n = /nhom: "([^"]+)"/.exec(l);
+    if (n) { nhom = n[1]; continue; }
+    if (nhom === "Xưởng code") assert.match(l, /xuong: "code"/, "mục của Xưởng code thiếu nhãn: " + l.trim());
+    else if (nhom === "Xưởng phim") assert.match(l, /xuong: "phim"/, "mục của Xưởng phim thiếu nhãn: " + l.trim());
+    else assert.doesNotMatch(l, /xuong: /, "mục ngoài hai xưởng không được mang nhãn xưởng: " + l.trim());
+  }
+  assert.ok(dong.some((l) => /nhom: "Xưởng code", xuong: "code"/.test(l)) && dong.some((l) => /nhom: "Xưởng phim", xuong: "phim"/.test(l)));
+  for (const m of ["cong-su", "viec", "bo-nao", "models", "code-du-an"]) assert.match(app, new RegExp(`mod: "\./khu/${m}\.js"`), "thiếu khu " + m);
+  const tok = doc("os/tokens.css");
+  assert.equal((tok.match(/--color-xuong-code:/g) || []).length, 2, "màu Xưởng code có cả nền tối và nền sáng");
+  assert.equal((tok.match(/--color-xuong-phim:/g) || []).length, 2, "màu Xưởng phim có cả nền tối và nền sáng");
+});
+
+test("OS-2: máy tính không vào được văn phòng 3D; điện thoại vẫn vào", () => {
+  assert.doesNotMatch(doc("os.html"), /href="index\.html"/, "OS trên máy tính không còn nút mở văn phòng 3D");
+  const idx = doc("index.html");
+  const chot = idx.indexOf('location.replace("os.html"');
+  assert.ok(chot > 0, "index.html chuyển máy tính sang os.html");
+  // Chốt chạy trước khi tải font, CSS hay mô-đun 3D để máy tính không tải 3D rồi mới chuyển.
+  for (const sau of ["fonts.googleapis.com", "<style>", "vanphong3d.js"]) assert.ok(chot < idx.indexOf(sau), "chốt phải đứng trước " + sau);
+  // Thử chính đoạn chốt với vài trình duyệt.
+  const code = /<script>\s*([\s\S]*?location\.replace\("os\.html" \+ location\.hash\);[\s\S]*?)<\/script>/.exec(idx)[1];
+  const chay = (ua, touch = 0) => { let toi = null; new Function("navigator", "location", code)({ userAgent: ua, maxTouchPoints: touch }, { hash: "", replace: (u) => { toi = u; } }); return toi; };
+  assert.equal(chay("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/150 Safari/537.36 Edg/150"), "os.html");
+  assert.equal(chay("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Safari/605.1.15"), "os.html");
+  assert.equal(chay("Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 Chrome/150 Mobile Safari/537.36"), null);
+  assert.equal(chay("Mozilla/5.0 (iPhone; CPU iPhone OS 19_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148"), null);
+  assert.equal(chay("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Safari/605.1.15", 5), null, "iPad tự xưng Macintosh nhưng có cảm ứng");
+});
+
+test("OS-2: mỗi lần mở khu giao cho khu một khung con mới, không giao thẳng #vung (bộ nghe sự kiện không chồng lên nhau)", () => {
+  const app = doc("os/app.js");
+  const mo = app.slice(app.indexOf("async function moKhu()"));
+  assert.match(mo, /vung\.replaceChildren\(khung\)/, "thay khung cũ bằng khung mới");
+  assert.match(mo, /m\.mo\(khung,/, "khu nhận khung mới");
+  assert.doesNotMatch(mo, /m\.mo\(vung,/, "không giao #vung sống suốt phiên cho khu");
+});
+
+test("OS-2: máy tính quản lý được tài khoản AI ngay trong OS (hộp thoại 3D không còn vào được trên máy tính)", () => {
+  const m = doc("os/khu/models.js");
+  for (const duong of ["/codex-tai-khoan/them", "/dang-nhap", "/chuyen", "/codex-tai-khoan/doc", "/agy-tai-khoan/cat", "/agy-tai-khoan/doc-nghi", "-tai-khoan/sua", "/xoa", "/bo"]) {
+    assert.ok(m.includes(duong), "khu Models và quyền thiếu thao tác tài khoản: " + duong);
+  }
+});
