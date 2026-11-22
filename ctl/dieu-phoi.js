@@ -16,7 +16,7 @@ const TIERS = ["nhe", "vua", "nang"];
 const TEN = { nhe: "nhẹ", vua: "vừa", nang: "nặng" };
 const BANG = {
   claude: { nhe: { model: "sonnet", effort: "low" }, vua: { model: "sonnet", effort: "high" }, nang: { model: "opus", effort: "high" } },
-  codex: { nhe: { effort: "low" }, vua: { effort: "medium" }, nang: { effort: "xhigh" } },
+  codex: { nhe: { effort: "low" }, vua: { effort: "high" }, nang: { effort: "xhigh" } },   // vừa = mặc định high (CEO chọn 22/11/2026)
   agy: { nhe: { model: "gemini-3.8-flash-low" }, vua: { model: "gemini-3.8-flash-medium" }, nang: { model: "gemini-3.8-flash-high" } },
 };
 const EFFORT = ["low", "medium", "high", "xhigh", "max", "ultra"];   // ultra: chỉ một số model Codex có

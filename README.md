@@ -218,7 +218,7 @@ Rồi chọn cờ thật của CLI:
 | | nhẹ | vừa | nặng |
 |---|---|---|---|
 | Claude (`--model`, `--effort`) | sonnet · low | sonnet · high | opus · high |
-| Codex (`model_reasoning_effort`, model giữ theo vai) | low | medium | xhigh |
+| Codex (`model_reasoning_effort`, model giữ theo vai: Sol gpt-6.2-sol, Astra gpt-6.2-astra) | low | high | xhigh |
 | Antigravity (`--model`) | gemini-3.8-flash-low | gemini-3.8-flash-medium | gemini-3.8-flash-high |
 
 - **Hạn mức:** AI còn ≤15% thì hạ một bậc, ≤5% thì về mức nhẹ nhất.
@@ -548,6 +548,6 @@ HUONG-DAN-CHO-AGENT.md hướng dẫn để agent tự cài từ link này
 docs/BAN-DO-HE-THONG.md bản đồ workflow → kiến trúc → mã (sinh bằng tools/ve-ban-do.js từ đồ thị Understand Anything trong .ua/)
 ```
 
-Bản đồ toàn hệ thống (8 miền nghiệp vụ, 53 workflow, từng bước trỏ tới file:dòng): [docs/BAN-DO-HE-THONG.md](docs/BAN-DO-HE-THONG.md). Mã đổi nhiều thì vẽ lại đồ thị bằng `/understand` và `/understand-domain` (plugin Understand Anything), rồi chạy `node tools/ve-ban-do.js`.
+Bản đồ toàn hệ thống (8 miền nghiệp vụ, 53 workflow, từng bước trỏ tới file:dòng): [docs/BAN-DO-HE-THONG.md](docs/BAN-DO-HE-THONG.md). Bản đồ tự cập nhật: sau mỗi commit/merge, hook của plugin Understand Anything (bật `autoUpdate` trong `.ua/config.json`) nhắc Claude chạy `node tools/cap-nhat-ban-do.js`; công cụ giao Codex (gpt-6.1-sol, mức medium, cho rẻ) cập nhật tăng dần đồ thị ở nền rồi vẽ lại trang trên, Claude chỉ kiểm kết quả. Xem bản đồ có cũ không: `node tools/cap-nhat-ban-do.js --kiem`; chạy tay và chờ xong: thêm `--cho`.
 
 Giấy phép MIT.
