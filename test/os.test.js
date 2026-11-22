@@ -77,6 +77,13 @@ test("OS-2: mỗi lần mở khu giao cho khu một khung con mới, không giao
   assert.doesNotMatch(mo, /m\.mo\(vung,/, "không giao #vung sống suốt phiên cho khu");
 });
 
+test("OS-2: máy tính quản lý được tài khoản AI ngay trong OS (hộp thoại 3D không còn vào được trên máy tính)", () => {
+  const m = doc("os/khu/models.js");
+  for (const duong of ["/codex-tai-khoan/them", "/dang-nhap", "/chuyen", "/codex-tai-khoan/doc", "/agy-tai-khoan/cat", "/agy-tai-khoan/doc-nghi", "-tai-khoan/sua", "/xoa", "/bo"]) {
+    assert.ok(m.includes(duong), "khu Models và quyền thiếu thao tác tài khoản: " + duong);
+  }
+});
+
 // OS-3 (CEO cấp FORCE_OVERRIDE 22/11/2026): "xem ở đâu, xử lý ngay ở đó".
 test("OS-3: thanh bên chỉ còn khu gốc (không nhúng trang cũ), trang cũ gom vào Công cụ cũ", () => {
   const app = doc("os/app.js");
