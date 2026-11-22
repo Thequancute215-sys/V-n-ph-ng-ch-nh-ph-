@@ -58,6 +58,25 @@ const detectStack = (root) => STACKS.filter(([files]) => files.some((f) => fs.ex
 const same = (a, b) => (process.platform === "win32" ? a.toLowerCase() === b.toLowerCase() : a === b);
 const inside = (root, p) => { const rel = path.relative(root, p); return rel === "" || (!rel.startsWith("..") && !path.isAbsolute(rel)); };
 const err = (code, msg) => Object.assign(new Error(msg), { code });
+// Đường dẫn thật (qua junction/symlink); không đọc được thì giữ nguyên. Sổ lưu đường dẫn lúc đăng ký: dự án chuyển ổ bằng junction
+// (CEO chuyển repo sang D: 21/11/2026) thì đường dẫn đã lưu và đường dẫn thật khác nhau, nên mọi phép so phải so đường dẫn thật.
+const realOf = (p) => { try { return fs.realpathSync(p); } catch { return p; } };
+// Thư mục cấu hình ẩn trong thư mục người dùng (~/.ssh, ~/.claude, ~/.van-phong-ao…) chứa khóa đăng nhập. Kiểm cả đường dẫn gõ vào
+// lẫn đường dẫn thật, và cả đích của thư mục ẩn đã chuyển ổ bằng junction (~/.claude trỏ sang D:): chỉ kiểm đường dẫn thật thì lọt.
+// Chặn cả đích, thư mục con LẪN thư mục cha của đích (đăng ký D:\DuLieuTuC là đọc được claude\.credentials.json bên trong).
+function isSensitive(...paths) {
+  const home = os.homedir();
+  const hiddenIn = (x) => inside(home, x) && !same(x, home) && path.relative(home, x).split(path.sep)[0].startsWith(".");
+  if (paths.some(hiddenIn)) return true;
+  let movedHiddenTargets;
+  try {
+    // lstat (không dùng Dirent): Windows báo junction là symbolic link qua lstat.
+    const isLink = (f) => { try { return fs.lstatSync(f).isSymbolicLink(); } catch { return false; } };
+    movedHiddenTargets = fs.readdirSync(home).filter((n) => n.startsWith(".")).map((n) => path.join(home, n)).filter(isLink)
+      .map(realOf).filter((t) => !inside(t, home)); // đích là chính home hay thư mục chứa nó: TOO_BROAD đã chặn
+  } catch { return true; } // không đọc được thư mục người dùng thì không biết đích nào nhạy cảm: từ chối, không đoán
+  return paths.some((x) => movedHiddenTargets.some((t) => inside(t, x) || inside(x, t)));
+}
 // Lệnh git chỉ đọc; lỗi (không phải repo, chưa có commit…) trả null để báo "không có", không đoán.
 const gitRead = (root, args) => {
   try { return execFileSync("git", args, { cwd: root, encoding: "utf8", windowsHide: true, timeout: 8000, stdio: ["ignore", "pipe", "ignore"], maxBuffer: 4 * 1024 * 1024 }).trim(); }
@@ -74,18 +93,25 @@ function createWorkspaces(db, audit) {
   };
   let active = null;
 
+  // Dòng đã lưu ứng với một đường dẫn thật: khớp theo đường dẫn đã lưu, hoặc theo đường dẫn thật của nó (đã chuyển ổ bằng junction).
+  const storedFor = (real) => q.all.all().find((w) => same(w.path, real) || same(realOf(w.path), real));
+
+  // Chặn cả ổ đĩa, thư mục người dùng và mọi thư mục chứa nó (C:\Users…), và thư mục cấu hình ẩn.
+  function checkScope(typed, real) {
+    if (same(real, path.parse(real).root) || inside(real, os.homedir())) throw err("TOO_BROAD", "Không đăng ký cả ổ đĩa hay cả thư mục người dùng");
+    if (isSensitive(typed, real)) throw err("TOO_SENSITIVE", "Không đăng ký thư mục cấu hình ẩn (.ssh, .claude, .codex…)");
+  }
+
   function list() { return q.all.all().map((w) => ({ ...w, active: !!active && same(w.path, active) })); }
 
   function add(p, actor = "ceo") {
     let real;
     try { real = fs.realpathSync(path.resolve(String(p || ""))); } catch { throw err("NOT_FOUND", "Không có thư mục " + p); }
     if (!fs.statSync(real).isDirectory()) throw err("NOT_DIR", real + " không phải thư mục");
-    // Chặn cả ổ đĩa, thư mục người dùng và mọi thư mục chứa nó (C:\Users…).
-    if (same(real, path.parse(real).root) || inside(real, os.homedir())) throw err("TOO_BROAD", "Không đăng ký cả ổ đĩa hay cả thư mục người dùng");
-    // Thư mục nằm TRONG thư mục người dùng mà bắt đầu bằng "." (~/.ssh, ~/.claude, ~/.van-phong-ao…) chứa khóa đăng nhập.
-    if (inside(os.homedir(), real) && path.relative(os.homedir(), real).split(path.sep)[0].startsWith(".")) throw err("TOO_SENSITIVE", "Không đăng ký thư mục cấu hình ẩn (.ssh, .claude, .codex…)");
-    // Windows không phân biệt hoa/thường và realpath giữ nguyên cách gõ: dùng lại đường dẫn đã lưu để không sinh 2 dòng cho 1 thư mục.
-    const dup = q.all.all().find((w) => same(w.path, real));
+    checkScope(path.resolve(String(p || "")), real);
+    // Windows không phân biệt hoa/thường và realpath giữ nguyên cách gõ; thư mục đã chuyển ổ bằng junction thì đường dẫn đã lưu
+    // khác đường dẫn thật. Dùng lại dòng đã lưu để không sinh 2 dòng cho 1 thư mục.
+    const dup = storedFor(real);
     if (dup) real = dup.path;
     const agentMd = initAgentMd(real, actor);
     q.add.run(real, path.basename(real), Date.now());
@@ -116,8 +142,14 @@ function createWorkspaces(db, audit) {
   function find(p) {
     let real;
     try { real = fs.realpathSync(path.resolve(String(p || ""))); } catch { throw err("WORKSPACE_DENIED", "Workspace không tồn tại: " + p); }
-    const w = q.all.all().find((x) => same(x.path, real));
+    // Khớp theo đường dẫn đã lưu hoặc đường dẫn thật của nó (dự án đã chuyển ổ bằng junction). Trả về dòng đã lưu, để lịch sử
+    // lượt, ý tưởng, nhật ký gắn với đường dẫn cũ vẫn đúng.
+    const w = storedFor(real);
     if (!w) throw err("WORKSPACE_DENIED", "Chưa đăng ký workspace " + real);
+    // Đích của junction có thể bị đổi sau khi đăng ký: kiểm lại phạm vi trên đường dẫn thật hiện tại.
+    if (!same(w.path, real)) {
+      try { checkScope(w.path, real); } catch (e) { throw err("WORKSPACE_DENIED", "Workspace " + w.path + " giờ trỏ tới " + real + ": " + e.message); }
+    }
     return w;
   }
 
@@ -192,7 +224,7 @@ function createWorkspaces(db, audit) {
 
   // Đổi (workspace, đường dẫn tương đối) thành đường dẫn thật nằm trong workspace. forWrite: file có thể chưa có, kiểm thư mục cha.
   function resolve(ws, rel, { forWrite = false } = {}) {
-    const root = find(ws).path;
+    const root = find(ws).path, realRoot = realOf(root);
     // "\\" coi như dấu phân cách trên mọi hệ: "..\\ngoai" không lọt qua kiểm tra khi ctl chạy trên Linux/macOS.
     const target = path.resolve(root, String(rel || ".").replace(/\\/g, "/"));
     if (!inside(root, target)) throw err("PATH_ESCAPE", "Đường dẫn ra ngoài workspace");
@@ -203,13 +235,14 @@ function createWorkspaces(db, audit) {
       if (!forWrite || e.code !== "ENOENT") throw err("NOT_FOUND", "Không có " + rel);
       let parent;
       try { parent = fs.realpathSync(path.dirname(target)); } catch { throw err("NOT_FOUND", "Không có thư mục cha của " + rel); }
-      if (!inside(root, parent)) throw err("PATH_ESCAPE", "Thư mục cha ra ngoài workspace");
+      if (!inside(realRoot, parent)) throw err("PATH_ESCAPE", "Thư mục cha ra ngoài workspace");
       real = path.join(parent, path.basename(target));
     }
-    if (!inside(root, real)) throw err("PATH_ESCAPE", "Đường dẫn (qua symlink) ra ngoài workspace");
-    const parts = path.relative(root, real).split(path.sep);
+    // So với gốc THẬT: gốc đã chuyển ổ bằng junction thì đường dẫn thật của file nằm dưới đích junction, không dưới đường dẫn đã lưu.
+    if (!inside(realRoot, real)) throw err("PATH_ESCAPE", "Đường dẫn (qua symlink) ra ngoài workspace");
+    const parts = path.relative(realRoot, real).split(path.sep);
     if (forWrite && parts.some((x) => x.toLowerCase() === ".git")) throw err("PATH_DENIED", "Không ghi thẳng vào .git");
-    return { root, real, rel: path.relative(root, real).split(path.sep).join("/") };
+    return { root, real, rel: path.relative(realRoot, real).split(path.sep).join("/") };
   }
 
   return { list, add, remove, find, switchTo, current, resolve, overview, excludeAgentMd, MAX_READ };

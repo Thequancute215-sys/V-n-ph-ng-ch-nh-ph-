@@ -1,4 +1,17 @@
 # Dành cho agent AI
 
 Nếu chủ của bạn gửi link kho này để cài văn phòng ảo: đọc và làm theo **HUONG-DAN-CHO-AGENT.md** (cài, kiểm, điền sổ, báo lại chủ).
-Nếu bạn được giao sửa mã văn phòng: máy chủ `server.js` + `lib/` chỉ đọc nhật ký phiên và sổ `data/`; công cụ ghi sổ là `tools/vp.js`; giao diện ở `public/`. Không thêm thư viện ngoài, không gửi dữ liệu ra ngoài.
+Nếu bạn được giao sửa mã văn phòng: máy chủ `server.js` + `lib/` chỉ đọc nhật ký phiên và sổ `data/` (chỉ ghi vài file trạng thái của chính nó: `data/.task-seen.json`, `data/.noiquy-seen.json`, `data/tin-nhan/*.jsonl` (sổ tin nhắn lâu dài, CEO duyệt 21/11/2026), `~/.van-phong-ao/keys.json`, `~/.van-phong-ao/dieu-khien-xa.*`); công cụ ghi sổ là `tools/vp.js`; giao diện ở `public/`. Không thêm thư viện ngoài, không gửi dữ liệu ra ngoài.
+
+Đường mạng ra ngoài đã có (tất cả nằm trong OS Controller `ctl/`, chỉ chạy khi CEO bấm hoặc đã bật; mã nguồn chỉ đi tới repo GitHub của chính CEO, khóa không gửi cho ai khác ngoài dịch vụ của chính khóa đó):
+- `ctl/tra-cuu.js` (CEO duyệt 16/11/2026): gửi câu hỏi ngắn và link công khai tới Gemini API khi CEO đã lưu khóa AI Studio; mọi đầu vào phải qua bộ chặn khóa/mã nguồn/địa chỉ nội bộ của nó.
+- `ctl/github.js`: GitHub API bằng đăng nhập Git của máy — liệt kê/mở/clone repo, chạy workflow phát hành, tạo repo mới (tên + mô tả CEO đã duyệt, mặc định riêng tư). `ctl/nhanh.js`, `ctl/bo-kiem.js`, `ctl/xuat-ban.js`: `git push` nhánh/tag lên repo đó (không `--force`).
+- `ctl/du-an-moi.js`: đưa ý tưởng CEO gõ cho Claude CLI trên máy để gợi ý tên repo.
+- `ctl/skill-duyet.js`, `ctl/skill.js`: `git ls-remote` / `git fetch` đúng commit từ GitHub và `npm view` tra gói, khi CEO dán link hoặc cài bộ skill.
+- `ctl/mcp-may.js`: `npm install` đúng phiên bản đã ghim (`--ignore-scripts`) khi CEO bấm cài MCP chạy trên máy.
+
+Thêm đường mạng mới phải được CEO duyệt và ghi vào danh sách này (cả `AGENTS.md` lẫn `CLAUDE.md`, hai file giữ giống hệt nhau).
+
+## Bản đồ hệ thống tự cập nhật (CEO duyệt 17/11/2026)
+Bản đồ (`.ua/*.json` của plugin Understand Anything + `docs/BAN-DO-HE-THONG.md`) bật `autoUpdate`. Khi hook của plugin báo bản đồ cũ (sau commit/merge, hoặc đầu phiên): **KHÔNG tự phân tích, không chạy /understand hay subagent** (tốn token). Chạy `node tools/cap-nhat-ban-do.js` — nó giao Codex (gpt-6.1-sol, mức medium, tài khoản GPT văn phòng đang chọn) cập nhật tăng dần ở nền, có khoá chống chạy chồng; tiến độ ở `.ua/tmp/cap-nhat-ban-do.log`. Việc của Claude chỉ là kiểm kết quả khi Codex xong: `node tools/cap-nhat-ban-do.js --kiem` báo "Bản đồ mới", `node --test test/ban-do.test.js` đạt, chỉ `.ua/` và `docs/BAN-DO-HE-THONG.md` đổi, số workflow/bước nghiệp vụ không tụt bất thường; rồi commit hai thứ đó cùng thay đổi của mình.
+Công cụ báo "Bỏ qua cập nhật bản đồ" (cổng kiểm ký hiệu của plugin đã chặn ở mốc này; CEO quyết 21/11/2026 giữ bản đồ cũ) thì dừng ở đó: không tự phân tích, không chạy `--ep` khi CEO chưa bảo. Bản đồ cũ vẫn dùng làm mục lục được, chỉ cần tự mở mã đối chiếu số dòng.

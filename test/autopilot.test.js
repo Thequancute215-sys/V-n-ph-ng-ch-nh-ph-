@@ -26,7 +26,9 @@ async function fixture(t, mode = "normal", ctlOpts = {}) {
     // sol-tu-tro: Sol ghi next_owner trùng vai mình ở lượt đầu; được trả lại (lời giao có "BỊ TRẢ LẠI") thì sửa đúng.
     if(mode==='sol-tu-tro'&&role==='SOL_ARCHITECT_PLANNER'&&!/BỊ TRẢ LẠI/.test(process.argv[4]||''))next=role;
     console.log(JSON.stringify({result:(role==='CLAUDE_AUDITOR'?'Claude báo cáo: đã kiểm thử và hoàn tất.\\n':'Xong lượt.\\n')+JSON.stringify({role,next_owner:next,files:[],claim_fixed:[],giai_thich:[{van_de:'Vấn đề của lượt thử nghiệm',da_lam:'Đã làm phần việc thử nghiệm',vi_sao:'Vì đây là CLI giả dùng cho test',phuong_an_khac:[]}]})}));`);
-  fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify(Object.fromEntries([spec, sol, dev, claude, "CLAUDE_REPORTER"].map((role) => [role, [process.execPath, fake, role, mode, "{prompt}"]]))));
+  const reporter = path.join(temp, "claude.js");
+  fs.writeFileSync(reporter, `process.argv.splice(2, process.argv.length, ...${JSON.stringify(["CLAUDE_REPORTER", mode])}, process.argv.at(-1)); require(${JSON.stringify(fake)});`);
+  fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify(Object.fromEntries([spec, sol, dev, claude, "CLAUDE_REPORTER"].map((role) => [role, role === "CLAUDE_REPORTER" ? [process.execPath, reporter, "-p", "{prompt}"] : [process.execPath, fake, role, mode, "{prompt}"]]))));
   const ctl = createCtl({ dir, ...ctlOpts });
   await new Promise((r) => ctl.server.listen(0, "127.0.0.1", r));
   ctl.ws.add(repo);

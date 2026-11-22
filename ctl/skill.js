@@ -16,13 +16,31 @@ const HOME = () => process.env.VP_HOME || path.join(os.homedir(), ".van-phong-ao
 const THU_MUC = () => ({ claude: path.join(os.homedir(), ".claude", "skills"), codex: path.join(os.homedir(), ".codex", "skills"), agy: path.join(os.homedir(), ".gemini", "config", "skills") });
 const err = (code, message) => Object.assign(new Error(message), { code });
 
-function danhMuc(file = DANH_MUC) {
+function kiemNguon(n) {
+  if (!n || !/^[\w.-]+\/[\w.-]+$/.test(n.repo)) throw err("BAD_CATALOG", "repo không hợp lệ: " + (n && n.repo));
+  if (!/^[0-9a-f]{40}$/.test(n.commit)) throw err("BAD_CATALOG", "commit phải là mã đủ 40 ký tự: " + n.repo);
+  if (!["A", "B"].includes(n.nhom)) throw err("BAD_CATALOG", "nhóm phải là A hoặc B: " + n.repo);
+  // Đường dẫn trong repo: tương đối, không lùi ra ngoài thư mục tải về.
+  const rels = typeof n.duong_dan === "object" && !Array.isArray(n.duong_dan) ? Object.values(n.duong_dan) : [].concat(n.duong_dan);
+  if (!rels.length || rels.some((r) => typeof r !== "string" || !r || path.isAbsolute(r) || /^[a-z]:/i.test(r) || r.split(/[\\/]/).includes(".."))) throw err("BAD_CATALOG", "duong_dan không hợp lệ: " + n.repo);
+  if (n.ten !== undefined && !/^[\w.-]{1,80}$/.test(n.ten)) throw err("BAD_CATALOG", "ten không hợp lệ: " + n.repo);
+  return n;
+}
+// Danh mục gốc đi kèm app (CEO duyệt, ghim commit). Sai là lỗi cài đặt: báo ngay.
+function danhMucGoc(file = DANH_MUC) {
   const d = JSON.parse(fs.readFileSync(file, "utf8"));
-  for (const n of d.nguon) {
-    if (!/^[\w.-]+\/[\w.-]+$/.test(n.repo)) throw err("BAD_CATALOG", "repo không hợp lệ: " + n.repo);
-    if (!/^[0-9a-f]{40}$/.test(n.commit)) throw err("BAD_CATALOG", "commit phải là mã đủ 40 ký tự: " + n.repo);
-    if (!["A", "B"].includes(n.nhom)) throw err("BAD_CATALOG", "nhóm phải là A hoặc B: " + n.repo);
-  }
+  for (const n of d.nguon) kiemNguon(n);
+  return d;
+}
+// Danh mục đầy đủ = gốc + skill CEO duyệt thêm trên máy này (skill-them.json, ctl/skill-duyet.js).
+// Mục thêm hỏng hay trùng repo với danh mục gốc thì bỏ qua, không làm hỏng cả văn phòng.
+function danhMuc(file = DANH_MUC, fileThem = null) {
+  const d = danhMucGoc(file);
+  if (!fileThem) return d;
+  let them = [];
+  try { them = JSON.parse(fs.readFileSync(fileThem, "utf8")).nguon || []; } catch {}
+  const co = new Set(d.nguon.map((n) => n.repo.toLowerCase()));
+  for (const n of them) { try { kiemNguon(n); if (!co.has(n.repo.toLowerCase())) { co.add(n.repo.toLowerCase()); d.nguon.push(n); } } catch {} }
   return d;
 }
 
@@ -72,14 +90,31 @@ function taiVe(nguon, cache, git = (args, cwd) => execFileSync("git", args, { cw
 
 function createSkill({ home = HOME, thuMuc = THU_MUC, file = DANH_MUC, now = () => new Date(), tai = taiVe } = {}) {
   const ghiNhan = () => path.join(home(), "skill-da-cai.json");
+  const fileThem = () => path.join(home(), "skill-them.json");
+  const muc = () => danhMuc(file, fileThem());
+
+  // Thêm (hoặc thay bản) một nguồn CEO vừa duyệt vào danh mục riêng của máy.
+  function themNguon(n) {
+    kiemNguon(n);
+    if (danhMucGoc(file).nguon.some((x) => x.repo.toLowerCase() === n.repo.toLowerCase())) throw err("SKILL_DA_CO", n.repo + " đã có trong bộ skill mặc định");
+    let d = { nguon: [] };
+    try { d = JSON.parse(fs.readFileSync(fileThem(), "utf8")); if (!Array.isArray(d.nguon)) d.nguon = []; } catch {}
+    d.ghi_chu = "Skill CEO duyệt thêm trên máy này (trang Skill của văn phòng). Mỗi nguồn ghim commit đội trưởng đã đọc.";
+    d.nguon = d.nguon.filter((x) => x && String(x.repo).toLowerCase() !== n.repo.toLowerCase()).concat(n);
+    fs.mkdirSync(home(), { recursive: true });
+    fs.writeFileSync(fileThem(), JSON.stringify(d, null, 2));
+    return n;
+  }
 
   // Cài (hoặc nâng) toàn bộ danh mục. Trả về báo cáo từng skill: cai | nang | giu | nhan (nhận thư mục giống hệt) | trung (bỏ qua).
-  function cai({ log = () => {} } = {}) {
-    const d = danhMuc(file), cache = path.join(home(), "skill-cache"), dirs = thuMuc(), bao = [];
+  // chi: chỉ cài một repo (CEO vừa duyệt); taiRieng: lấy bản đã tải sẵn thay vì tải lại.
+  function cai({ log = () => {}, chi = null, tai: taiRieng = null } = {}) {
+    const d = muc(), cache = path.join(home(), "skill-cache"), dirs = thuMuc(), bao = [];
     fs.mkdirSync(cache, { recursive: true });
     for (const n of d.nguon) {
+      if (chi && n.repo !== chi) continue;
       log(`Tải ${n.repo}@${n.commit.slice(0, 7)}…`);
-      const goc = tai(n, cache);
+      const goc = taiRieng ? taiRieng(n, cache) : tai(n, cache);
       for (const s of skillsCua(n, goc)) {
         const toi = path.join(dirs[s.ai], s.ten), dau = fs.existsSync(toi) ? docDau(toi) : null;
         let kq;
@@ -96,13 +131,16 @@ function createSkill({ home = HOME, thuMuc = THU_MUC, file = DANH_MUC, now = () 
     }
     const daCai = bao.filter((b) => b.kq !== "trung");
     fs.mkdirSync(home(), { recursive: true });
-    fs.writeFileSync(ghiNhan(), JSON.stringify({ luc: now().toISOString(), skill: [...new Map(daCai.map((b) => [b.ten, { ten: b.ten, nhom: b.nhom, repo: b.repo }])).values()] }, null, 2));
+    // Cài riêng một repo thì giữ ghi nhận của các repo khác.
+    let cu = [];
+    if (chi) { try { cu = (JSON.parse(fs.readFileSync(ghiNhan(), "utf8")).skill || []).filter((s) => s.repo !== chi); } catch {} }
+    fs.writeFileSync(ghiNhan(), JSON.stringify({ luc: now().toISOString(), skill: [...new Map([...cu.map((s) => [s.ten, s]), ...daCai.map((b) => [b.ten, { ten: b.ten, nhom: b.nhom, repo: b.repo }])]).values()] }, null, 2));
     return bao;
   }
 
   // Kiểm không tải mạng: skill nào thiếu, cũ (khác commit danh mục) hoặc trùng tên với skill không do văn phòng cài.
   function kiem() {
-    const d = danhMuc(file), dirs = thuMuc(), out = [];
+    const d = muc(), dirs = thuMuc(), out = [];
     let ghi; try { ghi = JSON.parse(fs.readFileSync(ghiNhan(), "utf8")); } catch { ghi = null; }
     for (const n of d.nguon) for (const ai of AI) {
       const marks = [];
@@ -119,7 +157,7 @@ function createSkill({ home = HOME, thuMuc = THU_MUC, file = DANH_MUC, now = () 
   // Ghi chú chèn vào lời giao việc: danh sách skill theo nguồn, luật bắt buộc dùng. Rỗng nếu máy chưa cài.
   function note() {
     if (!daCai()) return "";
-    let d; try { d = danhMuc(file); } catch { return ""; }
+    let d; try { d = muc(); } catch { return ""; }
     let ghi; try { ghi = JSON.parse(fs.readFileSync(ghiNhan(), "utf8")); } catch { ghi = { skill: [] }; }
     const theoRepo = (repo) => ghi.skill.filter((s) => s.repo === repo).map((s) => s.ten);
     const dong = (n) => `- ${theoRepo(n.repo).join(", ") || n.repo}: ${n.dung_cho}`;
@@ -132,7 +170,7 @@ function createSkill({ home = HOME, thuMuc = THU_MUC, file = DANH_MUC, now = () 
       "không skill nào khớp thì \"skill_da_dung\":[] kèm \"skill_ly_do\":\"<vì sao không skill nào khớp>\".";
   }
 
-  return { cai, kiem, daCai, note, danhMuc: () => danhMuc(file) };
+  return { cai, kiem, daCai, note, themNguon, danhMuc: muc };
 }
 
 // Kiểm trường skill_da_dung của dòng bàn giao (chỉ khi máy đã cài bộ skill).
@@ -143,4 +181,4 @@ function checkSkill(h) {
   return [];
 }
 
-module.exports = { createSkill, checkSkill, skillsCua, danhMuc, taiVe, AI, DAU };
+module.exports = { createSkill, checkSkill, skillsCua, danhMuc, danhMucGoc, kiemNguon, taiVe, AI, DAU, THU_MUC };

@@ -41,7 +41,9 @@ async function fixture(t, mode = "dung") {
     // cham: Kakashi chạy lâu (để CEO kịp thao tác giữa chừng trong test)
     if(mode==='cham'&&role==='FRONTEND_UIUX_DEV'){const t=Date.now();while(Date.now()-t<4000){}}
     console.log(JSON.stringify({result:'Xong.'+String.fromCharCode(10)+JSON.stringify({role,next_owner:next,files,claim_fixed:[],done:role==='CLAUDE_AUDITOR'?true:undefined,giai_thich:[{van_de:'Vấn đề của lượt thử nghiệm',da_lam:'Đã làm phần việc thử nghiệm',vi_sao:'Vì đây là CLI giả dùng cho test',phuong_an_khac:[]}]})}));`);
-  fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify(Object.fromEntries(["CODEX_ASTRA_DEV", "FRONTEND_UIUX_DEV", "SOL_ARCHITECT_ADVISOR", "CLAUDE_AUDITOR", "CLAUDE_REPORTER", "SPEC_ARCHITECT", "SOL_ARCHITECT_PLANNER"].map((r) => [r, [process.execPath, fake, r, mode, "{prompt}"]]))));
+  const reporter = path.join(temp, "claude.js");
+  fs.writeFileSync(reporter, `process.argv.splice(2, process.argv.length, ...${JSON.stringify(["CLAUDE_REPORTER", mode])}, process.argv.at(-1)); require(${JSON.stringify(fake)});`);
+  fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify(Object.fromEntries(["CODEX_ASTRA_DEV", "FRONTEND_UIUX_DEV", "SOL_ARCHITECT_ADVISOR", "CLAUDE_AUDITOR", "CLAUDE_REPORTER", "SPEC_ARCHITECT", "SOL_ARCHITECT_PLANNER"].map((r) => [r, r === "CLAUDE_REPORTER" ? [process.execPath, reporter, "-p", "{prompt}"] : [process.execPath, fake, r, mode, "{prompt}"]]))));
   fs.writeFileSync(path.join(dir, "quyen.json"), JSON.stringify({ toanQuyen: false }));
   const ctl = createCtl({ dir });
   await new Promise((r) => ctl.server.listen(0, "127.0.0.1", r));

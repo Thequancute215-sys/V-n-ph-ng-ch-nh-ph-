@@ -8,7 +8,7 @@ Mỗi phiên là một nhân viên robot có bàn riêng:
 - bạn giao việc thì cả nhóm ra phòng họp;
 - ai đang giữ môi trường DEV thì đứng giữa Phòng DEV, ai đang chờ thì xếp hàng.
 
-> **Văn phòng chỉ đọc, chạy tại máy bạn.** Văn phòng (`npm start`) chỉ đọc nhật ký mà Claude Code và Codex vốn tự ghi (`~/.claude`, `~/.codex`) và sổ của đội trong thư mục `data/`. Nó không gửi dữ liệu đi đâu và không cần khóa API. Mọi chuỗi giống khóa đều được che trước khi hiện. Kho không dùng thư viện ngoài nào, nên không cần `npm install`.
+> **Văn phòng chỉ đọc, chạy tại máy bạn.** Văn phòng (`npm start`) chỉ đọc nhật ký mà Claude Code và Codex vốn tự ghi (`~/.claude`, `~/.codex`) và sổ của đội trong thư mục `data/`; không sửa nhật ký hay sổ nào. Ngoại lệ: nó ghi đúng vài file nhỏ của chính nó: `data/.task-seen.json` và `data/.noiquy-seen.json` (mốc giờ việc/nội quy đổi để gắn nhãn MỚI), `~/.van-phong-ao/keys.json` (chỉ khi anh lưu khóa API ở màn Tài khoản AI) và `~/.van-phong-ao/dieu-khien-xa.json` + `.log` (thiết bị điện thoại đã ghép, nhật ký lệnh từ xa). Nó không gửi dữ liệu đi đâu và không cần khóa API. Mọi chuỗi giống khóa đều được che trước khi hiện. Kho không dùng thư viện ngoài nào, nên không cần `npm install`.
 >
 > **Điều khiển máy là phần riêng, phải tự bật.** OS Controller (`npm run ctl`) chạy lệnh, dừng tiến trình, đọc/ghi file và chạy lượt AI, nhưng chỉ trong thư mục dự án bạn đã đăng ký và chỉ từ trình duyệt trên chính máy này. Xem mục [Điều khiển máy](#điều-khiển-máy-os-controller).
 
@@ -114,18 +114,24 @@ Có thể đặt `"appStartPath": "/prototype.html#board"` trong `config.json` �
 
 | Màn | Có gì |
 |---|---|
-| **Văn phòng 3D** | 8 phòng: Giám đốc, Quản lý, Điều phối, Kiểm tra & duyệt, Studio Claude, Phòng DEV, Khu Codex, Phòng họp. Robot đi lại, tin bay giữa bàn, họp tự động. Trên cùng có ô **Cần anh** và **Tiền AI hôm nay**, kèm 3 màn hình lớn trên tường |
-| **Bảng điều hành** (màn giữa) | Đang làm / chờ / bị chặn / rảnh. Phòng DEV: ai giữ, bao lâu, dịch vụ khỏe không. Việc ưu tiên, lịch DEV hôm nay, hàng chờ, luồng tin, băng chữ chạy, dải "Cần anh làm", nhịp làm việc 3 giờ |
-| **Công việc & tiến độ** (màn trái) | Việc đang áp dụng theo thứ tự, nhật ký quyết định, tiến độ từng gói (mục "Đang dở"), DEV và việc chờ anh |
-| **Nội quy & đội ngũ** (màn phải) | Nội quy (mục mới đổi gắn nhãn MỚI), đội ngũ (chấm xanh khi phiên đang có mặt), cấp bậc, sổ tay gồm bài học, việc để sau, từ điển, SPEC |
-| **Tổng quan** | Việc gì, để làm gì, ai làm, tới đâu, nghẽn ở đâu (hạn quá thì đỏ). Từng bot đang làm gì, ai "rảnh mà còn việc", ai "im quá 2 giờ" |
-| **Hòm thư** | Mỗi vai: số tin chưa xong, chờ quá 1 giờ, đọc lại từ 3 lần mà chưa xong, chưa đọc, tin cũ nhất |
-| **Đánh giá nhân sự** | Token theo giờ và ngày, quỹ Codex tuần, xếp loại A/B/C/D theo việc xong, lỗi lệnh, lượt DEV, giờ làm, độ tiết kiệm |
-| **Tin nhắn** | Toàn bộ tin 24 giờ, lọc theo người |
-| **Sơ đồ 2D** | Bản nhẹ cho điện thoại yếu: mặt bằng, người, tin bay, cảnh báo, dòng thời gian |
-| **App trên máy** | Lối tắt Desktop / Start Menu, cửa sổ riêng, tự bật ngầm khi đăng nhập Windows (xem mục "Dùng như app trên máy") |
-| **Điều khiển máy** | CPU/RAM trực tiếp, phanh khẩn cấp, workspace, chạy lệnh (chờ duyệt nếu ngoài danh sách), lượt AI theo `agent.md` + duyệt chuyển lượt, sửa file, nhật ký kiểm toán. Chỉ mở được trên chính máy này |
-| **Nhắn tin cho agent** | Bấm vào một người trên văn phòng hoặc bảng điều hành, gõ tin. Tin vào hòm thư của người đó; từ xa phải nhập **PIN 6 số**, mã chỉ hiện trên chính máy bạn |
+| **Văn phòng 3D** (`/`) | Toà nhà theo vai: phòng Giám đốc, Điều hành (Pain), Đặc tả & Design System (Hinata), Kiến trúc (Itachi), Lập trình (Sasuke), Frontend & UI/UX (Kakashi), Kiểm duyệt (Sakura), phòng họp hội chẩn, cùng gym, pantry, nhà vệ sinh và sảnh. Đi bằng WASD hoặc cần cảm ứng, nút đi thẳng tới từng phòng. Nhân vật hiện bận khi có lượt AI thật; dưới tên có model đang dùng, chạm để đổi. Trời và thời tiết theo giờ Hà Nội |
+| **Bàn làm việc** (thanh công cụ trong văn phòng 3D) | Nhật ký, Việc đang làm, Giao việc cho cả đội, Ý tưởng, Dự án (gồm tạo dự án mới), Hạn mức (tài khoản Antigravity, model theo phòng), Dự án đang ở đâu, Xuất bản; kèm lối tắt Kết nối, Repo & Skill, Điện thoại, Cập nhật. Trên điện thoại gom vào ngăn kéo ☰ |
+| **Hỏi một AI trong đội** | Bấm vào một nhân vật trên văn phòng 3D và gõ câu hỏi. AI đọc repo để trả lời (chỉ đọc, không sửa file, không chuyển lượt); việc cần sửa thì AI soạn sẵn lời giao việc. Chạy qua OS Controller (`/ctl/chat`), trên chính máy này hoặc trên điện thoại đã ghép. Muốn để lại việc trong hòm thư của một vai thì dùng `vp gui` |
+| **Giao việc cả đội / một vai** (thanh trên) | 📢 mở mục **Giao việc cho cả đội** của bàn làm việc (luồng tự động). ⚡ **Giao việc một vai** chạy đúng một lượt AI cho vai đang giữ `NEXT_OWNER` trong `agent.md` (`/ctl/ai/run`); vai khác không chọn được, lỗi của ctl hiện nguyên văn |
+| **Tổng quan** (`prototype.html`) | Các thẻ Văn phòng, Dự án, Hội chẩn, **Điều hành** (Phase, ai giữ lượt, blocker, giao việc tự động, báo cáo của Claude), Nhật ký trực tiếp, Hạn mức & tài khoản. Dấu trang cũ `board.html`, `congviec.html`, `tongquan.html` tự chuyển về đây |
+| **Điều khiển máy** (`dieukhien.html`) | CPU/RAM trực tiếp, phanh khẩn cấp, workspace, chạy lệnh (chờ duyệt nếu ngoài danh sách), lượt AI theo `agent.md` + duyệt chuyển lượt, sửa file, nhật ký kiểm toán. Chỉ mở được trên chính máy này |
+| **Kết nối** (`ket-noi.html`) | Kết nối MCP/app (Notion, Figma, Google Drive…) cho Claude, Codex, Antigravity; bật theo phòng; cài MCP chạy trên máy như Chrome DevTools |
+| **Repo & Skill** (`skill.html`) | Dán link repo GitHub bất kỳ: máy rà, Claude đội trưởng giải thích, anh duyệt cài skill/MCP hoặc giữ làm tham khảo; xem bộ skill đang dùng |
+| **Cập nhật** (`cap-nhat.html`) | Bản đang chạy, thay đổi và ghi chú của bản mới, nút cập nhật (xem mục "Cập nhật app") |
+| **Nội quy & đội ngũ** (`noiquy.html`) | Nội quy (mục mới đổi gắn nhãn MỚI), đội ngũ (chấm xanh khi phiên đang có mặt), cấp bậc, sổ tay gồm bài học, việc để sau, từ điển, SPEC |
+| **Hòm thư** (`hopthu.html`) | Mỗi vai: số tin chưa xong, chờ quá 1 giờ, đọc lại từ 3 lần mà chưa xong, chưa đọc, tin cũ nhất |
+| **Đánh giá nhân sự** (`hieusuat.html`) | Token theo giờ và ngày, quỹ Codex tuần, xếp loại A/B/C/D theo việc xong, lỗi lệnh, lượt DEV, giờ làm, độ tiết kiệm |
+| **Tin nhắn** (`tinnhan.html`) | Toàn bộ tin 24 giờ, lọc theo người |
+| **Nhân vật 3D** (`characters.html`, `anime-studio.html`) | Hồ sơ nhân vật của đội và vĩ thú; studio xem mẫu nhân vật và soạn prompt dựng nhân vật |
+| **Điện thoại** | `dieu-khien.html`: app điều khiển cài ra màn hình chính (Tình hình, Giao việc, Chờ duyệt, Hạn mức). `dien-thoai.html` (trên máy tính): tạo mã ghép, xem và thu hồi máy đã ghép. Văn phòng 3D cũng mở được trên điện thoại đã ghép. Xem mục "Xem trên điện thoại" |
+| **App trên máy** | Lối tắt Desktop / Start Menu, cửa sổ riêng, tự bật ngầm khi đăng nhập Windows (xem mục "Dùng như app trên máy"). Văn phòng tắt thì hiện trang báo "chưa chạy" và tự tải lại khi bật |
+
+`2d.html` (sơ đồ 2D cũ) nay chuyển thẳng về văn phòng 3D.
 
 ## Điều khiển máy (OS Controller)
 
@@ -173,6 +179,25 @@ Sau đó:
 - **Đổi tay:** bấm **Dùng tài khoản này**.
 - **An toàn:** chỉ đổi khi không có tiến trình `agy.exe` nào chạy, vì đổi giữa chừng thì tiến trình đang chạy có thể ghi đè đăng nhập. Trước khi nạp tài khoản mới, văn phòng cất lại token đang dùng vào đúng chỗ của nó, và sau khi nạp thì kiểm lại email. Ứng dụng Antigravity trên máy có thể dùng chung chỗ lưu đăng nhập này (cần kiểm chứng): đang dùng app mà thấy đổi tài khoản thì đó là lý do.
 
+### Nhiều tài khoản GPT cho Codex (Itachi, Sasuke)
+
+Codex nhận biến `CODEX_HOME`, nên **mỗi tài khoản GPT có một thư mục riêng**: chứa đăng nhập, lịch sử phiên và hạn mức của tài khoản đó (`ctl/codex-tai-khoan.js`). Văn phòng không chép và không đọc file đăng nhập (`auth.json`).
+
+- **Tài khoản 1** là `~/.codex` đang có sẵn (app Codex của anh cũng dùng). Tài khoản thêm nằm ở `~/.van-phong-ao/codex-tk/<id>`.
+- **Thêm:** mục **Hạn mức** → thẻ Codex → *Thêm tài khoản GPT*, đặt tên → **Thêm và đăng nhập**. Văn phòng mở `codex login` với thư mục của tài khoản đó và trình duyệt mở trang đăng nhập ChatGPT. Anh đăng nhập **đúng tài khoản GPT kia** trên máy tính này. Trình duyệt đang đăng nhập tài khoản khác thì chép link mở trong cửa sổ ẩn danh. Xong, văn phòng tự đọc hạn mức và email (che bớt) của tài khoản mới. Hai tài khoản trùng email thì thẻ báo để đăng nhập lại.
+- **Dùng chung với `~/.codex`:**
+  - chép và đồng bộ trước mỗi lượt: `config.toml` (model, plugin, sandbox `elevated`), `AGENTS.md`, `cap_sid`;
+  - nối thẳng bằng junction: `skills`, `plugins`, phần sandbox (`.sandbox`, `.sandbox-bin`, `.sandbox-secrets`).
+
+  Nhờ vậy lượt chạy bằng tài khoản nào cũng cùng cấu hình và không phải dựng lại sandbox.
+- **Chạy:** mỗi tiến trình Codex văn phòng mở (lượt làm việc, chat, soạn prompt) nhận `CODEX_HOME` của tài khoản đang chọn **lúc khởi chạy**. Đổi tài khoản không ảnh hưởng lượt đang chạy.
+- **Xem song song:** hạn mức đọc được của mọi tài khoản cùng lúc (5 phút/lần), không cần đổi qua đổi lại như Antigravity.
+- **Tự chuyển:**
+  - trước mỗi lượt Codex, tài khoản đang dùng còn ≤ ngưỡng (mặc định 10%) thì chuyển sang tài khoản còn nhiều nhất;
+  - lượt nào báo "hết hạn mức" thì tài khoản đó bị đánh dấu cạn và văn phòng **đổi ngay rồi chạy lại lượt**, không chờ tới giờ mở lại;
+  - không chuyển sang tài khoản cùng email hay cũng sắp cạn.
+- **Điện thoại:** có từ 2 tài khoản GPT đã đăng nhập thì menu ☰ → Tài khoản có nút đổi một chạm.
+
 ### Chọn model ngoài chế độ tự động
 
 Ở mục **Hạn mức**, mỗi phòng có hai ô:
@@ -193,7 +218,7 @@ Rồi chọn cờ thật của CLI:
 | | nhẹ | vừa | nặng |
 |---|---|---|---|
 | Claude (`--model`, `--effort`) | sonnet · low | sonnet · high | opus · high |
-| Codex (`model_reasoning_effort`, model giữ theo vai) | low | medium | xhigh |
+| Codex (`model_reasoning_effort`, model giữ theo vai: Sol gpt-6.2-sol, Astra gpt-6.2-astra) | low | high | xhigh |
 | Antigravity (`--model`) | gemini-3.8-flash-low | gemini-3.8-flash-medium | gemini-3.8-flash-high |
 
 - **Hạn mức:** AI còn ≤15% thì hạ một bậc, ≤5% thì về mức nhẹ nhất.
@@ -216,6 +241,22 @@ Việc đơn giản (tra lỗi, cách dùng thư viện, changelog) giao cho Gem
 
 Tắt bằng `~/.van-phong-ao/tra-cuu.json` với nội dung `{"bat": false}`. Antigravity không cần công cụ này (vốn là Gemini, có tìm kiếm Google).
 
+**Chrome DevTools: AI mở Chrome thật để kiểm giao diện** (`ctl/chrome-devtools.js`, CEO yêu cầu 17/11/2026). Đây là máy chủ MCP mà bộ skill chrome-devtools cần. Với nó AI làm được:
+- bấm, gõ, chụp ảnh và chụp cấu trúc trang;
+- đọc lỗi console và yêu cầu mạng;
+- đo tốc độ tải (LCP, Lighthouse);
+- giả lập điện thoại 375px.
+
+Cách cài và bật:
+- **Cài:** trang **Kết nối** → dòng Chrome DevTools → **Cài trên máy**, hoặc chạy `node tools/cai-chrome-devtools.js cai`. Gói `chrome-devtools-mcp` của Google được cài đúng bản đã ghim (bản đã ra ít nhất 2 tuần, không dùng `@latest`) vào `~/.van-phong-ao/mcp/chrome-devtools`, không chạy script cài, không kéo thư viện con.
+- **Bật theo phòng:** mặc định Sakura (kiểm duyệt); bật thêm Sasuke hay Itachi trên trang Kết nối. Văn phòng chỉ gắn máy chủ vào lượt của phòng được bật, không đăng ký chung vào Claude/Codex của máy. Kakashi và Hinata (Antigravity) chưa dùng được vì Antigravity chạy nền chưa nạp MCP.
+
+Mỗi lượt chạy an toàn như sau:
+- Chrome ẩn, hồ sơ tạm xoá khi đóng: không thấy tài khoản anh đã đăng nhập, không bật cửa sổ đè lên màn hình;
+- không gửi thống kê sử dụng hay link trang lên Google (CrUX);
+- không mở `file:` trên máy, che header nhạy cảm;
+- ảnh chụp JPEG rộng tối đa 1280px để đỡ token.
+
 Đo thực tế 11/11/2026: một lượt Codex chỉ trả lời "ok" đã tốn khoảng 23.000 token, gần như toàn bộ là phần khởi động (lời dặn hệ thống + mô tả công cụ MCP). Vì vậy kết nối MCP theo phòng, mục lục và mức suy nghĩ đúng việc là ba chỗ tiết kiệm chính.
 
 ## Bộ skill mặc định của đội
@@ -232,6 +273,33 @@ node tools/cai-skill.js cai    # tải đúng commit đã ghim, chép vào ~/.cl
 - **Không cài:** ruflo, goclaw (nền tảng riêng, trùng văn phòng). Chỉ tham khảo: spec-kit, loop-engineering, GhidraMCP.
 - Khi máy đã cài, lời giao việc có danh sách skill và dòng bàn giao bắt buộc có `"skill_da_dung"` (rỗng thì kèm `"skill_ly_do"`); thiếu thì lượt đó bị trả lại.
 - Cài chỉ chép thư mục skill, không chạy file nào, không cài hook; skill anh tự cài (không có `.vp-skill.json`) không bị ghi đè. Muốn nâng bản: đội trưởng đọc diff giữa hai commit rồi mới sửa danh mục.
+
+### Dán link repo bất kỳ: đội trưởng xem, anh quyết
+
+Trang **Repo & Skill** (nút trên thanh văn phòng, `skill.html`) nhận **mọi loại repo GitHub**: bộ skill, máy chủ MCP, ứng dụng, thư viện, công cụ, mẫu dự án.
+
+1. Dán link repo (`https://github.com/<chủ>/<repo>`, hoặc link tới một thư mục trong repo: `/tree/<nhánh>/<thư mục>`).
+2. Văn phòng tìm commit rồi tải **đúng commit đó** vào thư mục cách ly (`~/.van-phong-ao/skill-xet/`). Không chạy file nào, không chép liên kết tượng trưng, không hỏi mật khẩu GitHub (repo riêng tư thì báo lỗi).
+3. Máy rà (không tốn AI) xác định văn phòng **cài được** gì:
+   - **bộ skill:** có `SKILL.md`;
+   - **máy chủ MCP:** `package.json` có lệnh chạy và dùng thư viện MCP. Văn phòng tra npm:
+     - chọn bản đã ra ít nhất 14 ngày;
+     - so repo ghi trong gói với link anh dán; khác tên thì kiểm hai link có cùng một repo không (repo đổi chủ);
+     - đếm thư viện con, xem script tự chạy khi cài;
+   - **loại khác.**
+
+   Máy rà cũng liệt kê script, file nhị phân, hook, câu nhắm vào AI, lệnh tải-rồi-chạy, gửi dữ liệu ra ngoài.
+4. Claude đội trưởng **luôn** đọc repo ở chế độ chỉ đọc (Read/Grep/Glob, không nạp kết nối nào) và coi nội dung repo là dữ liệu, không phải lệnh. Rồi giải thích bằng tiếng Việt:
+   - repo là loại gì, làm được gì, văn phòng dùng vào việc gì, phòng nào được lợi;
+   - rủi ro, có gửi dữ liệu ra ngoài không, có cần khóa không;
+   - đề nghị: cài skill (nhóm A/B), cài MCP, lưu tham khảo, hoặc không dùng.
+5. Anh quyết:
+   - **Bộ skill:** chọn nhóm A/B rồi bấm **Duyệt và cài skill**. Skill vào danh mục riêng của máy (`~/.van-phong-ao/skill-them.json`, ghim commit) và được cài cho Claude, Codex, Antigravity.
+   - **Máy chủ MCP:** chọn phòng (Itachi, Sasuke, Sakura) rồi bấm **Duyệt và cài MCP**. Gói được cài đúng bản đã chọn vào `~/.van-phong-ao/mcp/<tên>` (không chạy script cài, ghi trong `mcp-them.json`). Văn phòng gắn nó vào lượt của phòng được bật, giống Chrome DevTools; đổi phòng ở trang Kết nối. Gói ghi repo khác hẳn link anh dán thì phải đánh dấu đã hiểu rủi ro mới cài được. Antigravity chưa dùng được MCP.
+   - **Lưu tham khảo:** giữ lời giải thích trong mục **Thư viện tham khảo** để đội tra lại (không bị xoá khi danh sách dài).
+   - **Không dùng:** bản tải về bị xoá.
+
+Repo skill đã có trong bộ mặc định thì không thêm trùng ở đây (nâng bản vẫn theo cách đọc diff ở trên). `node tools/cai-skill.js cai` cài lại cả bộ mặc định lẫn skill anh đã duyệt. Claude hết hạn mức giữa chừng thì thẻ báo rõ, bấm **Phân tích lại** khi gói hồi.
 
 ## Tạo dự án mới
 
@@ -329,6 +397,61 @@ Giao thức [8] và [9] (CEO duyệt 16/11/2026): chốt hợp đồng trước,
 - **Chạy thật và nghiệm thu:** dự án có backend phải có `npm run smoke`, nên có `npm run perf`. Mỗi Phase ghi "Kiểm tay của Chủ Dự Án" và cập nhật `docs/TICH-HOP.md`. Thiếu thì Claude không cho đóng Phase.
 - **Bàn giao sai mẫu** (thiếu dòng JSON, `next_owner` trùng vai…) được trả lại đúng lượt đó sửa một lần thay vì dừng cả luồng.
 
+## Xưởng phim AI (đang xây, P0)
+
+Văn phòng đang được mở rộng để tự làm phim ngắn AI (bản thiết kế "Xưởng Phim AI", CEO duyệt 20/11/2026). P0 sửa nền máy để mọi phòng dùng chung một bộ công cụ:
+
+- **Thư mục gốc của xưởng**: mặc định `~/.van-phong-ao/xuong-phim`. Phim chiếm nhiều GB, nên máy có ổ rộng hơn thì ghi `{ "thuMuc": "D:\\VanPhongAI\\xuong-phim" }` vào `~/.van-phong-ao/xuong-phim.json` (máy CEO đặt ở ổ D từ 20/11/2026). Thư mục tạm và bộ đệm pip khi cài cũng nằm trong thư mục gốc.
+- Bấm **Cài xưởng phim** ở trang **Kết nối** để cài cả ba thứ dưới đây vào thư mục gốc:
+  - **Python chung** `<gốc>/venv` có edge-tts, kokoro-onnx, soundfile đúng bản ghim ở `tools/xuong-phim/requirements.txt`; pip chỉ nhận gói đóng sẵn, không chạy script cài.
+  - **Model Kokoro** (giọng Anh chạy trên máy, ~340 MB) ở `<gốc>/models`: chép từ bản đã có (chỗ cũ hoặc bản Antigravity) nếu khớp mã băm SHA-256 đã ghim, không có thì tải từ release GitHub cố định rồi kiểm mã băm.
+  - **FFmpeg** bản Gyan qua winget vào `<gốc>/ffmpeg`. FFmpeg đã có trên PATH thì dùng luôn.
+- **Script đọc lời dẫn** `tools/xuong-phim/tts_sync.py`: giọng Việt/Anh (Edge-TTS, cần mạng) và giọng Anh offline (Kokoro), xuất `.mp3`, `.srt`, `.json` có mốc từng câu. Lỗi mạng thì thử lại, không để lại file rỗng.
+
+Mỗi lượt AI nhận biến `XUONG_PHIM_PYTHON`, `XUONG_PHIM_TTS`, `XUONG_PHIM_MODELS`, `XUONG_PHIM_FFMPEG`, `XUONG_PHIM_FFPROBE` (chỉ đường dẫn, không khóa). Ví dụ đọc lời dẫn:
+
+```powershell
+& $env:XUONG_PHIM_PYTHON $env:XUONG_PHIM_TTS --text "Xin chào các bạn" --voice vi-nu --output media/giong/voice
+```
+
+Trang **Kết nối** hiện khối **🎬 Xưởng phim**: FFmpeg, giọng Việt, giọng Anh offline, script đã sẵn sàng hay còn thiếu, kèm cách sửa.
+
+### Hồ sơ phim (P1)
+
+**Dự án mới** có thêm loại **🎬 Phim AI**. Văn phòng tạo repo như dự án phần mềm, rồi đặt khuôn hồ sơ phim (không ghi đè file có sẵn):
+
+- `phim.json`: hợp đồng duy nhất giữa các phòng. Gồm tên, tỉ lệ khung, ngôn ngữ, ngân sách, người thật (kèm đồng ý dùng hình), nhân vật, và danh sách cảnh (lời dẫn, khung hình, máy quay, số câu giọng đọc, take). Hướng dẫn chi tiết cho AI ở `PHIM.md` trong repo phim.
+- `kich-ban.md`: bản đọc cho người. `.gitignore` loại `media/` (giọng, ảnh, clip không vào git).
+- Việc giao Hinata là viết kịch bản và chia cảnh, không phải đặc tả phần mềm.
+
+Bộ kiểm `lib/phim.js` (lệnh `node tools/phim.js kiem`, trong lượt AI là `node $env:XUONG_PHIM_CONG_CU kiem`) chặn ba lỗi đắt nhất trước khi tốn tiền quay:
+
+1. tổng thời lượng cảnh lệch giọng đọc quá 0,5 giây;
+2. cảnh dùng người thật chưa được đồng ý;
+3. chi phí tối đa ước tính (mọi cảnh quay đủ số take) vượt ngân sách.
+
+`node tools/phim.js dong-bo` chốt thời lượng từng cảnh theo `media/giong/voice.json`, nên tổng luôn khớp giọng đọc.
+
+### Máy quay và trạm Google Flow (P2)
+
+Trang **🎬 Xưởng phim** (nút trên thanh chức năng) là nơi anh bấm mọi việc tốn tiền. Chọn phim, đặt ngân sách, đánh dấu người thật đã đồng ý, rồi với từng cảnh:
+
+Máy quay **mặc định là Google Flow**: dùng credit của gói Google AI (Pro/Ultra) anh đã trả hằng tháng, không tốn tiền API. Credit gói và tiền Gemini API là hai túi riêng; mã không dùng được credit gói, nên Flow đi qua trạm do Opus thao tác. Gemini API là phương án phụ (tự động hoàn toàn, hoặc khi hết credit cả hai tài khoản).
+
+- **Máy quay Gemini** (`ctl/may-quay.js`, cảnh `may_quay: "omni-flash"`):
+  - **Tạo khung** bằng `gemini-nano-banana-2.1` (~$0,034/ảnh 1K, kèm ảnh tham chiếu nhân vật). Anh chọn một khung.
+  - **Quay video** bằng `gemini-omni-1.2-flash` (~$0,07/giây 720p, 3–15 giây, có tiếng). Khung anh chọn là ảnh đầu.
+  - Trước khi bấm, trang hiện số tiền, đã chi và còn lại. Vượt ngân sách thì dừng cứng.
+  - Mỗi lần quay ghi vào sổ chi `media/so-chi.json` của phim và nhật ký kiểm toán. Bộ đệm `media/bo-dem/` chặn trả tiền hai lần cho cùng một lần quay.
+  - Cần khóa Gemini API bậc trả phí ở màn Tài khoản AI. Khóa chỉ mô-đun máy quay đọc; AI không thấy.
+- **Trạm Google Flow** (`ctl/tram-flow.js`, cảnh `may_quay: "flow"`):
+  - Mỗi tài khoản Google (chính, phụ) một hồ sơ Chrome riêng ở `<thư mục xưởng phim>/flow/<id>`. Bấm **Mở trình duyệt** rồi tự đăng nhập Google một lần; văn phòng không gõ mật khẩu.
+  - Mỗi cảnh ba nhịp, anh bấm từng nhịp: **1. Chuẩn bị** (Opus tải ảnh, dán prompt, dừng trước nút tạo), **2. Tạo** (bấm tạo đúng một lần), **3. Tải về** (văn phòng gắn clip vào cảnh).
+  - Opus chỉ có công cụ điều khiển đúng cửa sổ Chrome đó, thao tác từng bước như người. Gặp CAPTCHA, xác minh, đăng nhập lại, cảnh báo tài khoản hay hết credit thì dừng và báo anh, không tự vượt.
+  - Mỗi cảnh không tạo quá `so_take_toi_da` lượt.
+  - **Hạn mức:** mỗi nhịp Opus đọc số credit còn lại hiện trên Flow (không có API để hỏi Google). Trang hiện theo từng tài khoản: credit còn, đọc lúc nào, số lượt đã tạo trong tháng (`~/.van-phong-ao/flow-credit.json`). Tài khoản đọc được 0 credit thì nhịp Tạo bị chặn, trang gợi ý đổi tài khoản.
+- Ảnh khung và clip xem ngay trên trang (đường `/phim/media`, chỉ đọc file trong `media/` của dự án phim đã đăng ký).
+
 ## Xem trên điện thoại
 
 - **Cùng Wi-Fi:** đặt `"host": "0.0.0.0"` và `accessKey` trong `config.json`, rồi mở `http://<IP máy>:7788`.
@@ -393,20 +516,38 @@ Muốn thêm một lớp đăng nhập bằng email trước cả khóa xem: dù
 
 ```
 server.js              máy chủ: tìm phiên, đọc nhật ký + sổ, đẩy trạng thái mỗi giây
-lib/                   perf (token, điểm, tiền) · docs (sổ sách) · hopthu · tongquan · chat (PIN) · mailbox · config
-                       guard (chặn CSRF/DNS rebinding) · proc (dừng cây tiến trình) · keys · mask · ctlbridge (cầu nối tới ctl) · app (mở app, lối tắt)
-ctl/                   OS Controller: main (HTTP) · jobs · policy · workspaces · files · runner (lượt AI) · autopilot (giao việc tự động) · handoff · monitor · audit · db (tự nâng cấp sổ) · cap-nhat (nút Cập nhật) · dieu-phoi (chọn model/mức) · muc-luc (mục lục từ bản đồ)
+lib/                   perf (token, điểm, tiền) · docs (sổ sách) · hopthu · tongquan · mailbox · config · dieu-khien-xa (điện thoại đã ghép)
+                       guard (chặn CSRF/DNS rebinding, nhận diện chính máy) · proc (dừng cây tiến trình) · keys · mask · ghi-file (ghi nguyên tử)
+                       ctlbridge (cầu nối tới ctl) · app (mở app, lối tắt) · cap-nhat · kiem-agent (bộ kiểm agent.md) · kiem-hop-dong (bộ kiểm hợp đồng)
+ctl/                   OS Controller: main (HTTP) · jobs · policy · workspaces · files · monitor · audit · db (tự nâng cấp sổ) · cap-nhat (nút Cập nhật)
+                       lượt AI: runner · handoff · autopilot (giao việc tự động) · nhanh (nhánh riêng) · ideas · du-an-moi (tạo dự án mới) · chat · nhat-ky · thongbao
+                       hợp đồng: song-song (Astra + Kakashi) · mien-hop-dong (CEO quyết miễn) · ra-soat (rà file trước khi toàn quyền)
+                       model & hạn mức: dieu-phoi (chọn model/mức) · muc-luc (mục lục từ bản đồ) · quotas · agy-tai-khoan (+ agy-dang-nhap.ps1)
+                       skill & kết nối: skill (+ skill-mac-dinh.json) · skill-duyet (duyệt repo từ link) · ket-noi · ket-noi-danh-muc · mcp-phong
+                                        mcp-may (MCP chạy trên máy) · chrome-devtools · tra-cuu + tra-cuu-mcp (Gemini) · xuong-phim (FFmpeg, Python chung, giọng đọc)
+                       GitHub & phát hành: github · xuat-ban · bo-kiem (cài bộ kiểm vào repo dự án, mẫu trong khung/) · agent-template.md
 test/                  node --test (npm test)
 tools/vp.js            công cụ ghi sổ cho agent
 tools/kiem-agent.js    bộ kiểm chu trình agent.md (lib/kiem-agent.js), CI chạy trên mỗi PR
+tools/kiem-hop-dong.js bộ kiểm hợp đồng giao tiếp contract/api.json (lib/kiem-hop-dong.js)
+tools/cai-skill.js     cài / kiểm bộ skill mặc định cho Claude, Codex, Antigravity
+tools/cai-chrome-devtools.js  cài / kiểm Chrome DevTools MCP
+tools/xuong-phim/       tts_sync.py (đọc lời dẫn + phụ đề) và requirements.txt (thư viện ghim)
+tools/phim.js           kiểm hồ sơ phim / chốt thời lượng cảnh theo giọng đọc (lib/phim.js); khuôn ở ctl/khung/phim/
+ctl/may-quay.js         máy quay Gemini (khung + video), sổ chi, bộ đệm, trần ngân sách; ctl/tram-flow.js trạm Google Flow
+public/xuong-phim.html  trang Xưởng phim: ngân sách, đồng ý dùng hình, khung, take, nhịp Flow
+tools/ve-ban-do.js     sinh docs/BAN-DO-HE-THONG.md từ đồ thị trong .ua/
 setup.js               cài đặt (hỏi–đáp hoặc --yes cho agent)
 mau/                   khung mẫu sổ điều phối + đoạn luật đội cho AGENTS.md / CLAUDE.md
-public/                giao diện: index (3D), board, congviec, noiquy, tongquan, hopthu, hieusuat, tinnhan, 2d, dieukhien
-scripts/               mở đường hầm xem trên điện thoại · chay-tat-ca.js (npm run all) · mo-app / tat-app / cai-app (app trên máy) · cap-nhat.js (bộ cập nhật, lib/cap-nhat.js)
+public/                giao diện: index (3D) + office-desk (bàn làm việc) · dieukhien · ket-noi · skill (Repo & Skill) · cap-nhat · noiquy · hopthu
+                       hieusuat · tinnhan · prototype · characters · anime-studio · vanphong3d · offline
+                       điện thoại: dieu-khien (app điều khiển) · dien-thoai (ghép máy, trên máy tính) · trang chuyển hướng cũ: 2d, board, congviec, tongquan
+scripts/               mở đường vào cho điện thoại (xem-tren-dien-thoai: Cloudflare · dien-thoai-tailscale.ps1: Tailscale) · chay-tat-ca.js (npm run all)
+                       mo-app / tat-app / cai-app (app trên máy) · cap-nhat.js (bộ cập nhật, lib/cap-nhat.js)
 HUONG-DAN-CHO-AGENT.md hướng dẫn để agent tự cài từ link này
 docs/BAN-DO-HE-THONG.md bản đồ workflow → kiến trúc → mã (sinh bằng tools/ve-ban-do.js từ đồ thị Understand Anything trong .ua/)
 ```
 
-Bản đồ toàn hệ thống (7 miền nghiệp vụ, 40 workflow, từng bước trỏ tới file:dòng): [docs/BAN-DO-HE-THONG.md](docs/BAN-DO-HE-THONG.md). Mã đổi nhiều thì vẽ lại đồ thị bằng `/understand` và `/understand-domain` (plugin Understand Anything), rồi chạy `node tools/ve-ban-do.js`.
+Bản đồ toàn hệ thống (8 miền nghiệp vụ, 53 workflow, từng bước trỏ tới file:dòng): [docs/BAN-DO-HE-THONG.md](docs/BAN-DO-HE-THONG.md). Bản đồ tự cập nhật: sau mỗi commit/merge, hook của plugin Understand Anything (bật `autoUpdate` trong `.ua/config.json`) nhắc Claude chạy `node tools/cap-nhat-ban-do.js`; công cụ giao Codex (gpt-6.1-sol, mức medium, cho rẻ) cập nhật tăng dần đồ thị ở nền rồi vẽ lại trang trên, Claude chỉ kiểm kết quả. Xem bản đồ có cũ không: `node tools/cap-nhat-ban-do.js --kiem`; chạy tay và chờ xong: thêm `--cho`.
 
 Giấy phép MIT.

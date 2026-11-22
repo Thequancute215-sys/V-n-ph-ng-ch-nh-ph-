@@ -52,6 +52,12 @@ button.act:disabled { opacity: .5; cursor: wait; }
 .msg { margin: 10px 0; padding: 8px 12px; border: 1.5px solid var(--line); background: #fff; }
 .msg.err { border-color: var(--bad); color: var(--bad); }
 .cap { display: none; }
+.xp { border: 2px solid var(--line); background: #fff; padding: 12px 14px; margin: 0 0 14px; display: flex; flex-direction: column; gap: 8px; }
+.xp-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.xp-h b { font-size: 15px; }
+.xp ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 6px 14px; }
+.xp li { font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
+.xp li small { display: block; color: var(--mute); }
 @media (max-width: 900px) {
   .row.head { display: none; }
   .row { grid-template-columns: 34px 1fr; }
@@ -72,6 +78,7 @@ button.act:disabled { opacity: .5; cursor: wait; }
   <div class="tools"><input type="search" id="q" placeholder="Tìm kết nối… (vd: figma, notion, supabase)" aria-label="Tìm kết nối"><button class="act" id="refresh" type="button">Kiểm tra lại</button></div>
   <p class="note">Kết nối là của chung văn phòng, nhưng <b>mỗi phòng chỉ bật vài kết nối đúng phần việc</b>: bấm chấm tròn của phòng ở cột "Phòng dùng" để bật/tắt. Lượt chạy của phòng nào chỉ thấy kết nối của phòng đó (đỡ tốn token, đỡ rủi ro). Chấm có viền cam: đã giao nhưng AI của phòng chưa đăng nhập kết nối đó.
   Claude dùng kết nối của tài khoản claude.ai; Codex (Itachi, Sasuke) và Antigravity (Hinata) thêm ở đây rồi đăng nhập một lần. Antigravity chạy nền hiện chưa nạp được kết nối (kiểm 07/11/2026), nên Hinata tạm chỉ được nhắc tên kết nối trong lời giao việc. Chính sách anh chọn: AI chạy toàn quyền được <b>đọc và làm việc</b>; nhóm <b>gửi / triển khai</b> (Gmail, lịch, Zoom, Composio, Vercel, AppDeploy, tạo/sửa/huỷ lịch Notion) <b>bị chặn</b> — cần thì AI hỏi anh.</p>
+  <section class="xp" id="xp" aria-live="polite" aria-label="Xưởng phim"><div class="xp-h"><b>🎬 Xưởng phim</b><span class="st none">Đang kiểm FFmpeg, giọng đọc…</span></div></section>
   <div class="giao" id="giao" aria-live="polite"></div>
   <div id="msg" role="status"></div>
   <div class="table" id="table" aria-live="polite"><div class="row"><span></span><span>Đang đọc kết nối của Claude, Codex, Antigravity…</span></div></div>
@@ -84,9 +91,9 @@ button.act:disabled { opacity: .5; cursor: wait; }
   const AI_NAME = { claude: "Claude", codex: "Codex", agy: "Antigravity" };
   const NPC = { hinata: ["Hinata", "H", "#9333ea"], itachi: ["Itachi", "I", "#059669"], sasuke: ["Sasuke", "S", "#2563eb"], kakashi: ["Kakashi", "K", "#71717a"], sakura: ["Sakura", "S", "#db2777"] };
   const ICON = { notion: "📝", figma: "🎨", canva: "🖌️", webflow: "🌐", gitbook: "📘", supabase: "🗄️", cloudflare: "☁️", "google-drive": "📁", "google-docs": "📄", "google-sheets": "📊", "google-slides": "📽️", "blaze-sql": "🧮", "claude-docs": "📚",
-    gmail: "✉️", "google-calendar": "📅", zoom: "🎥", composio: "🧩", vercel: "▲", appdeploy: "🚀", capcut: "🎬" };
-  const GROUP = { "tai-lieu": "Tài liệu", "thiet-ke": "Thiết kế", "du-lieu": "Dữ liệu", gui: "Gửi đi", "trien-khai": "Triển khai", "sang-tao": "Sáng tạo" };
-  const ST = { "da-ket-noi": ["✓ Đã kết nối", "ok"], "da-cau-hinh": ["✓ Đã thêm", "ok"], "can-dang-nhap": ["⚠ Cần đăng nhập", "warn"], loi: ["⚠ Lỗi", "warn"], tat: ["Đang tắt", "none"], "chua-co": ["— Chưa có", "none"], "khong-ho-tro": ["·", "none"] };
+    "chrome-devtools": "🧪", gmail: "✉️", "google-calendar": "📅", zoom: "🎥", composio: "🧩", vercel: "▲", appdeploy: "🚀", capcut: "🎬" };
+  const GROUP = { "tai-lieu": "Tài liệu", "thiet-ke": "Thiết kế", "du-lieu": "Dữ liệu", gui: "Gửi đi", "trien-khai": "Triển khai", "sang-tao": "Sáng tạo", "kiem-thu": "Kiểm thử", them: "Anh duyệt thêm" };
+  const ST = { "da-ket-noi": ["✓ Đã kết nối", "ok"], "da-cau-hinh": ["✓ Đã thêm", "ok"], "can-dang-nhap": ["⚠ Cần đăng nhập", "warn"], loi: ["⚠ Lỗi", "warn"], tat: ["Đang tắt", "none"], "chua-co": ["— Chưa có", "none"], cu: ["↻ Bản cũ", "warn"], "khong-ho-tro": ["·", "none"] };
   let data = null, filter = "all", busy = false;
   const ten = (id) => (data && data.rows.find((r) => r.id === id)?.name) || id;
   async function req(path, body) {
@@ -114,12 +121,14 @@ button.act:disabled { opacity: .5; cursor: wait; }
       return `<div><b><span class="av" style="background:${NPC[k][2]};width:20px;height:20px;font-size:10px;box-shadow:none;border:0">${NPC[k][1]}</span>${esc(NPC[k][0])} · ${AI_NAME[ai]}</b>${ids.length ? ids.map((id) => cho.includes(id) ? `<span class="w" title="Chưa đăng nhập">${esc(ten(id))}⚠</span>` : esc(ten(id))).join(", ") : '<span class="st none">Chưa giao kết nối nào</span>'}</div>`; }).join("");
     $("table").innerHTML = `<div class="row head"><span></span><span>KẾT NỐI</span><span>NHÓM</span><span>CLAUDE</span><span>CODEX</span><span>ANTIGRAVITY</span><span>PHÒNG DÙNG</span><span></span></div>` + (rows.map((r) => {
       let acts = "";
+      if (r.may && (r.ai.claude === "chua-co" || r.ai.claude === "cu")) acts += `<button class="act" data-cai-may="${r.id}">${r.ai.claude === "cu" ? "Nâng lên " + esc(r.canBan) : "Cài trên máy"}</button>`;
       if (r.url && !r.chan) {
         if (r.ai.codex === "chua-co") acts += `<button class="act" data-add="${r.id}" data-ai="codex">+ Codex</button>`;
         else acts += `<button class="act" data-login="${r.id}">Đăng nhập Codex</button>`;
         if (r.ai.agy === "chua-co") acts += `<button class="act" data-add="${r.id}" data-ai="agy">+ Antigravity</button>`;
       }
       let sub = r.note || "";
+      if (r.may) sub = (r.phienBan ? "Bản " + r.phienBan + " · " : "") + (r.note || "");
       if (r.nhom === "sang-tao" && !r.web) sub = (r.app ? "Đã cài app trên máy — chờ nối MCP" : "Chưa cài app") + (r.note ? " · " + r.note : "");
       return `<div class="row"><span class="ico" aria-hidden="true">${ICON[r.id] || "🔌"}</span><span class="name">${esc(r.name)}${sub ? `<small>${esc(sub)}</small>` : ""}</span>` +
         `<span><span class="tag">${esc(GROUP[r.nhom] || r.nhom)}</span></span><span><span class="cap">Claude</span>${st(r, "claude")}</span><span><span class="cap">Codex</span>${st(r, "codex")}</span><span><span class="cap">Antigravity</span>${st(r, "agy")}</span>` +
@@ -152,6 +161,14 @@ button.act:disabled { opacity: .5; cursor: wait; }
       return;
     }
     const b = e.target.closest("button.act"); if (!b || busy) return;
+    if (b.dataset.caiMay) {
+      if (!confirm("Cài Chrome DevTools MCP (gói chrome-devtools-mcp của Google, bản đã ghim) vào thư mục dữ liệu văn phòng? Tải từ npm, không chạy script cài.")) return;
+      busy = true; render(); msg("Đang cài Chrome DevTools MCP (có thể mất 1–2 phút)…");
+      try { data = await req("/ket-noi/cai-may", { id: b.dataset.caiMay }); msg("Đã cài Chrome DevTools MCP. Phòng nào được bật sẽ dùng được từ lượt chạy kế tiếp."); }
+      catch (err) { msg(err.message, true); }
+      finally { busy = false; render(); }
+      return;
+    }
     const name = data.rows.find((r) => r.id === (b.dataset.add || b.dataset.login))?.name || "";
     if (b.dataset.add) { if (!confirm(`Thêm ${name} cho ${b.dataset.ai === "codex" ? "Codex (Itachi, Sasuke)" : "Antigravity (Hinata)"}?`)) return; }
     else if (!confirm(`Đăng nhập ${name} cho Codex: trình duyệt sẽ mở trang cho phép của ${name}, anh tự bấm đồng ý. Tiếp tục?`)) return;
@@ -161,6 +178,39 @@ button.act:disabled { opacity: .5; cursor: wait; }
     finally { busy = false; render(); }
   });
   load(false);
+
+  // Xưởng phim (ctl/xuong-phim.js): FFmpeg, Python chung, giọng Việt/Anh. Cài chạy nền, trang hỏi lại tới khi xong.
+  let xp = null, xpHen = null;
+  async function xpReq(path, body) {
+    const r = await fetch("/ctl" + path, { cache: "no-store", method: body ? "POST" : "GET", headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(60000) });
+    let d; try { d = await r.json(); } catch { throw new Error("Controller chưa trả JSON"); }
+    if (!r.ok || d.ok === false) throw new Error(d.error || "Lỗi HTTP " + r.status);
+    return d.xuongPhim;
+  }
+  function xpRender(loi) {
+    const el = $("xp");
+    if (!xp) { el.innerHTML = `<div class="xp-h"><b>🎬 Xưởng phim</b><span class="st ${loi ? "warn" : "none"}">${esc(loi || "Đang kiểm FFmpeg, giọng đọc…")}</span></div>`; return; }
+    const canCai = (xp.muc || []).some((m) => !m.ok && m.id !== "ffmpeg" && m.id !== "script-giong");
+    const trangThai = xp.dangCai ? `<span class="st warn">${esc(xp.buoc || "Đang cài…")}</span>` : xp.san ? `<span class="st ok">✓ Sẵn sàng làm phim</span>` : `<span class="st warn">⚠ Còn thiếu</span>`;
+    el.innerHTML = `<div class="xp-h"><b>🎬 Xưởng phim</b>${trangThai}<span class="acts">${canCai && !xp.dangCai ? '<button class="act" type="button" id="xp-cai">Cài xưởng phim</button>' : ""}<button class="act" type="button" id="xp-kiem"${xp.dangCai ? " disabled" : ""}>Kiểm lại</button></span></div>` +
+      `<ul>${(xp.muc || []).map((m) => `<li><span class="st ${m.ok ? "ok" : "warn"}">${m.ok ? "✓" : "⚠"} ${esc(m.ten)}</span><small>${esc(m.chiTiet || "")}${!m.ok && m.cachSua ? " — " + esc(m.cachSua) : ""}</small></li>`).join("")}</ul>` +
+      (xp.loiCuoi ? `<div class="msg err">${esc(xp.loiCuoi)}</div>` : "") +
+      `<p class="note" style="margin:0">Mọi phòng dùng chung bộ này qua biến XUONG_PHIM_PYTHON, XUONG_PHIM_TTS, XUONG_PHIM_FFMPEG trong mỗi lượt chạy.</p>`;
+  }
+  async function xpLoad(fresh) {
+    clearTimeout(xpHen);
+    try { xp = await xpReq("/xuong-phim" + (fresh ? "?fresh=1" : "")); xpRender(); }
+    catch (e) { xp = null; xpRender(e.message); }
+    if (xp && xp.dangCai) xpHen = setTimeout(() => xpLoad(false), 3000);
+  }
+  $("xp").addEventListener("click", async (e) => {
+    if (e.target.id === "xp-kiem") { xpLoad(true); return; }
+    if (e.target.id !== "xp-cai") return;
+    if (!confirm("Cài bộ làm phim cho cả văn phòng vào " + ((xp && xp.duongDan && xp.duongDan.goc) || "thư mục xưởng phim") + "?\n• Tạo Python chung\n• Cài edge-tts, kokoro-onnx, soundfile đúng bản ghim (chỉ gói đóng sẵn, không chạy script cài)\n• Chép model Kokoro (~340 MB) từ bản đã có, thiếu thì tải từ GitHub và kiểm mã băm\n• Cài FFmpeg (bản Gyan, khoảng 200 MB) bằng winget nếu máy chưa có")) return;
+    try { xp = await xpReq("/xuong-phim/cai", {}); xpRender(); xpHen = setTimeout(() => xpLoad(false), 3000); }
+    catch (err) { xpRender(err.message); }
+  });
+  xpLoad(false);
 })();
 </script>
 </body>

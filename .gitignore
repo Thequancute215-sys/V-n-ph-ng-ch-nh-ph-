@@ -16,3 +16,7 @@ scratch/
 .ua/tmp/
 .ua/diff-overlay.json
 .ua/.trash-*/
+
+# Cấu hình Claude Code riêng của từng máy. Ghi ở đây (không chỉ trong ~/.config/git/ignore) để Git trong sandbox của Codex,
+# vốn không đọc được hồ sơ người dùng, cũng thấy repo sạch.
+.claude/settings.local.json

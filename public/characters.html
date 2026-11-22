@@ -13,7 +13,8 @@ tailwind.config = {
   darkMode: 'class',
   theme: {
     extend: {
-      // Đo bằng trình duyệt: tiêu đề 530px + nhãn phụ 216px + 5 nút nhãn đầy đủ 1063px + lề ≈ 1940px.
+      // Đo bằng trình duyệt: tiêu đề 530px + nhãn phụ 216px + 5 nút nhãn đầy đủ 1063px + lề ≈ 1940px
+      // (đo khi còn nút "Duyệt tất cả"; nút đó đã bỏ 20/11/2026 nên nay dư chỗ, giữ mốc cũ cho chắc).
       // Hẹp hơn thì nút dùng nhãn ngắn / chỉ biểu tượng để đầu trang không bị ép xuống nhiều dòng (P7-M01).
       screens: { wide: '1940px' },
       fontFamily: {
@@ -75,9 +76,6 @@ body { background: #040711; color: #f8fafc; font-family: "Plus Jakarta Sans", sa
     <button onclick="location.href='index.html'" title="Về Văn Phòng 3D" aria-label="Về Văn Phòng 3D" class="whitespace-nowrap px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-200 border border-white/10 flex items-center gap-1.5 transition">
       <i data-lucide="arrow-left" class="w-4 h-4"></i> <span class="hidden wide:inline">Về Văn Phòng 3D</span><span class="hidden sm:inline wide:hidden">Văn phòng</span>
     </button>
-    <button onclick="approveAll()" title="DUYỆT TẤT CẢ TẠO HÌNH NGUYÊN TÁC" aria-label="DUYỆT TẤT CẢ TẠO HÌNH NGUYÊN TÁC" class="whitespace-nowrap px-5 py-2 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-amber-400 hover:brightness-110 text-black text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-orange-500/25 transition">
-      <i data-lucide="check-check" class="w-4 h-4"></i> <span class="hidden wide:inline">DUYỆT TẤT CẢ TẠO HÌNH NGUYÊN TÁC</span><span class="hidden sm:inline wide:hidden">Duyệt tất cả</span>
-    </button>
   </div>
 </header>
 
@@ -126,7 +124,7 @@ body { background: #040711; color: #f8fafc; font-family: "Plus Jakarta Sans", sa
     <button onclick="selectChar('itachi_sol')" id="btn-itachi_sol" class="w-full text-left p-2.5 rounded-2xl border border-white/5 hover:border-emerald-500/30 hover:bg-emerald-500/5 flex items-center gap-3 transition group">
       <div class="w-11 h-11 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-xl shadow-md">🐦‍⬛</div>
       <div class="flex-1 truncate">
-        <div class="text-xs font-bold text-white font-chibi group-hover:text-emerald-300">GPT 6.1 Sol (Itachi)</div>
+        <div class="text-xs font-bold text-white font-chibi group-hover:text-emerald-300">GPT 6.2 Sol (Itachi)</div>
         <div class="text-[10px] text-emerald-400">Mangekyo Sharingan · Áo Akatsuki · Bầy Quạ</div>
       </div>
       <span class="text-xs text-slate-500">○</span>
@@ -335,13 +333,10 @@ body { background: #040711; color: #f8fafc; font-family: "Plus Jakarta Sans", sa
 
     <!-- Approval Action Box -->
     <div class="pt-4 border-t border-white/10 space-y-2">
-      <button onclick="approveCurrentChar()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-400 hover:brightness-110 text-black font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-orange-500/20 transition">
-        <i data-lucide="check" class="w-4 h-4"></i>
-        <span id="approveBtnText">Duyệt Tạo Hình Nhân Vật Này</span>
-      </button>
-      <button onclick="promptEditChar()" class="w-full py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold border border-white/10 transition">
+      <button onclick="promptEditChar()" id="editReqBtn" class="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 text-xs font-bold border border-white/10 transition disabled:opacity-50">
         ✏️ Yêu Cầu Chỉnh Thêm Chi Tiết
       </button>
+      <p id="editReqMsg" role="status" class="text-[11px] leading-snug text-slate-400">Yêu cầu được lưu thành một ý tưởng của dự án đang chọn; giao cho Hinata ở bàn làm việc → Ý tưởng.</p>
     </div>
   </aside>
 
@@ -814,7 +809,7 @@ const CHAR_DATA = {
     auth: "Chủ trì Vùng [2]", scale: "90% (72px)", type: "shinobi", shinobiType: "hinata"
   },
   itachi_sol: {
-    name: "GPT 6.1 Sol (Itachi Uchiha)",
+    name: "GPT 6.2 Sol (Itachi Uchiha)",
     role: "Quân Sư Chiến Lược / SOL_ARCHITECT_PLANNER",
     subhead: "MANGEKYO SHARINGAN · SIZE 72PX",
     color: 0x10b981,
@@ -1711,18 +1706,32 @@ window.toggleActionAnim = (type) => {
   }, 3200);
 };
 
-window.approveCurrentChar = () => {
-  const d = CHAR_DATA[currentCharKey];
-  alert(`ĐÃ DUYỆT TẠO HÌNH NGUYÊN TÁC:\n${d.name}!\nChi tiết nét mặt và trang phục đã được khóa vào hệ thống.`);
-};
-
-window.approveAll = () => {
-  alert("XÁC NHẬN CỦA THẾ QUÂN CEO:\nĐã DUYỆT TOÀN BỘ 5 Nhẫn Giả Chuẩn Manga và 10 Vĩ Thú Subagents!\nMặt nét vẽ, trang phục và hiệu ứng Chakra đã đạt chuẩn cao nhất.");
-};
-
-window.promptEditChar = () => {
-  const req = prompt("Nhập thêm chi tiết trang phục hoặc nét mặt cần căn chỉnh:", "Thêm vết xước trên băng trán hoặc chỉnh tone áo");
-  if (req) alert(`Đã ghi nhận yêu cầu: "${req}". Kiến trúc sư Antigravity sẽ cập nhật ngay!`);
+// "Yêu cầu chỉnh thêm chi tiết": lưu thật thành một ý tưởng của dự án đang chọn qua OS Controller (POST /ctl/ideas, như mục
+// Ý tưởng của bàn làm việc), rồi CEO giao Hinata đặc tả từ đó. Trước 20/11/2026 nút này và hai nút "Duyệt" chỉ hiện alert
+// "đã ghi nhận / đã duyệt / đã khóa vào hệ thống" mà không ghi gì; hai nút duyệt đã bỏ vì không có sổ duyệt tạo hình nào.
+async function ctlCall(path, body) {
+  let r;
+  try { r = await fetch("/ctl" + path, { cache: "no-store", method: body ? "POST" : "GET", signal: AbortSignal.timeout(15000), ...(body ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {}) }); }
+  catch (e) { throw new Error("Không kết nối được OS Controller: " + e.message); }
+  let d = null; try { d = await r.json(); } catch {}
+  if (!r.ok || !d || d.ok === false) throw new Error((d && d.error) || "Lỗi HTTP " + r.status);
+  return d;
+}
+window.promptEditChar = async () => {
+  const d = CHAR_DATA[currentCharKey], msg = document.getElementById("editReqMsg"), btn = document.getElementById("editReqBtn");
+  const say = (t, bad = false) => { msg.textContent = t; msg.className = "text-[11px] leading-snug " + (bad ? "text-rose-300" : "text-emerald-300"); };
+  const req = (prompt(`Chi tiết trang phục hoặc nét mặt cần chỉnh cho ${d.name}:`, "") || "").trim();
+  if (!req) return;
+  btn.disabled = true; say("Đang đọc dự án đang chọn…");
+  try {
+    const w = await ctlCall("/workspaces");
+    if (!w.active) throw new Error("Chưa chọn dự án: mở bàn làm việc → Dự án để chọn repo.");
+    const name = (w.workspaces || []).find((x) => x.path === w.active)?.name || w.active;
+    if (!confirm(`Lưu yêu cầu chỉnh ${d.name} thành ý tưởng của dự án "${name}"?\n\n"${req}"`)) { say("Chưa lưu: anh đã hủy.", true); return; }
+    const r = await ctlCall("/ideas", { workspace: w.active, title: ("Chỉnh tạo hình " + d.name).slice(0, 200), detail: req.slice(0, 2400) });
+    say(`Đã lưu ý tưởng "${r.idea.title}" vào dự án ${name}. Giao Hinata đặc tả ở bàn làm việc → Ý tưởng.`);
+  } catch (e) { say("Chưa lưu: " + e.message, true); }
+  finally { btn.disabled = false; }
 };
 
 // Render Loop
