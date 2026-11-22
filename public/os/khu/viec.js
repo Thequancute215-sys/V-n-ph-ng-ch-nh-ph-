@@ -2,24 +2,15 @@
 // Bảng việc gộp ba nguồn thật của ctl: lượt AI và lệnh (/jobs), luồng tự chạy (/autopilot), bàn giao chờ duyệt (/handoffs).
 // Lịch chạy (/lich-chay, ctl/lich-chay.js): giao việc cho đội hoặc hỏi một AI theo nhịp; mặc định TẮT, CEO bật từng lịch.
 // ctl tự bỏ qua lần chạy khi lần trước chưa xong, dự án đang bận hay hạn mức AI dưới 15%, và không chạy bù khi máy tắt.
-import { esc, cat, luc, dangTai, rong, loi, VAI } from "../ui.js";
+// OS-3: mỗi thẻ việc có nút mở ngăn trượt tại chỗ (duyệt, trả lời, xem nhật ký lượt đang chạy) thay cho chuyển sang trang Luồng.
+import { esc, cat, luc, dangTai, rong, loi } from "../ui.js";
+import { TT_LUONG, LUONG_CHAY, LUONG_CHO, LUONG_CAN_ANH, tenDuAn, tenLenh as tenViec, tenVai as TEN_VAI_BG, cauHoi } from "../viec-chung.js";
 
-const TT_LUONG = { running: "đang chạy", reporting: "đang viết báo cáo", awaiting_answer: "chờ anh trả lời", awaiting_approval: "chờ anh duyệt báo cáo",
-  attention: "cần anh xem", waiting_quota: "chờ hạn mức", awaiting_scan: "chờ anh duyệt rà soát", stopped: "đã dừng", approved: "anh đã duyệt",
-  acknowledged: "đã ghi nhận", done: "xong", failed: "lỗi" };
-const LUONG_CHAY = new Set(["running", "reporting"]), LUONG_CHO = new Set(["waiting_quota"]);
-const LUONG_CAN_ANH = new Set(["awaiting_answer", "awaiting_approval", "attention", "awaiting_scan"]);
 const NGAY = 24 * 3600 * 1000;
 const THU = ["", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ nhật"];
 const HOI = { pain: "Pain (Claude)", hinata: "Hinata (Antigravity)", itachi: "Itachi (Sol)", sasuke: "Sasuke (Astra)", kakashi: "Kakashi (Antigravity)", sakura: "Sakura (Claude)" };
-const tenDuAn = (p) => String(p || "").split(/[\\/]/).pop();
-// Tên cộng sự thay cho mã vai (CODEX_ASTRA_DEV → Sasuke (Astra)); lượt phụ (báo cáo, chat…) ghi theo việc.
-const PHU = { CLAUDE_REPORTER: "Pain viết báo cáo", CLAUDE_CHAT: "Hỏi Claude", CODEX_CHAT: "Hỏi Codex", AGY_CHAT: "Hỏi Antigravity",
-  CLAUDE_WEB_PROMPT: "Claude soạn prompt web", CODEX_WEB_PROMPT: "Codex soạn prompt web", AGY_WEB_PROMPT: "Antigravity soạn prompt web" };
-const tenViec = (j) => { const v = VAI.find((x) => x.role === j.agent); return v ? "Lượt của " + v.ten : PHU[j.agent] || (j.agent ? j.agent : "Lệnh " + (j.kind || "")); };
-const TEN_VAI_BG = (r) => (VAI.find((x) => x.role === r) || {}).ten || r || "AI";
 
-export async function mo(vung, { kho, ctl, bao }) {
+export async function mo(vung, { kho, ctl, bao, ngan }) {
   vung.innerHTML = `<div class="vung">
     <div class="so-kpi" id="kpi" aria-label="Số việc">${dangTai(1)}</div>
     <section aria-labelledby="hBang" style="display:flex;flex-direction:column;gap:var(--space-sm)">
@@ -49,24 +40,25 @@ export async function mo(vung, { kho, ctl, bao }) {
   }
 
   // ---------- bảng việc ----------
+  const nutNgan = (ref, chu, tieu) => `<button type="button" class="nut nho" data-ngan="${esc(ref)}" aria-label="${esc(chu + ": " + cat(tieu, 80))}">${esc(chu)}</button>`;
   function the(tieu, chiTiet, nut = "") { return `<div class="the-viec"><div class="tieu">${esc(tieu)}</div><div class="chi-tiet">${esc(chiTiet)}</div>${nut}</div>`; }
   function veBang() {
     if (!jobs && !runs && !handoffs) { $("kpi").innerHTML = ""; $("bangViec").innerHTML = loi(loiCtl || "Chưa nối được bộ điều khiển (ctl)."); return; }
     const bay = Date.now(), cot = { cho: [], chay: [], canAnh: [], xong: [] };
     for (const r of runs || []) {
       const tt = TT_LUONG[r.status] || r.status, ct = `Luồng tự chạy · ${tenDuAn(r.workspace)} · ${tt} · ${luc(r.updatedAt)}`;
-      const nut = `<a class="nut nho" href="#/code/dieu-khien">Mở</a>`;
-      if (LUONG_CHAY.has(r.status)) cot.chay.push([r.updatedAt, the(cat(r.task, 140), ct, nut)]);
-      else if (LUONG_CHO.has(r.status)) cot.cho.push([r.updatedAt, the(cat(r.task, 140), ct, nut)]);
-      else if (LUONG_CAN_ANH.has(r.status)) cot.canAnh.push([r.updatedAt, the(cat(r.question && r.question.text ? r.question.text : r.task, 140), ct, nut)]);
-      else if (bay - (r.updatedAt || 0) < NGAY) cot.xong.push([r.updatedAt, the(cat(r.task, 140), ct)]);
+      const nut = (chu) => nutNgan("luong:" + r.id, chu, r.task);
+      if (LUONG_CHAY.has(r.status)) cot.chay.push([r.updatedAt, the(cat(r.task, 140), ct, nut("Xem tiến độ"))]);
+      else if (LUONG_CHO.has(r.status)) cot.cho.push([r.updatedAt, the(cat(r.task, 140), ct, nut("Mở"))]);
+      else if (LUONG_CAN_ANH.has(r.status)) cot.canAnh.push([r.updatedAt, the(cat(cauHoi(r) || r.task, 140), ct, nut(r.status === "awaiting_answer" ? "Trả lời" : "Mở"))]);
+      else if (bay - (r.updatedAt || 0) < NGAY) cot.xong.push([r.updatedAt, the(cat(r.task, 140), ct, nut("Xem"))]);
     }
     for (const h of handoffs || []) { const p = h.payload || {};
-      cot.canAnh.push([h.createdAt || 0, the(cat(p.giai_thich || p.tom_tat || "Bàn giao chờ duyệt", 140), `Bàn giao của ${TEN_VAI_BG(h.role)}${p.next_owner ? " cho " + TEN_VAI_BG(p.next_owner) : ""} · ${tenDuAn(h.workspace)}`, `<a class="nut nho" href="#/code/dieu-khien">Duyệt</a>`)]); }
+      cot.canAnh.push([h.createdAt || 0, the(cat(p.giai_thich || p.tom_tat || "Bàn giao chờ duyệt", 140), `Bàn giao của ${TEN_VAI_BG(h.role)}${p.next_owner ? " cho " + TEN_VAI_BG(p.next_owner) : ""} · ${tenDuAn(h.workspace)}`, nutNgan("ban-giao:" + h.job_id, p.ask_ceo ? "Trả lời" : "Duyệt", p.giai_thich || "bàn giao"))]); }
     for (const j of jobs || []) {
       const ct = `${tenDuAn(j.workspace)}${j.started_at ? " · " + luc(j.started_at) : ""}`;
-      if (j.status === "running") cot.chay.push([j.started_at, the(tenViec(j), ct + (j.runningS ? ` · đã chạy ${Math.round(j.runningS / 60)} phút` : ""))]);
-      else if (j.status === "pending_approval") cot.canAnh.push([j.started_at, the(tenViec(j) + ": chờ anh duyệt", ct, `<a class="nut nho" href="#/code/dieu-khien">Duyệt</a>`)]);
+      if (j.status === "running") cot.chay.push([j.started_at, the(tenViec(j), ct + (j.runningS ? ` · đã chạy ${Math.round(j.runningS / 60)} phút` : ""), nutNgan("lenh:" + j.id, "Xem tiến độ", tenViec(j)))]);
+      else if (j.status === "pending_approval") cot.canAnh.push([j.started_at, the(tenViec(j) + ": chờ anh duyệt", ct, nutNgan("lenh:" + j.id, "Duyệt", tenViec(j)))]);
       else if (j.status === "queued") cot.cho.push([j.started_at, the(tenViec(j), ct)]);
       else if (bay - (j.ended_at || j.started_at || 0) < NGAY) cot.xong.push([j.ended_at || j.started_at, the(`${tenViec(j)}: ${j.status === "done" ? "xong" : j.status === "rejected" ? "anh từ chối" : j.status}`, ct)]);
     }
@@ -145,6 +137,7 @@ export async function mo(vung, { kho, ctl, bao }) {
 
   vung.addEventListener("click", (e) => {
     const t = e.target;
+    const n = t.closest("[data-ngan]"); if (n) return ngan.mo(n.dataset.ngan, n, { khiDoi: tai });
     if (t.closest("#nutThemLich")) return moBieuMau();
     if (t.closest("#nutDongBm")) { $("bieuMau").hidden = true; sua = null; return; }
     const b = t.closest("[data-bat]"); if (b) { const x = lich.find((y) => y.id === b.dataset.bat); return hanhDong(`/lich-chay/${encodeURIComponent(x.id)}/bat`, { bat: !x.bat }, x.bat ? "Đã tắt lịch." : "Đã bật lịch."); }

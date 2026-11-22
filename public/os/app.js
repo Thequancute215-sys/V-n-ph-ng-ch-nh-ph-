@@ -3,36 +3,46 @@
 // Dữ liệu: MỘT kết nối /events (máy chủ đẩy ảnh chụp mỗi giây) dùng chung cho mọi khu; ctl gọi qua /ctl.
 // Tab bị ẩn thì đóng luồng /events và các khu ngừng hỏi lại; hiện lại thì nối lại ngay.
 import { esc, ctl, bao, icon } from "./ui.js";
+import { taoNgan } from "./ngan.js";
 
 // OS-2 (CEO duyệt 21/11/2026): hai xưởng tách hẳn nhau, mỗi xưởng một màu nhận diện (xuong: "code" | "phim");
 // "sapCo" là tính năng của xưởng sẽ cập nhật sau, hiện mờ để CEO biết lộ trình, không bấm được.
 // Đội ngũ học cách tổ chức của Javis OS (phòng sạch, xem D:\VanPhongAI\os-2\replica): Cộng sự, Việc và lịch chạy, Bộ não, Models và quyền.
+// OS-3 (CEO cấp FORCE_OVERRIDE 22/11/2026): "xem ở đâu, xử lý ngay ở đó". Giao việc và Luồng và bàn giao thành khu gốc;
+// thanh bên chỉ giữ khu gốc, trang cũ còn lại gom vào mục "Công cụ cũ" (mảng CU, đường dẫn cũ vẫn mở được).
 const KHU = [
   { id: "", ten: "Tổng quan", icon: "nha", mod: "./khu/tong-quan.js" },
   { id: "tin-nhan", ten: "Tin nhắn", icon: "tin", mod: "./khu/tin-nhan.js" },
   { nhom: "Xưởng code", xuong: "code" },
   { id: "code/du-an", ten: "Dự án", icon: "du_an", mod: "./khu/code-du-an.js", xuong: "code" },
-  { id: "code/giao-viec", ten: "Giao việc cho đội", icon: "luong", nhung: "prototype.html", xuong: "code" },
-  { id: "code/dieu-khien", ten: "Luồng và bàn giao", icon: "luong", nhung: "dieukhien.html", xuong: "code" },
-  { id: "code/skill", ten: "Repo và skill", icon: "skill", nhung: "skill.html", xuong: "code" },
-  { id: "code/hop-thu", ten: "Hòm thư", icon: "hop", nhung: "hopthu.html", xuong: "code" },
+  { id: "code/giao-viec", ten: "Giao việc cho đội", icon: "giao", mod: "./khu/giao-viec.js", xuong: "code" },
+  { id: "code/dieu-khien", ten: "Luồng và bàn giao", icon: "luong", mod: "./khu/luong.js", xuong: "code" },
   { sapCo: "Phát hành một chạm, kiểm CI, xem PR", xuong: "code" },
   { nhom: "Xưởng phim", xuong: "phim" },
   { id: "phim", ten: "Phim và bàn dựng", icon: "phim", mod: "./khu/phim.js", xuong: "phim" },
-  { id: "phim/nhan-vat", ten: "Nhân vật", icon: "doi", nhung: "characters.html", xuong: "phim" },
-  { id: "phim/xuong-cu", ten: "Trạm phim (bản cũ)", icon: "phim", nhung: "xuong-phim.html", xuong: "phim" },
   { sapCo: "Kịch bản, phân cảnh, lồng tiếng, xuất bản phim", xuong: "phim" },
   { nhom: "Đội ngũ" },
   { id: "doi/cong-su", ten: "Cộng sự và team", icon: "doi", mod: "./khu/cong-su.js" },
   { id: "doi/viec", ten: "Việc và lịch chạy", icon: "lich", mod: "./khu/viec.js" },
   { id: "doi/bo-nao", ten: "Bộ não chung", icon: "nao", mod: "./khu/bo-nao.js" },
-  { id: "doi/hieu-suat", ten: "Hiệu suất", icon: "doi", nhung: "hieusuat.html" },
-  { id: "doi/noi-quy", ten: "Nội quy", icon: "luat", nhung: "noiquy.html" },
   { nhom: "Hệ thống" },
   { id: "he/models", ten: "Models và quyền", icon: "khoa", mod: "./khu/models.js" },
-  { id: "he/ket-noi", ten: "Kết nối", icon: "noi", nhung: "ket-noi.html" },
-  { id: "he/dien-thoai", ten: "Điện thoại", icon: "dt", nhung: "dien-thoai.html" },
-  { id: "he/cap-nhat", ten: "Cập nhật", icon: "moi", nhung: "cap-nhat.html" },
+  { id: "cu", ten: "Công cụ cũ", icon: "hop", mod: "./khu/cong-cu-cu.js" },
+];
+// Công cụ cũ: trang chưa viết lại, không lên thanh bên; mở từ khu Công cụ cũ hoặc đường dẫn cũ (#/code/skill…).
+// nhomCu: nhóm hiển thị trong khu Công cụ cũ; xuong giữ nhãn xưởng trên tiêu đề khi mở.
+const CU = [
+  { id: "cu/bang-dieu-phoi", ten: "Bảng điều phối (bản cũ)", icon: "luong", nhung: "prototype.html", nhomCu: "code", xuong: "code", moTa: "Ý tưởng giao Hinata đặc tả, làm lượt trên ChatGPT web khi hết hạn mức, xem diff từng lượt, biên bản hội chẩn." },
+  { id: "cu/dieu-khien-may", ten: "Điều khiển máy (bản cũ)", icon: "khoa", nhung: "dieukhien.html", nhomCu: "code", xuong: "code", moTa: "Chạy tay từng lượt, lệnh trong danh sách cho phép, duyệt file, CPU và RAM." },
+  { id: "code/skill", ten: "Repo và skill", icon: "skill", nhung: "skill.html", nhomCu: "code", xuong: "code", moTa: "Bộ skill mặc định của đội, duyệt skill mới từ link GitHub." },
+  { id: "code/hop-thu", ten: "Hòm thư", icon: "hop", nhung: "hopthu.html", nhomCu: "code", xuong: "code", moTa: "Thư giao việc và trả lời giữa các AI." },
+  { id: "phim/nhan-vat", ten: "Nhân vật", icon: "doi", nhung: "characters.html", nhomCu: "phim", xuong: "phim", moTa: "Nhân vật 3D của văn phòng và yêu cầu chỉnh tạo hình." },
+  { id: "phim/xuong-cu", ten: "Trạm phim (bản cũ)", icon: "phim", nhung: "xuong-phim.html", nhomCu: "phim", xuong: "phim", moTa: "Trạm phim trước khi có Phim và bàn dựng." },
+  { id: "doi/hieu-suat", ten: "Hiệu suất", icon: "doi", nhung: "hieusuat.html", nhomCu: "doi", moTa: "Số lượt, thời gian và chi phí của từng AI." },
+  { id: "doi/noi-quy", ten: "Nội quy", icon: "luat", nhung: "noiquy.html", nhomCu: "doi", moTa: "Nội quy chung của văn phòng cho mọi AI." },
+  { id: "he/ket-noi", ten: "Kết nối", icon: "noi", nhung: "ket-noi.html", nhomCu: "he", moTa: "Đăng nhập CLI Claude, Codex, Antigravity và các dịch vụ." },
+  { id: "he/dien-thoai", ten: "Điện thoại", icon: "dt", nhung: "dien-thoai.html", nhomCu: "he", moTa: "Mở văn phòng trên điện thoại, điều khiển từ xa." },
+  { id: "he/cap-nhat", ten: "Cập nhật", icon: "moi", nhung: "cap-nhat.html", nhomCu: "he", moTa: "Cập nhật app lên bản phát hành mới, quay lại bản trước." },
 ];
 
 // ---------- kho dữ liệu dùng chung ----------
@@ -40,6 +50,7 @@ const nghe = new Set();
 const kho = {
   state: null, loiState: "", duAn: null, dsDuAn: [],
   on(fn) { nghe.add(fn); return () => nghe.delete(fn); },
+  taiLaiDuAn: () => taiDuAn(),   // khu Giao việc gọi sau khi mở repo GitHub mới
   bao() { for (const fn of nghe) { try { fn(kho); } catch (e) { console.error(e); } } },
 };
 let es = null, henPoll = null, chuKy = "";
@@ -78,6 +89,7 @@ function trangThaiMay() {
 }
 
 // ---------- dự án đang làm ----------
+let henDuAn = null;
 async function taiDuAn() {
   const sel = document.getElementById("chonDuAn");
   try {
@@ -86,7 +98,11 @@ async function taiDuAn() {
     kho.duAn = (d.active && d.active.path) || (kho.dsDuAn.find((w) => w.active) || {}).path || (kho.dsDuAn[0] || {}).path || null;
     sel.innerHTML = kho.dsDuAn.length ? kho.dsDuAn.map((w) => `<option value="${esc(w.path)}"${w.path === kho.duAn ? " selected" : ""}>${esc(w.name || w.path.split(/[\\/]/).pop())}</option>`).join("")
       : `<option value="">Chưa có dự án</option>`;
-  } catch (e) { sel.innerHTML = `<option value="">Chưa nối ctl</option>`; kho.duAn = null; }
+  } catch (e) {
+    sel.innerHTML = `<option value="">Chưa nối ctl</option>`; kho.duAn = null;
+    // ctl có thể bật sau văn phòng (hoặc vừa khởi động lại): thử lại thay vì giữ "Chưa nối ctl" tới khi tải lại trang.
+    clearTimeout(henDuAn); henDuAn = setTimeout(taiDuAn, 8000);
+  }
   kho.bao();
 }
 document.getElementById("chonDuAn").addEventListener("change", async (e) => {
@@ -121,13 +137,21 @@ document.getElementById("dsKhu").innerHTML = KHU.map((k) => k.nhom ? `<div class
 // Số việc cần anh trên mục Tổng quan (từ máy chủ, không đoán).
 kho.on((k) => { const n = k.state ? (k.state.asks || []).length : 0; const el = document.getElementById("demCanAnh"); el.hidden = !n; el.textContent = n; });
 
+// Ngăn trượt dùng chung (OS-3): các khu mở việc tại chỗ bằng ngan.mo("luong:<id>" | "ban-giao:<id>" | "lenh:<id>", nút đã bấm).
+const ngan = taoNgan({ ctl, bao });
+
 let dong = null, phien = 0;
 async function moKhu() {
-  const id = decodeURIComponent(location.hash.replace(/^#\/?/, "")).split("?")[0];
-  const k = KHU.find((x) => x.id !== undefined && x.id === id) || KHU[0];
-  document.querySelectorAll(".thanh-ben a.muc").forEach((a) => { if (a.dataset.khu === k.id) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+  const [id, truyVan = ""] = decodeURIComponent(location.hash.replace(/^#\/?/, "")).split("?");
+  const cu = CU.find((x) => x.id === id);
+  const k = cu || KHU.find((x) => x.id !== undefined && x.id === id) || KHU[0];
+  // Công cụ cũ không có mục riêng trên thanh bên: sáng mục "Công cụ cũ".
+  const sang = cu ? "cu" : k.id;
+  document.querySelectorAll(".thanh-ben a.muc").forEach((a) => { if (a.dataset.khu === sang) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+  ngan.dong();
   // Tiêu đề ghi rõ đang ở xưởng nào (CEO: "trong đấy ghi rõ xưởng phim và xưởng code").
-  document.getElementById("tieuDe").innerHTML = (k.xuong ? `<span class="nhan-xuong" data-xuong="${esc(k.xuong)}">Xưởng ${k.xuong === "code" ? "code" : "phim"}</span>` : "") + esc(k.ten);
+  document.getElementById("tieuDe").innerHTML = (k.xuong ? `<span class="nhan-xuong" data-xuong="${esc(k.xuong)}">Xưởng ${k.xuong === "code" ? "code" : "phim"}</span>` : "")
+    + (cu ? `<a class="ve-cu" href="#/cu">Công cụ cũ</a><span class="mo" aria-hidden="true"> / </span>` : "") + esc(k.ten);
   document.title = k.ten + " · Thế Quân OS";
   os.classList.remove("mo-ben"); nutMenu.setAttribute("aria-expanded", "false");
   if (dong) { try { dong(); } catch {} dong = null; }
@@ -146,7 +170,10 @@ async function moKhu() {
     const khung = document.createElement("div");
     khung.className = "khung-khu";
     vung.replaceChildren(khung);
-    dong = (await m.mo(khung, { kho, ctl, bao })) || null;
+    dong = (await m.mo(khung, { kho, ctl, bao, ngan, congCuCu: CU })) || null;
+    // Đường dẫn #/<khu>?mo=luong:<id> mở thẳng ngăn của việc đó (rồi bỏ ?mo khỏi địa chỉ để tải lại không mở lại).
+    const moNgay = new URLSearchParams(truyVan).get("mo");
+    if (moNgay && mine === phien) { history.replaceState(null, "", "#/" + id); ngan.mo(moNgay); }
   } catch (e) {
     if (mine !== phien) return;
     vung.innerHTML = `<div class="vung"><div class="loi" role="alert"><span>Không mở được khu ${esc(k.ten)}: ${esc(e.message)}</span></div></div>`;

@@ -83,3 +83,59 @@ test("OS-2: máy tính quản lý được tài khoản AI ngay trong OS (hộp 
     assert.ok(m.includes(duong), "khu Models và quyền thiếu thao tác tài khoản: " + duong);
   }
 });
+
+// OS-3 (CEO cấp FORCE_OVERRIDE 22/11/2026): "xem ở đâu, xử lý ngay ở đó".
+test("OS-3: thanh bên chỉ còn khu gốc (không nhúng trang cũ), trang cũ gom vào Công cụ cũ", () => {
+  const app = doc("os/app.js");
+  const khu = app.slice(app.indexOf("const KHU = ["), app.indexOf("];", app.indexOf("const KHU = [")));
+  const muc = khu.split("\n").filter((l) => /^\s*\{ id: /.test(l));
+  assert.ok(muc.length <= 11, "thanh bên tối đa 11 mục chính, đang có " + muc.length);
+  for (const l of muc) assert.doesNotMatch(l, /nhung: /, "mục trên thanh bên phải là khu gốc: " + l.trim());
+  assert.match(khu, /id: "cu", ten: "Công cụ cũ", icon: "\w+", mod: "\.\/khu\/cong-cu-cu\.js"/);
+  assert.match(khu, /id: "code\/giao-viec", [^\n]*mod: "\.\/khu\/giao-viec\.js", xuong: "code"/);
+  assert.match(khu, /id: "code\/dieu-khien", [^\n]*mod: "\.\/khu\/luong\.js", xuong: "code"/);
+  // Đường dẫn cũ vẫn mở được: mọi trang từng có trên thanh bên vẫn có trong CU.
+  const cu = app.slice(app.indexOf("const CU = ["), app.indexOf("];", app.indexOf("const CU = [")));
+  for (const id of ["code/skill", "code/hop-thu", "phim/nhan-vat", "phim/xuong-cu", "doi/hieu-suat", "doi/noi-quy", "he/ket-noi", "he/dien-thoai", "he/cap-nhat"]) assert.ok(cu.includes(`id: "${id}"`), "mất đường dẫn cũ " + id);
+  for (const n of ["prototype.html", "dieukhien.html"]) assert.ok(cu.includes(`nhung: "${n}"`), "bản cũ " + n + " vẫn mở được từ Công cụ cũ");
+});
+
+test("OS-3: Tổng quan và Việc mở ngăn trượt tại chỗ thay cho chuyển sang trang Luồng", () => {
+  for (const f of ["os/khu/tong-quan.js", "os/khu/viec.js", "os/khu/luong.js", "os/khu/giao-viec.js"]) {
+    const m = doc(f);
+    assert.match(m, /ngan\.mo\(n\.dataset\.ngan, n/, f + " mở ngăn từ nút data-ngan");
+    assert.doesNotMatch(m, /href="#\/code\/dieu-khien">(Duyệt|Mở)/, f + " không còn chuyển trang để duyệt");
+    assert.doesNotMatch(m, /getElementById\("vung"\)/, f + " không gắn bộ nghe lên #vung");
+  }
+  const app = doc("os/app.js");
+  assert.match(app, /ngan\.dong\(\);/, "đổi khu thì đóng ngăn");
+  assert.match(app, /m\.mo\(khung, \{ kho, ctl, bao, ngan, congCuCu: CU \}\)/);
+  const ngan = doc("os/ngan.js");
+  assert.match(ngan, /showModal\(\)/, "ngăn là dialog modal: bàn phím ở yên trong ngăn, Esc đóng");
+  assert.match(ngan, /const dich = dung\(nguoiMo\) \? nguoiMo : /, "đóng ngăn trả tiêu điểm về nút đã mở");
+  assert.match(ngan, /!el\.disabled/, "nút mở đã bị khoá thì tìm nút khác của cùng việc, không để tiêu điểm rơi về đầu trang");
+});
+
+test("OS-3: mọi đường dẫn ctl mà ngăn trượt và hai khu mới gọi đều có trong ctl/main.js", () => {
+  const main = fs.readFileSync(path.join(__dirname, "..", "ctl", "main.js"), "utf8");
+  const can = [["GET", "/autopilot/:id"], ["POST", "/autopilot"], ["POST", "/autopilot/:id/answer"], ["POST", "/autopilot/:id/approve"], ["POST", "/autopilot/:id/reject"],
+    ["POST", "/autopilot/:id/stop"], ["POST", "/autopilot/:id/resume"], ["POST", "/autopilot/:id/push"],
+    ["GET", "/handoffs/:id"], ["POST", "/handoffs/:id/approve"], ["POST", "/handoffs/:id/reject"], ["POST", "/handoffs/:id/answer"],
+    ["GET", "/jobs/:id"], ["POST", "/jobs/:id/approve"], ["POST", "/jobs/:id/reject"], ["POST", "/jobs/:id/kill"], ["POST", "/kill-all"],
+    ["GET", "/ai/status"], ["GET", "/scan"], ["POST", "/scan/approve"], ["GET", "/github/repos"], ["POST", "/github/open"], ["GET", "/github/operations/:id"]];
+  for (const [m, p] of can) assert.ok(main.includes(`["${m}", "${p}"`), "ctl thiếu " + m + " " + p);
+  assert.ok(main.includes("/^\\/jobs\\/([^/]+)\\/log$/"), "ctl có /jobs/:id/log cho nhật ký lượt");
+  assert.match(fs.readFileSync(path.join(__dirname, "..", "lib", "ctlbridge.js"), "utf8"), /"x-next-offset", "x-size"/, "cầu nối chuyển tiếp X-Next-Offset và X-Size");
+});
+
+test("OS-3: nhãn chung đọc đúng câu hỏi của luồng và tên lượt", async () => {
+  const v = await import(require("node:url").pathToFileURL(path.join(PUB, "os", "viec-chung.js")).href);
+  assert.equal(v.cauHoi({ question: { question: "Chọn A hay B?", options: [] } }), "Chọn A hay B?");
+  assert.equal(v.cauHoi({ question: null }), "");
+  assert.equal(v.tenLenh({ agent: "CODEX_ASTRA_DEV" }), "Lượt của Sasuke (Astra)");
+  assert.equal(v.tenLenh({ agent: "CLAUDE_REPORTER" }), "Pain viết báo cáo");
+  assert.equal(v.soLuot({ steps: [{}, { quota: true }, {}] }), 2);
+  assert.ok(v.LUONG_SONG.has("waiting_quota") && v.LUONG_SONG.has("awaiting_scan") && !v.LUONG_SONG.has("approved"));
+  assert.equal(v.tenDuAn(String.raw`D:\Projects\abc`), "abc");
+  assert.equal(v.tenDuAn("/home/a/xyz"), "xyz");
+});
