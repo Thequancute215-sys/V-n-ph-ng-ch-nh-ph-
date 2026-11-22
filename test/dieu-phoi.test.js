@@ -52,7 +52,7 @@ test("bảng chọn + chèn cờ: Claude --model/--effort, Antigravity --model G
   assert.deepEqual(dp.apply(AG, d), ["agy", "--model", "gemini-3.8-flash-low", "-p", "{prompt}"]);
   const CX = ["codex", "exec", "--json", "{prompt}"];
   d = dp.decide({ role: "CODEX_ASTRA_DEV", argv: CX });
-  assert.equal(d.effort, "medium"); assert.deepEqual(dp.apply(CX, d), CX, "Codex: mức đi qua codexArgs");
+  assert.equal(d.effort, "high"); assert.deepEqual(dp.apply(CX, d), CX, "Codex: mức đi qua codexArgs");
   assert.equal(dp.decide({ role: "CODEX_ASTRA_DEV", argv: CX, explicitEffort: "max" }).effort, "max", "đội trưởng đặt rõ thì thắng");
   assert.equal(kindOf([process.execPath, "C:/x/claude.js"]), "claude");
   assert.equal(dp.decide({ role: "CLAUDE_AUDITOR", argv: ["python", "x.py"] }).kind, null);

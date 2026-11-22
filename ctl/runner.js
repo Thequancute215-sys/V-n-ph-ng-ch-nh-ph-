@@ -48,16 +48,17 @@ const CAPTAIN = `\n\nQUYỀN ĐỘI TRƯỞNG: bạn được phản biện Anti
   ` HỢP ĐỒNG (giao thức [8], [9]): dự án có API hay sự kiện mạng mà chưa có contract/api.json đạt \`node tools/kiem-hop-dong.js\` thì ghi blocker [HIGH] cho SOL_ARCHITECT_PLANNER và không PASS kiến trúc. Miễn hợp đồng ("Không có API") chỉ CEO duyệt, Claude không tự cho miễn; thấy dự án thật ra có API dù đã được miễn thì hỏi CEO bằng ask_ceo.` +
   DELETE_CLAUDE + ` ĐỐI CHIẾU GIẢI THÍCH: với mỗi lượt có "GIẢI THÍCH CỦA CÁC LƯỢT" trong việc giao, chạy git diff <base>..<head> của lượt đó và kiểm từng mục: da_lam có đúng với diff không, van_de/nguyên nhân gốc có thật trong code không, phuong_an_khac bị bỏ có thật sự kém hơn không. ` +
   `Câu trả lời của bạn (trước dòng JSON) phải có mục "VÌ SAO LÀM VẬY & PHƯƠNG ÁN KHÁC" cho CEO: mỗi thay đổi một dòng tóm lý do và kết luận KHỚP / KHÔNG KHỚP DIFF / CHƯA KIỂM CHỨNG kèm chỗ lệch (file:dòng). Giải thích không khớp diff hoặc bịa nguyên nhân là lỗi: ghi vào Vùng [5] và không nghiệm thu đạt.` +
-  ` Lượt kế tiếp là Sol (gpt-6.1-sol) hoặc Astra (gpt-6-astra) thì bạn được tự đặt mức suy luận, không cần hỏi CEO: thêm "effort":"high" | "xhigh" | "max" khi việc khó (kiến trúc phức tạp, lỗi khó tìm, bảo mật, sửa lại nhiều lần), "medium" để trở về mặc định. Chỉ nâng khi cần vì mức cao tốn hạn mức hơn.`;
+  ` Lượt kế tiếp là Sol (gpt-6.2-sol) hoặc Astra (gpt-6.2-astra) thì bạn được tự đặt mức suy luận, không cần hỏi CEO: thêm "effort":"xhigh" | "max" khi việc khó (kiến trúc phức tạp, lỗi khó tìm, bảo mật, sửa lại nhiều lần), "high" để trở về mặc định. Chỉ nâng khi cần vì mức cao tốn hạn mức hơn.`;
 
 // Lệnh mặc định: cờ của từng CLI cần kiểm chứng trên máy thật (phiên bản CLI thay đổi); sai thì sửa ở ctl-agents.json.
 const CLAUDE = ["claude", "-p", "{prompt}", "--output-format", "json", "--max-turns", "30", "--permission-mode", "acceptEdits",
   "--allowedTools", "Read", "Grep", "Glob", "Edit", "Write", "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git show:*)", "Bash(git pull --ff-only)", "Bash(npm test:*)", "Bash(node --test:*)"];
 const CODEX = ["codex", "exec", "--json", "--approve-for-me", "{prompt}"];
 // Codex có nhiều model (danh sách thật lấy từ codex app-server model/list): Sol lập kế hoạch/cố vấn, Astra viết code.
-// Mặc định mức suy luận medium; đội trưởng nâng cho từng lượt bằng trường "effort" trong bàn giao.
-const CODEX_MODEL = { SOL_ARCHITECT_PLANNER: "gpt-6.1-sol", SOL_ARCHITECT_ADVISOR: "gpt-6.1-sol", CODEX_ASTRA_DEV: "gpt-6-astra" };
-const DEFAULT_EFFORT = "medium";
+// CEO chọn 22/11/2026: Sol gpt-6.2-sol, Astra gpt-6.2-astra, mức suy luận mặc định high (cần Codex CLI ≥ 0.169: bản cũ hơn
+// bị máy chủ từ chối 6.2); đội trưởng nâng cho từng lượt bằng trường "effort" trong bàn giao.
+const CODEX_MODEL = { SOL_ARCHITECT_PLANNER: "gpt-6.2-sol", SOL_ARCHITECT_ADVISOR: "gpt-6.2-sol", CODEX_ASTRA_DEV: "gpt-6.2-astra" };
+const DEFAULT_EFFORT = "high";
 // Chèn -m <model> và -c model_reasoning_effort=<mức> ngay sau "exec". Lệnh tự cấu hình đã có -m thì giữ model đó;
 // mức do đội trưởng đặt luôn được ghi sau cùng nên thắng cấu hình sẵn.
 // chosen: CEO cố định model khác cho phòng (dieu-phoi.json) thì dùng model đó thay model mặc định của vai.
@@ -260,10 +261,9 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     let a = custom[role] || AGENTS[role].argv;
     // Vai phụ (soạn prompt): lấy phần chương trình (trước "exec" hoặc cờ đầu tiên) từ lệnh của vai chính đã cấu hình.
     const base = AGENTS[role].base && custom[AGENTS[role].base];
-    if (!custom[role] && Array.isArray(base)) {
-      const cut = base.findIndex((x, i) => i > 0 && (x === "exec" || x.startsWith("-")));
-      if (cut > 0) a = [...base.slice(0, cut), ...AGENTS[role].argv.slice(1)];
-    }
+    // Cắt bằng phanChuongTrinh: lệnh chạy qua node.exe --preserve-symlinks … codex.js giữ đủ cờ node và file script
+    // (cắt ở dấu "-" đầu tiên thì chat/soạn prompt của Codex chỉ còn "node.exe exec …", lỗi gặp thật 22/11/2026).
+    if (!custom[role] && Array.isArray(base) && base.length > 1) a = [...phanChuongTrinh(base), ...AGENTS[role].argv.slice(1)];
     if (!Array.isArray(a) || !a.every((x) => typeof x === "string") || !a.includes("{prompt}")) throw err("BAD_CONFIG", "ctl-agents.json: lệnh của " + role + " phải là mảng chuỗi có \"{prompt}\"");
     return a;
   }

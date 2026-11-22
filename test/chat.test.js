@@ -47,12 +47,26 @@ test("lệnh chat mặc định luôn chỉ đọc kể cả khi bật toàn quy
   assert.deepEqual(claude.slice(claude.indexOf("--permission-mode"), claude.indexOf("--permission-mode") + 2), ["--permission-mode", "plan"]);
   assert.ok(claude.includes("Read,Grep,Glob"));
   for (const a of [sol, astra]) assert.deepEqual(a.slice(a.indexOf("--sandbox"), a.indexOf("--sandbox") + 2), ["--sandbox", "read-only"]);
-  assert.equal(sol[sol.indexOf("-m") + 1], "gpt-6.1-sol");
-  assert.equal(astra[astra.indexOf("-m") + 1], "gpt-6-astra");
+  assert.equal(sol[sol.indexOf("-m") + 1], "gpt-6.2-sol");
+  assert.equal(astra[astra.indexOf("-m") + 1], "gpt-6.2-astra");
   assert.deepEqual(agy.slice(agy.indexOf("--mode"), agy.indexOf("--mode") + 2), ["--mode", "plan"]);
   assert.match(agy[agy.indexOf("--settings") + 1], /Get-ChildItem/, "Antigravity được lệnh chỉ đọc để không bị chặn trả lời rỗng");
   for (const a of [claude, sol, astra, agy]) assert.ok(!a.some((x) => /dangerously/.test(x)), a.join(" "));
   assert.throws(() => ctl.runner.chatArgv("pain"), /Không có AI để chat/);
+});
+
+// Lỗi gặp thật 22/11/2026: máy chạy Codex qua `node --preserve-symlinks … codex.js` (ctl-agents.json); vai phụ (chat, soạn prompt)
+// cắt lệnh ở dấu "-" đầu tiên nên chỉ còn "node.exe exec …" và Node báo không tìm thấy module.
+test("chat/soạn prompt của Codex giữ đủ cờ node và file codex.js khi lệnh chính chạy qua node.exe", (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vp-chat-node-"));
+  const prog = [process.execPath, "--preserve-symlinks", "--preserve-symlinks-main", "C:\\cx\\bin\\codex.js"];
+  fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify({ CODEX_ASTRA_DEV: [...prog, "exec", "--json", "--approve-for-me", "{prompt}"] }));
+  const ctl = createCtl({ dir });
+  t.after(async () => { await ctl.close(); fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); });
+  const sol = ctl.runner.chatArgv("sol");
+  assert.deepEqual(sol.slice(0, 5), [...prog, "exec"]);
+  assert.deepEqual(sol.slice(sol.indexOf("--sandbox"), sol.indexOf("--sandbox") + 2), ["--sandbox", "read-only"]);
+  assert.ok(!sol.includes("--approve-for-me"), "chat không mượn cờ của lượt làm việc");
 });
 
 // CLI giả: Claude/Codex/agy trả lời theo người được hỏi; Itachi được nhờ viết code thì chỉ sang Sasuke.

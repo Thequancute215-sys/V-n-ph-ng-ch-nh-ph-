@@ -218,7 +218,7 @@ Rồi chọn cờ thật của CLI:
 | | nhẹ | vừa | nặng |
 |---|---|---|---|
 | Claude (`--model`, `--effort`) | sonnet · low | sonnet · high | opus · high |
-| Codex (`model_reasoning_effort`, model giữ theo vai) | low | medium | xhigh |
+| Codex (`model_reasoning_effort`, model giữ theo vai: Sol gpt-6.2-sol, Astra gpt-6.2-astra) | low | high | xhigh |
 | Antigravity (`--model`) | gemini-3.8-flash-low | gemini-3.8-flash-medium | gemini-3.8-flash-high |
 
 - **Hạn mức:** AI còn ≤15% thì hạ một bậc, ≤5% thì về mức nhẹ nhất.

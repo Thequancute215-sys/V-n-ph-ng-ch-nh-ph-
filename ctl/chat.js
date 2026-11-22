@@ -15,7 +15,7 @@ const PEOPLE = {
     scope: "điều phối chung: dự án đang ở đâu, đang tới lượt ai, việc nên giao cho ai, tóm tắt tiến độ từ agent.md và lịch sử git" },
   hinata: { name: "Hinata", room: "Phòng Đặc tả & Design System", ai: "antigravity", role: "SPEC_ARCHITECT (Antigravity)",
     scope: "đặc tả sản phẩm, phạm vi MVP, luồng người dùng, thiết kế giao diện/trải nghiệm, Design Tokens, 5 trạng thái giao diện (Vùng [2] của agent.md)" },
-  itachi: { name: "Itachi", room: "Phòng Kiến trúc", ai: "sol", role: "SOL_ARCHITECT (GPT 6.1 Sol)",
+  itachi: { name: "Itachi", room: "Phòng Kiến trúc", ai: "sol", role: "SOL_ARCHITECT (GPT 6.2 Sol)",
     scope: "kiến trúc, chọn công nghệ, cây thư mục, schema DB, API contract, chia Phase (Vùng [1], [3]); nhận xét code có khớp kế hoạch không" },
   sasuke: { name: "Sasuke", room: "Phòng Lập trình", ai: "astra", role: "CODEX_ASTRA_DEV (Codex Astra)",
     scope: "viết và sửa code backend, API, CSDL, AI Agent; giải thích code đang có, lỗi khi chạy, kiểm thử" },
