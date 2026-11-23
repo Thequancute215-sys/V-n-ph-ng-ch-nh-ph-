@@ -4,8 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Nội quy &amp; đội ngũ</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#000;--panel:#070707;--panel2:#0b0b0b;--line:#1a1a1a;--line2:#242424;--text:#f2f2f2;--mute:#a6a6a6;--mute2:#6b6b6b;--gold:#ecc970;--ok:#7ccf9b;--warn:#ecc970;--bad:#e8a39b;--mono:"JetBrains Mono",ui-monospace,monospace}
 *{box-sizing:border-box}
@@ -86,6 +84,7 @@ function renderRules() {
   const toc = $("toc"); toc.textContent = "";
   const items = secs.map((s, i) => ({ key: "r" + i, title: s.title || "Phần đầu", body: s.body, at: s.changedAt, isNew: isNew(s) }));
   if (D.noiQuyGon) items.push({ key: "gon", title: "Bản gọn", body: D.noiQuyGon.body, draft: true, at: D.noiQuyGon.at });
+  if (!items.length) { $("rule-title").textContent = "Nội quy"; $("rule-age").textContent = ""; $("rule").textContent = "Chưa có mục nội quy nào."; return; }
   if (!sel || !items.some((x) => x.key === sel)) sel = (items.find((x) => x.isNew) || items[0]).key;
   for (const it of items) {
     const a = h("a", it.key === sel ? "sel" : "", it.title);
@@ -118,10 +117,15 @@ function renderTeam() {
   if (D.camCo) $("camco").innerHTML = MD.render(D.camCo.body);
 }
 const TABS = [["bai", "Bài học"], ["sau", "Việc để sau"], ["tu", "Từ điển"], ["spec", "SPEC"]];
-function renderBook() {
-  const tabs = $("tabs"); tabs.textContent = "";
-  for (const [k, lab] of TABS) { const b = h("button", k === tab ? "on" : "", lab); b.onclick = () => { tab = k; renderBook(); }; tabs.appendChild(b); }
+let lastBookSig = "";
+function renderBook(force = false) {
+  if (!D) return;
   const q = $("q").value.trim().toLowerCase(), hit = (s) => !q || String(s).toLowerCase().includes(q);
+  const sig = JSON.stringify([tab, q, D.baiHoc?.at, D.baiHoc?.rows?.length, D.viecLamSau?.at, D.viecLamSau?.sections?.length, D.tuDien?.at, D.tuDien?.rows?.length, (D.specs || []).length]);
+  if (!force && sig === lastBookSig) return;
+  lastBookSig = sig;
+  const tabs = $("tabs"); tabs.textContent = "";
+  for (const [k, lab] of TABS) { const b = h("button", k === tab ? "on" : "", lab); b.onclick = () => { tab = k; renderBook(true); }; tabs.appendChild(b); }
   const box = $("book"); box.textContent = "";
   if (tab === "bai" && D.baiHoc) {
     const H = D.baiHoc.head; $("book-meta").textContent = `${D.baiHoc.rows.length} bài · sửa ${ago(D.baiHoc.at)} trước`;
@@ -151,11 +155,12 @@ function renderBook() {
     for (const s of D.specs) { if (!hit(s.title + s.file)) continue; const c = h("div", "card"); c.append(h("b", "", s.title), h("small", "", `${s.file} · sửa ${ago(s.at)} trước`)); box.appendChild(c); }
   }
 }
-$("q").addEventListener("input", renderBook);
+$("q").addEventListener("input", () => renderBook(true));
 function render(d) { D = d; renderRules(); renderTeam(); renderBook(); }
 // Hỏi máy chủ 5 giây/lần, không giữ kết nối mở: trình duyệt chỉ cho 6 kết nối tới cùng localhost, văn phòng 3D đang mở cả 3 bảng.
 async function load() { try { const r = await fetch("docs", { cache: "no-store" }); render(await r.json()); $("live").className = "live"; } catch { $("live").className = "live off"; } }
-load(); setInterval(load, 5000);
+load(); setInterval(() => { if (!document.hidden) load(); }, 5000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
 setInterval(() => { $("clock").textContent = new Date().toLocaleTimeString("vi-VN", { hour12: false }); }, 1000);
 </script>
 </body>

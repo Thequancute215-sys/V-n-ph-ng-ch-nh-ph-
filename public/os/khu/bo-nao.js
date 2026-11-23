@@ -85,7 +85,7 @@ export async function mo(vung, { ctl, bao }) {
   // File mới: chọn ngăn + gõ tên thường (không bắt gõ đường dẫn). Tên được đổi thành tên file an toàn: bỏ dấu, chữ thường, gạch nối.
   function fileMoi() {
     if (!boDangSua()) return;
-    dang = null; veCay();
+    dang = null; veCay(); taiLs();
     $("hFile").textContent = "Ghi chú mới"; $("maFile").textContent = "";
     $("thanFile").innerHTML = `<form id="fMoi" class="bieu-mau" novalidate>
       <label>Ngăn<select class="o" name="ngan">${Object.entries(TEN_THU_MUC).map(([k, t]) => `<option value="${k}">${esc(t)}</option>`).join("")}</select></label>
@@ -117,6 +117,7 @@ export async function mo(vung, { ctl, bao }) {
     } catch (e) { if (conSong) $("ls").innerHTML = loi(e.message, false); }
   }
   async function xemBan(commit) {
+    if (!dang || !dang.p) return;
     try { const d = await ctl("/bo-nao/ban?p=" + encodeURIComponent(dang.p) + "&commit=" + encodeURIComponent(commit));
       const md = window.MD ? window.MD.render(d.noiDung || "") : `<pre class="van-ban">${esc(d.noiDung || "")}</pre>`;
       $("thanFile").innerHTML = `<p class="canh-bao">Đang xem bản ${esc(commit)} (chỉ đọc).</p><div class="md-xem">${md}</div><div class="hang"><button type="button" class="nut" id="nutVeBanMoi">Về bản hiện tại</button></div>`; }

@@ -151,7 +151,7 @@ pre { white-space: pre-wrap; background: #f6f5f2; padding: 10px; font: 13px/1.5 
       <div class="grid"><div>${p.loaiRepo ? `<h3>Đây là</h3><p>${esc(p.loaiRepo)}</p>` : ""}<h3>Làm được gì</h3><p>${esc(p.tomTat)}</p><h3>Văn phòng dùng vào việc gì</h3><p>${esc(p.cachDung)}</p>
         ${p.phong.length ? `<h3>Phòng được lợi</h3><p>${p.phong.map((x) => esc(PHONG[x] || x)).join(", ")}</p>` : ""}
         ${p.trungVoi ? `<h3>Trùng với thứ đang có</h3><p>${esc(p.trungVoi)}</p>` : ""}</div>
-      <div><h3>Rủi ro</h3>${p.ruiRo.length ? `<ul class="risk">${p.ruiRo.map((r) => `<li class="${r.muc}"><b>${{ cao: "cao", vua: "vừa", thap: "thấp" }[r.muc]}</b>${esc(r.noiDung)}</li>`).join("")}</ul>` : "<p>Đội trưởng không thấy rủi ro đáng kể.</p>"}
+      <div><h3>Rủi ro</h3>${p.ruiRo.length ? `<ul class="risk">${p.ruiRo.map((r) => { const mc = ["cao", "vua", "thap"].includes(r.muc) ? r.muc : ""; return `<li class="${mc}"><b>${esc({ cao: "cao", vua: "vừa", thap: "thấp" }[r.muc] || r.muc || "")}</b>${esc(r.noiDung)}</li>`; }).join("")}</ul>` : "<p>Đội trưởng không thấy rủi ro đáng kể.</p>"}
         ${p.guiRaNgoai ? `<h3>Gửi dữ liệu ra ngoài</h3><p>${esc(p.guiRaNgoai)}</p>` : ""}${p.canKhoa ? `<p style="color:var(--warn)"><b>Cần khóa API hoặc tài khoản riêng.</b></p>` : ""}</div></div>
       ${p.giaiThich ? `<details><summary>Đội trưởng giải thích đầy đủ</summary><pre>${esc(p.giaiThich)}</pre></details>` : ""}`;
   }
@@ -193,7 +193,7 @@ pre { white-space: pre-wrap; background: #f6f5f2; padding: 10px; font: 13px/1.5 
     else if (d.trangThai === "da-cai" && d.mcpId) body = `<p>Đã cài máy chủ MCP <b class="mono">${esc(d.mcpId)}</b> (${esc(d.npm && d.npm.goi)}@${esc(d.npm && d.npm.ban)}), bật cho: ${esc((d.phongBat || []).map((r) => PHONG[r] || r).join(", ") || "chưa phòng nào")}. Đổi phòng ở trang <a href="ket-noi.html">Kết nối</a>.</p>`;
     else if (d.trangThai === "da-cai") {
       const kq = d.ketQuaCai || [], ok = kq.filter((x) => x.kq !== "trung");
-      body = `<p>Đã thêm vào bộ skill (nhóm <b>${esc(d.nhom)}</b>): ${esc(d.dungCho)}</p><p class="note">${ok.length} lần cài cho ${[...new Set(ok.map((x) => AI[x.ai] || x.ai))].join(", ") || "—"}.` +
+      body = `<p>Đã thêm vào bộ skill (nhóm <b>${esc(d.nhom)}</b>): ${esc(d.dungCho)}</p><p class="note">${ok.length} lần cài cho ${esc([...new Set(ok.map((x) => AI[x.ai] || x.ai))].join(", ") || "—")}.` +
         (kq.some((x) => x.kq === "trung") ? ` Bỏ qua vì trùng tên skill anh tự cài: ${esc([...new Set(kq.filter((x) => x.kq === "trung").map((x) => x.ten))].join(", "))}.` : "") + ` Lượt làm việc tiếp theo của đội sẽ thấy skill này.</p>`;
     } else if (d.trangThai === "dang-cai") body = `<p><span class="spin" aria-hidden="true"></span>Đang cài…</p>`;
     else body = `<p class="note">Anh đã chọn không dùng${d.phanTich ? " (đội trưởng đề nghị: " + esc(DE_NGHI[d.phanTich.deNghi] || d.phanTich.deNghi) + ")" : ""}.</p>`;
@@ -202,7 +202,7 @@ pre { white-space: pre-wrap; background: #f6f5f2; padding: 10px; font: 13px/1.5 
   }
   function thamKhaoHtml(d) {
     const p = d.phanTich || {};
-    return `<details class="card"><summary style="padding:10px 14px"><a href="https://github.com/${esc(d.repo)}" target="_blank" rel="noopener noreferrer">${esc(d.repo)}</a> · ${esc(p.loaiRepo || LOAI[d.loai] || "")} — ${esc(p.tomTat).slice(0, 160)}</summary>
+    return `<details class="card"><summary style="padding:10px 14px"><a href="https://github.com/${esc(d.repo)}" target="_blank" rel="noopener noreferrer">${esc(d.repo)}</a> · ${esc(p.loaiRepo || LOAI[d.loai] || "")} — ${esc(String(p.tomTat || "").slice(0, 160))}</summary>
       <div class="body">${phanTichHtml(p)}<p class="note">Lưu lúc ${esc(new Date(d.capNhat || d.luc).toLocaleString("vi-VN"))} · commit <span class="mono">${esc(String(d.commit || "").slice(0, 7))}</span></p></div></details>`;
   }
   function render() {
@@ -214,7 +214,7 @@ pre { white-space: pre-wrap; background: #f6f5f2; padding: 10px; font: 13px/1.5 
     for (const r of data.skill.nguon) (theo[r.repo] = theo[r.repo] || []).push(r);
     $("kiemNote").textContent = data.skill.daCai ? "Máy đã cài bộ skill lúc " + new Date(data.skill.luc).toLocaleString("vi-VN") + "." : "Máy chưa cài bộ skill mặc định: chạy `node tools/cai-skill.js cai` trong thư mục văn phòng.";
     $("table").innerHTML = `<div class="trow head"><span>NGUỒN</span><span>NHÓM</span><span>DÙNG CHO</span><span>ĐÃ CÀI</span></div>` + data.danhMuc.map((n) => {
-      const st = (theo[n.repo] || []).map((r) => `<span class="st ${r.trangThai}" title="${esc(AI[r.ai])}: ${{ du: "đã cài đúng bản", cu: "bản cũ", thieu: "chưa cài" }[r.trangThai]}">${{ du: "✓", cu: "↻", thieu: "✗" }[r.trangThai]} ${esc(AI[r.ai])}</span>`).join(" · ");
+      const st = (theo[n.repo] || []).map((r) => { const tt = ["du", "cu", "thieu"].includes(r.trangThai) ? r.trangThai : ""; const tenAi = AI[r.ai] || r.ai; return `<span class="st ${tt}" title="${esc(tenAi)}: ${esc({ du: "đã cài đúng bản", cu: "bản cũ", thieu: "chưa cài" }[r.trangThai] || r.trangThai || "")}">${esc({ du: "✓", cu: "↻", thieu: "✗" }[r.trangThai] || "?")} ${esc(tenAi)}</span>`; }).join(" · ");
       return `<div class="trow"><span><a href="https://github.com/${esc(n.repo)}/tree/${esc(n.commit)}" target="_blank" rel="noopener noreferrer">${esc(n.repo)}</a><br><span class="mono">${n.ceoThem ? "anh duyệt thêm " + esc(new Date(n.them.luc).toLocaleDateString("vi-VN")) : "bộ mặc định"} · ${esc(n.giayPhep || "")}</span></span>
         <span><b>${esc(n.nhom)}</b></span><span>${esc(n.dungCho)}</span><span class="mono">${st}</span></div>`;
     }).join("");

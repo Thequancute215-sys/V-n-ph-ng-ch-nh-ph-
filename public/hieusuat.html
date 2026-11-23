@@ -4,8 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Đánh giá nhân sự AI</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#000;--panel:#070707;--panel2:#0b0b0b;--line:#1a1a1a;--line2:#242424;
@@ -156,26 +154,37 @@ function tok(n) { if (!n) return "0"; if (n >= 1e9) return vn(n / 1e9, 2) + " t�
 const ST = { active: "đang làm", idle: "rảnh", away: "nghỉ lâu", offline: "chưa thấy nhật ký" };
 let data = null, sel = null;
 
-// tooltip dùng chung: phần tử có data-tip
+// tooltip dùng chung: dùng DOM thuần (textContent + ô màu), không chèn HTML thô qua innerHTML
 const tip = $("tip");
+const tipMap = new WeakMap();
+const setTip = (el, lines) => { el.setAttribute("data-tip", "1"); tipMap.set(el, Array.isArray(lines) ? lines : [{ text: String(lines) }]); };
 document.addEventListener("mousemove", (e) => {
   const t = e.target.closest && e.target.closest("[data-tip]");
-  if (!t) { tip.style.display = "none"; return; }
-  tip.innerHTML = t.getAttribute("data-tip"); tip.style.display = "block";
+  const lines = t && tipMap.get(t);
+  if (!lines) { tip.style.display = "none"; return; }
+  tip.textContent = "";
+  lines.forEach((ln, idx) => {
+    if (idx > 0) tip.appendChild(document.createElement("br"));
+    if (typeof ln === "string") { tip.append(ln); return; }
+    if (ln.color) { const sw = document.createElement("i"); sw.style.background = ln.color; tip.appendChild(sw); }
+    if (ln.pre) tip.append(ln.pre);
+    if (ln.b != null) tip.appendChild(h("b", "", String(ln.b)));
+    if (ln.text != null) tip.append(String(ln.text));
+  });
+  tip.style.display = "block";
   const w = tip.offsetWidth; tip.style.left = Math.min(innerWidth - w - 8, e.clientX + 14) + "px"; tip.style.top = (e.clientY + 14) + "px";
 });
-const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
 function kpis(d) {
   const k = $("kpis"); k.textContent = "";
   const T = d.team, t24 = T.t24.codex + T.t24.claude, t7 = T.t7.codex + T.t7.claude;
   const fresh24 = d.rows.reduce((s, r) => s + r.t24.i + r.t24.o, 0);
-  const tile = (lab, val, sub, split) => { const e = h("div", "kpi"); e.append(h("small", "", lab), h("b", "mono", val)); if (sub) e.appendChild(h("span", "", sub)); if (split) { const b = h("div", "split"); for (const [n, c, tt] of split) { const i = h("i"); i.style.flex = String(Math.max(n, 0.0001)); i.style.background = c; i.setAttribute("data-tip", tt); b.appendChild(i); } e.appendChild(b); } k.appendChild(e); };
-  tile("Token 24 giờ", tok(t24), `Codex ${tok(T.t24.codex)} · Claude ${tok(T.t24.claude)}`, [[T.t24.codex, "var(--codex)", `<i style="background:var(--codex)"></i>Codex ${tok(T.t24.codex)}`], [T.t24.claude, "var(--claude)", `<i style="background:var(--claude)"></i>Claude ${tok(T.t24.claude)}`]]);
+  const tile = (lab, val, sub, split) => { const e = h("div", "kpi"); e.append(h("small", "", lab), h("b", "mono", val)); if (sub) e.appendChild(h("span", "", sub)); if (split) { const b = h("div", "split"); for (const [n, c, tt] of split) { const i = h("i"); i.style.flex = String(Math.max(n, 0.0001)); i.style.background = c; setTip(i, tt); b.appendChild(i); } e.appendChild(b); } k.appendChild(e); };
+  tile("Token 24 giờ", tok(t24), `Codex ${tok(T.t24.codex)} · Claude ${tok(T.t24.claude)}`, [[T.t24.codex, "var(--codex)", [{ color: "var(--codex)", text: `Codex ${tok(T.t24.codex)}` }]], [T.t24.claude, "var(--claude)", [{ color: "var(--claude)", text: `Claude ${tok(T.t24.claude)}` }]]]);
   tile("Token mới 24 giờ", tok(fresh24), `${t24 ? Math.round((fresh24 / t24) * 100) : 0}% tổng — phần tính đủ giá`);
   tile("Token 7 ngày", tok(t7), `đọc lại từ đệm ${T.all7 ? Math.round((T.c7 / T.all7) * 100) : 0}%`);
   const q = d.quota;
-  tile("Quỹ Codex tuần", q.usedPct != null ? q.usedPct + "%" : "–", q.resetsAt ? `đặt lại ${new Date(q.resetsAt).toLocaleString("vi-VN", { weekday: "short", hour: "2-digit", minute: "2-digit" })}` : "chưa đọc được", q.usedPct != null ? [[q.usedPct, q.usedPct > 80 ? "var(--bad)" : q.usedPct > 60 ? "var(--warn)" : "var(--ok)", `Đã dùng ${q.usedPct}% quỹ tuần`], [100 - q.usedPct, "#1c1c1c", `Còn ${100 - q.usedPct}%`]] : null);
+  tile("Quỹ Codex tuần", q.usedPct != null ? q.usedPct + "%" : "–", q.resetsAt ? `đặt lại ${new Date(q.resetsAt).toLocaleString("vi-VN", { weekday: "short", hour: "2-digit", minute: "2-digit" })}` : "chưa đọc được", q.usedPct != null ? [[q.usedPct, q.usedPct > 80 ? "var(--bad)" : q.usedPct > 60 ? "var(--warn)" : "var(--ok)", [`Đã dùng ${q.usedPct}% quỹ tuần`]], [100 - q.usedPct, "#1c1c1c", [`Còn ${100 - q.usedPct}%`]]] : null);
   const nNew = d.rows.filter((r) => r.isNew).length;
   tile("Nhân sự AI", String(d.rows.length), `${d.rows.filter((r) => r.status === "active").length} đang làm${nNew ? ` · ${nNew} người mới` : ""}`);
   const g = (x) => d.rows.filter((r) => r.score.grade === x).length;
@@ -196,7 +205,7 @@ function bars(svg, series, labelOf, every) {
     if (hC > 0) s$("rect", { x: x0, y: base - hC, width: bw, height: hC, fill: PCOL.codex, rx: hL > 0 ? 0 : Math.min(3, hC / 2) }, svg);
     if (hL > 0) s$("rect", { x: x0, y: base - hC - hL - (hC > 0 ? 2 : 0), width: bw, height: hL, fill: PCOL.claude, rx: Math.min(3, hL / 2) }, svg);
     const hit = s$("rect", { x: L + slot * i, y: Tp, width: slot, height: Hh - Tp - B, fill: "transparent" }, svg);
-    hit.setAttribute("data-tip", `<b>${labelOf(x)}</b><br><i style="background:${PCOL.codex}"></i>Codex ${tok(x.codex)}<br><i style="background:${PCOL.claude}"></i>Claude ${tok(x.claude)}<br>Tổng ${tok(x.codex + x.claude)}`);
+    setTip(hit, [{ b: labelOf(x) }, { color: PCOL.codex, text: `Codex ${tok(x.codex)}` }, { color: PCOL.claude, text: `Claude ${tok(x.claude)}` }, `Tổng ${tok(x.codex + x.claude)}`]);
     if (i % every === 0 || i === n - 1) { const t = s$("text", { x: cx, y: Hh - 6, "text-anchor": "middle" }, svg); t.textContent = labelOf(x, true); }
   });
 }
@@ -219,18 +228,18 @@ function table(d) {
     who.append(dot, nm); w.appendChild(who); tr.appendChild(w);
     const g = h("td", "c-grade"); g.appendChild(h("span", "grade g-" + (r.score.grade === "–" ? "x" : r.score.grade), r.score.grade)); tr.appendChild(g);
     const sc = h("td", "c-score"); const sw = h("div", "score"); const sb = h("div", "sbar");
-    for (const [k, lab, c, mx] of PART) { const v = r.score.parts[k]; if (!v) continue; const seg = h("i"); seg.style.width = v + "%"; seg.style.background = `var(${c})`; seg.setAttribute("data-tip", `<i style="background:var(${c})"></i>${lab}: <b>${v}</b>/${mx}`); sb.appendChild(seg); }
+    for (const [k, lab, c, mx] of PART) { const v = r.score.parts[k]; if (!v) continue; const seg = h("i"); seg.style.width = v + "%"; seg.style.background = `var(${c})`; setTip(seg, [{ color: `var(${c})`, pre: `${lab}: `, b: String(v), text: `/${mx}` }]); sb.appendChild(seg); }
     sw.append(sb, h("span", "mono st", String(r.score.total))); sc.appendChild(sw); tr.appendChild(sc);
     const td = (txt, cls = "") => { const e = h("td", "n mono hide-m " + cls, txt); tr.appendChild(e); return e; };
     td(vn(r.hr24) + " h");
-    td(String(r.done.d24)).setAttribute("data-tip", `${r.done.d24} lượt việc xong trong 24 giờ, ${r.done.d7} lượt trong 7 ngày`);
-    td(r.tool.n ? `${r.tool.err}/${r.tool.n}` : "–").setAttribute("data-tip", r.tool.n ? `${r.tool.err} lần lỗi trên ${r.tool.n} lệnh/công cụ trong 24 giờ` : "Chưa chạy lệnh nào trong 24 giờ");
-    td(r.dev.turns ? `${r.dev.ok} / ${r.dev.turns}` : "–").setAttribute("data-tip", r.dev.turns ? `${r.dev.ok} lượt đạt, ${r.dev.fail} lượt chưa đạt` : "Chưa có lượt DEV trong 7 ngày");
-    td(`${r.msg.sent} ↑ ${r.msg.recv} ↓`).setAttribute("data-tip", `Gửi ${r.msg.sent} tin, nhận ${r.msg.recv} tin trong 24 giờ`);
-    td(tok(r.t24.t)).setAttribute("data-tip", `Mới ${tok(r.t24.i + r.t24.o)} (vào ${tok(r.t24.i)}, ra ${tok(r.t24.o)})<br>Đọc lại từ đệm ${tok(r.t24.c)}`);
+    setTip(td(String(r.done.d24)), `${r.done.d24} lượt việc xong trong 24 giờ, ${r.done.d7} lượt trong 7 ngày`);
+    setTip(td(r.tool.n ? `${r.tool.err}/${r.tool.n}` : "–"), r.tool.n ? `${r.tool.err} lần lỗi trên ${r.tool.n} lệnh/công cụ trong 24 giờ` : "Chưa chạy lệnh nào trong 24 giờ");
+    setTip(td(r.dev.turns ? `${r.dev.ok} / ${r.dev.turns}` : "–"), r.dev.turns ? `${r.dev.ok} lượt đạt, ${r.dev.fail} lượt chưa đạt` : "Chưa có lượt DEV trong 7 ngày");
+    setTip(td(`${r.msg.sent} ↑ ${r.msg.recv} ↓`), `Gửi ${r.msg.sent} tin, nhận ${r.msg.recv} tin trong 24 giờ`);
+    setTip(td(tok(r.t24.t)), [`Mới ${tok(r.t24.i + r.t24.o)} (vào ${tok(r.t24.i)}, ra ${tok(r.t24.o)})`, `Đọc lại từ đệm ${tok(r.t24.c)}`]);
     td(r.perHour ? tok(r.perHour) : "–");
     td(r.cache7 != null ? r.cache7 + "%" : "–");
-    const sp = h("td", "hide-m"); const svg = spark(r.hourly, PCOL[r.platform] || "#888"); svg.setAttribute("data-tip", `Token theo giờ, 24 giờ qua · cao nhất ${tok(Math.max(...r.hourly))}/giờ`); sp.appendChild(svg); tr.appendChild(sp);
+    const sp = h("td", "hide-m"); const svg = spark(r.hourly, PCOL[r.platform] || "#888"); setTip(svg, `Token theo giờ, 24 giờ qua · cao nhất ${tok(Math.max(...r.hourly))}/giờ`); sp.appendChild(svg); tr.appendChild(sp);
     const stt = r.flag === "blocked" ? ["blocked", "bị chặn"] : [r.status, ST[r.status] || r.status];
     tr.appendChild(h("td", "hide-m"));
     tr.lastChild.appendChild(h("span", "st " + stt[0], stt[1]));

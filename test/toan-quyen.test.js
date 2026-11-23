@@ -10,7 +10,7 @@ const { execFileSync } = require("node:child_process");
 const { createCtl } = require("../ctl/main");
 const { createAutopilot } = require("../ctl/autopilot");
 const { fullAccessArgs, FULL_ROLES } = require("../ctl/runner");
-const { scan, scanText, scanDeps } = require("../ctl/ra-soat");
+const { scan, scanText, scanDeps, createScanner } = require("../ctl/ra-soat");
 const { checkHandoff } = require("../ctl/handoff");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const G = [{ van_de: "Vấn đề của lượt thử nghiệm", da_lam: "Đã làm phần việc thử nghiệm", vi_sao: "Vì đây là CLI giả dùng cho test", phuong_an_khac: [] }];
@@ -26,6 +26,25 @@ test("toàn quyền: đổi đúng cờ của từng CLI, kể cả lệnh cấu
   assert.deepEqual(fullAccessArgs(["node", "fake.cjs", "{prompt}"]), ["node", "fake.cjs", "{prompt}"], "chương trình lạ giữ nguyên");
   for (const r of ["CLAUDE_REPORTER", "CLAUDE_WEB_PROMPT", "CODEX_WEB_PROMPT", "AGY_WEB_PROMPT"]) assert.equal(FULL_ROLES.has(r), false, r + " chỉ đọc");
   for (const r of ["SPEC_ARCHITECT", "SOL_ARCHITECT_PLANNER", "CODEX_ASTRA_DEV", "CLAUDE_AUDITOR"]) assert.ok(FULL_ROLES.has(r));
+});
+
+test("không duyệt Toàn quyền khi phần rà soát chưa hoàn tất", (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "vp-ra-soat-"));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const project = path.join(root, "project");
+  fs.mkdirSync(project);
+  const scanner = createScanner({ dir: root, audit: { log() {} } });
+  fs.writeFileSync(path.join(project, "package.json"), "{");
+  assert.equal(scanner.status(project).truncated, true);
+  fs.writeFileSync(path.join(project, "package.json"), "{}");
+  fs.writeFileSync(path.join(project, "README.md"), "x".repeat(1024 * 1024 + 1));
+  const status = scanner.status(project);
+  assert.equal(status.approved, false);
+  assert.equal(status.truncated, true);
+  assert.throws(() => scanner.require(project), { code: "NEEDS_SCAN_APPROVAL" });
+  assert.throws(() => scanner.approve(project, status.fingerprint), { code: "NEEDS_SCAN_APPROVAL" });
+  fs.writeFileSync(path.join(project, "README.md"), "Dữ liệu kiểm thử.");
+  assert.equal(scanner.require(project).approved, true);
 });
 
 test("rà file .md: bắt câu nhắm vào AI, tải-và-chạy, phá hoại, đụng file khóa, gửi ra ngoài, chỉ dẫn giấu, ký tự ẩn; không báo nhầm câu thường", () => {

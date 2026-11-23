@@ -30,21 +30,29 @@ const COMMENT = /<!--([\s\S]*?)-->/g;
 const COMMENT_AI = /\b(AI|LLM|assistant|agent|claude|codex|gpt|gemini|copilot|instruction|prompt|chỉ dẫn|hãy|must|ignore|execute|run)\b/i;
 
 function listFiles(root) {
-  const out = [];
-  const walk = (dir, depth) => {
-    if (out.length >= MAX_FILES || depth > 8) return;
-    let items = [];
-    try { items = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
-    for (const d of items) {
-      if (out.length >= MAX_FILES) return;
-      const full = path.join(dir, d.name);
-      if (d.isSymbolicLink()) continue;
-      if (d.isDirectory()) { if (!SKIP_DIRS.has(d.name)) walk(full, depth + 1); }
-      else if (TEXT_FILE.test(d.name) && !(dir === root && d.name === "agent.md")) out.push(full);   // agent.md là sổ của chính văn phòng
+  const files = [];
+  let truncated = false;
+  function walk(dir, depth) {
+    if (depth > 8) { truncated = true; return; }
+    let items;
+    try { items = fs.readdirSync(dir, { withFileTypes: true }); }
+    catch { truncated = true; return; }
+    for (const entry of items) {
+      if (entry.isSymbolicLink()) {
+        if (TEXT_FILE.test(entry.name)) truncated = true;
+        continue;
+      }
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (!SKIP_DIRS.has(entry.name)) walk(full, depth + 1);
+      } else if (entry.isFile() && TEXT_FILE.test(entry.name) && !(dir === root && entry.name === "agent.md")) {
+        if (files.length >= MAX_FILES) { truncated = true; return; }
+        files.push(full);
+      }
     }
-  };
+  }
   walk(root, 0);
-  return out;
+  return { files, truncated };
 }
 
 function scanText(text, rel) {
@@ -87,31 +95,41 @@ const RISKY_SCRIPT = /\b(curl|wget|Invoke-WebRequest|iwr|irm|Invoke-Expression|i
 const NON_REGISTRY = /^(git\+|git:|github:|gitlab:|bitbucket:|https?:|file:|link:)|^[\w.-]+\/[\w.-]+(#.*)?$/i;
 
 function depFiles(root) {
-  const out = [];
+  const files = [];
+  let truncated = false;
+  const manifest = /^(package\.json|package-lock\.json|pyproject\.toml|requirements[\w.-]*\.(txt|in|lock))$/i;
   const walk = (dir, depth) => {
-    let items = [];
-    try { items = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    let items;
+    try { items = fs.readdirSync(dir, { withFileTypes: true }); } catch { truncated = true; return; }
     for (const d of items) {
       const full = path.join(dir, d.name);
-      if (d.isSymbolicLink()) continue;
-      if (d.isDirectory()) { if (depth < 3 && !SKIP_DIRS.has(d.name)) walk(full, depth + 1); }
-      else if (/^(package\.json|package-lock\.json|pyproject\.toml|requirements[\w.-]*\.(txt|in|lock))$/i.test(d.name)) out.push(full);
+      if (d.isDirectory()) {
+        if (depth < 3 && !SKIP_DIRS.has(d.name)) walk(full, depth + 1);
+      } else if (manifest.test(d.name)) {
+        if (!d.isFile() || files.length >= 50) { truncated = true; continue; }
+        files.push(full);
+      }
     }
   };
   walk(root, 0);
-  return out.slice(0, 50);
+  return { files, truncated };
 }
 
-function scanDeps(root) {
+function scanDependencyFiles(root) {
+  let { files, truncated } = depFiles(root);
   const found = [];
   const add = (file, line, kind, name, text) => found.push({ file, line, kind, name, text: maskSecrets(String(text)).slice(0, 240) });
-  for (const f of depFiles(root)) {
+  for (const f of files) {
     const rel = path.relative(root, f).replace(/\\/g, "/"), base = path.basename(f).toLowerCase();
     let text;
-    try { if (fs.statSync(f).size > 20 * MAX_BYTES) continue; text = fs.readFileSync(f, "utf8"); } catch { continue; }
+    try {
+      if (fs.statSync(f).size > 20 * MAX_BYTES) { truncated = true; continue; }
+      text = fs.readFileSync(f, "utf8").replace(/^\uFEFF/, "");
+    } catch { truncated = true; continue; }
     const lineOf = (needle) => Math.max(1, text.split(/\r?\n/).findIndex((l) => l.includes(needle)) + 1);
     if (base === "package.json") {
-      let pkg; try { pkg = JSON.parse(text); } catch { continue; }
+      let pkg; try { pkg = JSON.parse(text); } catch { truncated = true; continue; }
+      if (!pkg || typeof pkg !== "object" || Array.isArray(pkg)) { truncated = true; continue; }
       for (const group of ["dependencies", "devDependencies", "optionalDependencies", "peerDependencies"]) {
         for (const [name, spec] of Object.entries(pkg[group] || {})) {
           if (typeof spec === "string" && NON_REGISTRY.test(spec.trim()) && !/^workspace:/.test(spec)) add(rel, lineOf(`"${name}"`), "dep-source", "Thư viện lấy từ nguồn ngoài kho npm chuẩn", `${name}: ${spec}`);
@@ -124,7 +142,8 @@ function scanDeps(root) {
         if (typeof cmd === "string" && RISKY_SCRIPT.test(cmd)) add(rel, lineOf(`"${hook}"`), "dep-script", "Script tự chạy khi cài có lệnh tải mạng / chạy mã", `${hook}: ${cmd}`);
       }
     } else if (base === "package-lock.json") {
-      let lock; try { lock = JSON.parse(text); } catch { continue; }
+      let lock; try { lock = JSON.parse(text); } catch { truncated = true; continue; }
+      if (!lock || typeof lock !== "object" || Array.isArray(lock)) { truncated = true; continue; }
       const odd = [], scripts = [];
       for (const [p, info] of Object.entries(lock.packages || {})) {
         if (!p || !info || info.link) continue;
@@ -145,21 +164,35 @@ function scanDeps(root) {
       });
     }
   }
-  return found;
+  return { findings: found, truncated };
 }
 
+function scanDeps(root) { return scanDependencyFiles(root).findings; }
+
 function scan(root) {
-  const files = listFiles(root), findings = [];
+  let { files, truncated } = listFiles(root);
+  const findings = [];
   for (const f of files) {
     let text;
-    try { const st = fs.statSync(f); if (st.size > MAX_BYTES) { findings.push({ file: path.relative(root, f).replace(/\\/g, "/"), line: 0, kind: "big", name: "File chữ quá lớn, không rà hết được", text: Math.round(st.size / 1024) + " KB" }); continue; } text = fs.readFileSync(f, "utf8"); } catch { continue; }
+    try {
+      const st = fs.statSync(f);
+      if (st.size > MAX_BYTES) {
+        truncated = true;
+        findings.push({ file: path.relative(root, f).replace(/\\/g, "/"), line: 0,
+          kind: "big", name: "File chữ quá lớn, không rà hết được", text: Math.round(st.size / 1024) + " KB" });
+        continue;
+      }
+      text = fs.readFileSync(f, "utf8");
+    } catch { truncated = true; continue; }
     findings.push(...scanText(text, path.relative(root, f).replace(/\\/g, "/")));
   }
-  findings.push(...scanDeps(root));
+  const deps = scanDependencyFiles(root);
+  truncated ||= deps.truncated;
+  for (const f of deps.findings) findings.push(f);
   findings.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line);
   // Dấu vân tay không theo số dòng: thêm dòng phía trên không bắt duyệt lại, đổi nội dung bất thường thì có.
   const fingerprint = findings.length ? crypto.createHash("sha256").update(findings.map((x) => x.file + "|" + x.kind + "|" + x.text).sort().join("\n")).digest("hex").slice(0, 16) : null;
-  return { files: files.length, truncated: files.length >= MAX_FILES, findings: findings.slice(0, 200), total: findings.length, fingerprint };
+  return { files: files.length, truncated, findings: findings.slice(0, 200), total: findings.length, fingerprint };
 }
 
 const err = (code, message) => Object.assign(new Error(message), { code });
@@ -173,27 +206,31 @@ function createScanner({ dir, audit, notify = () => {} }) {
   const told = new Set(), cache = new Map();
   const key = (root) => (process.platform === "win32" ? root.toLowerCase() : root);
 
+  const incomplete = "Rà soát chưa đọc được toàn bộ phạm vi. Chọn mức quyền thấp hơn hoặc xử lý phần chưa quét trước khi bật Toàn quyền.";
+
   function status(root, { fresh = true } = {}) {
     const hit = cache.get(key(root));
     const r = !fresh && hit && Date.now() - hit.at < 30000 ? hit.r : scan(root);
     cache.set(key(root), { at: Date.now(), r });
     const a = approvals[key(root)];
-    const approved = !r.fingerprint || Boolean(a && a.fingerprint === r.fingerprint);
+    const approved = !r.truncated && (!r.fingerprint || Boolean(a && a.fingerprint === r.fingerprint));
     if (!approved && !told.has(root + r.fingerprint)) {
       told.add(root + r.fingerprint);
       audit.log("ctl", "scan.flag", root, { total: r.total, fingerprint: r.fingerprint });
-      try { notify("Văn phòng AI · " + path.basename(root), `Phát hiện ${r.total} điểm bất thường trong file .md: AI chưa được chạy toàn quyền. Anh xem và duyệt ở mục Việc chờ anh duyệt.`); } catch {}
+      try { notify("Văn phòng AI · " + path.basename(root), r.truncated ? incomplete : `Phát hiện ${r.total} điểm bất thường trong file .md: AI chưa được chạy toàn quyền. Anh xem và duyệt ở mục Việc chờ anh duyệt.`); } catch {}
     }
     return { ...r, approved, approvedAt: approved && a ? a.at : null };
   }
   // Chặn chạy toàn quyền khi còn điểm bất thường chưa duyệt.
   function require(root) {
     const s = status(root);
+    if (s.truncated) throw Object.assign(err("NEEDS_SCAN_APPROVAL", incomplete), { scan: s });
     if (!s.approved) throw Object.assign(err("NEEDS_SCAN_APPROVAL", `Phát hiện ${s.total} điểm bất thường trong file .md của dự án (ví dụ ${s.findings[0].file}:${s.findings[0].line} — ${s.findings[0].name}). AI chưa được chạy toàn quyền: anh xem và duyệt ở mục "Việc chờ anh duyệt".`), { scan: s });
     return s;
   }
   function approve(root, fingerprint, actor = "ceo") {
     const s = scan(root);
+    if (s.truncated) throw Object.assign(err("NEEDS_SCAN_APPROVAL", incomplete), { scan: s });
     if (!s.fingerprint) return { approved: true, ...s };
     if (fingerprint !== s.fingerprint) throw err("CHANGED", "File .md đã đổi sau khi anh xem: tải lại danh sách bất thường rồi duyệt lại.");
     approvals[key(root)] = { fingerprint, at: Date.now(), total: s.total };

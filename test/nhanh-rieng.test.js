@@ -14,14 +14,20 @@ const ROLES = ["SPEC_ARCHITECT", "SOL_ARCHITECT_PLANNER", "CODEX_ASTRA_DEV", "CL
 
 // CLI giả: Astra ghi src/app.js (mode "secret": ghi kèm chuỗi giống khóa API; "quota": lần đầu báo hết hạn mức).
 // CLAUDE_WEB_APPLY đọc file kết quả GPT web trong prompt: có chữ "SAI" thì từ chối, không thì ghi src/web.js và bàn giao thay Astra.
-async function fixture(t, { owner = "SOL_ARCHITECT_PLANNER", mode = "ok" } = {}) {
-  const temp = fs.mkdtempSync(path.join(os.tmpdir(), "vp-nhanh-")), dir = path.join(temp, "home"), repo = path.join(temp, "repo");
+async function fixture(t, { owner = "SOL_ARCHITECT_PLANNER", mode = "ok", linked = false } = {}) {
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), "vp-nhanh-")), dir = path.join(temp, "home");
+  let repo = path.join(temp, "repo");
   fs.mkdirSync(dir); fs.mkdirSync(repo);
   const git = (...a) => execFileSync("git", a, { cwd: repo, encoding: "utf8", stdio: "pipe" }).trim();
   git("init", "-q", "-b", "main"); git("config", "user.name", "test"); git("config", "user.email", "test@localhost");
   fs.writeFileSync(path.join(repo, "agent.md"), `# Agent\n## [4] KHÓA LƯỢT\n- CURRENT_PHASE: Phase 1\n- LAST_UPDATED_BY: CLAUDE_AUDITOR\n- NEXT_OWNER (MUTEX LOCK): ${owner}\n## [5] CHỐT CHẶN\n- AUDIT_STATUS: PASS\n`);
   fs.writeFileSync(path.join(repo, "README.md"), "# Thử\n");
   git("add", "."); git("commit", "-qm", "init");
+  if (linked) {
+    const worktree = path.join(temp, "linked");
+    git("worktree", "add", "-q", "--detach", worktree, "main");
+    repo = worktree;
+  }
   const marker = path.join(temp, "het"), fake = path.join(temp, "cli.cjs");
   fs.writeFileSync(fake, `const fs=require('fs'),path=require('path');const role=process.argv[2],mode=process.argv[3],prompt=process.argv[process.argv.length-1];
     if(role==='CLAUDE_REPORTER'){console.log(JSON.stringify({result:'Claude báo cáo.'}));return;}
@@ -135,8 +141,8 @@ test("nhánh ai/ cũ đã merge vào main trên remote: luồng sau về main, c
   await wait(r2.id, "awaiting_approval");
 });
 
-test("GPT web: dán kết quả cho lượt hết hạn mức; Claude kiểm, chưa đạt thì quay về chờ kèm lý do, đạt thì áp và chạy tiếp", async (t) => {
-  const { repo, git, autopilot, wait, notes } = await fixture(t, { mode: "quota" });
+for (const linked of [false, true]) test(`GPT web (${linked ? "linked worktree" : "checkout thường"}): từ chối kết quả sai, áp kết quả đạt và chạy tiếp`, async (t) => {
+  const { repo, git, autopilot, wait, notes } = await fixture(t, { mode: "quota", linked });
   const r = autopilot.start({ workspace: repo, task: "Viết trang chủ" });
   let run = await wait(r.id, "waiting_quota");
   assert.equal(run.wait.role, "CODEX_ASTRA_DEV");
@@ -156,6 +162,7 @@ test("GPT web: dán kết quả cho lượt hết hạn mức; Claude kiểm, ch
   assert.equal(run.steps.at(-1).role, "CLAUDE_AUDITOR");
   assert.match(git("log", "--format=%s"), /ai\(CODEX_ASTRA_DEV\): Viết trang chủ \[lượt \d+, từ GPT web\]/);
   assert.equal(fs.readFileSync(path.join(repo, "src", "web.js"), "utf8").replace(/\r\n/g, "\n"), "module.exports = 'web';\n");
+  assert.ok(fs.readdirSync(path.join(git("rev-parse", "--absolute-git-dir"), "van-phong-ai")).length > 0);
 });
 
 test("tên nhánh bỏ dấu tiếng Việt", () => {

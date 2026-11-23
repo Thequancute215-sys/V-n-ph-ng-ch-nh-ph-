@@ -3,6 +3,10 @@
 
 export const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 export const cat = (s, n) => { s = String(s ?? "").replace(/\s+/g, " ").trim(); return s.length > n ? s.slice(0, n - 1) + "…" : s; };
+export function safeHttps(u) {
+  try { const x = new URL(String(u || "")); return x.protocol === "https:" && !x.username && !x.password ? x.href : null; }
+  catch { return null; }
+}
 
 export function luc(t) {
   if (!t) return "";

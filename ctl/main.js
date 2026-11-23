@@ -198,7 +198,11 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     ["GET", "/monitor", () => snap()],
     ["GET", "/audit", (p, qs) => ({ audit: audit.recent(Number(qs.get("limit")) || 100) })],
 
-    ["GET", "/jobs", (p, qs) => ({ jobs: jobs.list(qs.get("status")) })],
+    ["GET", "/jobs", (p, qs) => {
+      const rows = jobs.list(qs.get("status"));
+      const limit = Number(qs.get("limit"));
+      return { jobs: Number.isInteger(limit) && limit > 0 ? rows.slice(0, limit) : rows };
+    }],
     ["GET", "/jobs/:id", (p) => { const j = jobs.get(p.id); if (!j) throw Object.assign(new Error("Không có việc " + p.id), { code: "NOT_FOUND" }); return { job: j }; }],
     ["POST", "/jobs", (p, qs, b) => {
       const workspace = ws.find(wsOf(b.workspace)).path;

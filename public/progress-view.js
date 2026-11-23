@@ -6,10 +6,12 @@
   const list = (items, empty) => items.length ? `<ul>${items.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>` : `<p class="muted">${esc(empty)}</p>`;
   // Bộ kiểm chu trình (CI) trong repo dự án (ctl/bo-kiem.js). actions: hiện nút cài (chỉ bàn làm việc 3D có xử lý nút).
   const BO_KIEM = { "da-cai": "Đã cài: mỗi PR được kiểm agent.md và lint/test.", "cu": "Đã cài nhưng là bản cũ: cài lại để có luật mới.", "chua-cai": "Chưa cài: PR của dự án chưa bị kiểm tự động.", "khong-phai-git": "Dự án không phải repo git.", "van-phong": "Repo của chính Văn phòng AI: dùng CI riêng (.github/workflows/kiem-tra.yml), không cần cài." };
+  const safeGithub = (v) => { try { const u = new URL(String(v || "")); return u.protocol === "https:" && u.hostname === "github.com" && !u.username && !u.password ? u.href : null; } catch { return null; } };
   function boKiemHtml(b, actions) {
     if (!b) return "";
+    const prUrl = safeGithub(b.last && b.last.compareUrl);
     const last = b.last ? `<br>Lần cài gần nhất: nhánh <span class="mono">${esc(b.last.branch)}</span> · ${esc(new Date(b.last.at).toLocaleString("vi-VN"))}` +
-      (b.last.compareUrl && /^https:\/\/github\.com\//.test(b.last.compareUrl) ? ` · <a href="${esc(b.last.compareUrl)}" target="_blank" rel="noopener">mở trang tạo PR</a>` : "") + (b.state === "da-cai" ? "" : " (PR chưa merge hoặc chưa kéo về máy)") : "";
+      (prUrl ? ` · <a href="${esc(prUrl)}" target="_blank" rel="noopener noreferrer">mở trang tạo PR</a>` : "") + (b.state === "da-cai" ? "" : " (PR chưa merge hoặc chưa kéo về máy)") : "";
     const btn = actions && ["chua-cai", "cu"].includes(b.state) ? `<div class="actions desk-actions"><button type="button" data-bo-kiem data-write${b.busy ? " disabled" : ""}>${b.state === "cu" ? "Cài lại bộ kiểm" : "Cài bộ kiểm vào repo"}</button></div>` : "";
     return `<h4>Bộ kiểm chu trình (CI)</h4><p>${esc(BO_KIEM[b.state] || b.state)}${last}</p>${btn}`;
   }
@@ -44,13 +46,16 @@
     }).join("") + '<p class="muted">Đây là lời các AI tự khai. Claude đối chiếu với diff thật trong báo cáo (mục "VÌ SAO LÀM VẬY & PHƯƠNG ÁN KHÁC"); anh xem thêm "Xem file đã đổi" của từng lượt.</p></details>';
   }
   // Rà soát file .md và thư viện trước khi AI chạy toàn quyền: điểm bất thường chưa duyệt thì CEO xem và bấm duyệt.
-  function scanHtml(scan, workspace, attr = "data-scan-approve") {
+  function scanHtml(scan, workspace, attr = "data-scan-approve", { canApprove = true } = {}) {
     if (!scan || scan.approved) return "";
+    if (scan.truncated) {
+      return '<div class="scan-box"><strong>Rà soát chưa hoàn tất</strong><p class="muted">Xử lý phần chưa quét hoặc chọn mức quyền thấp hơn trước khi giao lượt mới.</p></div>';
+    }
     const items = scan.findings.map((f) => `<li><span class="mono">${esc(f.file)}${f.line ? ":" + esc(f.line) : ""}</span> — <b>${esc(f.name)}</b><br><code>${esc(f.text)}</code></li>`).join("");
     return `<div class="scan-box"><strong>⚠️ ${esc(scan.total)} điểm bất thường trong file .md / thư viện của dự án — AI chưa được chạy toàn quyền</strong>` +
       `<p class="muted">Văn phòng rà bằng quy tắc so mẫu (không gọi AI) nên có thể báo nhầm. Anh đọc từng điểm; thấy an toàn thì duyệt, AI chạy toàn quyền bình thường. File đổi thêm điểm mới thì phải duyệt lại.</p>` +
       `<ol>${items}</ol>${scan.total > scan.findings.length ? `<p class="muted">… và ${esc(scan.total - scan.findings.length)} điểm khác.</p>` : ""}` +
-      `<div class="actions desk-actions"><button class="primary" ${attr}="${esc(scan.fingerprint)}" data-scan-workspace="${esc(workspace)}">Đã xem, cho AI chạy toàn quyền</button></div></div>`;
+      (canApprove ? `<div class="actions desk-actions"><button class="primary" ${attr}="${esc(scan.fingerprint)}" data-scan-workspace="${esc(workspace)}">Đã xem, cho AI chạy toàn quyền</button></div>` : `<p class="muted">Duyệt rà soát toàn quyền chỉ thực hiện trên máy tính.</p>`) + `</div>`;
   }
   // Xoá file trong luồng: đề nghị của AI khác, Claude đã xoá (kèm vì sao, đã kiểm gì), AI tự xoá bị khôi phục / không khôi phục được.
   function deleteHtml(run) {

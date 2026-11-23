@@ -64,7 +64,13 @@ async function server(t, { hasKey = true } = {}) {
   const srv = http.createServer((req, res) => {
     const url = new URL(req.url, "http://x");
     handle(dkx, req, res, url, { local: req.headers["x-test-local"] === "1", hasKey, readJson: guard.readJson,
-      call: async (m, p, b) => { calls.push([m, p, b]); return { status: 200, json: { ok: true, path: p } }; } });
+      call: async (m, p, b) => {
+        calls.push([m, p, b]);
+        const json = p === "/jobs"
+          ? { jobs: [{ id: "test", agent: "ceo", status: "running", runningS: 1, argv: ["prompt thử"], pid: 123 }] }
+          : { ok: true, path: p };
+        return { status: 200, json };
+      } });
   });
   await new Promise((r) => srv.listen(0, "127.0.0.1", r));
   t.after(() => srv.close());
@@ -108,6 +114,15 @@ test("HTTP: chỉ máy tính tạo mã/thu hồi; điện thoại ghép rồi m�
   const id = (await go("/thiet-bi", { local: true })).json.thietBi[0].id;
   await go("/thu-hoi", { local: true, body: { id } });
   assert.equal((await go("/api/autopilot", { cookie })).json.code, "NOT_PAIRED");
+});
+
+test("HTTP: điện thoại nhận tóm tắt công việc đã ghép", async (t) => {
+  const { go } = await server(t);
+  const { json: { ma } } = await go("/ma", { body: {}, local: true });
+  const cookie = (await go("/ghep", { body: { ma } })).cookie.split(";")[0];
+  const { status, json } = await go("/api/jobs", { cookie });
+  assert.equal(status, 200);
+  assert.deepEqual(json.jobs, [{ id: "test", agent: "ceo", status: "running", runningS: 1 }]);
 });
 
 test("HTTP: điện thoại tự huỷ ghép", async (t) => {

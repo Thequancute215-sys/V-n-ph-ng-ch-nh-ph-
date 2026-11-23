@@ -7,7 +7,7 @@ import { taoNgan } from "./ngan.js";
 
 // OS-2 (CEO duyệt 21/11/2026): hai xưởng tách hẳn nhau, mỗi xưởng một màu nhận diện (xuong: "code" | "phim");
 // "sapCo" là tính năng của xưởng sẽ cập nhật sau, hiện mờ để CEO biết lộ trình, không bấm được.
-// Đội ngũ học cách tổ chức của Javis OS (phòng sạch, xem D:\VanPhongAI\os-2\replica): Cộng sự, Việc và lịch chạy, Bộ não, Models và quyền.
+// Đội ngũ học cách tổ chức của Javis OS (phòng sạch): Cộng sự, Việc và lịch chạy, Bộ não, Models và quyền.
 // OS-3 (CEO cấp FORCE_OVERRIDE 22/11/2026): "xem ở đâu, xử lý ngay ở đó". Giao việc và Luồng và bàn giao thành khu gốc;
 // thanh bên chỉ giữ khu gốc, trang cũ còn lại gom vào mục "Công cụ cũ" (mảng CU, đường dẫn cũ vẫn mở được).
 const KHU = [

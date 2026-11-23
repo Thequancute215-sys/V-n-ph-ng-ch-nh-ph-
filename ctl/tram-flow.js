@@ -14,7 +14,7 @@ const os = require("os");
 const path = require("path");
 const http = require("http");
 const { spawn } = require("child_process");
-const { kiem, MAY_QUAY_MAC_DINH, congDaDuyet } = require("../lib/phim");
+const { kiem, MAY_QUAY_MAC_DINH, congDaDuyet, docFileTrongPhim } = require("../lib/phim");
 const { writeAtomic } = require("../lib/ghi-file");
 const mcpMay = require("./mcp-may");
 const cdt = require("./chrome-devtools");
@@ -188,7 +188,7 @@ function createTramFlow({ dir, goc, audit = { log() {} }, jobs, cliClaude, spawn
     if (buoc === "tao" && luotDaTao(root, c.ma) >= (c.so_take_toi_da || 2)) throw err("TOI_DA_TAKE", c.ma + ": đã tạo đủ " + (c.so_take_toi_da || 2) + " lượt Flow cho cảnh này.");
     if (buoc === "tao" && creditCua(id).conLai === 0) throw err("NO_QUOTA", t.nhan + " đã hết credit Flow (đọc lúc " + creditCua(id).lucDoc + "). Chọn tài khoản khác, hoặc chạy nhịp Chuẩn bị để đọc lại số credit.");
     const nv = new Map((phim.nhan_vat || []).map((v) => [v.ma, v]));
-    const abs = (rel) => path.resolve(root, rel);
+    const abs = (rel) => docFileTrongPhim(root, rel);
     const absThamChieu = (c.nhan_vat || []).flatMap((m) => ((nv.get(m) || {}).tham_chieu || []).slice(0, 3)).map(abs);
     const prompt = LUAT + "\n\n" + moTaNhip(buoc, { phim, c, absKhung: c.khung_chon ? abs(c.khung_chon) : null, absThamChieu });
 

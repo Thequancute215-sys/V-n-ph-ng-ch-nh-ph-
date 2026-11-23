@@ -17,7 +17,7 @@ export async function mo(vung) {
   async function batDau() {
     try { dsPhim = (await ctl("/phim/du-an")).duAn || []; }
     catch (e) { goc.innerHTML = loi(e.message); return; }
-    if (!dsPhim.length) { goc.innerHTML = rong("Chưa có dự án phim nào", "Tạo một dự án loại Phim AI ở Dự án và giao việc; văn phòng dựng sẵn phim.json.", `<a class="nut" href="#/code/du-an">Tạo dự án phim</a>`); return; }
+    if (!dsPhim.length) { goc.innerHTML = rong("Chưa có dự án phim nào", "Tạo một dự án loại Phim AI ở Dự án; văn phòng dựng sẵn phim.json.", `<a class="nut" href="#/code/du-an?loai=phim">Tạo dự án phim</a>`); return; }
     let nho = ""; try { nho = localStorage.getItem("tqos-phim") || ""; } catch {}
     ws = dsPhim.some((d) => d.path === nho) ? nho : dsPhim[0].path;
     tai();
@@ -53,7 +53,7 @@ export async function mo(vung) {
         <button type="button" class="nut" data-luu-ns>Lưu ngân sách</button>
         <span class="mo">Tối đa ước tính cả phim ${usd(toiDa)}${k.chiPhi && k.chiPhi.luotFlow ? ", " + k.chiPhi.luotFlow + " lượt Flow" : ""}</span></div>
       <div class="thanh-do" role="img" aria-label="Đã chi ${usd(mq.daChi)} trên ngân sách ${usd(ngan)}"><i style="transform:scaleX(${pt(mq.daChi)})"></i></div>
-      ${mq.coKhoa ? "" : `<div class="canh-bao">Chưa có khóa Gemini API (bậc trả phí): dán ở Kết nối hoặc trang Tài khoản AI để dùng máy quay Gemini.</div>`}
+      ${mq.coKhoa ? "" : `<div class="canh-bao">Chưa có khóa Gemini API (bậc trả phí): dán ở <a href="#/he/ket-noi">Kết nối</a> để dùng máy quay Gemini.</div>`}
       ${mq.dang ? `<div class="canh-bao">Đang quay ${esc(mq.dang.loai)} cảnh ${esc(mq.dang.canh)}, một clip có thể mất vài phút.</div>` : ""}
       ${mq.loiCuoi ? `<div class="hong">Lần quay trước lỗi: ${esc(mq.loiCuoi)}</div>` : ""}
       ${k.loi.length ? `<div class="hong"><b>Hồ sơ còn lỗi, chưa quay được:</b><br>${k.loi.map((l) => esc(l.chiTiet)).join("<br>")}</div>` : `<div class="dat">Hồ sơ phim hợp lệ.</div>`}
@@ -74,7 +74,7 @@ export async function mo(vung) {
       const b = bd.banDung;
       banDung = `<section class="khoi" aria-labelledby="hDung"><div class="hang"><h2 class="dau" id="hDung">Bàn dựng</h2><button type="button" class="nut-chinh" data-dung>${b ? "Dựng lại" : "Dựng bản xem thử"}</button>` +
         `<span class="mo">Miễn phí, chạy trên máy: ghép take đã chọn, phụ đề, giọng đọc, nhạc, chuẩn âm −14 LUFS.</span></div>` +
-        (!bd.coFfmpeg ? `<div class="canh-bao">Chưa có FFmpeg: bấm Cài xưởng phim ở Kết nối.</div>` : "") +
+        (!bd.coFfmpeg ? `<div class="canh-bao">Chưa có FFmpeg: bấm Cài xưởng phim ở <a href="#/he/ket-noi">Kết nối</a>.</div>` : "") +
         (bd.dang ? `<div class="canh-bao">${esc(bd.dang.buoc)}</div>` : "") +
         (bd.loiCuoi ? `<div class="hong">Lần dựng trước lỗi: ${esc(bd.loiCuoi)}</div>` : "") +
         (b && bd.cu ? `<div class="canh-bao">Bản dựng này cũ: take hoặc thời lượng cảnh đã đổi. Bấm Dựng lại.</div>` : "") +
@@ -93,7 +93,7 @@ export async function mo(vung) {
       `<table class="bang"><tbody>` + flow.taiKhoan.map((t) => { const c = t.credit; return `<tr><td><b>${esc(t.nhan)}</b></td><td class="${t.dangMo ? "song" : "mo"}">${t.dangMo ? "đang mở" : "tắt"}</td>` +
         `<td class="mo">${c ? (c.conLai === null ? "Flow không hiện số dư" : "còn " + esc(c.conLai) + " credit, đọc " + esc(luc(c.lucDoc))) + ", tháng này " + esc(c.luotTaoThang) + " lượt" : ""}</td>` +
         `<td class="so"><button type="button" class="nut nho" data-mo-flow="${esc(t.id)}">Mở trình duyệt</button></td></tr>`; }).join("") + `</tbody></table>` +
-      (!flow.mcp ? `<div class="canh-bao">Chưa cài Chrome DevTools MCP (Kết nối): Opus chưa lái được Flow.</div>` : "") +
+      (!flow.mcp ? `<div class="canh-bao">Chưa cài Chrome DevTools MCP (<a href="#/he/ket-noi">Kết nối</a>): Opus chưa lái được Flow.</div>` : "") +
       (flow.nhipDang ? `<div class="canh-bao">Opus đang làm nhịp ${esc(NHIP[flow.nhipDang.buoc])} cảnh ${esc(flow.nhipDang.canh)} (${esc(flow.nhipDang.taiKhoan)}).</div>` : "") +
       (flow.ketQuaCuoi ? `<div class="${flow.ketQuaCuoi.ket_qua === "xong" ? "dat" : "canh-bao"}">Nhịp vừa xong, ${esc(NHIP[flow.ketQuaCuoi.buoc])} cảnh ${esc(flow.ketQuaCuoi.canh)}: ${esc(flow.ketQuaCuoi.ket_qua)}. ${esc(flow.ketQuaCuoi.ghi_chu)}</div>` : "") + `</section>` : "";
 

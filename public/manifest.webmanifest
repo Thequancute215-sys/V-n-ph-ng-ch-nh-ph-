@@ -16,8 +16,8 @@
     { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    { "name": "Điều khiển máy", "url": "/dieukhien.html", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
-    { "name": "Bảng điều hành", "url": "/prototype.html#board", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
-    { "name": "Hồ sơ nhân vật", "url": "/characters.html", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] }
+    { "name": "Luồng và bàn giao", "url": "/#/code/dieu-khien", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
+    { "name": "Giao việc cho đội", "url": "/#/code/giao-viec", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
+    { "name": "Phim và bàn dựng", "url": "/#/phim", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] }
   ]
 }

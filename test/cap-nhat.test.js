@@ -40,6 +40,20 @@ function fixture(t) {
   return { temp, origin, dev, app, run, commit, tag, git: (...a) => run(app, ...a) };
 }
 
+test("kênh phát hành chỉ chọn tag thuộc origin/main và khớp phiên bản", (t) => {
+  const f = fixture(t);
+  f.tag("v1.0.0");
+  f.commit("1.1.0");
+  f.tag("v8.0.0");
+  f.run(f.dev, "checkout", "-q", "-b", "thu");
+  fs.writeFileSync(path.join(f.dev, "package.json"), JSON.stringify({ version: "9.0.0" }));
+  f.run(f.dev, "commit", "-qam", "Bản ở nhánh thử");
+  f.tag("v9.0.0");
+  const s = u.check(f.app, { fetch: true });
+  assert.equal(s.target.name, "v1.0.0");
+  assert.equal(s.canUpdate, false);
+});
+
 test("so tag: số chứ không theo chữ (v1.10.0 mới hơn v1.9.0)", () => {
   assert.deepEqual(["v1.10.0", "v1.9.0", "v1.2.3", "v2.0.0"].sort(u.cmpTag), ["v1.2.3", "v1.9.0", "v1.10.0", "v2.0.0"]);
   assert.ok(!u.TAG.test("v2.0.0-beta") && !u.TAG.test("1.0.0"));

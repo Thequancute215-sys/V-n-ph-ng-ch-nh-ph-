@@ -4,7 +4,7 @@
 // ctl tự bỏ qua lần chạy khi lần trước chưa xong, dự án đang bận hay hạn mức AI dưới 15%, và không chạy bù khi máy tắt.
 // OS-3: mỗi thẻ việc có nút mở ngăn trượt tại chỗ (duyệt, trả lời, xem nhật ký lượt đang chạy) thay cho chuyển sang trang Luồng.
 import { esc, cat, luc, dangTai, rong, loi } from "../ui.js";
-import { TT_LUONG, LUONG_CHAY, LUONG_CHO, LUONG_CAN_ANH, tenDuAn, tenLenh as tenViec, tenVai as TEN_VAI_BG, cauHoi } from "../viec-chung.js";
+import { TT_LUONG, LUONG_CHAY, LUONG_CHO, LUONG_CAN_ANH, tenDuAn, tenLenh as tenViec, tenVai as TEN_VAI_BG, cauHoi, tomTatGiaiThich } from "../viec-chung.js";
 
 const NGAY = 24 * 3600 * 1000;
 const THU = ["", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy", "Chủ nhật"];
@@ -45,6 +45,8 @@ export async function mo(vung, { kho, ctl, bao, ngan }) {
   function veBang() {
     if (!jobs && !runs && !handoffs) { $("kpi").innerHTML = ""; $("bangViec").innerHTML = loi(loiCtl || "Chưa nối được bộ điều khiển (ctl)."); return; }
     const bay = Date.now(), cot = { cho: [], chay: [], canAnh: [], xong: [] };
+    const jobCuaLuong = new Set((runs || []).flatMap((r) => [r.jobId, ...(r.steps || []).map((s) => s.jobId)]).filter(Boolean));
+    const jobById = new Map((jobs || []).map((j) => [j.id, j]));
     for (const r of runs || []) {
       const tt = TT_LUONG[r.status] || r.status, ct = `Luồng tự chạy · ${tenDuAn(r.workspace)} · ${tt} · ${luc(r.updatedAt)}`;
       const nut = (chu) => nutNgan("luong:" + r.id, chu, r.task);
@@ -53,12 +55,15 @@ export async function mo(vung, { kho, ctl, bao, ngan }) {
       else if (LUONG_CAN_ANH.has(r.status)) cot.canAnh.push([r.updatedAt, the(cat(cauHoi(r) || r.task, 140), ct, nut(r.status === "awaiting_answer" ? "Trả lời" : "Mở"))]);
       else if (bay - (r.updatedAt || 0) < NGAY) cot.xong.push([r.updatedAt, the(cat(r.task, 140), ct, nut("Xem"))]);
     }
-    for (const h of handoffs || []) { const p = h.payload || {};
-      cot.canAnh.push([h.createdAt || 0, the(cat(p.giai_thich || p.tom_tat || "Bàn giao chờ duyệt", 140), `Bàn giao của ${TEN_VAI_BG(h.role)}${p.next_owner ? " cho " + TEN_VAI_BG(p.next_owner) : ""} · ${tenDuAn(h.workspace)}`, nutNgan("ban-giao:" + h.job_id, p.ask_ceo ? "Trả lời" : "Duyệt", p.giai_thich || "bàn giao"))]); }
+    (handoffs || []).forEach((h, idx) => { const p = h.payload || {}, jh = jobById.get(h.job_id);
+      const t = h.createdAt || h.created_at || h.decided_at || (jh && (jh.ended_at || jh.started_at)) || 0;
+      const tieu = cat(tomTatGiaiThich(p.giai_thich) || p.tom_tat || "Bàn giao chờ duyệt", 140);
+      cot.canAnh.push([t || (bay - idx), the(tieu, `Bàn giao của ${TEN_VAI_BG(h.role)}${p.next_owner ? " cho " + TEN_VAI_BG(p.next_owner) : ""} · ${tenDuAn(h.workspace)}${t ? " · " + luc(t) : ""}`, nutNgan("ban-giao:" + h.job_id, p.ask_ceo ? "Trả lời" : "Duyệt", tieu))]); });
     for (const j of jobs || []) {
       const ct = `${tenDuAn(j.workspace)}${j.started_at ? " · " + luc(j.started_at) : ""}`;
-      if (j.status === "running") cot.chay.push([j.started_at, the(tenViec(j), ct + (j.runningS ? ` · đã chạy ${Math.round(j.runningS / 60)} phút` : ""), nutNgan("lenh:" + j.id, "Xem tiến độ", tenViec(j)))]);
-      else if (j.status === "pending_approval") cot.canAnh.push([j.started_at, the(tenViec(j) + ": chờ anh duyệt", ct, nutNgan("lenh:" + j.id, "Duyệt", tenViec(j)))]);
+      if (j.status === "pending_approval") cot.canAnh.push([j.started_at, the(tenViec(j) + ": chờ anh duyệt", ct, nutNgan("lenh:" + j.id, "Duyệt", tenViec(j)))]);
+      else if (jobCuaLuong.has(j.id)) continue;
+      else if (j.status === "running") cot.chay.push([j.started_at, the(tenViec(j), ct + (j.runningS ? ` · đã chạy ${Math.round(j.runningS / 60)} phút` : ""), nutNgan("lenh:" + j.id, "Xem tiến độ", tenViec(j)))]);
       else if (j.status === "queued") cot.cho.push([j.started_at, the(tenViec(j), ct)]);
       else if (bay - (j.ended_at || j.started_at || 0) < NGAY) cot.xong.push([j.ended_at || j.started_at, the(`${tenViec(j)}: ${j.status === "done" ? "xong" : j.status === "rejected" ? "anh từ chối" : j.status}`, ct)]);
     }

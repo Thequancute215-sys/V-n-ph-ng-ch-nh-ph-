@@ -75,7 +75,8 @@ const nameOf = (ws) => String(ws || "").split(/[\\/]/).filter(Boolean).pop() || 
 const ROLE = { SPEC_ARCHITECT: "Hinata · đặc tả", SOL_ARCHITECT_PLANNER: "Itachi · kiến trúc", SOL_ARCHITECT_ADVISOR: "Itachi · đối chiếu", CODEX_ASTRA_DEV: "Sasuke · backend", FRONTEND_UIUX_DEV: "Kakashi · giao diện", CLAUDE_AUDITOR: "Sakura · kiểm duyệt" };
 const STATUS = { running: ["Đang chạy", "run"], reporting: ["Claude đang báo cáo", "run"], awaiting_approval: ["Chờ anh duyệt", "wait"], awaiting_answer: ["Claude hỏi anh", "wait"], attention: ["Cần anh xem", "bad"], waiting_quota: ["Chờ hạn mức", "wait"], awaiting_scan: ["Chờ duyệt rà soát (trên máy tính)", "wait"], approved: ["Đã duyệt", ""], acknowledged: ["Đã xem", ""], rejected: ["Đã trả lại", ""], stopped: ["Đã dừng", ""] };
 const LIVE = new Set(["running", "reporting", "awaiting_approval", "awaiting_answer", "attention", "waiting_quota", "awaiting_scan"]);
-let tab = "tinh-hinh", data = null, loading = false, busy = false, timer = null;
+let tab = location.hash === "#giao-viec" ? "giao-viec" : "tinh-hinh";
+let data = null, loading = false, busy = false, timer = null;
 
 // Cài lên màn hình chính iPhone/iPad (CEO hỏi 17/11/2026): Safari không có nút "Cài app" như Android (nút data-cai-app ở đầu trang,
 // app.js lo), phải qua Chia sẻ → Thêm vào MH chính. Đã mở từ biểu tượng (standalone) thì không nhắc nữa.

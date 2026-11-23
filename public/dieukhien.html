@@ -4,8 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Điều khiển máy</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#000;--panel:#070707;--panel2:#0b0b0b;--line:#1a1a1a;--line2:#242424;--text:#f2f2f2;--mute:#a6a6a6;--mute2:#6b6b6b;--gold:#ecc970;--ok:#7ccf9b;--warn:#ecc970;--bad:#e8a39b;--red:#ef4444;--claude:#d9734a;--codex:#3f8fd9;--mono:"JetBrains Mono",ui-monospace,monospace}
 *{box-sizing:border-box}
@@ -296,8 +294,11 @@ async function loadJobs() {
 $("jobs").addEventListener("click", async (e) => {
   const d = e.target.dataset;
   if (d.ok) {
-    const j = (await api("GET", "/jobs/" + encodeURIComponent(d.ok))).job;
-    if (!confirm("Duyệt chạy lệnh NGOÀI danh sách cho phép?\n\n" + j.argv.join(" ") + "\n\ntrong " + j.workspace)) return;
+    const res = await api("GET", "/jobs/" + encodeURIComponent(d.ok));
+    const j = res && res.job;
+    if (!j) { say("cmdMsg", (res && res.error) || "Không đọc được thông tin lệnh để duyệt.", "r"); return; }
+    const cmdLine = Array.isArray(j.argv) ? j.argv.join(" ") : String(j.argv || "");
+    if (!confirm("Duyệt chạy lệnh NGOÀI danh sách cho phép?\n\n" + cmdLine + "\n\ntrong " + (j.workspace || ""))) return;
     const r = await api("POST", `/jobs/${encodeURIComponent(d.ok)}/approve`, {}); say("cmdMsg", r.ok ? "Đã duyệt, đang chạy." : r.error, r.ok ? "g" : "r"); if (r.ok) openLog(d.ok);
   }
   if (d.no) { const r = await api("POST", `/jobs/${encodeURIComponent(d.no)}/reject`, {}); say("cmdMsg", r.ok ? "Đã từ chối." : r.error, r.ok ? "" : "r"); }
@@ -369,8 +370,8 @@ async function refresh() {
   const h = await api("GET", "/health");
   if (!h.ok) { $("wsList").innerHTML = $("turnBox").innerHTML = `<div class="z">OS Controller chưa chạy.</div>`; $("jobs").innerHTML = ""; }
   monitor(); await loadWs(); await refresh();
-  setInterval(refresh, 2000);
-  setInterval(loadTurn, 5000);
+  setInterval(() => { if (!document.hidden) refresh(); }, 2000);
+  setInterval(() => { if (!document.hidden) loadTurn(); }, 5000);
 })();
 </script>
 </body>

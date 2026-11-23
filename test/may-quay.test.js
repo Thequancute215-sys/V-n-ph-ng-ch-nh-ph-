@@ -89,6 +89,37 @@ test("bộ đệm: cùng lần quay bị lặp (hồ sơ chưa ghi) thì không 
   assert.equal(r.usd, 0); assert.equal(r.tuBoDem, 1);
 });
 
+test("từng kết quả thành công được tính tiền dù đợt quay lỗi và phải thử lại", async (t) => {
+  const d = duAn(tmp(t), (p) => ({ ...p, ngan_sach_usd: 1 }));
+  const anh = ok({ output_image: { data: Buffer.from("ANH").toString("base64") } });
+  const { f, goi } = giaFetch((n) => n === 2 ? ok({}) : anh);
+  const mq = createMayQuay({ dir: d, khoa: () => KHOA, fetchImpl: f });
+  const opts = { canh: "C01", loai: "khung", soPhuongAn: 2 };
+  await assert.rejects(mq.quay(d, opts), { code: "MAY_QUAY_LOI" });
+  assert.equal(mq.trangThai(d).daChi, 0.0336);
+  assert.equal(mq.uocTinh(d, opts).usd, 0.0336);
+  const thuLai = await mq.quay(d, opts);
+  assert.equal(goi.length, 3);
+  assert.equal(thuLai.tuBoDem, 1);
+  assert.equal(thuLai.usd, 0.0336);
+  assert.equal(thuLai.daChi, 0.0672);
+  assert.equal(new Set(mq.trangThai(d).soChi.map(m => m.maLanGoi)).size, 2);
+});
+
+test("tham chiếu phim chỉ chấp nhận đích thật bên trong dự án", (t) => {
+  const root = duAn(tmp(t));
+  const trong = path.join(root, "media", "khung");
+  const ngoai = tmp(t);
+  ghi(path.join(ngoai, "anh.jpg"), "DU LIEU THU");
+  fs.symlinkSync(trong, path.join(root, "trong"), process.platform === "win32" ? "junction" : "dir");
+  fs.symlinkSync(ngoai, path.join(root, "ngoai"), process.platform === "win32" ? "junction" : "dir");
+  const mq = createMayQuay({ dir: root, khoa: () => KHOA });
+  const phim = docPhim(root), canh = phim.canh[0];
+  const dung = (khung_chon) => mq.dungYeuCau(root, phim, { ...canh, khung_chon }, { loai: "video" });
+  assert.equal(dung("trong/C01-1.jpg").body.input[0].mime_type, "image/jpeg");
+  assert.throws(() => dung("ngoai/anh.jpg"), { code: "PATH_ESCAPE" });
+});
+
 test("chặn trước khi tốn tiền: vượt ngân sách, chưa có khóa, hồ sơ lỗi, máy quay flow; lỗi Gemini không lộ khóa", async (t) => {
   // Cả phim ước tối đa $0,95 ≤ $1 (bộ kiểm hồ sơ qua), nhưng đã chi $0,8 nên lần quay $0,35 vượt ngân sách.
   const d = duAn(tmp(t), (p) => ({ ...p, ngan_sach_usd: 1 }));

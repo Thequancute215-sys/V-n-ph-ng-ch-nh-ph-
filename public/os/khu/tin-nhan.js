@@ -52,11 +52,16 @@ export async function mo(vung, { kho, ctl }) {
   async function taiTin(them = false) {
     if (dangTaiTin) return;
     dangTaiTin = true;
-    const truoc = them && tin.length ? tin[tin.length - 1].t : null;
+    const tinCuoi = them ? tin.at(-1) : null;
     try {
       if (coSo) {
         const u = new URLSearchParams({ gioiHan: String(TRANG) });
-        if (ai) u.set("ai", ai); if (q) u.set("q", q); if (truoc) u.set("truoc", String(truoc));
+        if (ai) u.set("ai", ai);
+        if (q) u.set("q", q);
+        if (tinCuoi) {
+          u.set("truoc", String(tinCuoi.t));
+          if (tinCuoi.id) u.set("truocId", tinCuoi.id);
+        }
         const r = await fetch("tin-nhan?" + u, { cache: "no-store" });
         if (r.status === 404) { coSo = false; dangTaiTin = false; return taiTin(them); }
         const d = await r.json();
@@ -153,9 +158,11 @@ export async function mo(vung, { kho, ctl }) {
     if (b.hasAttribute("data-thu-lai")) return taiTin();
   });
 
-  // Tin mới trong /events → tải lại trang đầu (chỉ khi đang xem trang mới nhất).
+  // Tin mới trong /events → tải lại trang đầu (chỉ khi đang xem trang mới nhất); đổi dự án → đọc lại cuộc hỏi.
+  let duAnCu = kho.duAn;
   const bo = kho.on((k) => {
     veLoc();
+    if (k.duAn !== duAnCu) { duAnCu = k.duAn; veTraLoi(); }
     const t = k.state && k.state.events.length ? k.state.events.at(-1).t : 0;
     if (t && t !== moiNhat) { moiNhat = t; if (tin.length <= TRANG) taiTin(); }
   });

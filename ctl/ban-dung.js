@@ -11,7 +11,7 @@
 const fs = require("fs");
 const path = require("path");
 const { execFile } = require("child_process");
-const { kiem, MAY_QUAY, MAY_QUAY_MAC_DINH, duongDanHopLe } = require("../lib/phim");
+const { kiem, MAY_QUAY, MAY_QUAY_MAC_DINH, duongDanHopLe, docFileTrongPhim } = require("../lib/phim");
 const { writeAtomic } = require("../lib/ghi-file");
 
 const err = (code, message) => Object.assign(new Error(message), { code });
@@ -31,7 +31,10 @@ function docJson(f, mac) {
   try { return JSON.parse(fs.readFileSync(f, "utf8").replace(/^\uFEFF/, "")); }
   catch (e) { if (e.code === "ENOENT" && mac !== undefined) return mac; throw err("BAD_REQUEST", path.basename(f) + " không đọc được: " + e.message); }
 }
-const coFileTrong = (root) => (rel) => { try { return fs.statSync(path.join(root, rel)).isFile(); } catch { return false; } };
+const coFileTrong = (root) => (rel) => {
+  try { return Boolean(docFileTrongPhim(root, rel)); }
+  catch (e) { if (e.code === "NOT_FOUND") return false; throw e; }
+};
 // Cảnh chỉ có một take thì dùng luôn take đó; nhiều take thì CEO phải chọn.
 const takeDung = (c) => c.take_chon || (Array.isArray(c.take) && c.take.length === 1 ? c.take[0] : null);
 const fileMedia = (rel) => typeof rel === "string" && /^media\//.test(rel) && duongDanHopLe(rel);
@@ -237,11 +240,13 @@ function createBanDung({ audit = { log() {} }, ffmpeg = () => null, tam = () => 
     try {
       const font = phong.find((f) => { try { return fs.statSync(f).isFile(); } catch { return false; } });
       if (font) fs.copyFileSync(font, path.join(viec, "font.ttf"));
-      const takeAbs = kh.canh.map((d) => path.join(root, d.take));
+      const takeAbs = kh.canh.map((d) => docFileTrongPhim(root, d.take));
       const tieng = [];
       for (const f of takeAbs) tieng.push(await coTieng(fp, f));
-      const mp3 = path.join(root, "media", "giong", "voice.mp3");
-      const coGiong = Array.isArray(giong) && giong.length && fs.existsSync(mp3);
+      const voice = "media/giong/voice.mp3";
+      const coGiong = Array.isArray(giong) && giong.length && coFileTrong(root)(voice);
+      const mp3 = coGiong ? docFileTrongPhim(root, voice) : null;
+      const nhac = kh.nhac ? docFileTrongPhim(root, kh.nhac) : null;
       const tiLe = (phim.ti_le || ["9:16"]).filter((t) => KICH_THUOC[t]);
       const ban = [], canhBao = [];
       if (!font) canhBao.push("Không thấy phông chữ trên máy: bản dựng không có phụ đề và nhãn AI.");
@@ -249,7 +254,7 @@ function createBanDung({ audit = { log() {} }, ffmpeg = () => null, tam = () => 
       for (const tl of tiLe) {
         dang.set(root, { buoc: "Đang dựng " + tl + "…", luc: now().toISOString() });
         const ten = tenFile(tl) + ".mp4", ra = path.join(xuat, "." + tenFile(tl) + ".dang-dung.mp4");
-        const l = lenhDung(kh, tl, { takeAbs, coTieng: tieng, giong: coGiong ? mp3 : null, nhac: kh.nhac ? path.join(root, kh.nhac) : null, ra, phong: !!font });
+        const l = lenhDung(kh, tl, { takeAbs, coTieng: tieng, giong: mp3, nhac, ra, phong: !!font });
         fs.writeFileSync(path.join(viec, "do-thi.txt"), l.doThi, "utf8");
         for (const c of l.chu) fs.writeFileSync(path.join(viec, c.ten), c.noiDung, "utf8");
         const r = await chay(ff, l.args, viec);

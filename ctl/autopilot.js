@@ -323,7 +323,7 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
       if (e.code === "AGY_BUSY" && (run.choAgyLan || 0) < 15 && Date.now() < run.deadline) { run.choAgyLan = (run.choAgyLan || 0) + 1; run.retryNote = note; run.choAgy = Date.now() + choAgyMs; save(run); audit.log("autopilot", "step.wait_agy", run.id, { role }); return; }
       if (e.code !== "NEEDS_SCAN_APPROVAL") throw e;
       // Giữa luồng có file .md mới/đổi chứa điểm bất thường (AI vừa tạo, hoặc kéo về): tạm dừng, CEO duyệt thì chạy tiếp đúng lượt này.
-      run.status = "awaiting_scan"; run.scan = { total: e.scan.total, fingerprint: e.scan.fingerprint, role, since: Date.now() }; run.retryNote = run.retryNote || null; save(run);
+      run.status = "awaiting_scan"; run.scan = { total: e.scan.total, fingerprint: e.scan.fingerprint, truncated: e.scan.truncated, role, since: Date.now() }; run.retryNote = run.retryNote || null; save(run);
       audit.log("autopilot", "scan.pause", run.id, { role, total: e.scan.total });
       return;
     }
@@ -377,7 +377,7 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
       // File .md bất thường cần CEO duyệt (chế độ toàn quyền): như khi chạy lần lượt, tạm dừng ở awaiting_scan rồi chạy lại lượt Astra.
       if (e.code === "NEEDS_SCAN_APPROVAL") {
         dungSongSong(run, null);
-        run.status = "awaiting_scan"; run.scan = { total: e.scan.total, fingerprint: e.scan.fingerprint, role: "CODEX_ASTRA_DEV", since: Date.now() }; save(run);
+        run.status = "awaiting_scan"; run.scan = { total: e.scan.total, fingerprint: e.scan.fingerprint, truncated: e.scan.truncated, role: "CODEX_ASTRA_DEV", since: Date.now() }; save(run);
         audit.log("autopilot", "scan.pause", run.id, { role: vai, total: e.scan.total, songSong: true });
         return;
       }
@@ -744,7 +744,9 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     const q = quotaState(providers().find((p) => p.id === applier));
     if (q.state === "hết") throw err("NO_QUOTA", `${PROVIDER_NAME[applier]} (AI kiểm kết quả) cũng đang hết hạn mức tới ${new Date(q.resetAt).toLocaleString("vi-VN")}.`);
     // Kết quả để trong .git của repo (không lẫn vào file dự án, không đưa vào dòng lệnh vì Windows giới hạn độ dài).
-    const store = nhanh.isRepo(run.workspace) ? path.join(run.workspace, ".git", "van-phong-ai") : path.join(folder, "web");
+    const store = nhanh.isRepo(run.workspace)
+      ? path.join(nhanh.git(run.workspace, ["rev-parse", "--absolute-git-dir"]).trim(), "van-phong-ai")
+      : path.join(folder, "web");
     fs.mkdirSync(store, { recursive: true });
     const file = path.join(store, run.id + "-" + Date.now().toString(36) + ".md");
     fs.writeFileSync(file, text, { mode: 0o600 });

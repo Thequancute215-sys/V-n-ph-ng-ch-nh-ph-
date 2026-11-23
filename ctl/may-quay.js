@@ -13,7 +13,7 @@
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
-const { kiem, MAY_QUAY_MAC_DINH, congDaDuyet } = require("../lib/phim");
+const { kiem, MAY_QUAY_MAC_DINH, congDaDuyet, docFileTrongPhim } = require("../lib/phim");
 const { writeAtomic } = require("../lib/ghi-file");
 const { khoaGemini } = require("./tra-cuu");
 
@@ -37,11 +37,10 @@ const daChi = (s) => tron(s.muc.reduce((t, m) => t + (Number(m.usd) || 0), 0));
 
 // Ảnh tham chiếu → phần "image" của Interactions API (base64). Chỉ ảnh trong repo, đúng đuôi, tối đa 20 MB.
 function phanAnh(root, rel) {
-  const f = path.resolve(root, rel);
-  if (path.relative(root, f).startsWith("..")) throw err("PATH_ESCAPE", "Ảnh ngoài dự án: " + rel);
+  const f = docFileTrongPhim(root, rel);
   const mime = MIME[path.extname(f).toLowerCase()];
   if (!mime) throw err("BAD_REQUEST", "Ảnh tham chiếu phải là png/jpg/webp: " + rel);
-  let st; try { st = fs.statSync(f); } catch { throw err("NOT_FOUND", "Không có ảnh " + rel); }
+  const st = fs.statSync(f);
   if (st.size > 20 * 1024 * 1024) throw err("TOO_LARGE", "Ảnh quá 20 MB: " + rel);
   return { type: "image", mime_type: mime, data: fs.readFileSync(f).toString("base64") };
 }
@@ -128,19 +127,27 @@ function createMayQuay({ dir, audit = { log() {} }, khoa = () => khoaGemini(dir)
     const yc = dungYeuCau(root, phim, c, { loai, soPhuongAn, doPhanGiai });
     const s = soChi(root), chi = daChi(s);
     const ngan = Number(phim.ngan_sach_usd) || 0;
-    return { phim, c, yc, chi, ngan, conLai: tron(ngan - chi) };
+    const ext = loai === "video" ? ".mp4" : ".jpg";
+    const daCo = (loai === "video" ? c.take || [] : c.khung || []).length;
+    const lanGoi = Array.from({ length: yc.soLuong }, (_, i) => {
+      const hash = crypto.createHash("sha256").update(JSON.stringify({ body: yc.body, thuTu: daCo + i })).digest("hex").slice(0, 32);
+      const dem = path.join(root, "media", "bo-dem", hash + ext);
+      return { hash, dem, coSan: fs.existsSync(dem) };
+    });
+    const usd = tron(yc.usd / yc.soLuong * lanGoi.filter((l) => !l.coSan).length);
+    return { phim, c, yc, chi, ngan, conLai: tron(ngan - chi), lanGoi, usd };
   }
 
   // Ước tính trước khi CEO bấm quay: không gọi mạng, không tốn gì.
   function uocTinh(root, opts) {
-    const { yc, chi, ngan, conLai } = chuanBi(root, opts);
-    return { usd: yc.usd, daChi: chi, nganSach: ngan, conLai, du: chi + yc.usd <= ngan + 1e-9, moHinh: yc.body.model };
+    const { yc, chi, ngan, conLai, usd } = chuanBi(root, opts);
+    return { usd, daChi: chi, nganSach: ngan, conLai, du: chi + usd <= ngan + 1e-9, moHinh: yc.body.model };
   }
 
   async function quay(root, opts, actor = "ceo") {
     if (dang.has(root)) throw err("MAY_QUAY_BAN", "Phim này đang quay cảnh " + dang.get(root).canh + ". Chờ xong rồi bấm tiếp.");
-    const { phim, c, yc, chi, ngan } = chuanBi(root, opts);
-    if (chi + yc.usd > ngan + 1e-9) throw err("VUOT_NGAN_SACH", `Lần quay này ~$${yc.usd}, đã chi $${chi} / ngân sách $${ngan}. Nâng ngân sách hoặc giảm số phương án.`);
+    const { phim, c, yc, chi, ngan, lanGoi, usd: uocChi } = chuanBi(root, opts);
+    if (chi + uocChi > ngan + 1e-9) throw err("VUOT_NGAN_SACH", `Lần quay này ~$${uocChi}, đã chi $${chi} / ngân sách $${ngan}. Nâng ngân sách hoặc giảm số phương án.`);
     dang.set(root, { canh: c.ma, loai: opts.loai, batDau: now().toISOString() });
     loiCuoi.delete(root);
     try {
@@ -149,22 +156,23 @@ function createMayQuay({ dir, audit = { log() {} }, khoa = () => khoaGemini(dir)
       const ext = opts.loai === "video" ? ".mp4" : ".jpg";
       const files = [];
       let usd = 0, tuBoDem = 0;
-      for (let i = 0; i < yc.soLuong; i++) {
-        // Bộ đệm chặn trả tiền hai lần cho CÙNG một lần quay (vd. lỗi ghi hồ sơ sau khi đã gọi xong rồi bấm lại).
-        // Số thứ tự take/khung nằm trong mã băm: quay lại (take 2) hay phương án 2 vẫn là lần quay mới.
-        const thuTu = (opts.loai === "video" ? (c.take || []).length : (c.khung || []).length) + i;
-        const hash = crypto.createHash("sha256").update(JSON.stringify({ body: yc.body, thuTu })).digest("hex").slice(0, 32);
-        const dem = path.join(boDem, hash + ext);
+      for (const [i, { hash, dem, coSan }] of lanGoi.entries()) {
         let buf;
-        if (fs.existsSync(dem)) { buf = fs.readFileSync(dem); tuBoDem++; }
+        if (coSan) { buf = fs.readFileSync(dem); tuBoDem++; }
         else {
           const j = await goi(yc.body);
           const kq = layKetQua(j, opts.loai === "video" ? "video" : "anh");
           if (!kq.length) throw err("MAY_QUAY_LOI", "Gemini không trả " + (opts.loai === "video" ? "video" : "ảnh") + " (có thể bị bộ lọc an toàn chặn). Sửa mô tả khung hình rồi thử lại.");
+          // Ghi chi phí ngay khi nhà cung cấp trả kết quả, trước bước tải và lưu file.
+          const motLan = tron(yc.usd / yc.soLuong);
+          const s = soChi(root);
+          s.muc.push({ luc: now().toISOString(), canh: c.ma, loai: opts.loai, moHinh: yc.body.model, giay: yc.doDai,
+            soAnh: opts.loai === "khung" ? 1 : 0, usd: motLan, maLanGoi: hash, actor });
+          writeAtomic(fileSoChi(root), JSON.stringify(s, null, 2) + "\n", 0o644);
+          usd += motLan;
           buf = kq[0].data ? Buffer.from(kq[0].data, "base64") : await taiVe(kq[0].uri);
           if (!buf.length) throw err("MAY_QUAY_LOI", "Kết quả rỗng.");
-          fs.writeFileSync(dem, buf);
-          usd += yc.usd / yc.soLuong;
+          writeAtomic(dem, buf);
         }
         const thuMuc = path.join(root, "media", opts.loai === "video" ? "quay" : "khung");
         fs.mkdirSync(thuMuc, { recursive: true });
@@ -180,9 +188,6 @@ function createMayQuay({ dir, audit = { log() {} }, khoa = () => khoaGemini(dir)
       else { cm.khung = [...(cm.khung || []), ...files]; if (!cm.trang_thai || cm.trang_thai === "viet") cm.trang_thai = "co_khung"; }
       writeAtomic(path.join(root, "phim.json"), JSON.stringify(moi, null, 2) + "\n", 0o644);
       const s = soChi(root);
-      s.muc.push({ luc: now().toISOString(), canh: c.ma, loai: opts.loai, moHinh: yc.body.model, giay: yc.doDai, soAnh: opts.loai === "khung" ? yc.soLuong : 0,
-        usd: tron(usd), tuBoDem, files, actor });
-      writeAtomic(fileSoChi(root), JSON.stringify(s, null, 2) + "\n", 0o644);
       audit.log(actor, "phim.quay", path.basename(root) + "/" + c.ma, { loai: opts.loai, moHinh: yc.body.model, usd: tron(usd), tuBoDem });
       return { files, usd: tron(usd), tuBoDem, daChi: daChi(s), nganSach: Number(phim.ngan_sach_usd) || 0 };
     } catch (e) {
@@ -197,7 +202,7 @@ function createMayQuay({ dir, audit = { log() {} }, khoa = () => khoaGemini(dir)
   function batDauQuay(root, opts, actor = "ceo") {
     if (dang.has(root)) throw err("MAY_QUAY_BAN", "Phim này đang quay cảnh " + dang.get(root).canh + ". Chờ xong rồi bấm tiếp.");
     const t = chuanBi(root, opts);
-    if (t.chi + t.yc.usd > t.ngan + 1e-9) throw err("VUOT_NGAN_SACH", `Lần quay này ~$${t.yc.usd}, đã chi $${t.chi} / ngân sách $${t.ngan}. Nâng ngân sách hoặc giảm số phương án.`);
+    if (t.chi + t.usd > t.ngan + 1e-9) throw err("VUOT_NGAN_SACH", `Lần quay này ~$${t.usd}, đã chi $${t.chi} / ngân sách $${t.ngan}. Nâng ngân sách hoặc giảm số phương án.`);
     const p = quay(root, opts, actor);
     p.catch(() => {});
     return trangThai(root);

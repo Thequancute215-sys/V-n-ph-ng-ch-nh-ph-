@@ -3,7 +3,7 @@
 // luồng tự chạy đang chờ anh (ctl /autopilot). Không có số nào tự đặt ra.
 // OS-3: bấm Duyệt, Trả lời hay Xem thì mở ngăn trượt ngay tại Tổng quan, không chuyển sang trang Luồng.
 import { esc, cat, luc, dangTai, rong, loi, ctl } from "../ui.js";
-import { TT_LUONG, LUONG_CAN_ANH, LUONG_CHO, tenVai, cauHoi } from "../viec-chung.js";
+import { TT_LUONG, LUONG_CAN_ANH, LUONG_CHO, tenVai, cauHoi, tomTatGiaiThich } from "../viec-chung.js";
 
 const CHO_ANH = new Set([...LUONG_CAN_ANH, ...LUONG_CHO]);
 const TT_AI = { active: ["đang làm", "song"], idle: ["rảnh", "phu"], away: ["vắng", "mo"] };
@@ -43,14 +43,15 @@ export async function mo(vung, { kho, ngan }) {
   function veCanAnh() {
     const s = kho.state, ten = (k) => (s && s.agents.find((a) => a.key === k) || {}).name || k || "AI";
     if (!s && !handoffs && !runs) { $("canAnh").innerHTML = kho.loiState ? loi(kho.loiState, false) : dangTai(4); return; }
-    const muc = [];
-    for (const a of (s && s.asks) || []) muc.push({ t: a.since, tieu: cat(a.text, 220), nguon: ten(a.who) + (a.guess ? " (máy đoán từ câu cuối)" : ""), nut: `<a class="nut nho" href="#/tin-nhan?ai=${encodeURIComponent(a.who || "")}">Xem tin</a>` });
+    const bay = Date.now(), muc = [];
+    for (const a of (s && s.asks) || []) muc.push({ sap: a.since || 0, t: a.since, tieu: cat(a.text, 220), nguon: ten(a.who) + (a.guess ? " (máy đoán từ câu cuối)" : ""), nut: `<a class="nut nho" href="#/tin-nhan?ai=${encodeURIComponent(a.who || "")}">Xem tin</a>` });
     const nutNgan = (ref, chu, tieu, chinh = false) => `<button type="button" class="${chinh ? "nut-chinh" : "nut nho"}" data-ngan="${esc(ref)}" aria-label="${esc(chu + ": " + cat(tieu, 80))}">${esc(chu)}</button>`;
-    for (const h of handoffs || []) { const p = h.payload || {}, tieu = cat(p.giai_thich || p.tom_tat || h.summary || "Bàn giao chờ duyệt", 220);
-      muc.push({ t: h.decided_at || 0, tieu, nguon: "Bàn giao của " + tenVai(h.role || p.vai) + (h.next_owner || p.next_owner ? " cho " + tenVai(h.next_owner || p.next_owner) : ""), nut: nutNgan("ban-giao:" + h.job_id, p.ask_ceo ? "Trả lời" : "Duyệt", tieu) }); }
+    (handoffs || []).forEach((h, idx) => { const p = h.payload || {}, tieu = cat(tomTatGiaiThich(p.giai_thich) || p.tom_tat || h.summary || "Bàn giao chờ duyệt", 220);
+      const t = h.createdAt || h.created_at || h.decided_at || 0;
+      muc.push({ sap: t || (bay - idx), t, tieu, nguon: "Bàn giao của " + tenVai(h.role || p.vai) + (h.next_owner || p.next_owner ? " cho " + tenVai(h.next_owner || p.next_owner) : ""), nut: nutNgan("ban-giao:" + h.job_id, p.ask_ceo ? "Trả lời" : "Duyệt", tieu) }); });
     for (const r of runs || []) if (CHO_ANH.has(r.status)) { const tieu = cat(cauHoi(r) || r.task, 220);
-      muc.push({ t: r.updatedAt, tieu, nguon: "Luồng tự chạy: " + TT_LUONG[r.status], nut: nutNgan("luong:" + r.id, r.status === "awaiting_answer" ? "Trả lời" : "Mở", tieu, true) }); }
-    muc.sort((x, y) => (y.t || 0) - (x.t || 0));
+      muc.push({ sap: r.updatedAt || 0, t: r.updatedAt, tieu, nguon: "Luồng tự chạy: " + TT_LUONG[r.status], nut: nutNgan("luong:" + r.id, r.status === "awaiting_answer" ? "Trả lời" : "Mở", tieu, true) }); }
+    muc.sort((x, y) => (y.sap || 0) - (x.sap || 0));
     $("soCanAnh").textContent = muc.length ? muc.length + " việc" : "";
     $("canAnh").innerHTML = (loiCtl ? loi("Chưa đọc được bàn giao và luồng: " + loiCtl) : "") + (muc.length
       ? muc.map((m) => `<div class="dong"><div><div class="tieu">${esc(m.tieu)}</div><div class="chi-tiet">${esc(m.nguon)}${m.t ? ", " + esc(luc(m.t)) : ""}</div></div>${m.nut}</div>`).join("")

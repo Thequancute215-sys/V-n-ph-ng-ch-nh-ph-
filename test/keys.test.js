@@ -18,7 +18,9 @@ test("lưu khóa hợp lệ vào ~/.van-phong-ao/keys.json", () => {
   if (process.platform !== "win32") assert.strictEqual(fs.statSync(keys.file(home)).mode & 0o777, 0o600);
 });
 test("từ chối nhà cung cấp lạ và khóa sai định dạng", () => {
-  assert.strictEqual(keys.save("evil", "sk-" + "a".repeat(30), home).ok, false);
+  for (const provider of ["evil", "constructor", "__proto__", ["gpt"]]) {
+    assert.strictEqual(keys.save(provider, "sk-" + "a".repeat(30), home).ok, false);
+  }
   assert.strictEqual(keys.save("gpt", "<script>", home).ok, false);
   assert.strictEqual(keys.has("gpt", home), false);
 });

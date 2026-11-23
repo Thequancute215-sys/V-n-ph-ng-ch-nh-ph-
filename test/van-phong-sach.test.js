@@ -20,29 +20,29 @@ const ROOT = path.join(__dirname, "..");
 const read = (f) => fs.readFileSync(path.join(ROOT, f), "utf8");
 
 const freePort = () => new Promise((ok, bad) => { const s = net.createServer(); s.on("error", bad); s.listen(0, "127.0.0.1", () => { const p = s.address().port; s.close(() => ok(p)); }); });
-function req(port, method, p, body) {
+function req(port, method, p, body, extraHeaders = {}) {
   return new Promise((ok, bad) => {
     const data = body === undefined ? null : Buffer.from(JSON.stringify(body));
-    const r = http.request({ host: "127.0.0.1", port, method, path: p, headers: data ? { "content-type": "application/json", "content-length": data.length } : {} }, (res) => {
-      let b = ""; res.on("data", (c) => (b += c)); res.on("end", () => { let json = null; try { json = JSON.parse(b); } catch {} ok({ status: res.statusCode, json, text: b }); });
+    const r = http.request({ host: "127.0.0.1", port, method, path: p, headers: { ...(data ? { "content-type": "application/json", "content-length": data.length } : {}), ...extraHeaders } }, (res) => {
+      let b = ""; res.on("data", (c) => (b += c)); res.on("end", () => { let json = null; try { json = JSON.parse(b); } catch {} ok({ status: res.statusCode, headers: res.headers, json, text: b }); });
     });
     r.on("error", bad); r.setTimeout(10000, () => r.destroy(new Error("hết giờ " + p))); r.end(data);
   });
 }
 
 // Dựng máy chủ văn phòng thật từ bản chép của mã (server.js + lib/ + public/), HOME tạm: không đụng ~/.claude, ~/.van-phong-ao của máy.
-async function startOffice(t) {
+async function startOffice(t, accessKey = "") {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vp-sach-"));
   const home = path.join(dir, "home"); fs.mkdirSync(home);
   for (const x of ["server.js", "package.json", "lib", "public"]) fs.cpSync(path.join(ROOT, x), path.join(dir, x), { recursive: true });
   const port = await freePort(), ctlPort = await freePort();
-  fs.writeFileSync(path.join(dir, "config.json"), JSON.stringify({ port, host: "127.0.0.1", projects: [path.join(dir, "du-an")] }));
+  fs.writeFileSync(path.join(dir, "config.json"), JSON.stringify({ port, host: "127.0.0.1", accessKey, projects: [path.join(dir, "du-an")] }));
   const env = { ...process.env, HOME: home, USERPROFILE: home, VP_HOME: path.join(home, ".van-phong-ao"), CTL_PORT: String(ctlPort), PORT: String(port) };
   const child = spawn(process.execPath, ["server.js"], { cwd: dir, env, stdio: ["ignore", "pipe", "pipe"], windowsHide: true });
   let log = ""; child.stdout.on("data", (c) => (log += c)); child.stderr.on("data", (c) => (log += c));
   t.after(() => { child.kill(); try { fs.rmSync(dir, { recursive: true, force: true }); } catch {} });
   for (let i = 0; i < 100; i++) {
-    try { const r = await req(port, "GET", "/state"); if (r.status === 200) return port; } catch {}
+    try { const r = await req(port, "GET", "/state"); if (r.status === (accessKey ? 401 : 200)) return port; } catch {}
     if (child.exitCode !== null) break;
     await new Promise((r) => setTimeout(r, 100));
   }
@@ -70,6 +70,44 @@ test("máy chủ: đường nhắn tin PIN và phát loa giả đã bỏ; việc
   assert.strictEqual(ht.status, 200); assert.ok(Array.isArray(ht.json.roles)); assert.ok(!("pending" in ht.json), "/hopthu còn mục pending");
   // các API còn lại vẫn chạy
   for (const p of ["/state", "/docs", "/tongquan", "/perf", "/api/accounts", "/"]) assert.strictEqual((await req(port, "GET", p)).status, 200, p);
+});
+
+test("khóa API: máy chủ mới được lưu, người xem và thiết bị đã ghép chỉ nhận trạng thái", async (t) => {
+  const accessKey = "khoa-xem-trong-fixture";
+  const port = await startOffice(t, accessKey);
+  const login = await req(port, "GET", "/?key=" + encodeURIComponent(accessKey));
+  assert.strictEqual(login.status, 302);
+  const cookie = login.headers["set-cookie"][0].split(";")[0];
+  const local = { cookie };
+  const remote = { cookie, "x-forwarded-proto": "https" };
+  const show = (headers) => req(port, "GET", "/api/accounts", undefined, headers);
+  const save = (headers, body) => req(port, "POST", "/api/accounts/save", body, headers);
+  const first = await show(local);
+  assert.strictEqual(first.json.canManageKeys, true);
+  assert.strictEqual(first.headers["cache-control"], "no-store");
+  const pairing = await req(port, "POST", "/dkx/ma", {}, local);
+  assert.strictEqual(pairing.status, 200);
+  const phone = await req(port, "POST", "/dkx/ghep", { ma: pairing.json.ma, ten: "Điện thoại thử" }, remote);
+  assert.strictEqual(phone.status, 200);
+  const paired = { ...remote, cookie: cookie + "; " + phone.headers["set-cookie"][0].split(";")[0] };
+  const fakeKey = "AIza" + "a".repeat(35);
+  for (const identity of [remote, paired]) {
+    const read = await show(identity);
+    assert.strictEqual(read.status, 200);
+    assert.strictEqual(read.json.canManageKeys, false);
+    assert.deepStrictEqual(Object.keys(read.json.accounts).sort(), ["claude", "gemini", "gpt"]);
+    for (const account of Object.values(read.json.accounts)) {
+      assert.deepStrictEqual(Object.keys(account), ["connected"]);
+    }
+    assert.strictEqual((await save(identity, { provider: "gemini", apiKey: fakeKey })).status, 403);
+  }
+  assert.strictEqual((await show(local)).json.accounts.gemini.hasApiKey, false);
+  assert.strictEqual((await save(local, { provider: "constructor", apiKey: fakeKey })).status, 400);
+  const saved = await save(local, { provider: "gemini", apiKey: fakeKey });
+  assert.strictEqual(saved.status, 200);
+  assert.deepStrictEqual(Object.keys(saved.json).sort(), ["message", "ok"]);
+  assert.ok(!saved.text.includes(fakeKey));
+  assert.strictEqual((await show(local)).json.accounts.gemini.hasApiKey, true);
 });
 
 test("giao diện: mọi /api/… trang gọi đều có trên máy chủ; không còn chat-ui.js, PIN hay phát loa giả", () => {

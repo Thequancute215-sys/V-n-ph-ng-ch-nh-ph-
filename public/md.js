@@ -3,12 +3,14 @@
 (function () {
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   function inline(s) {
-    s = esc(s);
-    s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
-    s = s.replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
-    s = s.replace(/(^|[^*])\*([^*\s][^*]*)\*/g, "$1<i>$2</i>");
-    s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-    return s;
+    s = esc(s).replace(/\u0000/g, "");
+    const slots = [];
+    const hold = (html) => `\u0000${slots.push(html) - 1}\u0000`;
+    const fmt = (t) => t.replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/(^|[^*])\*([^*\s][^*]*)\*/g, "$1<i>$2</i>");
+    s = s.replace(/`([^`]+)`/g, (_, c) => hold(`<code>${c}</code>`));
+    s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, (_, label, url) => hold(`<a href="${url}" target="_blank" rel="noopener noreferrer">${fmt(label)}</a>`));
+    s = fmt(s);
+    return s.replace(/\u0000(\d+)\u0000/g, (_, i) => slots[Number(i)]);
   }
   function render(md) {
     const lines = String(md || "").replace(/\r\n/g, "\n").split("\n"), out = [];

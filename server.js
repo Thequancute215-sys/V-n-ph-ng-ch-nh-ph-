@@ -22,7 +22,7 @@ const keys = require("./lib/keys");
 const ctlbridge = require("./lib/ctlbridge");
 const dieuKhienXa = require("./lib/dieu-khien-xa");
 const dkx = dieuKhienXa.createDieuKhienXa();
-const { createSoTinNhan } = require("./lib/so-tin-nhan");
+const { createSoTinNhan, khoaTin } = require("./lib/so-tin-nhan");
 
 const ROOT = __dirname;
 const CFG = loadConfig(ROOT);
@@ -206,9 +206,10 @@ const events = [];
 const seenEvt = new Set();
 function pushEvent(e) {
   if (!e.body) e.body = e.title;
-  const key = `${e.kind}|${e.from}|${e.to}|${e.title.slice(0, 60)}`, b = Math.floor(e.t / 60000);
-  if (seenEvt.has(key + b) || seenEvt.has(key + (b - 1))) return;
-  seenEvt.add(key + b); if (seenEvt.size > 20000) seenEvt.clear();
+  const key = khoaTin(e);
+  if (seenEvt.has(key)) return;
+  if (seenEvt.size >= 20000) seenEvt.delete(seenEvt.keys().next().value);
+  seenEvt.add(key);
   so.ghi(e);
   events.push(e); events.sort((x, y) => x.t - y.t);
   if (events.length > 500) events.splice(0, events.length - 500);
@@ -599,7 +600,7 @@ const LOGIN = `<!doctype html><meta charset="utf-8"><meta name="viewport" conten
 <input name="key" type="password" autofocus style="padding:12px;border-radius:10px;border:1px solid #333;background:#111;color:#eee;font-size:16px">
 <button style="padding:12px;border-radius:10px;border:0;background:#ecc970;font-weight:700;font-size:15px">Vào xem</button></form></body>`;
 const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon", ".webmanifest": "application/manifest+json; charset=utf-8", ".json": "application/json; charset=utf-8" };
-const json = (res, body, code = 200) => { res.writeHead(code, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-cache" }); res.end(typeof body === "string" ? body : JSON.stringify(body)); };
+const json = (res, body, code = 200, cacheControl = "no-cache") => { res.writeHead(code, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": cacheControl }); res.end(typeof body === "string" ? body : JSON.stringify(body)); };
 function sse(req, res, set, first) {
   res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive", "X-Accel-Buffering": "no" });
   res.write("data: " + JSON.stringify(first) + "\n\n"); set.add(res); req.on("close", () => set.delete(res));
@@ -756,15 +757,26 @@ http.createServer((req, res) => {
 
   // API: Lấy trạng thái tài khoản AI (Claude, GPT Codex, Gemini)
   if (url.pathname === "/api/accounts" && req.method === "GET") {
-    return json(res, { ok: true, accounts: getAccountsStatus() });
+    const canManageKeys = ctlbridge.isLocal(req);
+    const status = getAccountsStatus();
+    const accounts = canManageKeys ? status : Object.fromEntries(
+      Object.entries(status).map(([provider, { connected }]) => [provider, { connected }])
+    );
+    return json(res, { ok: true, canManageKeys, accounts }, 200, "no-store");
   }
 
   // API: Lưu API Key tài khoản AI (vào ~/.van-phong-ao/keys.json, không vào config.json, không trả khóa về)
   if (url.pathname === "/api/accounts/save" && req.method === "POST") {
+    if (!ctlbridge.isLocal(req)) {
+      return json(res, { ok: false, error: "Chỉ lưu khóa API trên máy tính chạy văn phòng." }, 403, "no-store");
+    }
     guard.readJson(req).then((data) => {
-      if (!data) return json(res, { ok: false, error: "Thân yêu cầu không phải JSON hợp lệ" }, 400);
-      const r = keys.save(data.provider, data.apiKey);
-      json(res, { ok: r.ok, message: r.ok ? "Đã lưu khóa vào " + keys.file() : r.error, accounts: getAccountsStatus() }, r.ok ? 200 : 400);
+      if (!data || Array.isArray(data)) {
+        return json(res, { ok: false, error: "Thân yêu cầu phải là đối tượng JSON." }, 400, "no-store");
+      }
+      const result = keys.save(data.provider, data.apiKey);
+      if (!result.ok) return json(res, result, 400, "no-store");
+      return json(res, { ok: true, message: "Đã lưu khóa API." }, 200, "no-store");
     });
     return;
   }
@@ -772,7 +784,7 @@ http.createServer((req, res) => {
   if (url.pathname === "/state") return json(res, snapshot());
   if (url.pathname === "/tin-nhan" && req.method === "GET") {
     const options = {};
-    for (const name of ["ai", "tu", "toi", "q", "truoc", "gioiHan"]) {
+    for (const name of ["ai", "tu", "toi", "q", "truoc", "truocId", "gioiHan"]) {
       const values = url.searchParams.getAll(name);
       if (!values.length) continue;
       const value = values[0];
@@ -786,6 +798,9 @@ http.createServer((req, res) => {
         }
         options[name] = n;
       } else options[name] = value;
+    }
+    if (options.truocId !== undefined && (!/^[a-f0-9]{16}$/.test(options.truocId) || options.truoc === undefined)) {
+      return json(res, { ok: false, error: "Mã tin phân trang không hợp lệ" }, 400);
     }
     return json(res, { ok: true, ...so.doc(options) });
   }
