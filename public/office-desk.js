@@ -175,15 +175,18 @@ export function createDesk(getOffice) {
   }
   function renderApprovals() {
     const waiting = ownRuns().filter(pendingRun), manual = ownHandoffs();
-    let html = errors.scan ? `<p class="error">${esc(errors.scan)}</p>` : globalThis.RepoProgress.scanHtml(scan, active, "data-scan", { canApprove: !isRemote });
+    const hasAwaitingScan = waiting.some((r) => r.status === "awaiting_scan");
+    let html = errors.scan ? `<p class="error">${esc(errors.scan)}</p>` : globalThis.RepoProgress.scanHtml(scan, active, "data-scan", { canApprove: !isRemote, hasAwaitingScan });
     html += waiting.map((r) => {
       let body = r.problem ? `<p class="error">${esc(r.problem)}</p>` : "";
       if (r.status === "awaiting_answer") body += (r.report ? `<details open><summary>Phân tích của Claude</summary><pre class="desk-report" tabindex="0">${esc(r.report)}</pre></details>` : "") + question(r.question, "autopilot", r.id);
       body += globalThis.RepoProgress.explainHtml(r) + globalThis.RepoProgress.deleteHtml(r);
       if (r.status === "awaiting_scan") {
-        body += r.scan?.truncated
-          ? '<p class="error">Rà soát chưa hoàn tất. Xem mục rà soát của dự án để biết bước tiếp theo.</p>'
-          : '<p class="error">Luồng tạm dừng vì file .md / thư viện có điểm bất thường mới: duyệt ở mục rà soát phía trên để chạy tiếp.</p>';
+        body += (scan?.truncated || (!scan && r.scan?.truncated))
+          ? '<p class="error">Rà soát chưa hoàn tất. Xử lý phần chưa quét hoặc chọn mức quyền thấp hơn trước khi chạy Toàn quyền.</p>'
+          : scan?.approved
+            ? (isRemote ? '<p class="muted">Rà soát mới nhất đã đạt. Bấm Chạy tiếp trên máy tính để tiếp tục luồng.</p>' : '<p class="muted">Rà soát mới nhất đã đạt: bấm Chạy tiếp ở mục rà soát phía trên để tiếp tục luồng.</p>')
+            : (isRemote ? '<p class="error">Luồng tạm dừng vì file .md / thư viện có điểm bất thường mới: duyệt trên máy tính để chạy tiếp.</p>' : '<p class="error">Luồng tạm dừng vì file .md / thư viện có điểm bất thường mới: duyệt ở mục rà soát phía trên để chạy tiếp.</p>');
       }
       if (r.status === "awaiting_approval") body += `<pre class="desk-report" tabindex="0">${esc(r.report || "Chưa có nội dung báo cáo.")}</pre><div class="desk-actions">${action("autopilot", r.id, "approve", "Duyệt báo cáo")}${action("autopilot", r.id, "reject", "Từ chối")}</div>`;
       if (r.status === "attention") body += action("autopilot", r.id, "approve", "Đã xem lỗi");
@@ -505,7 +508,7 @@ export function createDesk(getOffice) {
         const w = await request("/workspaces"); errors.workspace = "";
         const changed = active !== w.active;
         active = w.active; workspaces = w.workspaces || [];
-        if (changed) { overview = null; runs = []; jobs = []; handoffs = []; ideas = []; turn = null; compareUrl = null; errors = {}; $("deskProject").value = ""; }
+        if (changed) { overview = null; scan = null; runs = []; jobs = []; handoffs = []; ideas = []; turn = null; compareUrl = null; errors = {}; $("deskProject").value = ""; }
         // Tự mở "Dự án đang ở đâu" khi đổi dự án; lần đầu tải trang thì chỉ một lần mỗi phiên trình duyệt (hộp thoại chặn cảnh 3D).
         if (changed && !firstLoad) show("progress");
         else if (firstLoad) { let seen = false; try { seen = sessionStorage.getItem("vp-progress-seen") === active; sessionStorage.setItem("vp-progress-seen", active || ""); } catch {} if (!seen && active) show("progress"); }
@@ -516,7 +519,7 @@ export function createDesk(getOffice) {
           ["handoffs", "/handoffs", (d) => { handoffs = d.handoffs || []; }],
           ["quotas", "/quotas", (d) => { quotas = d; }],
           ["dieuPhoi", "/dieu-phoi", (d) => { dieuPhoi = d.dieuPhoi || null; }],
-          ...(active ? [["scan", "/scan?workspace=" + encodeURIComponent(active), (d) => { scan = d.scan || null; }]] : []),
+          ...(active ? [["scan", "/scan?workspace=" + encodeURIComponent(active) + "&fresh=1", (d) => { scan = d.scan || null; }]] : []),
           ...(active ? [["publish", "/publish?workspace=" + encodeURIComponent(active), (d) => { publish = d.publish || null; }]] : []),
           ...(active ? [["journal", "/nhat-ky?workspace=" + encodeURIComponent(active) + "&limit=120", (d) => { journal = d.nhatKy || null; }]] : []),
           ...(active ? [["turn", "/ai/status?workspace=" + encodeURIComponent(active), (d) => { turn = d; }],
@@ -724,7 +727,13 @@ export function createDesk(getOffice) {
       return;
     }
     const sb = e.target.closest("[data-scan]");
-    if (sb && !sb.disabled) { mutate("Anh đã đọc các điểm bất thường và đồng ý cho AI chạy toàn quyền trong dự án này", async () => { await request("/scan/approve", { workspace: sb.dataset.scanWorkspace, fingerprint: sb.dataset.scan }, 30000); }); return; }
+    if (sb && !sb.disabled && !isRemote) {
+      const label = sb.dataset.scanMode === "resume"
+        ? "Rà soát mới nhất đã đạt. Chạy tiếp luồng đang tạm dừng chờ rà soát của dự án này"
+        : "Anh đã đọc các điểm bất thường và đồng ý cho AI chạy toàn quyền trong dự án này";
+      mutate(label, async () => { await request("/scan/approve", { workspace: sb.dataset.scanWorkspace, fingerprint: sb.dataset.scan || "" }, 30000); });
+      return;
+    }
     const room = e.target.closest("[data-room]"); if (room?.dataset.room) { getOffice()?.goToRoom(room.dataset.room); dialog.close(); return; }
     const repo = e.target.closest("[data-repo]"); if (repo && !mutating) { openGithub(repo.dataset.repo); return; }
     const b = e.target.closest("[data-action]"); if (!b || b.disabled) return;

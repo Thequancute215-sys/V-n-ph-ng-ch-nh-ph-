@@ -9,7 +9,7 @@ const TRANG = 60;
 export async function mo(vung, { kho, ctl }) {
   const thamSo = new URLSearchParams(location.hash.split("?")[1] || "");
   let ai = thamSo.get("ai") || "", q = "", tin = [], conNua = false, coSo = true, dangTaiTin = false, loiTin = "", moiNhat = 0;
-  let nguoiHoi = "pain", cheDo = "hoi", henHoi = null, conSong = true;
+  let nguoiHoi = "pain", cheDo = "hoi", henHoi = null, phienHoi = 0, nguCanhHoi = "", conSong = true;
 
   vung.innerHTML = `<div class="vung">
     <div class="tin-khung">
@@ -96,25 +96,57 @@ export async function mo(vung, { kho, ctl }) {
   }
 
   // ---------- soạn ----------
-  function datCheDo(m) {
+  function xoaTraLoi() {
+    phienHoi++;
+    clearTimeout(henHoi);
+    henHoi = null;
+    nguCanhHoi = "";
+    const el = $("traLoi");
+    if (el) el.innerHTML = "";
+  }
+
+  function datCheDo(m, taiLai = true) {
+    const doi = m !== cheDo;
     cheDo = m;
     vung.querySelectorAll("[data-che-do]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.cheDo === m)));
     $("nguoiHoi").hidden = m !== "hoi";
     $("goiYCheDo").textContent = m === "hoi" ? "AI chỉ đọc repo để trả lời, không sửa file." : "Tạo một luồng tự chạy trong dự án đang chọn; đội làm theo lượt agent.md, anh duyệt báo cáo cuối.";
     $("nutGui").textContent = m === "hoi" ? "Gửi câu hỏi" : "Giao việc";
     $("noiDung").placeholder = m === "hoi" ? "Dự án đang tới lượt ai, và còn vướng gì?" : "Thêm nút xuất CSV cho bảng hạn mức, có test";
+    if (m !== "hoi") xoaTraLoi();
+    else if (taiLai && doi) veTraLoi({ xoaTruoc: true });
   }
 
-  async function veTraLoi() {
+  async function veTraLoi({ xoaTruoc = false } = {}) {
     clearTimeout(henHoi);
-    if (!conSong || cheDo !== "hoi" || !kho.duAn) { $("traLoi").innerHTML = ""; return; }
+    henHoi = null;
+    const mine = ++phienHoi;
+    const ws = kho.duAn, who = nguoiHoi;
+    if (!conSong || cheDo !== "hoi" || !ws) {
+      nguCanhHoi = "";
+      const el = $("traLoi");
+      if (el) el.innerHTML = "";
+      return;
+    }
+    const key = ws + "\u0000" + who;
+    if (xoaTruoc || key !== nguCanhHoi) {
+      nguCanhHoi = key;
+      $("traLoi").innerHTML = "";
+    }
+    const conDung = () => conSong && mine === phienHoi && cheDo === "hoi" && kho.duAn === ws && nguoiHoi === who;
     try {
-      const c = (await ctl("/chat?workspace=" + encodeURIComponent(kho.duAn) + "&who=" + encodeURIComponent(nguoiHoi))).chat;
+      const d = await ctl("/chat?workspace=" + encodeURIComponent(ws) + "&who=" + encodeURIComponent(who));
+      if (!conDung()) return;
+      const c = (d && d.chat) || {};
       const cuoi = (c.messages || []).slice(-2);
-      $("traLoi").innerHTML = cuoi.length ? `<div class="tra-loi">` + cuoi.map((m) => `<div><span class="mo">${m.from === "ceo" ? "Anh hỏi" : esc(c.name || PHONG[nguoiHoi].ten) + (m.status === "cho" ? " đang trả lời…" : " trả lời")}:</span>` +
+      const ten = c.name || (PHONG[who] && PHONG[who].ten) || who;
+      $("traLoi").innerHTML = cuoi.length ? `<div class="tra-loi">` + cuoi.map((m) => `<div><span class="mo">${m.from === "ceo" ? "Anh hỏi" : esc(ten) + (m.status === "cho" ? " đang trả lời…" : " trả lời")}:</span>` +
         `<pre class="van-ban">${esc(m.status === "cho" ? "" : cat(m.text, 1500))}</pre></div>`).join("") + `</div>` : "";
-      if (c.busy) henHoi = setTimeout(veTraLoi, 3000);
-    } catch (e) { $("traLoi").innerHTML = loi("Không đọc được cuộc hỏi: " + e.message, false); }
+      if (c.busy && conDung()) henHoi = setTimeout(() => { if (conDung()) veTraLoi(); }, 3000);
+    } catch (e) {
+      if (!conDung()) return;
+      $("traLoi").innerHTML = loi("Không đọc được cuộc hỏi: " + e.message, false);
+    }
   }
 
   $("soan").addEventListener("submit", async (e) => {
@@ -123,24 +155,27 @@ export async function mo(vung, { kho, ctl }) {
     if (!text) { $("loiSoan").textContent = "Gõ nội dung trước đã."; o.setAttribute("aria-invalid", "true"); o.focus(); return; }
     if (!kho.duAn) { $("loiSoan").textContent = "Chọn dự án ở thanh trên trước."; return; }
     const nut = $("nutGui"); nut.setAttribute("aria-busy", "true"); nut.disabled = true;
+    const ws = kho.duAn, who = nguoiHoi, mode = cheDo;
     try {
-      if (cheDo === "hoi") {
-        await ctl("/chat", { workspace: kho.duAn, who: nguoiHoi, text });
-        o.value = ""; bao("Đã gửi câu hỏi cho " + PHONG[nguoiHoi].ten + ".");
-        veTraLoi();
+      if (mode === "hoi") {
+        await ctl("/chat", { workspace: ws, who, text });
+        if (!conSong) return;
+        o.value = ""; bao("Đã gửi câu hỏi cho " + ((PHONG[who] && PHONG[who].ten) || who) + ".");
+        if (cheDo === "hoi" && kho.duAn === ws && nguoiHoi === who) veTraLoi();
       } else {
-        const duAn = (kho.dsDuAn.find((w) => w.path === kho.duAn) || {}).name || kho.duAn.split(/[\\/]/).pop();
+        const duAn = (kho.dsDuAn.find((w) => w.path === ws) || {}).name || ws.split(/[\\/]/).pop();
         if (!confirm(`Giao việc này cho cả đội trong dự án ${duAn}?\n\n${cat(text, 300)}\n\nĐội làm theo lượt agent.md; báo cáo cuối chờ anh duyệt, không tự push hay phát hành.`)) return;
-        const r = await ctl("/autopilot", { workspace: kho.duAn, task: text });
+        const r = await ctl("/autopilot", { workspace: ws, task: text });
+        if (!conSong) return;
         o.value = ""; bao("Đã giao việc. Theo dõi ở Tổng quan hoặc Dự án và giao việc.");
         void r;
       }
-    } catch (err) { $("loiSoan").textContent = err.message; }
-    finally { nut.removeAttribute("aria-busy"); nut.disabled = false; }
+    } catch (err) { if (conSong) $("loiSoan").textContent = err.message; }
+    finally { if (conSong) { nut.removeAttribute("aria-busy"); nut.disabled = false; } }
   });
   $("noiDung").addEventListener("input", () => { $("loiSoan").textContent = ""; $("noiDung").removeAttribute("aria-invalid"); });
   $("noiDung").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) $("soan").requestSubmit(); });
-  $("nguoiHoi").addEventListener("change", (e) => { nguoiHoi = e.target.value; veTraLoi(); });
+  $("nguoiHoi").addEventListener("change", (e) => { nguoiHoi = e.target.value; veTraLoi({ xoaTruoc: true }); });
 
   let henTim = null;
   $("timTin").addEventListener("input", (e) => { clearTimeout(henTim); henTim = setTimeout(() => { q = e.target.value.trim().slice(0, 120); taiTin(); }, 300); });
@@ -150,7 +185,7 @@ export async function mo(vung, { kho, ctl }) {
     if (b.dataset.ai !== undefined) {
       ai = b.dataset.ai; veLoc();
       history.replaceState(null, "", "#/tin-nhan" + (ai ? "?ai=" + encodeURIComponent(ai) : ""));
-      if (PHONG[ai]) { nguoiHoi = ai; $("nguoiHoi").value = ai; veTraLoi(); }
+      if (PHONG[ai] && ai !== nguoiHoi) { nguoiHoi = ai; $("nguoiHoi").value = ai; veTraLoi({ xoaTruoc: true }); }
       return taiTin();
     }
     if (b.hasAttribute("data-them")) return taiTin(true);
@@ -158,19 +193,19 @@ export async function mo(vung, { kho, ctl }) {
     if (b.hasAttribute("data-thu-lai")) return taiTin();
   });
 
-  // Tin mới trong /events → tải lại trang đầu (chỉ khi đang xem trang mới nhất); đổi dự án → đọc lại cuộc hỏi.
+  // Tin mới trong /events → tải lại trang đầu (chỉ khi đang xem trang mới nhất); đổi dự án → xóa cũ và đọc lại cuộc hỏi.
   let duAnCu = kho.duAn;
   const bo = kho.on((k) => {
     veLoc();
-    if (k.duAn !== duAnCu) { duAnCu = k.duAn; veTraLoi(); }
+    if (k.duAn !== duAnCu) { duAnCu = k.duAn; veTraLoi({ xoaTruoc: true }); }
     const t = k.state && k.state.events.length ? k.state.events.at(-1).t : 0;
     if (t && t !== moiNhat) { moiNhat = t; if (tin.length <= TRANG) taiTin(); }
   });
   if (PHONG[ai]) { nguoiHoi = ai; $("nguoiHoi").value = ai; }
-  datCheDo("hoi");
+  datCheDo("hoi", false);
   veLoc();
   moiNhat = kho.state && kho.state.events.length ? kho.state.events.at(-1).t : 0;
   taiTin();
   veTraLoi();
-  return () => { conSong = false; clearTimeout(henHoi); clearTimeout(henTim); bo(); };
+  return () => { conSong = false; xoaTraLoi(); clearTimeout(henTim); bo(); };
 }

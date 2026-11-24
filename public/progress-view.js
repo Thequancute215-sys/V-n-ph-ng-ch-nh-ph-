@@ -45,17 +45,26 @@
         (x.phuong_an_khac && x.phuong_an_khac.length ? `<p><b>Cách khác đã cân nhắc:</b></p><ul>${x.phuong_an_khac.map((a) => `<li>${esc(a.cach)} — <i>không chọn vì</i> ${esc(a.vi_sao_khong)}</li>`).join("")}</ul>` : '<p class="muted">Không nêu cách khác (lý do nằm trong phần "Vì sao").</p>') + "</li>").join("")}</ol>`;
     }).join("") + '<p class="muted">Đây là lời các AI tự khai. Claude đối chiếu với diff thật trong báo cáo (mục "VÌ SAO LÀM VẬY & PHƯƠNG ÁN KHÁC"); anh xem thêm "Xem file đã đổi" của từng lượt.</p></details>';
   }
-  // Rà soát file .md và thư viện trước khi AI chạy toàn quyền: điểm bất thường chưa duyệt thì CEO xem và bấm duyệt.
-  function scanHtml(scan, workspace, attr = "data-scan-approve", { canApprove = true } = {}) {
-    if (!scan || scan.approved) return "";
+  // Rà soát file .md và thư viện trước khi AI chạy toàn quyền: điểm bất thường chưa duyệt thì CEO xem và bấm duyệt;
+  // nếu lần quét mới nhất đã đạt (scan.approved) nhưng vẫn còn luồng awaiting_scan thì hiện nút Chạy tiếp (chỉ máy tính).
+  function scanHtml(scan, workspace, attr = "data-scan-approve", { canApprove = true, hasAwaitingScan = false } = {}) {
+    if (!scan) return "";
     if (scan.truncated) {
-      return '<div class="scan-box"><strong>Rà soát chưa hoàn tất</strong><p class="muted">Xử lý phần chưa quét hoặc chọn mức quyền thấp hơn trước khi giao lượt mới.</p></div>';
+      return '<div class="scan-box" data-scan-truncated><strong>Rà soát chưa hoàn tất</strong><p class="muted">Xử lý phần chưa quét hoặc chọn mức quyền thấp hơn trước khi giao lượt mới.</p></div>';
     }
-    const items = scan.findings.map((f) => `<li><span class="mono">${esc(f.file)}${f.line ? ":" + esc(f.line) : ""}</span> — <b>${esc(f.name)}</b><br><code>${esc(f.text)}</code></li>`).join("");
+    if (scan.approved) {
+      if (!hasAwaitingScan) return "";
+      return '<div class="scan-box" data-scan-resume><strong>Rà soát mới nhất đã đạt</strong>' +
+        `<p class="muted">${scan.total ? "Các điểm bất thường hiện tại đã được duyệt trước đó" : "Dự án không còn điểm bất thường"}, nhưng vẫn có luồng đang tạm dừng chờ rà soát.</p>` +
+        (canApprove
+          ? `<div class="actions desk-actions"><button type="button" class="primary" ${attr}="${esc(scan.fingerprint || "")}" data-scan-workspace="${esc(workspace)}" data-scan-mode="resume">Chạy tiếp</button></div>`
+          : `<p class="muted">Chạy tiếp luồng sau rà soát chỉ thực hiện trên máy tính.</p>`) + `</div>`;
+    }
+    const items = (scan.findings || []).map((f) => `<li><span class="mono">${esc(f.file)}${f.line ? ":" + esc(f.line) : ""}</span> — <b>${esc(f.name)}</b><br><code>${esc(f.text)}</code></li>`).join("");
     return `<div class="scan-box"><strong>⚠️ ${esc(scan.total)} điểm bất thường trong file .md / thư viện của dự án — AI chưa được chạy toàn quyền</strong>` +
       `<p class="muted">Văn phòng rà bằng quy tắc so mẫu (không gọi AI) nên có thể báo nhầm. Anh đọc từng điểm; thấy an toàn thì duyệt, AI chạy toàn quyền bình thường. File đổi thêm điểm mới thì phải duyệt lại.</p>` +
-      `<ol>${items}</ol>${scan.total > scan.findings.length ? `<p class="muted">… và ${esc(scan.total - scan.findings.length)} điểm khác.</p>` : ""}` +
-      (canApprove ? `<div class="actions desk-actions"><button class="primary" ${attr}="${esc(scan.fingerprint)}" data-scan-workspace="${esc(workspace)}">Đã xem, cho AI chạy toàn quyền</button></div>` : `<p class="muted">Duyệt rà soát toàn quyền chỉ thực hiện trên máy tính.</p>`) + `</div>`;
+      `<ol>${items}</ol>${scan.total > (scan.findings || []).length ? `<p class="muted">… và ${esc(scan.total - (scan.findings || []).length)} điểm khác.</p>` : ""}` +
+      (canApprove ? `<div class="actions desk-actions"><button type="button" class="primary" ${attr}="${esc(scan.fingerprint || "")}" data-scan-workspace="${esc(workspace)}">Đã xem, cho AI chạy toàn quyền</button></div>` : `<p class="muted">Duyệt rà soát toàn quyền chỉ thực hiện trên máy tính.</p>`) + `</div>`;
   }
   // Xoá file trong luồng: đề nghị của AI khác, Claude đã xoá (kèm vì sao, đã kiểm gì), AI tự xoá bị khôi phục / không khôi phục được.
   function deleteHtml(run) {

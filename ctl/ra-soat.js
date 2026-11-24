@@ -12,7 +12,7 @@ const { writeAtomic } = require("../lib/ghi-file");
 
 const SKIP_DIRS = new Set([".git", "node_modules", ".venv", "venv", "env", "__pycache__", "dist", "build", ".next", ".nuxt", "vendor", "target", ".tox", ".mypy_cache", ".pytest_cache", "coverage", "site-packages"]);
 const TEXT_FILE = /(\.(md|mdx|mdc|markdown|prompt)|^\.(cursorrules|windsurfrules|clinerules))$/i;
-const MAX_FILES = 500, MAX_BYTES = 1024 * 1024;
+const MAX_DEPTH = 8, MAX_FILES = 500, MAX_BYTES = 1024 * 1024;
 
 // [mã, tên tiếng Việt, mẫu]. Mẫu chạy trên từng dòng.
 const RULES = [
@@ -33,7 +33,7 @@ function listFiles(root) {
   const files = [];
   let truncated = false;
   function walk(dir, depth) {
-    if (depth > 8) { truncated = true; return; }
+    if (depth > MAX_DEPTH) { truncated = true; return; }
     let items;
     try { items = fs.readdirSync(dir, { withFileTypes: true }); }
     catch { truncated = true; return; }
@@ -99,12 +99,13 @@ function depFiles(root) {
   let truncated = false;
   const manifest = /^(package\.json|package-lock\.json|pyproject\.toml|requirements[\w.-]*\.(txt|in|lock))$/i;
   const walk = (dir, depth) => {
+    if (depth > MAX_DEPTH) { truncated = true; return; }
     let items;
     try { items = fs.readdirSync(dir, { withFileTypes: true }); } catch { truncated = true; return; }
     for (const d of items) {
       const full = path.join(dir, d.name);
       if (d.isDirectory()) {
-        if (depth < 3 && !SKIP_DIRS.has(d.name)) walk(full, depth + 1);
+        if (!SKIP_DIRS.has(d.name)) walk(full, depth + 1);
       } else if (manifest.test(d.name)) {
         if (!d.isFile() || files.length >= 50) { truncated = true; continue; }
         files.push(full);
