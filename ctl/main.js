@@ -56,7 +56,7 @@ const HTTP_CODE = {
   GITHUB_AUTH: 401, GITHUB_LIMIT: 429, GITHUB_OFFLINE: 502, GITHUB_CLONE: 502,
   CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_WAITING: 409, NEEDS_SPEC_TURN: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409, HANDOFF_PENDING: 409, NEEDS_ANSWER: 409, NO_QUESTION: 422, BAD_OPTION: 400,
   CHAT_BUSY: 409, PUBLISH_BUSY: 409, NOT_READY: 409, NO_RELEASE_WORKFLOW: 422, NOT_ON_MAIN: 409, TAG_EXISTS: 409, DIRTY_REPO: 409, NEEDS_SCAN_APPROVAL: 409, NO_COMMIT: 409, NO_QUOTA: 409, NO_GIT: 422, NO_REMOTE: 422, GIT_PUSH: 502,
-  UPDATE_BUSY: 409, NOT_APP: 409, UPDATE_FAILED: 500, GIT_BRANCH: 409,
+  UPDATE_BUSY: 409, NOT_APP: 409, UPDATE_FAILED: 500, GIT_BRANCH: 409, HANDOFF_IN_RUN: 409,
   AGY_BUSY: 409, XUONG_BUSY: 409, CAI_LOI: 500, NO_KEY: 409, MAY_QUAY_BAN: 409, CAN_DOI_SOAT_CHI: 409, VUOT_NGAN_SACH: 409, TOI_DA_TAKE: 409, PHIM_LOI: 422, MAY_QUAY_LOI: 502, BAD_URL: 400, AGY_UNSAVED: 409, SKILL_BUSY: 409, SKILL_DA_CO: 409, BAD_CATALOG: 422, SONG_SONG: 409, AGY_CRED: 502, NO_LOGIN: 409, NOT_SUPPORTED: 501,
   CHUA_DUNG_DUOC: 422, DANG_DUNG: 409, THIEU_FFMPEG: 409, THIEU_THU_MUC: 409, DUNG_LOI: 500, CHUA_DU_DIEU_KIEN: 409,
 };
@@ -363,13 +363,19 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     ["POST", "/autopilot/:id/push", (p) => ({ run: autopilot.view(autopilot.pushBranch(p.id)) })],
     ["POST", "/autopilot/:id/approve", (p) => ({ run: autopilot.view(autopilot.decide(p.id, true)) })],
     ["POST", "/autopilot/:id/reject", (p) => ({ run: autopilot.view(autopilot.decide(p.id, false)) })],
-    ["GET", "/handoffs", () => ({ handoffs: runner.pending() })],
+    // Các màn hình hàng chờ dùng scope=manual; danh sách mặc định vẫn trả mọi bàn giao chờ duyệt.
+    ["GET", "/handoffs", (p, qs) => ({ handoffs: runner.pending().filter((h) => qs.get("scope") !== "manual" || !autopilot.handoffRun(h.job_id)) })],
     ["GET", "/handoffs/:id", (p) => { const h = runner.get(p.id); if (!h) throw Object.assign(new Error("Chưa có bàn giao của " + p.id), { code: "NOT_FOUND" }); return { handoff: h }; }],
-    ["POST", "/handoffs/:id/approve", (p) => ({ handoff: runner.approve(p.id, "ceo") })],
-    ["POST", "/handoffs/:id/reject", (p) => ({ handoff: runner.reject(p.id, "ceo") })],
-    // Trả lời câu hỏi của Claude khi chạy tay; trong luồng tự động thì dùng /autopilot/:id/answer để luồng chạy tiếp.
-    ["POST", "/handoffs/:id/answer", (p, qs, b) => ({ handoff: runner.answer(p.id, b.option, "ceo") })],
+    ["POST", "/handoffs/:id/approve", (p) => ({ handoff: runner.approve(manualHandoff(p.id), "ceo") })],
+    ["POST", "/handoffs/:id/reject", (p) => ({ handoff: runner.reject(manualHandoff(p.id), "ceo") })],
+    ["POST", "/handoffs/:id/answer", (p, qs, b) => ({ handoff: runner.answer(manualHandoff(p.id), b.option, "ceo") })],
   ];
+  function manualHandoff(id) {
+    const runId = autopilot.handoffRun(id);
+    if (runId) throw Object.assign(new Error("Bàn giao thuộc luồng " + runId + ". Mở luồng để trả lời, duyệt hoặc từ chối."), { code: "HANDOFF_IN_RUN" });
+    return id;
+  }
+
   const match = (pattern, pathname) => {
     const a = pattern.split("/"), b = pathname.split("/");
     if (a.length !== b.length) return null;

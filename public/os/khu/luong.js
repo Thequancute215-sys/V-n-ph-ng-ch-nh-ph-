@@ -32,7 +32,7 @@ export async function mo(vung, { kho, ctl, bao, ngan }) {
     clearTimeout(hen);
     if (!conSong) return;
     if (!document.hidden) {
-      const [a, h, j] = await Promise.allSettled([ctl("/autopilot"), ctl("/handoffs"), ctl("/jobs?limit=80")]);
+      const [a, h, j] = await Promise.allSettled([ctl("/autopilot"), ctl("/handoffs?scope=manual"), ctl("/jobs?limit=80")]);
       if (!conSong) return;
       runs = a.status === "fulfilled" ? a.value.runs || [] : runs;
       handoffs = h.status === "fulfilled" ? h.value.handoffs || [] : handoffs;

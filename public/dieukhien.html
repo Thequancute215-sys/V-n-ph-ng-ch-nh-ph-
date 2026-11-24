@@ -253,7 +253,7 @@ $("aiRun").onclick = async () => {
   refresh();
 };
 async function loadHandoffs() {
-  const r = await api("GET", "/handoffs");
+  const r = await api("GET", "/handoffs?scope=manual");
   if (!r.ok) return 0;
   $("handoffs").innerHTML = r.handoffs.length ? r.handoffs.map((h) => `<div class="panel" style="background:var(--panel2);margin-bottom:8px">
     <div class="row"><b class="mono">${esc(h.role)}</b> → <b class="mono" style="color:var(--gold)">${esc(h.next_owner || "?")}</b><span class="z mono" style="margin-left:auto">${esc(h.job_id)}</span></div>

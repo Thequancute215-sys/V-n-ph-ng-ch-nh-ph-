@@ -97,6 +97,13 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
   const get = (id) => { const r = runs.get(id); if (!r) throw err("NOT_FOUND", "Không có luồng " + id); return r; };
   const list = () => [...runs.values()].sort((a, b) => b.createdAt - a.createdAt).slice(0, 50);
   const busy = (workspace) => [...runs.values()].some((r) => r.workspace === workspace && ACTIVE.has(r.status));
+  function handoffRun(jobId) {
+    for (const run of runs.values()) {
+      if (ACTIVE.has(run.status) && (run.jobId === jobId || run.question?.jobId === jobId || run.finalHandoffId === jobId ||
+          run.steps.some((step) => step.jobId === jobId) || Object.values(run.ss?.jobs || {}).includes(jobId))) return run.id;
+    }
+    return null;
+  }
   const logOf = (id) => maskSecrets(jobs.rawLog(id) || "").slice(-40000);
   // Giới hạn lượt tính từ lần CEO quyết gần nhất (trả lời câu hỏi của Claude = CEO cho phép đi tiếp).
   // Lượt bị ngắt vì hết hạn mức (quota) không tính vào giới hạn lượt và số lần sửa lại.
@@ -512,7 +519,7 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     save(run);
   }
 
-  function start({ workspace, task, maxSteps = 10, timeoutMs = 90 * 60000 }) {
+  function start({ workspace, task, maxSteps = 10, timeoutMs = 90 * 60000 }, beforeLaunch) {
     const root = ws.find(workspace).path;
     if (typeof task !== "string" || !task.trim() || task.length > 3000) throw err("BAD_REQUEST", "Nhập việc CEO giao, tối đa 3000 ký tự.");
     if (!Number.isInteger(maxSteps) || maxSteps < 1 || maxSteps > 12 || !Number.isFinite(timeoutMs) || timeoutMs < 1000 || timeoutMs > 120 * 60000) throw err("BAD_REQUEST", "Giới hạn 1–12 lượt và tối đa 120 phút.");
@@ -523,6 +530,7 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     scanGate(root);
     const id = "auto-" + Date.now().toString(36) + "-" + crypto.randomBytes(3).toString("hex");
     const git = nhanh.prepare(root, { task, id });   // nhánh riêng ai/<việc>-<mã>; repo đang sửa dở thì từ chối (DIRTY_REPO)
+    beforeLaunch?.(git);
     const run = { id, workspace: root, task: maskSecrets(task.trim()), status: "running", createdAt: Date.now(), updatedAt: Date.now(), deadline: Date.now() + timeoutMs, timeoutMs, maxSteps, steps: [], stepBase: 0, rework: 0, decisions: [], question: null, jobId: null, finalHandoffId: null, report: "", problem: "", git };
     runs.set(run.id, run); save(run);
     audit.log("ceo", "autopilot.start", run.id, { workspace: root, task: run.task, maxSteps, timeoutMs, branch: git?.branch || null }, "approved");
@@ -831,7 +839,7 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     }
     return resumed;
   }
-  return { start, stop, answer, decide, resumeNow, resumeScan, scanCanResumeLimited, webPrompt, applyWeb, pushBranch, stepDiff, preflight, view, list, get, busy, cancelJob, cancelAll, close, tick };
+  return { start, stop, answer, decide, resumeNow, resumeScan, scanCanResumeLimited, webPrompt, applyWeb, pushBranch, stepDiff, preflight, view, list, get, busy, handoffRun, cancelJob, cancelAll, close, tick };
 }
 
 module.exports = { createAutopilot, responseText };

@@ -518,7 +518,7 @@ export function createDesk(getOffice) {
         const reads = [
           ["runs", "/autopilot", (d) => { runs = d.runs || []; }],
           ["jobs", "/jobs?status=running", (d) => { jobs = d.jobs || []; }],
-          ["handoffs", "/handoffs", (d) => { handoffs = d.handoffs || []; }],
+          ["handoffs", "/handoffs?scope=manual", (d) => { handoffs = d.handoffs || []; }],
           ["quotas", "/quotas", (d) => { quotas = d; }],
           ["dieuPhoi", "/dieu-phoi", (d) => { dieuPhoi = d.dieuPhoi || null; }],
           ...(active ? [["scan", "/scan?workspace=" + encodeURIComponent(active), (d) => { scan = d.scan ? { ...d.scan, fullAccess: d.fullAccess, canResumeLimited: d.canResumeLimited } : null; }]] : []),

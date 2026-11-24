@@ -10,6 +10,7 @@ const os = require("os");
 const crypto = require("crypto");
 const { spawn } = require("child_process");
 const { resolveProgram } = require("./policy");
+const nhanh = require("./nhanh");
 const fs = require("fs");
 const path = require("path");
 const { cleanEnv } = require("../lib/mask");
@@ -189,15 +190,37 @@ function createDuAnMoi({ github, ideas, boKiem, dir = null, audit = { log() {} }
         op.workspace = o.workspace;
         return o.workspace;
       });
-      await lam("khung-phim", async (s) => { const r = datKhungPhim(root, op.ten); s.ghiChu = r.da.length ? "Đã đặt: " + r.da.join(", ") : "Repo đã có đủ khuôn, không ghi đè"; });
       const phim = op.loai === "phim";
+      const datKhung = (git) => {
+        const s = b("khung-phim");
+        s.trangThai = "dang";
+        try {
+          const { da } = datKhungPhim(root, op.ten);
+          const saved = nhanh.save(root, git, "chore(phim): đặt khuôn hồ sơ phim");
+          if (saved.secret) throw err("SECRET", "Git phát hiện nội dung giống khóa trong khuôn hồ sơ phim.");
+          if (saved.error) throw err("GIT_BRANCH", "Không commit được khuôn hồ sơ phim: " + saved.error);
+          s.ghiChu = da.length ? "Đã đặt: " + da.join(", ") : "Repo đã có đủ khuôn, không ghi đè";
+          if (saved.commit) s.ghiChu += " · " + git.branch + " · " + saved.commit;
+          s.trangThai = "xong";
+        } catch (e) {
+          s.trangThai = "loi";
+          s.ghiChu = String(e.message).slice(0, 300);
+          throw e;
+        }
+      };
+      if (phim && b("hinata").trangThai === "bo-qua") {
+        await lam("khung-phim", () => datKhung(nhanh.prepare(root, { task: "khung-phim-" + op.ten, id: op.id })));
+      }
       const idea = await lam("y-tuong", async () => ideas.add({ workspace: root, title: (phim ? "🎬 " : "") + op.ten + ": " + yTuong.split(/\r?\n/)[0].slice(0, 150),
         detail: phim ? VIEC_PHIM + yTuong : yTuong }));
       try {
         await lam("bo-kiem", async (s) => { const r = boKiem.install(root, "ceo"); s.ghiChu = r && r.last && r.last.compareUrl ? "Mở PR: " + r.last.compareUrl : "Đã đẩy nhánh bộ kiểm"; });
       } catch { /* thiếu bộ kiểm không chặn việc giao Hinata: ghi lỗi ở bước, làm tiếp */ }
       // Repo vừa tạo: agent.md mẫu đặt lượt đầu cho Claude; anh đã duyệt tạo dự án kèm "giao Hinata" nên ghi đè lượt sang Hinata.
-      await lam("hinata", async (s) => { const r = ideas.start(idea.id, { force: true }); s.ghiChu = r.runId ? "Luồng " + r.runId : ""; });
+      await lam("hinata", (s) => {
+        const r = ideas.start(idea.id, phim ? { force: true, prepare: datKhung } : { force: true });
+        s.ghiChu = r.runId ? "Luồng " + r.runId : "";
+      });
       op.trangThai = op.buoc.some((x) => x.trangThai === "loi") ? "xong-mot-phan" : "xong";
     } catch { op.trangThai = "loi"; }
     op.xongLuc = new Date().toISOString();

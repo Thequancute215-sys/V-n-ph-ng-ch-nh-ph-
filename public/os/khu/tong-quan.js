@@ -31,7 +31,7 @@ export async function mo(vung, { kho, ngan, signal }) {
     if (!conSong) return;
     const mine = ++phien;
     if (!document.hidden) {
-      const [h, a, q] = await Promise.allSettled([ctl("/handoffs"), ctl("/autopilot"), ctl("/quotas")]);
+      const [h, a, q] = await Promise.allSettled([ctl("/handoffs?scope=manual"), ctl("/autopilot"), ctl("/quotas")]);
       if (!conSong || mine !== phien) return;
       handoffs = h.status === "fulfilled" ? h.value.handoffs || [] : null;
       runs = a.status === "fulfilled" ? a.value.runs || [] : null;

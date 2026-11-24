@@ -64,7 +64,15 @@ test("Claude hỏi CEO trong luồng tự động: chờ, CEO chọn A → Sol n
   assert.equal(asked.question.options.length, 2);
   assert.match(asked.report, /^Xong lượt\./, "CEO đọc được toàn bộ phân tích của Claude trước khi chọn");
   assert.equal(ctl.autopilot.busy(repo), true, "đang chờ CEO thì không giao việc khác");
-  assert.equal((await call(`/handoffs/${asked.question.jobId}/approve`, {})).code, "NEEDS_ANSWER", "phải chọn phương án, không duyệt thẳng");
+  const jobId = asked.question.jobId;
+  assert.ok((await call("/handoffs")).handoffs.some((h) => h.job_id === jobId));
+  assert.ok(!(await call("/handoffs?scope=manual")).handoffs.some((h) => h.job_id === jobId));
+  for (const action of ["approve", "reject", "answer"]) {
+    const manual = await call(`/handoffs/${jobId}/${action}`, { option: "A" });
+    assert.equal(manual.status, 409);
+    assert.equal(manual.code, "HANDOFF_IN_RUN");
+  }
+  assert.equal(ctl.runner.get(jobId).decided, null);
   assert.equal((await call(`/autopilot/${r.run.id}/answer`, { option: "Z" })).status, 400);
   const a = await call(`/autopilot/${r.run.id}/answer`, { option: "A" });
   assert.equal(a.status, 200, JSON.stringify(a));
@@ -101,12 +109,16 @@ test("Claude báo done:true thì luồng kết thúc chờ CEO duyệt báo cáo
   assert.deepEqual(run.steps.map((s) => s.role), [DEV, CLAUDE]);
   assert.equal(run.problem, "");
   assert.equal(ctl.runner.get(run.finalHandoffId).decided, null, "kết quả cuối vẫn chờ CEO duyệt");
+  assert.ok(!(await call("/handoffs?scope=manual")).handoffs.some((h) => h.job_id === run.finalHandoffId));
+  assert.equal((await call(`/handoffs/${run.finalHandoffId}/approve`, {})).code, "HANDOFF_IN_RUN");
+  assert.equal((await call(`/autopilot/${run.id}/approve`, {})).run.status, "approved");
 });
 
 test("chạy tay: Claude hỏi → nút phương án qua /handoffs/:id/answer, không tự chạy tiếp", async (t) => {
   const { ctl, repo, git, call } = await fixture(t, "ask");
   const job = (await call("/ai/run", { workspace: repo, role: CLAUDE })).job;
   for (let i = 0; i < 100 && !ctl.runner.get(job.id); i++) await sleep(50);
+  assert.ok((await call("/handoffs?scope=manual")).handoffs.some((h) => h.job_id === job.id));
   const a = await call(`/handoffs/${job.id}/answer`, { option: "B" });
   assert.equal(a.status, 200, JSON.stringify(a));
   assert.equal(a.handoff.next, DEV);

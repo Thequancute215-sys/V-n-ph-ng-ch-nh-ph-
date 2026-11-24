@@ -334,7 +334,7 @@
     $("workspace").disabled = switching || !workspaces.length;
     $("workspace").title = active;
     const target = active;
-    const [health, jobResult, handoffResult, autoResult] = await Promise.all([request("/ctl/health"), request("/ctl/jobs"), request("/ctl/handoffs"), request("/ctl/autopilot")]);
+    const [health, jobResult, handoffResult, autoResult] = await Promise.all([request("/ctl/health"), request("/ctl/jobs"), request("/ctl/handoffs?scope=manual"), request("/ctl/autopilot")]);
     if (target !== active) return;
     controller = !!health.ok; jobs = jobResult.jobs; handoffs = handoffResult.handoffs; autoRuns = autoResult.runs;
     if (active) request("/ctl/scan?workspace=" + encodeURIComponent(active), undefined, 20000).then((v) => { if (target === active) { scanInfo = v.scan ? { ...v.scan, fullAccess: v.fullAccess, canResumeLimited: v.canResumeLimited } : null; scanError = ""; renderBoard(); } }).catch((e) => { scanInfo = null; scanError = "Chưa rà được file .md / thư viện: " + e.message; renderBoard(); });

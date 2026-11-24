@@ -135,7 +135,7 @@ async function load(quiet) {
   if (loading) return; loading = true;
   if (!quiet && !data) $("app").innerHTML = '<div class="skeleton"></div><div class="skeleton"></div>';
   try {
-    const [ws, ap, ho, q, jobs] = await Promise.all([api("/api/workspaces"), api("/api/autopilot"), api("/api/handoffs"), api("/api/quotas").catch(() => null), api("/api/jobs?status=running").catch(() => ({ jobs: [] }))]);
+    const [ws, ap, ho, q, jobs] = await Promise.all([api("/api/workspaces"), api("/api/autopilot"), api("/api/handoffs?scope=manual"), api("/api/quotas").catch(() => null), api("/api/jobs?status=running").catch(() => ({ jobs: [] }))]);
     const turns = await Promise.all(ws.workspaces.map((w) => api("/api/ai/status?workspace=" + encodeURIComponent(w.path)).catch(() => null)));
     data = { workspaces: ws.workspaces, active: ws.active, turns, runs: ap.runs || [], handoffs: ho.handoffs || [], quotas: q, jobs: (jobs && jobs.jobs) || [], at: Date.now() };
     render();

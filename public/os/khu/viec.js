@@ -28,7 +28,7 @@ export async function mo(vung, { kho, ctl, bao, ngan }) {
   let jobs = null, runs = null, handoffs = null, lich = null, loiCtl = "", loiLich = "", conSong = true, sua = null;
 
   async function tai() {
-    const [j, a, h, l] = await Promise.allSettled([ctl("/jobs?limit=80"), ctl("/autopilot"), ctl("/handoffs"), ctl("/lich-chay")]);
+    const [j, a, h, l] = await Promise.allSettled([ctl("/jobs?limit=80"), ctl("/autopilot"), ctl("/handoffs?scope=manual"), ctl("/lich-chay")]);
     if (!conSong) return;
     jobs = j.status === "fulfilled" ? j.value.jobs || [] : null;
     runs = a.status === "fulfilled" ? a.value.runs || [] : null;
