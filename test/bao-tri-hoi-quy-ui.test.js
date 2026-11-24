@@ -480,6 +480,37 @@ test("tin-nhan.js: đổi phòng, đổi chế độ hoi->giao và đóng khu x�
 });
 
 // ---------- 2. Kiểm hành vi awaiting_scan, Chạy tiếp chủ động và scan.truncated trên giao-viec.js ----------
+test("tin-nhan.js: phản hồi gửi ở dự án cũ không xóa nội dung đang soạn ở dự án mới", async (t) => {
+  const env = createMiniDom({ hash: "#/tin-nhan" });
+  const restore = installGlobals(env, async () => ({ ok: true, status: 200, json: async () => ({ ok: true, tin: [], conNua: false }) }));
+  let dong;
+  t.after(() => { try { dong?.(); } finally { restore(); } });
+  const { mo } = await import(pathToFileURL(path.join(PUB, "os", "khu", "tin-nhan.js")).href);
+  const vung = env.document.createElement("div");
+  env.document.body.append(vung);
+  const kho = makeKho("D:\\proj-A");
+  const pending = deferred();
+  const posts = [];
+  const ctl = (p, body) => {
+    if (p !== "/chat") return Promise.resolve({ chat: { messages: [] } });
+    posts.push(body);
+    return pending.promise;
+  };
+  dong = await mo(vung, { kho, ctl });
+  const input = vung.querySelector("#noiDung");
+  const form = vung.querySelector("#soan");
+  input.value = "Câu hỏi cho A";
+  form.dispatchEvent({ type: "submit", target: form, preventDefault() {} });
+  assert.deepEqual(posts, [{ workspace: "D:\\proj-A", who: "pain", text: "Câu hỏi cho A" }]);
+  kho.duAn = "D:\\proj-B";
+  kho.bao();
+  input.value = "Nháp mới ở B";
+  pending.resolve({});
+  await flush();
+  assert.equal(input.value, "Nháp mới ở B");
+  assert.equal(vung.querySelector("#nutGui").disabled, false);
+});
+
 test("giao-viec.js: awaiting_scan nhưng lần quét mới approved (sạch / đã duyệt) -> hiện nút Chạy tiếp chủ động, bấm gửi đúng workspace & fingerprint", async (t) => {
   const env = createMiniDom({ hash: "#/code/giao-viec" });
   const restore = installGlobals(env, async () => ({ ok: true, status: 200, json: async () => ({}) }));
@@ -639,6 +670,37 @@ test("giao-viec.js: scan.truncated không hiện nút duyệt Toàn quyền hay 
   }
 });
 
+test("giao-viec.js: hạ quyền vai đang chờ cho phép tiếp tục, vẫn không hiện duyệt Toàn quyền", async (t) => {
+  const ws = "D:\\Projects\\app-thu";
+  const env = createMiniDom({ hash: "#/code/giao-viec" });
+  const restore = installGlobals(env, async () => ({ ok: true, status: 200, json: async () => ({}) }));
+  let dong;
+  t.after(() => { try { dong?.(); } finally { restore(); } });
+  const { mo } = await import(pathToFileURL(path.join(PUB, "os", "khu", "giao-viec.js")).href);
+  const vung = env.document.createElement("div");
+  env.document.body.append(vung);
+  const kho = makeKho(ws, [{ path: ws, name: "app-thu" }]);
+  const calls = [];
+  let resumed = false;
+  const ctl = async (p, body) => {
+    if (p.startsWith("/ai/status")) return { turn: { phase: "Phase 2", nextOwner: "CLAUDE_AUDITOR" } };
+    if (p.startsWith("/scan?")) return { fullAccess: !resumed, canResumeLimited: !resumed, scan: { approved: false, truncated: true, findings: [] } };
+    if (p === "/autopilot") return { runs: resumed ? [] : [{ id: "run-thu", workspace: ws, status: "awaiting_scan", task: "Việc thử", steps: [], maxSteps: 8 }] };
+    calls.push({ p, body });
+    if (p === "/scan/resume") { resumed = true; return { resumed: ["run-thu"] }; }
+    throw new Error("Yêu cầu ngoài fixture: " + p);
+  };
+  dong = await mo(vung, { kho, ctl, bao() {}, ngan: { mo() {} } });
+  assert.equal(vung.querySelector("[data-duyet-scan]"), null);
+  const button = vung.querySelector('[data-chay-tiep-scan]');
+  assert.equal(button?.dataset.scanMode, "limited");
+  assert.deepEqual(calls, []);
+  button.click();
+  await flush();
+  assert.deepEqual(calls, [{ p: "/scan/resume", body: { workspace: ws } }]);
+  assert.equal(vung.querySelector("#nutGiao").disabled, false, "khi Toàn quyền tắt, quét thiếu không chặn giao việc mới");
+});
+
 // ---------- 3. Kiểm hành vi ngăn trượt ngan.js cho awaiting_scan ----------
 test("ngan.js: awaiting_scan — approved hiện Chạy tiếp gửi /scan/approve, truncated không duyệt, mất snapshot hiện link Giao việc đúng dự án", async (t) => {
   const env = createMiniDom({ hash: "#/code/dieu-khien" });
@@ -728,12 +790,12 @@ test("progress-view.js scanHtml: awaiting_scan + approved hiện Chạy tiếp c
   // Không có luồng awaiting_scan và đã duyệt -> trả rỗng
   assert.equal(scanHtml({ approved: true, truncated: false, fingerprint: null, total: 0, findings: [] }, "D:\\repo", "data-scan-approve", { canApprove: true, hasAwaitingScan: false }), "");
 
-  // Kiểm nối dây ở prototype.js và office-desk.js dùng &fresh=1 và hasAwaitingScan
+  // Hai trang cũ đọc kết quả có bộ đệm và hiện nút khi luồng đang chờ.
   const proto = fs.readFileSync(path.join(PUB, "prototype.js"), "utf8");
-  assert.match(proto, /\/ctl\/scan\?workspace=" \+ encodeURIComponent\(active\) \+ "&fresh=1"/);
+  assert.match(proto, /\/ctl\/scan\?workspace=" \+ encodeURIComponent\(active\),/);
   assert.match(proto, /hasAwaitingScan/);
   const desk = fs.readFileSync(path.join(PUB, "office-desk.js"), "utf8");
-  assert.match(desk, /\/scan\?workspace=" \+ encodeURIComponent\(active\) \+ "&fresh=1"/);
+  assert.match(desk, /\/scan\?workspace=" \+ encodeURIComponent\(active\),/);
   assert.match(desk, /canApprove: !isRemote, hasAwaitingScan/);
   assert.match(desk, /if \(sb && !sb\.disabled && !isRemote\)/);
 });

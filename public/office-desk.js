@@ -182,7 +182,9 @@ export function createDesk(getOffice) {
       if (r.status === "awaiting_answer") body += (r.report ? `<details open><summary>Phân tích của Claude</summary><pre class="desk-report" tabindex="0">${esc(r.report)}</pre></details>` : "") + question(r.question, "autopilot", r.id);
       body += globalThis.RepoProgress.explainHtml(r) + globalThis.RepoProgress.deleteHtml(r);
       if (r.status === "awaiting_scan") {
-        body += (scan?.truncated || (!scan && r.scan?.truncated))
+        body += scan?.fullAccess === false || scan?.canResumeLimited === true
+          ? '<p class="muted">Vai đang chờ có thể chạy tiếp ở mức quyền hiện tại trên máy tính.</p>'
+          : (scan?.truncated || (!scan && r.scan?.truncated))
           ? '<p class="error">Rà soát chưa hoàn tất. Xử lý phần chưa quét hoặc chọn mức quyền thấp hơn trước khi chạy Toàn quyền.</p>'
           : scan?.approved
             ? (isRemote ? '<p class="muted">Rà soát mới nhất đã đạt. Bấm Chạy tiếp trên máy tính để tiếp tục luồng.</p>' : '<p class="muted">Rà soát mới nhất đã đạt: bấm Chạy tiếp ở mục rà soát phía trên để tiếp tục luồng.</p>')
@@ -519,7 +521,7 @@ export function createDesk(getOffice) {
           ["handoffs", "/handoffs", (d) => { handoffs = d.handoffs || []; }],
           ["quotas", "/quotas", (d) => { quotas = d; }],
           ["dieuPhoi", "/dieu-phoi", (d) => { dieuPhoi = d.dieuPhoi || null; }],
-          ...(active ? [["scan", "/scan?workspace=" + encodeURIComponent(active) + "&fresh=1", (d) => { scan = d.scan || null; }]] : []),
+          ...(active ? [["scan", "/scan?workspace=" + encodeURIComponent(active), (d) => { scan = d.scan ? { ...d.scan, fullAccess: d.fullAccess, canResumeLimited: d.canResumeLimited } : null; }]] : []),
           ...(active ? [["publish", "/publish?workspace=" + encodeURIComponent(active), (d) => { publish = d.publish || null; }]] : []),
           ...(active ? [["journal", "/nhat-ky?workspace=" + encodeURIComponent(active) + "&limit=120", (d) => { journal = d.nhatKy || null; }]] : []),
           ...(active ? [["turn", "/ai/status?workspace=" + encodeURIComponent(active), (d) => { turn = d; }],
@@ -728,10 +730,15 @@ export function createDesk(getOffice) {
     }
     const sb = e.target.closest("[data-scan]");
     if (sb && !sb.disabled && !isRemote) {
-      const label = sb.dataset.scanMode === "resume"
-        ? "Rà soát mới nhất đã đạt. Chạy tiếp luồng đang tạm dừng chờ rà soát của dự án này"
+      const limited = sb.dataset.scanMode === "limited";
+      const label = limited ? "Chạy tiếp luồng với mức quyền hiện tại"
+        : sb.dataset.scanMode === "resume" ? "Rà soát mới nhất đã đạt. Chạy tiếp luồng đang tạm dừng"
         : "Anh đã đọc các điểm bất thường và đồng ý cho AI chạy toàn quyền trong dự án này";
-      mutate(label, async () => { await request("/scan/approve", { workspace: sb.dataset.scanWorkspace, fingerprint: sb.dataset.scan || "" }, 30000); });
+      const workspace = sb.dataset.scanWorkspace;
+      mutate(label, async () => {
+        if (limited) await request("/scan/resume", { workspace }, 30000);
+        else await request("/scan/approve", { workspace, fingerprint: sb.dataset.scan || "" }, 30000);
+      });
       return;
     }
     const room = e.target.closest("[data-room]"); if (room?.dataset.room) { getOffice()?.goToRoom(room.dataset.room); dialog.close(); return; }

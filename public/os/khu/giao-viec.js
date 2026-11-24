@@ -64,16 +64,18 @@ export async function mo(vung, { kho, ctl, bao, ngan }) {
     if (mucTieu) { sel.value = mucTieu; wsYeuCau = ""; return true; }
     return false;
   }
-  async function taiTinhTrang() {
+  async function taiTinhTrang({ fresh = false } = {}) {
     clearTimeout(hen);
     if (!conSong) return;
     const w = daChon(), mine = ++phien;
     if (!w) { tt = null; loiTT = ""; runs = runs || []; veTinh(); veGan(); return; }
     if (!document.hidden) {
       const q = encodeURIComponent(w);
-      const [s, sc, a] = await Promise.allSettled([ctl("/ai/status?workspace=" + q), ctl("/scan?workspace=" + q + "&fresh=1", undefined, { timeout: 25000 }), ctl("/autopilot")]);
+      const [s, sc, a] = await Promise.allSettled([ctl("/ai/status?workspace=" + q), ctl("/scan?workspace=" + q + (fresh ? "&fresh=1" : ""), undefined, { timeout: 25000 }), ctl("/autopilot")]);
       if (!conSong || mine !== phien) return;
-      tt = s.status === "fulfilled" ? { ...s.value, scan: sc.status === "fulfilled" ? sc.value.scan : null, loiScan: sc.status === "rejected" ? sc.reason.message : "" } : null;
+      tt = s.status === "fulfilled" ? { ...s.value, scan: sc.status === "fulfilled" ? sc.value.scan : null,
+        fullAccess: sc.status !== "fulfilled" || sc.value.fullAccess !== false,
+        canResumeLimited: sc.status === "fulfilled" && sc.value.canResumeLimited === true, loiScan: sc.status === "rejected" ? sc.reason.message : "" } : null;
       loiTT = s.status === "rejected" ? s.reason.message : "";
       runs = a.status === "fulfilled" ? a.value.runs || [] : runs;
       veTinh(); veGan();
@@ -90,8 +92,8 @@ export async function mo(vung, { kho, ctl, bao, ngan }) {
     if (tt.handoffPending) return { ly: "Có bàn giao đang chờ anh duyệt.", nut: `<button type="button" class="nut nho" data-ngan="ban-giao:${esc(tt.handoffPending)}">Duyệt bàn giao</button>` };
     if (tt.aiBusy) return { ly: "Một AI đang chạy lượt trong dự án này.", nut: `<a class="nut nho" href="#/code/dieu-khien">Xem lượt đang chạy</a>`, chay: true };
     if (!tt.turn) return { ly: tt.problem || "Chưa đọc được sổ agent.md của dự án." };
-    if (tt.scan && tt.scan.truncated) return { ly: "Rà soát chưa hoàn tất. Xử lý phần chưa quét hoặc chọn mức quyền thấp hơn trước khi chạy Toàn quyền." };
-    if (tt.scan && !tt.scan.approved) return { ly: GOI_Y.SCAN_PENDING, scan: true };
+    if (tt.fullAccess && tt.scan?.truncated) return { ly: "Rà soát chưa hoàn tất. Xử lý phần chưa quét hoặc chọn mức quyền thấp hơn trước khi chạy Toàn quyền." };
+    if (tt.fullAccess && tt.scan && !tt.scan.approved) return { ly: GOI_Y.SCAN_PENDING, scan: true };
     return null;
   }
   function veTinh() {
@@ -105,14 +107,17 @@ export async function mo(vung, { kho, ctl, bao, ngan }) {
     if (c && c.chay) h += `<p class="dang-chay"><span class="cham" aria-hidden="true"></span>Đội đang làm việc trong dự án này</p>`;
     h += c ? `<div class="hoi-anh"><p>${esc(c.ly)}</p>${c.nut ? `<div class="hang">${c.nut}</div>` : ""}</div>` : `<p class="dat">Sẵn sàng nhận việc.</p>`;
     const s = tt.scan;
-    if (s && s.truncated) {
+    if (choScan && (!tt.fullAccess || tt.canResumeLimited)) {
+      h += `<div class="hoi-anh" data-scan-resume><p>Vai đang chờ có thể chạy tiếp ở mức quyền hiện tại.</p>
+        <div class="hang"><button type="button" class="nut-chinh" data-chay-tiep-scan="" data-scan-mode="limited" data-scan-workspace="${esc(w)}">Chạy tiếp</button></div></div>`;
+    } else if (tt.fullAccess && s?.truncated) {
       h += `<div class="loi" role="alert" data-scan-truncated><span>Rà soát chưa hoàn tất: văn phòng chưa đọc được toàn bộ phạm vi dự án nên chưa thể duyệt Toàn quyền. Xử lý phần chưa quét hoặc chọn mức quyền thấp hơn.</span><a class="nut nho" href="#/he/models">Đổi mức quyền</a></div>`;
       if ((s.findings || []).length) {
         h += `<details data-k="scan"><summary>${esc(s.total)} điểm đã ghi nhận trong phần đã quét</summary>
           <ol class="ds-file">${(s.findings || []).map((f) => `<li><code>${esc(f.file)}${f.line ? ":" + esc(f.line) : ""}</code> ${esc(f.name)}<br><code>${esc(cat(f.text, 200))}</code></li>`).join("")}</ol>
           ${s.total > (s.findings || []).length ? `<p class="mo">… và ${esc(s.total - s.findings.length)} điểm khác.</p>` : ""}</details>`;
       }
-    } else if (s && !s.approved) {
+    } else if (tt.fullAccess && s && !s.approved) {
       h += `<details data-k="scan" open><summary>${esc(s.total)} điểm cần anh xem</summary><p class="mo">Văn phòng rà bằng quy tắc so mẫu (không gọi AI) nên có thể báo nhầm. Thấy an toàn thì duyệt${choScan ? " để chạy tiếp luồng đang tạm dừng" : ""}; file đổi thêm điểm mới thì phải duyệt lại.</p>
         <ol class="ds-file">${(s.findings || []).map((f) => `<li><code>${esc(f.file)}${f.line ? ":" + esc(f.line) : ""}</code> ${esc(f.name)}<br><code>${esc(cat(f.text, 200))}</code></li>`).join("")}</ol>
         ${s.total > (s.findings || []).length ? `<p class="mo">… và ${esc(s.total - s.findings.length)} điểm khác.</p>` : ""}
@@ -225,7 +230,7 @@ export async function mo(vung, { kho, ctl, bao, ngan }) {
     if (t.closest("[data-mo-gh]")) { moKhungGh(true); return $("hGh").scrollIntoView({ block: "start" }); }
     if (t.closest("#nutThemGh")) return taiGh(true);
     const r = t.closest("[data-mo-repo]"); if (r) return moRepo(r.dataset.moRepo, r);
-    if (t.closest("#nutDocLai")) { tt = null; veTinh(); return taiTinhTrang(); }
+    if (t.closest("#nutDocLai")) { tt = null; veTinh(); return taiTinhTrang({ fresh: true }); }
     if (t.closest("[data-thu-lai]")) return $("khungGh").contains(t) ? taiGh() : taiTinhTrang();
     const s = t.closest("[data-duyet-scan], [data-chay-tiep-scan]");
     if (s && !s.disabled) {
@@ -234,10 +239,12 @@ export async function mo(vung, { kho, ctl, bao, ngan }) {
       const fingerprint = laChayTiep ? (s.dataset.chayTiepScan || "") : (s.dataset.duyetScan || "");
       s.disabled = true; s.setAttribute("aria-busy", "true");
       try {
-        const d = await ctl("/scan/approve", { workspace, fingerprint }, { timeout: 20000 });
+        const d = s.dataset.scanMode === "limited"
+          ? await ctl("/scan/resume", { workspace }, { timeout: 20000 })
+          : await ctl("/scan/approve", { workspace, fingerprint }, { timeout: 20000 });
         const nRes = (d.resumed || []).length;
         bao(laChayTiep
-          ? (nRes ? "Đã chạy tiếp " + nRes + " luồng đang tạm dừng." : "Rà soát đã đạt; không còn luồng nào đang chờ.")
+          ? (nRes ? "Đã chạy tiếp " + nRes + " luồng đang tạm dừng." : "Không còn luồng nào đang chờ.")
           : ("Đã duyệt rà soát." + (nRes ? " Chạy tiếp " + nRes + " luồng đang tạm dừng." : "")));
       } catch (err) {
         bao(err.message, true);
@@ -259,6 +266,6 @@ export async function mo(vung, { kho, ctl, bao, ngan }) {
   const khiHien = () => { if (!document.hidden) taiTinhTrang(); };
   document.addEventListener("visibilitychange", khiHien);
   veChonDuAn(); veTinh();
-  await taiTinhTrang();
+  await taiTinhTrang({ fresh: true });
   return () => { conSong = false; clearTimeout(hen); bo(); document.removeEventListener("visibilitychange", khiHien); };
 }

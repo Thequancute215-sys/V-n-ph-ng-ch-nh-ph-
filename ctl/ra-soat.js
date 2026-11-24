@@ -212,7 +212,7 @@ function createScanner({ dir, audit, notify = () => {} }) {
   function status(root, { fresh = true } = {}) {
     const hit = cache.get(key(root));
     const r = !fresh && hit && Date.now() - hit.at < 30000 ? hit.r : scan(root);
-    cache.set(key(root), { at: Date.now(), r });
+    if (r !== hit?.r) cache.set(key(root), { at: Date.now(), r });
     const a = approvals[key(root)];
     const approved = !r.truncated && (!r.fingerprint || Boolean(a && a.fingerprint === r.fingerprint));
     if (!approved && !told.has(root + r.fingerprint)) {
@@ -231,6 +231,7 @@ function createScanner({ dir, audit, notify = () => {} }) {
   }
   function approve(root, fingerprint, actor = "ceo") {
     const s = scan(root);
+    cache.set(key(root), { at: Date.now(), r: s });
     if (s.truncated) throw Object.assign(err("NEEDS_SCAN_APPROVAL", incomplete), { scan: s });
     if (!s.fingerprint) return { approved: true, ...s };
     if (fingerprint !== s.fingerprint) throw err("CHANGED", "File .md đã đổi sau khi anh xem: tải lại danh sách bất thường rồi duyệt lại.");

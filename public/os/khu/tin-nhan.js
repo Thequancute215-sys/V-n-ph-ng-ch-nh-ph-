@@ -151,26 +151,30 @@ export async function mo(vung, { kho, ctl }) {
 
   $("soan").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const o = $("noiDung"), text = o.value.trim();
+    const o = $("noiDung"), nhap = o.value, text = nhap.trim();
+    const nut = $("nutGui");
+    if (nut.disabled) return;
     if (!text) { $("loiSoan").textContent = "Gõ nội dung trước đã."; o.setAttribute("aria-invalid", "true"); o.focus(); return; }
     if (!kho.duAn) { $("loiSoan").textContent = "Chọn dự án ở thanh trên trước."; return; }
-    const nut = $("nutGui"); nut.setAttribute("aria-busy", "true"); nut.disabled = true;
+    nut.setAttribute("aria-busy", "true"); nut.disabled = true;
     const ws = kho.duAn, who = nguoiHoi, mode = cheDo;
+    const conDung = () => conSong && kho.duAn === ws && cheDo === mode && (mode !== "hoi" || nguoiHoi === who);
     try {
       if (mode === "hoi") {
         await ctl("/chat", { workspace: ws, who, text });
-        if (!conSong) return;
-        o.value = ""; bao("Đã gửi câu hỏi cho " + ((PHONG[who] && PHONG[who].ten) || who) + ".");
-        if (cheDo === "hoi" && kho.duAn === ws && nguoiHoi === who) veTraLoi();
+        if (!conDung()) return;
+        if (o.value === nhap) o.value = "";
+        bao("Đã gửi câu hỏi cho " + ((PHONG[who] && PHONG[who].ten) || who) + ".");
+        veTraLoi();
       } else {
         const duAn = (kho.dsDuAn.find((w) => w.path === ws) || {}).name || ws.split(/[\\/]/).pop();
         if (!confirm(`Giao việc này cho cả đội trong dự án ${duAn}?\n\n${cat(text, 300)}\n\nĐội làm theo lượt agent.md; báo cáo cuối chờ anh duyệt, không tự push hay phát hành.`)) return;
-        const r = await ctl("/autopilot", { workspace: ws, task: text });
-        if (!conSong) return;
-        o.value = ""; bao("Đã giao việc. Theo dõi ở Tổng quan hoặc Dự án và giao việc.");
-        void r;
+        await ctl("/autopilot", { workspace: ws, task: text });
+        if (!conDung()) return;
+        if (o.value === nhap) o.value = "";
+        bao("Đã giao việc. Theo dõi ở Tổng quan hoặc Dự án và giao việc.");
       }
-    } catch (err) { if (conSong) $("loiSoan").textContent = err.message; }
+    } catch (err) { if (conDung()) $("loiSoan").textContent = err.message; }
     finally { if (conSong) { nut.removeAttribute("aria-busy"); nut.disabled = false; } }
   });
   $("noiDung").addEventListener("input", () => { $("loiSoan").textContent = ""; $("noiDung").removeAttribute("aria-invalid"); });

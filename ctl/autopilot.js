@@ -13,6 +13,7 @@ const crypto = require("crypto");
 const { maskSecrets, looksLikeKey } = require("../lib/mask");
 const { writeAtomic } = require("../lib/ghi-file");
 const { readTurn } = require("./handoff");
+const { FULL_ROLES } = require("./quyen");
 const nhanh = require("./nhanh");
 const songSong = require("./song-song");
 const { createMienHopDong, dongDeNghi } = require("./mien-hop-dong");   // Astra + Kakashi chạy song song theo hợp đồng (giao thức [8], CEO duyệt 16/11/2026)
@@ -323,7 +324,7 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
       if (e.code === "AGY_BUSY" && (run.choAgyLan || 0) < 15 && Date.now() < run.deadline) { run.choAgyLan = (run.choAgyLan || 0) + 1; run.retryNote = note; run.choAgy = Date.now() + choAgyMs; save(run); audit.log("autopilot", "step.wait_agy", run.id, { role }); return; }
       if (e.code !== "NEEDS_SCAN_APPROVAL") throw e;
       // Giữa luồng có file .md mới/đổi chứa điểm bất thường (AI vừa tạo, hoặc kéo về): tạm dừng, CEO duyệt thì chạy tiếp đúng lượt này.
-      run.status = "awaiting_scan"; run.scan = { total: e.scan.total, fingerprint: e.scan.fingerprint, truncated: e.scan.truncated, role, since: Date.now() }; run.retryNote = run.retryNote || null; save(run);
+      run.status = "awaiting_scan"; run.scan = { total: e.scan.total, fingerprint: e.scan.fingerprint, truncated: e.scan.truncated, role, songSong: false, since: Date.now() }; run.retryNote = run.retryNote || null; save(run);
       audit.log("autopilot", "scan.pause", run.id, { role, total: e.scan.total });
       return;
     }
@@ -377,7 +378,7 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
       // File .md bất thường cần CEO duyệt (chế độ toàn quyền): như khi chạy lần lượt, tạm dừng ở awaiting_scan rồi chạy lại lượt Astra.
       if (e.code === "NEEDS_SCAN_APPROVAL") {
         dungSongSong(run, null);
-        run.status = "awaiting_scan"; run.scan = { total: e.scan.total, fingerprint: e.scan.fingerprint, truncated: e.scan.truncated, role: "CODEX_ASTRA_DEV", since: Date.now() }; save(run);
+        run.status = "awaiting_scan"; run.scan = { total: e.scan.total, fingerprint: e.scan.fingerprint, truncated: e.scan.truncated, role: vai, songSong: true, since: Date.now() }; save(run);
         audit.log("autopilot", "scan.pause", run.id, { role: vai, total: e.scan.total, songSong: true });
         return;
       }
@@ -798,21 +799,39 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
     return run;
   }
   const preflight = (workspace) => { const root = ws.find(workspace).path; scanGate(root); return nhanh.preflight(root); };
-  // CEO vừa duyệt điểm bất thường của dự án: luồng đang tạm dừng vì rà soát chạy tiếp đúng lượt đang chờ.
+  function waitingScan(root) {
+    const same = (p) => process.platform === "win32" ? p.toLowerCase() === root.toLowerCase() : p === root;
+    return [...runs.values()].filter((run) => run.status === "awaiting_scan" && same(run.workspace));
+  }
+
+  function scanCanResumeLimited(root) {
+    const waiting = waitingScan(root);
+    if (!waiting.length) return false;
+    const s = runner.quyen.doc();
+    const mucThap = (role) => FULL_ROLES.has(role) && runner.quyen.mucCua(role, s) !== "toan";
+    return waiting.every((run) => {
+      const songSongCu = run.scan?.songSong === undefined && run.scan?.role === "CODEX_ASTRA_DEV" &&
+        run.songSong !== false && songSong.dieuKien(root).ok;
+      return run.scan?.songSong || songSongCu ? BEN.every(mucThap) : mucThap(run.scan?.role);
+    });
+  }
+
+  // CEO xác nhận chạy tiếp đúng lượt đang chờ. Runner vẫn kiểm quyền và rà soát khi khởi chạy từng lượt.
   function resumeScan(workspace) {
-    const root = ws.find(workspace).path, same = (p) => (process.platform === "win32" ? p.toLowerCase() === root.toLowerCase() : p === root);
+    const root = ws.find(workspace).path;
     const resumed = [];
-    for (const run of runs.values()) {
-      if (run.status !== "awaiting_scan" || !same(run.workspace)) continue;
+    for (const run of waitingScan(root)) {
       const waited = Date.now() - (run.scan?.since || Date.now());
       run.deadline += waited; run.status = "running"; run.scan = null; save(run);
       audit.log("ceo", "scan.resume", run.id);
-      try { launch(run); } catch (e) { report(run, e.message); }
-      resumed.push(run.id);
+      try {
+        launch(run);
+        if (run.status === "running") resumed.push(run.id);
+      } catch (e) { report(run, e.message); }
     }
     return resumed;
   }
-  return { start, stop, answer, decide, resumeNow, resumeScan, webPrompt, applyWeb, pushBranch, stepDiff, preflight, view, list, get, busy, cancelJob, cancelAll, close, tick };
+  return { start, stop, answer, decide, resumeNow, resumeScan, scanCanResumeLimited, webPrompt, applyWeb, pushBranch, stepDiff, preflight, view, list, get, busy, cancelJob, cancelAll, close, tick };
 }
 
 module.exports = { createAutopilot, responseText };

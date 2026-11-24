@@ -38,7 +38,7 @@ export function taoNgan({ ctl, bao }) {
     $("nganThan").innerHTML = dangTai(5); $("nganChan").hidden = true;
     if (!dlg.open) dlg.showModal();
     $("nganTieu").focus();
-    tai();
+    tai({ fresh: true });
   }
   function dong() { if (dlg.open) dlg.close(); }
   dlg.addEventListener("close", () => {
@@ -55,7 +55,7 @@ export function taoNgan({ ctl, bao }) {
   dlg.addEventListener("click", (e) => { if (e.target === dlg) dong(); });
 
   const duongDan = () => ref.loai === "luong" ? "/autopilot/" : ref.loai === "ban-giao" ? "/handoffs/" : "/jobs/";
-  async function tai() {
+  async function tai({ fresh = false } = {}) {
     clearTimeout(hen);
     if (!ref) return;
     const mine = phien, r = ref;
@@ -67,9 +67,9 @@ export function taoNgan({ ctl, bao }) {
       } catch (e) { if (mine !== phien) return; loiTai = e.status === 404 || e.code === "NOT_FOUND" ? "" : e.message; if (e.status === 404 || e.code === "NOT_FOUND") du = false; }
       if (!loiTai && r.loai === "luong" && du && du.status === "awaiting_scan" && du.workspace) {
         try {
-          const sc = await ctl("/scan?workspace=" + encodeURIComponent(du.workspace) + "&fresh=1", undefined, { timeout: 20000 });
+          const sc = await ctl("/scan?workspace=" + encodeURIComponent(du.workspace) + (fresh ? "&fresh=1" : ""), undefined, { timeout: 20000 });
           if (mine !== phien) return;
-          scanHienTai = sc && sc.scan ? sc.scan : null;
+          scanHienTai = sc?.scan ? { ...sc.scan, limited: sc.fullAccess === false || sc.canResumeLimited === true } : null;
         } catch {
           if (mine !== phien) return;
           scanHienTai = null;
@@ -129,7 +129,9 @@ export function taoNgan({ ctl, bao }) {
       <p class="mo">Muốn làm lượt này trên ChatGPT web thì mở Công cụ cũ, Bảng điều phối (bản cũ).</p></section>`;
     if (r.status === "awaiting_scan") {
       const linkGiao = "#/code/giao-viec" + (r.workspace ? "?workspace=" + encodeURIComponent(r.workspace) : "");
-      if (scanHienTai && scanHienTai.truncated) {
+      if (scanHienTai?.limited) {
+        than += `<p class="canh-bao">Vai đang chờ có thể chạy tiếp ở mức quyền hiện tại.</p>`;
+      } else if (scanHienTai?.truncated) {
         than += `<div class="hoi-anh" data-scan-truncated><p class="canh-bao">Rà soát chưa hoàn tất. Xử lý phần chưa quét hoặc chọn mức quyền thấp hơn trước khi chạy Toàn quyền.</p>
           <div class="hang"><a class="nut nho" href="${esc(linkGiao)}" data-dong data-k="ve-giao-viec">Mở Giao việc cho dự án này</a><a class="nut nho" href="#/he/models" data-dong data-k="doi-quyen">Đổi mức quyền</a></div></div>`;
       } else if (scanHienTai && scanHienTai.approved) {
@@ -158,8 +160,9 @@ export function taoNgan({ ctl, bao }) {
     let chan = "";
     if (["awaiting_approval", "attention"].includes(r.status)) chan += nut("approve", r.status === "attention" ? "Đã xem lỗi" : r.problem ? "Đã nhận báo cáo" : "Duyệt báo cáo", "nut-chinh") + nut("reject", "Từ chối");
     if (r.status === "waiting_quota") chan += nut("resume", "Chạy lại ngay", "nut-chinh");
-    if (r.status === "awaiting_scan" && scanHienTai && scanHienTai.approved && !scanHienTai.truncated) {
-      chan += `<button type="button" class="nut-chinh" data-chay-tiep-scan="${esc(scanHienTai.fingerprint || "")}" data-scan-workspace="${esc(r.workspace || "")}" data-k="hd-scan-resume"${dangLam ? " disabled" : ""}${dangLam === "scan-resume" ? ' aria-busy="true"' : ""}>${esc(dangLam === "scan-resume" ? "Đang gửi…" : "Chạy tiếp")}</button>`;
+    const mucThap = scanHienTai?.limited;
+    if (r.status === "awaiting_scan" && (mucThap || (scanHienTai?.approved && !scanHienTai.truncated))) {
+      chan += `<button type="button" class="nut-chinh" data-chay-tiep-scan="${esc(scanHienTai.fingerprint || "")}" data-scan-mode="${mucThap ? "limited" : "resume"}" data-scan-workspace="${esc(r.workspace || "")}" data-k="hd-scan-resume"${dangLam ? " disabled" : ""}${dangLam === "scan-resume" ? ' aria-busy="true"' : ""}>${esc(dangLam === "scan-resume" ? "Đang gửi…" : "Chạy tiếp")}</button>`;
     }
     if (["running", "reporting", "awaiting_answer", "waiting_quota", "awaiting_scan"].includes(r.status)) chan += nut("stop", "Dừng luồng", "nut nguy");
     if (["approved", "acknowledged"].includes(r.status) && r.git && !r.git.pushed) chan += nut("push", "Đẩy nhánh lên GitHub");
@@ -263,16 +266,21 @@ export function taoNgan({ ctl, bao }) {
     if (mine !== phien) return;
     dangLam = false; ky = ""; tai();
   }
-  async function chayTiepScan(workspace, fingerprint) {
+  async function chayTiepScan(workspace, fingerprint, limited) {
     if (dangLam || !ref || !workspace) return;
     const mine = phien;
     dangLam = "scan-resume"; ve();
     try {
-      const d = await ctl("/scan/approve", { workspace, fingerprint }, { timeout: 20000 });
+      const d = limited
+        ? await ctl("/scan/resume", { workspace }, { timeout: 20000 })
+        : await ctl("/scan/approve", { workspace, fingerprint }, { timeout: 20000 });
       const nRes = (d.resumed || []).length;
-      const thong = nRes ? "Đã chạy tiếp " + nRes + " luồng đang tạm dừng." : "Rà soát đã đạt; không còn luồng nào đang chờ.";
-      bao(thong); if (mine === phien) baoNgan(thong);
-      if (khiDoi) try { khiDoi(); } catch {}
+      const thong = nRes ? "Đã chạy tiếp " + nRes + " luồng đang tạm dừng." : "Không còn luồng nào đang chờ.";
+      bao(thong);
+      if (mine === phien) {
+        baoNgan(thong);
+        if (khiDoi) try { khiDoi(); } catch {}
+      }
     } catch (e) { bao(e.message, true); if (mine === phien) baoNgan(e.message, true); }
     if (mine !== phien) return;
     dangLam = false; ky = ""; tai();
@@ -280,9 +288,9 @@ export function taoNgan({ ctl, bao }) {
   dlg.addEventListener("click", (e) => {
     const t = e.target;
     if (t.closest("[data-dong]")) return dong();
-    if (t.closest("[data-thu-lai]")) return tai();
+    if (t.closest("[data-thu-lai]")) return tai({ fresh: true });
     const sc = t.closest("[data-chay-tiep-scan]");
-    if (sc && !sc.disabled) return chayTiepScan(sc.dataset.scanWorkspace || (du && du.workspace) || "", sc.dataset.chayTiepScan || "");
+    if (sc && !sc.disabled) return chayTiepScan(sc.dataset.scanWorkspace || (du && du.workspace) || "", sc.dataset.chayTiepScan || "", sc.dataset.scanMode === "limited");
     const tl = t.closest("[data-tra-loi]");
     if (tl) return guiHanhDong("answer", { option: tl.dataset.traLoi }, "Đã chọn " + tl.dataset.traLoi + ". Luồng chạy tiếp.");
     const b = t.closest("[data-hd]");

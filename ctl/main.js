@@ -308,7 +308,15 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     ["POST", "/lich-chay/:id/bat", (p, qs, b) => ({ lich: lichChay.batTat(p.id, b.bat, "ceo") })],
     ["POST", "/lich-chay/:id/xoa", (p) => lichChay.xoa(p.id, "ceo")],
     ["POST", "/lich-chay/:id/chay-ngay", async (p) => ({ ketQua: await lichChay.chayNgay(p.id, "ceo") })],
-    ["GET", "/scan", (p, qs) => { const root = ws.find(wsOf(qs.get("workspace"))).path; return { scan: scanner.status(root, { fresh: qs.get("fresh") === "1" }), fullAccess: runner.fullOn() }; }],
+    ["GET", "/scan", (p, qs) => {
+      const root = ws.find(wsOf(qs.get("workspace"))).path;
+      return { scan: scanner.status(root, { fresh: qs.get("fresh") === "1" }), fullAccess: runner.fullOn(), canResumeLimited: autopilot.scanCanResumeLimited(root) };
+    }],
+    ["POST", "/scan/resume", (p, qs, b) => {
+      const root = ws.find(wsOf(b.workspace)).path;
+      if (runner.fullOn() && !autopilot.scanCanResumeLimited(root)) scanner.require(root);
+      return { resumed: autopilot.resumeScan(root) };
+    }],
     ["POST", "/scan/approve", (p, qs, b) => { const root = ws.find(wsOf(b.workspace)).path; const scan = scanner.approve(root, String(b.fingerprint || "")); return { scan, resumed: autopilot.resumeScan(root) }; }],
     ["GET", "/github/repos", (p, qs) => github.list(qs.get("page") || 1)],
     ["POST", "/github/open", (p, qs, b) => [202, { operation: github.open(b.fullName) }]],

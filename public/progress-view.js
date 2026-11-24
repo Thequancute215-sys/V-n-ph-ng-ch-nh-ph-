@@ -49,15 +49,18 @@
   // nếu lần quét mới nhất đã đạt (scan.approved) nhưng vẫn còn luồng awaiting_scan thì hiện nút Chạy tiếp (chỉ máy tính).
   function scanHtml(scan, workspace, attr = "data-scan-approve", { canApprove = true, hasAwaitingScan = false } = {}) {
     if (!scan) return "";
-    if (scan.truncated) {
+    const mucThap = scan.fullAccess === false || scan.canResumeLimited === true;
+    if (scan.truncated && !mucThap) {
       return '<div class="scan-box" data-scan-truncated><strong>Rà soát chưa hoàn tất</strong><p class="muted">Xử lý phần chưa quét hoặc chọn mức quyền thấp hơn trước khi giao lượt mới.</p></div>';
     }
-    if (scan.approved) {
+    if (scan.approved || mucThap) {
       if (!hasAwaitingScan) return "";
-      return '<div class="scan-box" data-scan-resume><strong>Rà soát mới nhất đã đạt</strong>' +
-        `<p class="muted">${scan.total ? "Các điểm bất thường hiện tại đã được duyệt trước đó" : "Dự án không còn điểm bất thường"}, nhưng vẫn có luồng đang tạm dừng chờ rà soát.</p>` +
+      const tieuDe = mucThap ? "Mức quyền của lượt đang chờ" : "Rà soát mới nhất đã đạt";
+      const chiTiet = mucThap ? "Luồng có thể tiếp tục ở mức quyền hiện tại."
+        : (scan.total ? "Các điểm bất thường hiện tại đã được duyệt trước đó" : "Dự án không còn điểm bất thường") + ", nhưng vẫn có luồng đang tạm dừng chờ rà soát.";
+      return `<div class="scan-box" data-scan-resume><strong>${tieuDe}</strong><p class="muted">${chiTiet}</p>` +
         (canApprove
-          ? `<div class="actions desk-actions"><button type="button" class="primary" ${attr}="${esc(scan.fingerprint || "")}" data-scan-workspace="${esc(workspace)}" data-scan-mode="resume">Chạy tiếp</button></div>`
+          ? `<div class="actions desk-actions"><button type="button" class="primary" ${attr}="${esc(scan.fingerprint || "")}" data-scan-workspace="${esc(workspace)}" data-scan-mode="${mucThap ? "limited" : "resume"}">Chạy tiếp</button></div>`
           : `<p class="muted">Chạy tiếp luồng sau rà soát chỉ thực hiện trên máy tính.</p>`) + `</div>`;
     }
     const items = (scan.findings || []).map((f) => `<li><span class="mono">${esc(f.file)}${f.line ? ":" + esc(f.line) : ""}</span> — <b>${esc(f.name)}</b><br><code>${esc(f.text)}</code></li>`).join("");
