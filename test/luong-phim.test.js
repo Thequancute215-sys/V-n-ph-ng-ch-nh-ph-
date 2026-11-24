@@ -218,6 +218,32 @@ test("đi hết bốn cổng, đứng chờ Flow và chỉ ghi báo cáo Claude 
   assert.equal(f.calls.quay.length, 3);
 });
 
+test("Claude hết lượt dù mã thoát thành công: giữ bước nghiệm thu cho tới khi có báo cáo thật", async (t) => {
+  const f = tao(t, { coPhim: true, may: ["omni-flash"] });
+  let ketQuaClaude = { type: "result", subtype: "error_max_turns", is_error: true, result: "Exceeded max turns" };
+  f.deps.chayAi = async () => ({ ok: true, text: JSON.stringify(ketQuaClaude, null, 2) });
+  f.mo();
+  await f.denCong2();
+  f.chonKhung();
+  f.duyet(2);
+  assert.equal((await f.tiep()).trangThai, "cho_cong_3");
+  f.duyet(3);
+  const result = await f.tiep();
+  const report = path.join(f.root, "media", "xuat", "nghiem-thu.md");
+  assert.equal(result.trangThai, "loi");
+  assert.equal(result.buoc, "nghiem_thu");
+  assert.match(result.loi, /Claude.*nghiệm thu/);
+  assert.equal(fs.existsSync(report), false);
+  assert.equal(f.doc().cong[4], undefined);
+
+  ketQuaClaude = { type: "result", subtype: "success", is_error: false, result: "Đã kiểm các bản xuất." };
+  f.batDau();
+  const retried = await f.tiep();
+  assert.equal(retried.trangThai, "cho_cong_4", retried.loi);
+  assert.match(fs.readFileSync(report, "utf8"), /Đã kiểm các bản xuất/);
+  assert.equal(f.calls.dung.length, 1);
+});
+
 test("Hinata được sửa tối đa hai lần khi hồ sơ chưa hợp lệ", async (t) => {
   const f = tao(t);
   f.deps.chayAi = async (input) => {

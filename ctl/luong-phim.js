@@ -8,7 +8,6 @@ const { promisify } = require("node:util");
 const { kiem, dongBoGiong, congDaDuyet, duongDanHopLe, MAY_QUAY, MAY_QUAY_MAC_DINH, TI_LE, TRANG_THAI } = require("../lib/phim");
 const { CONG, NHAN_AI, dsCong } = require("./ban-dung");
 const { remaining } = require("./dieu-phoi");
-const { responseText } = require("./autopilot");
 const { writeAtomic, renameRetry } = require("../lib/ghi-file");
 const { cleanEnv, maskSecrets } = require("../lib/mask");
 
@@ -24,6 +23,18 @@ const coFile = (f) => fs.statSync(f, { throwIfNoEntry: false })?.isFile() ?? fal
 const coKhung = (c) => !!(c.khung_chon || c.khung?.length);
 const coTake = (c) => !!c.take?.length;
 const hash = (value, alg = "sha256") => createHash(alg).update(value).digest("hex");
+
+function noiDungNghiemThu(log) {
+  const text = String(log || "").trim();
+  for (const raw of [text, ...text.split(/\r?\n/).reverse()]) {
+    let result;
+    try { result = JSON.parse(raw); } catch { continue; }
+    if (result?.type !== "result") continue;
+    if (result.is_error || (result.subtype && result.subtype !== "success")) return "";
+    return typeof result.result === "string" ? result.result.trim() : "";
+  }
+  return "";
+}
 
 function fileTrong(root, rel) {
   if (!duongDanHopLe(rel)) return false;
@@ -359,8 +370,8 @@ function createLuongPhim({ dir, audit = { log() {} }, now = Date.now, setTimer =
     if (!ketQua) return false;
     const hien = docPhim(s.root);
     if (!hien || JSON.stringify(thongTinBaoCao(hien)) !== chuKy) return false;
-    const text = responseText(ketQua.text || "").trim();
-    if (!text) throw err("AI_LOI", "Claude chưa trả nội dung báo cáo nghiệm thu.");
+    const text = noiDungNghiemThu(ketQua.text);
+    if (!text) throw err("AI_LOI", "Claude chưa hoàn thành báo cáo nghiệm thu. Thử lại khi Claude sẵn sàng.");
     reportFile(s.root); // Kiểm lại sau khi chờ AI.
     fs.mkdirSync(path.dirname(file), { recursive: true });
     ghiAtomic(file, `${moc}# Nghiệm thu\n\nNhãn yêu cầu: ${NHAN_AI}.\n\n${maskSecrets(text)}\n`, 0o644);
