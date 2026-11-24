@@ -136,8 +136,9 @@ button { min-height: 36px; }
     $("dung").hidden = !bd;
     if (bd) {
       const b = bd.banDung;
-      $("dung").innerHTML = `<div class="row"><h2>Bàn dựng</h2><button type="button" class="chinh" data-dung="1">${b ? "Dựng lại" : "Dựng bản xem thử"}</button><span class="mute">Miễn phí, chạy trên máy: ghép take đã chọn, phụ đề, giọng đọc, nhạc, chuẩn âm −14 LUFS.</span></div>` +
-        (!bd.coFfmpeg ? `<div class="warn">⚠ Chưa có FFmpeg: bấm Cài xưởng phim ở trang Kết nối.</div>` : "") +
+      const khoaDung = !bd.coFfmpeg;
+      $("dung").innerHTML = `<div class="row"><h2>Bàn dựng</h2><button type="button" class="chinh" data-dung="1"${khoaDung ? ' disabled aria-describedby="canhBaoFfmpeg" title="Chưa có FFmpeg: bấm Cài xưởng phim ở trang Kết nối."' : ""}>${b ? "Dựng lại" : "Dựng bản xem thử"}</button><span class="mute">Miễn phí, chạy trên máy: ghép take đã chọn, phụ đề, giọng đọc, nhạc, chuẩn âm −14 LUFS.</span></div>` +
+        (!bd.coFfmpeg ? `<div class="warn" id="canhBaoFfmpeg">⚠ Chưa có FFmpeg: bấm Cài xưởng phim ở trang Kết nối.</div>` : "") +
         (bd.dang ? `<div class="warn">⏳ ${esc(bd.dang.buoc)}</div>` : "") +
         (bd.loiCuoi ? `<div class="bad">Lần dựng trước lỗi: ${esc(bd.loiCuoi)}</div>` : "") +
         (b && bd.cu ? `<div class="warn">⚠ Bản dựng này cũ: anh đã đổi take hoặc thời lượng cảnh. Bấm Dựng lại.</div>` : "") +
@@ -177,7 +178,10 @@ button { min-height: 36px; }
         `<div><div>${esc(c.loi_dan || "")}</div><div class="mute">Khung hình: ${esc(c.khung_hinh || "(chưa có)")}</div>` +
         (khung ? `<div class="anh">${khung}</div>` : "") + (take ? `<div class="anh">${take}</div>` : "") + `<div class="row">${nut}</div></div></div>`;
     }).join("") || `<p class="mute">Phim chưa có cảnh nào. Hinata viết phân cảnh vào phim.json trước.</p>`;
-    document.querySelectorAll("main button, main input, main select").forEach((b) => { if (b.id !== "chonPhim" && b.id !== "taiLai") b.disabled = ban; });
+    document.querySelectorAll("main button, main input, main select").forEach((b) => {
+      if (b.id === "chonPhim" || b.id === "taiLai") return;
+      b.disabled = ban || (b.hasAttribute("data-dung") && !(bd && bd.coFfmpeg));
+    });
   }
 
   async function load() {
@@ -201,7 +205,10 @@ button { min-height: 36px; }
     if (b.id === "luuNS") return lam(() => req("/phim/ceo", { workspace: ws, nganSach: Number($("nganSach").value) }), "Đã lưu ngân sách.");
     if (b.dataset.chonKhung) return lam(() => req("/phim/ceo", { workspace: ws, canh: b.dataset.chonKhung, khungChon: b.dataset.file }), "Đã chọn khung cho " + b.dataset.chonKhung + ".");
     if (b.dataset.chonTake) return lam(() => req("/phim/ceo", { workspace: ws, canh: b.dataset.chonTake, takeChon: b.dataset.file }), "Đã chọn take cho " + b.dataset.chonTake + ".");
-    if (b.dataset.dung) return lam(() => req("/phim/dung", { workspace: ws }), "Đang dựng. Trang tự cập nhật khi xong.");
+    if (b.dataset.dung) {
+      if (!(data && data.banDung && data.banDung.coFfmpeg)) return msg("Chưa có FFmpeg: bấm Cài xưởng phim ở trang Kết nối trước khi dựng.", true);
+      return lam(() => req("/phim/dung", { workspace: ws }), "Đang dựng. Trang tự cập nhật khi xong.");
+    }
     if (b.dataset.cong) {
       const so = Number(b.dataset.cong), duyet = b.dataset.duyet === "1";
       const hoi = duyet ? { 1: "Duyệt kịch bản và phân cảnh?", 2: "Duyệt khung chính và khoản quay?", 3: "Duyệt bản dựng này?", 4: "Xuất xưởng phim này? File cuối nằm trong media/xuat/; anh tự tải và tự đăng." }[so]

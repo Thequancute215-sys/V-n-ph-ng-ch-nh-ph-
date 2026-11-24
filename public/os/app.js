@@ -170,10 +170,17 @@ async function moKhu() {
     const khung = document.createElement("div");
     khung.className = "khung-khu";
     vung.replaceChildren(khung);
-    dong = (await m.mo(khung, { kho, ctl, bao, ngan, congCuCu: CU })) || null;
+    // Hủy vòng đời khu ngay khi rời trang, kể cả khi lần tải đầu chưa xong.
+    const vongDoi = new AbortController();
+    const { signal } = vongDoi;
+    dong = () => vongDoi.abort();
+    const dongKhu = await m.mo(khung, { kho, ctl, bao, ngan, congCuCu: CU, signal });
+    // Khu tải chậm có thể mở xong sau khi người dùng đã chuyển trang.
+    if (mine !== phien) { dongKhu?.(); return; }
+    dong = dongKhu || null;
     // Đường dẫn #/<khu>?mo=luong:<id> mở thẳng ngăn của việc đó (rồi bỏ ?mo khỏi địa chỉ để tải lại không mở lại).
     const moNgay = new URLSearchParams(truyVan).get("mo");
-    if (moNgay && mine === phien) { history.replaceState(null, "", "#/" + id); ngan.mo(moNgay); }
+    if (moNgay) { history.replaceState(null, "", "#/" + id); ngan.mo(moNgay); }
   } catch (e) {
     if (mine !== phien) return;
     vung.innerHTML = `<div class="vung"><div class="loi" role="alert"><span>Không mở được khu ${esc(k.ten)}: ${esc(e.message)}</span></div></div>`;

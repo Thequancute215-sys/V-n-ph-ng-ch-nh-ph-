@@ -12,7 +12,7 @@ const STEP_TT = { done: "✓", failed: "✗", running: "…", skipped: "⏭" };
 const safeGithub = (v) => { const u = safeHttps(v); return u && new URL(u).hostname === "github.com" ? u : null; };
 const slugRepo = (v) => String(v || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[đĐ]/g, "d").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
 
-export async function mo(vung, { kho, ctl, bao }) {
+export async function mo(vung, { kho, ctl, bao, signal }) {
   const qs = new URLSearchParams(location.hash.split("?")[1] || "");
   let moTao = qs.get("loai") === "phim";
   let loaiMacDinh = qs.get("loai") === "phim" ? "phim" : "phan-mem";
@@ -288,6 +288,13 @@ export async function mo(vung, { kho, ctl, bao }) {
   });
 
   veTao();
-  await tai();
-  return () => { conSong = false; clearTimeout(damHen); clearTimeout(pubHen); };
+  function dong() {
+    conSong = false;
+    clearTimeout(damHen);
+    clearTimeout(pubHen);
+  }
+  signal?.addEventListener("abort", dong, { once: true });
+  try { await tai(); }
+  finally { signal?.removeEventListener("abort", dong); }
+  return dong;
 }

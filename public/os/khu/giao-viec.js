@@ -8,7 +8,7 @@ import { TT_LUONG, LUONG_SONG, LUONG_CHAY, tenDuAn, tenVai, soLuot, lopLuong } f
 const GOI_Y = { AI_BUSY: "Dự án đang có luồng hoặc bàn giao chưa xong.", BAD_AGENT_MD: "Sổ agent.md của dự án chưa đọc được.", DIRTY_REPO: "Repo đang có thay đổi chưa commit: commit hoặc cất đi rồi giao lại (văn phòng không tự đụng vào phần anh đang sửa).",
   SCAN_PENDING: "Dự án có điểm bất thường trong file .md hay thư viện chưa được duyệt." };
 
-export async function mo(vung, { kho, ctl, bao, ngan }) {
+export async function mo(vung, { kho, ctl, bao, ngan, signal }) {
   vung.innerHTML = `<div class="vung">
     <div class="luoi-2">
       <section class="khung-goc" aria-labelledby="hGiao"><form id="bieuMau" class="cot-doc" novalidate>
@@ -266,6 +266,15 @@ export async function mo(vung, { kho, ctl, bao, ngan }) {
   const khiHien = () => { if (!document.hidden) taiTinhTrang(); };
   document.addEventListener("visibilitychange", khiHien);
   veChonDuAn(); veTinh();
-  await taiTinhTrang({ fresh: true });
-  return () => { conSong = false; clearTimeout(hen); bo(); document.removeEventListener("visibilitychange", khiHien); };
+  function dong() {
+    if (!conSong) return;
+    conSong = false;
+    clearTimeout(hen);
+    bo();
+    document.removeEventListener("visibilitychange", khiHien);
+  }
+  signal?.addEventListener("abort", dong, { once: true });
+  try { await taiTinhTrang({ fresh: true }); }
+  finally { signal?.removeEventListener("abort", dong); }
+  return dong;
 }

@@ -72,9 +72,10 @@ export async function mo(vung) {
     let banDung = "";
     if (bd) {
       const b = bd.banDung;
-      banDung = `<section class="khoi" aria-labelledby="hDung"><div class="hang"><h2 class="dau" id="hDung">Bàn dựng</h2><button type="button" class="nut-chinh" data-dung>${b ? "Dựng lại" : "Dựng bản xem thử"}</button>` +
+      const khoaDung = !bd.coFfmpeg;
+      banDung = `<section class="khoi" aria-labelledby="hDung"><div class="hang"><h2 class="dau" id="hDung">Bàn dựng</h2><button type="button" class="nut-chinh" data-dung${khoaDung ? ' disabled aria-describedby="canhBaoFfmpeg" title="Chưa có FFmpeg: bấm Cài xưởng phim ở Kết nối trước khi dựng."' : ""}>${b ? "Dựng lại" : "Dựng bản xem thử"}</button>` +
         `<span class="mo">Miễn phí, chạy trên máy: ghép take đã chọn, phụ đề, giọng đọc, nhạc, chuẩn âm −14 LUFS.</span></div>` +
-        (!bd.coFfmpeg ? `<div class="canh-bao">Chưa có FFmpeg: bấm Cài xưởng phim ở <a href="#/he/ket-noi">Kết nối</a>.</div>` : "") +
+        (!bd.coFfmpeg ? `<div class="canh-bao" id="canhBaoFfmpeg">Chưa có FFmpeg: bấm Cài xưởng phim ở <a href="#/he/ket-noi">Kết nối</a>.</div>` : "") +
         (bd.dang ? `<div class="canh-bao">${esc(bd.dang.buoc)}</div>` : "") +
         (bd.loiCuoi ? `<div class="hong">Lần dựng trước lỗi: ${esc(bd.loiCuoi)}</div>` : "") +
         (b && bd.cu ? `<div class="canh-bao">Bản dựng này cũ: take hoặc thời lượng cảnh đã đổi. Bấm Dựng lại.</div>` : "") +
@@ -115,7 +116,10 @@ export async function mo(vung) {
     }).join("") || rong("Phim chưa có cảnh nào", "Hinata viết phân cảnh vào phim.json; xong thì duyệt cổng 1.")) + `</section>`;
 
     goc.innerHTML = chon + (loiTai ? loi(loiTai) : "") + hoSo + thieuP3 + cong + banDung + tram + canh;
-    goc.querySelectorAll("button, input, select").forEach((el) => { if (el.id !== "chonPhim" && !el.hasAttribute("data-tai-lai")) el.disabled = ban; });
+    goc.querySelectorAll("button, input, select").forEach((el) => {
+      if (el.id === "chonPhim" || el.hasAttribute("data-tai-lai")) return;
+      el.disabled = ban || (el.hasAttribute("data-dung") && !(bd && bd.coFfmpeg));
+    });
   }
 
   async function lam(fn, xong) {
@@ -138,7 +142,10 @@ export async function mo(vung) {
     if (d.taiLai !== undefined) return tai();
     if (d.thuLai !== undefined) return dsPhim ? tai() : batDau();
     if (d.luuNs !== undefined) return lam(() => ctl("/phim/ceo", { workspace: ws, nganSach: Number(goc.querySelector("#nganSach").value) }), "Đã lưu ngân sách.");
-    if (d.dung !== undefined) return lam(() => ctl("/phim/dung", { workspace: ws }), "Đang dựng. Trang tự cập nhật khi xong.");
+    if (d.dung !== undefined) {
+      if (!(data && data.banDung && data.banDung.coFfmpeg)) return bao("Chưa có FFmpeg: bấm Cài xưởng phim ở Kết nối trước khi dựng.", true);
+      return lam(() => ctl("/phim/dung", { workspace: ws }), "Đang dựng. Trang tự cập nhật khi xong.");
+    }
     if (d.cong) { const duyet = d.duyet === "1"; if (!confirm(duyet ? HOI_CONG[d.cong] : `Bỏ duyệt cổng ${d.cong}? Các cổng sau cũng bị bỏ.`)) return;
       return lam(() => ctl("/phim/cong", { workspace: ws, cong: Number(d.cong), duyet }), duyet ? `Đã duyệt cổng ${d.cong}.` : `Đã bỏ duyệt từ cổng ${d.cong}.`); }
     if (d.chonKhung) return lam(() => ctl("/phim/ceo", { workspace: ws, canh: d.chonKhung, khungChon: d.file }), "Đã chọn khung cho " + d.chonKhung + ".");

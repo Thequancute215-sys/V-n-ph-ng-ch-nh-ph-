@@ -112,7 +112,7 @@ test("OS-3: Tổng quan và Việc mở ngăn trượt tại chỗ thay cho chuy
   }
   const app = doc("os/app.js");
   assert.match(app, /ngan\.dong\(\);/, "đổi khu thì đóng ngăn");
-  assert.match(app, /m\.mo\(khung, \{ kho, ctl, bao, ngan, congCuCu: CU \}\)/);
+  assert.match(app, /m\.mo\(khung, \{ kho, ctl, bao, ngan, congCuCu: CU, signal \}\)/);
   const ngan = doc("os/ngan.js");
   assert.match(ngan, /showModal\(\)/, "ngăn là dialog modal: bàn phím ở yên trong ngăn, Esc đóng");
   assert.match(ngan, /const dich = dung\(nguoiMo\) \? nguoiMo : /, "đóng ngăn trả tiêu điểm về nút đã mở");

@@ -651,7 +651,6 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
 </div>
 
 <script type="module">
-import { createOffice } from "./vanphong3d.js";
 import { createDesk } from "./office-desk.js";
 import { connectLive, vietnamHour } from "./thoitiet.js";
 
@@ -672,41 +671,49 @@ const NPC_OF = { ceo: "ceo", pain: "pain", antigravity: "hinata", sol: "itachi",
 const KEY_OF = Object.fromEntries(Object.entries(NPC_OF).map(([k, v]) => [v, k]));
 let selected = "ceo";
 
-// ================= VĂN PHÒNG 3D: một map trong + ngoài, nhân vật Thế Quân đi WASD =================
-// Trời theo giờ Việt Nam (UTC+7) và thời tiết thật Hà Nội (thoitiet.js).
 let office = null;
-try {
-  office = createOffice({
-    gl: $("gl"), lbl: $("lbl"), hour: vietnamHour(), cardStyle: "top:76px;right:16px",
-    onNpcClick: (id) => {
-      const a = defaultAgents.find((x) => x.key === (KEY_OF[id] || id));
-      if (!a) return;
-      selected = a.key;
-      updateSidebarAgentInfo(a);
-      chatWith(a.key);
-      openRightSidebar();
-    },
-  });
-  // Trời theo giờ Việt Nam và thời tiết thật của Hà Nội
-  connectLive(office, {
-    onUpdate: ({ place, clock, weather: w }) => {
-      $("wxTxt").textContent = `${place} · ${clock} · ` + (!w ? "đang lấy thời tiết…" : w.error ? "chưa lấy được thời tiết (" + w.error + ", thử lại sau 2 phút)" : `${w.temp}°C · ${w.text}${w.stale ? " (cũ)" : ""}`);
-    },
-  });
-  // Thẻ "Bạn đang ở" nằm ngay dưới thanh trên (trên màn hẹp thanh trên xuống nhiều dòng)
-  const placeCard = () => {
-    const card = document.querySelector(".vp-room"), bar = document.querySelector(".bar");
-    if (card && bar) card.style.top = Math.round(bar.getBoundingClientRect().bottom + 8) + "px";
-  };
-  addEventListener("resize", placeCard);
-  new ResizeObserver(placeCard).observe(document.querySelector(".bar"));
-  placeCard();
-} catch (err) {
-  console.error(err);
-  const msg = document.createElement("div");
-  msg.style.cssText = "position:absolute;inset:0;display:grid;place-items:center;color:#94a3b8;font-size:14px;padding:16px;text-align:center";
-  msg.textContent = "Không vẽ được văn phòng 3D: " + err.message;
-  $("world").appendChild(msg);
+
+// Tải riêng cảnh 3D để bàn làm việc và menu vẫn mở được khi CDN không phản hồi.
+async function startOffice() {
+  try {
+    const { createOffice } = await import("./vanphong3d.js");
+    office = createOffice({
+      gl: $("gl"), lbl: $("lbl"), hour: vietnamHour(), cardStyle: "top:76px;right:16px",
+      onNpcClick: (id) => {
+        const a = defaultAgents.find((x) => x.key === (KEY_OF[id] || id));
+        if (!a) return;
+        selected = a.key;
+        updateSidebarAgentInfo(a);
+        chatWith(a.key);
+        openRightSidebar();
+      },
+    });
+    office.controls.addEventListener("change", () => { zoomRange.value = office.getDistance(); });
+    // Trời theo giờ Việt Nam và thời tiết thật của Hà Nội
+    connectLive(office, {
+      onUpdate: ({ place, clock, weather: w }) => {
+        $("wxTxt").textContent = `${place} · ${clock} · ` + (!w ? "đang lấy thời tiết…" : w.error ? "chưa lấy được thời tiết (" + w.error + ", thử lại sau 2 phút)" : `${w.temp}°C · ${w.text}${w.stale ? " (cũ)" : ""}`);
+      },
+    });
+    // Thẻ "Bạn đang ở" nằm ngay dưới thanh trên (trên màn hẹp thanh trên xuống nhiều dòng)
+    const placeCard = () => {
+      const card = document.querySelector(".vp-room"), bar = document.querySelector(".bar");
+      if (card && bar) card.style.top = Math.round(bar.getBoundingClientRect().bottom + 8) + "px";
+    };
+    addEventListener("resize", placeCard);
+    new ResizeObserver(placeCard).observe(document.querySelector(".bar"));
+    placeCard();
+  } catch (err) {
+    console.warn("Không tải được văn phòng 3D:", err);
+    const msg = document.createElement("div");
+    msg.setAttribute("role", "status");
+    msg.style.cssText = "position:absolute;inset:0;display:grid;place-items:center;color:#94a3b8;font-size:14px;padding:16px;text-align:center";
+    msg.textContent = "Chưa mở được cảnh 3D. Anh vẫn có thể dùng menu và bàn làm việc.";
+    $("world").appendChild(msg);
+    $("hint").hidden = true;
+    $("wxTxt").textContent = "Hà Nội · chưa tải thời tiết";
+    document.querySelectorAll(".rbtn, #zoomRange, #zoomInBtn, #zoomOutBtn").forEach((btn) => { btn.disabled = true; });
+  }
 }
 
 // ================= ĐI TỚI PHÒNG & ZOOM =================
@@ -758,7 +765,6 @@ zoomRange.addEventListener("input", (e) => office?.setDistance(parseFloat(e.targ
 zoomRange.addEventListener("change", (e) => e.target.blur());
 $("zoomInBtn").addEventListener("click", (e) => { office?.setDistance(office.getDistance() - 3); e.currentTarget.blur(); });
 $("zoomOutBtn").addEventListener("click", (e) => { office?.setDistance(office.getDistance() + 3); e.currentTarget.blur(); });
-office?.controls.addEventListener("change", () => { zoomRange.value = office.getDistance(); });
 
 // ================= GIAO VIỆC CHO MỘT VAI (MỘT LƯỢT AI THẬT) =================
 // Trước đây là hộp "Phân việc ngoài lề (Đặc cách)" chỉ hiện bong bóng và báo "đã ghi nhận vào sổ điều phối và hòm thư" mà không ghi gì,
@@ -1237,6 +1243,7 @@ es.onmessage = (m) => {
   } catch (e) {}
 };
 es.onerror = () => { $("live").className = "live off"; };
+startOffice();
 </script>
 </body>
 </html>
