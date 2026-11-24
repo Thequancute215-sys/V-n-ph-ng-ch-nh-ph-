@@ -138,6 +138,7 @@ test("AGY-M03: safeHttps, md.js an toàn với URL chứa dấu *, hieusuat khô
   assert.doesNotMatch(MD.render("<img src=example.png>"), /<img/);
   assert.doesNotMatch(MD.render("[x](javascript:alert(1))"), /<a /);
   assert.match(MD.render("`**code**`"), /<code>\*\*code\*\*<\/code>/);
+  assert.match(MD.render("[Xem `config.json` **mới**](https://example.com/a*b*c)"), /<a href="https:\/\/example\.com\/a\*b\*c"[^>]*>Xem <code>config\.json<\/code> <b>mới<\/b><\/a>/);
 
   const hs = doc("hieusuat.html");
   assert.doesNotMatch(hs, /tip\.innerHTML/);

@@ -25,8 +25,9 @@ async function fixture(t, owner, mode = "ok") {
   const reporter = path.join(temp, "claude.js");
   fs.writeFileSync(reporter, `process.argv.splice(2, process.argv.length, ...${JSON.stringify(["CLAUDE_REPORTER", mode])}, process.argv.at(-1)); require(${JSON.stringify(fake)});`);
   fs.writeFileSync(path.join(dir, "ctl-agents.json"), JSON.stringify(Object.fromEntries(ROLES.map((r) => [r, r === "CLAUDE_REPORTER" ? [process.execPath, reporter, "-p", "{prompt}"] : [process.execPath, fake, r, mode, "{prompt}"]]))));
+  const createdRepos = [];
   const github = {
-    createRepo: async ({ name }) => ({ fullName: "fixture/" + name }),
+    createRepo: async ({ name }) => { createdRepos.push(name); return { fullName: "fixture/" + name }; },
     open: () => ({ status: "done", workspace: repo }),
   };
   const ctl = createCtl({ dir, duAnOptions: { github } });
@@ -38,7 +39,7 @@ async function fixture(t, owner, mode = "ok") {
     return { status: r.status, ...await r.json() };
   };
   t.after(async () => { await ctl.close(); fs.rmSync(temp, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); });
-  return { ctl, repo, git, call };
+  return { ctl, repo, git, call, createdRepos };
 }
 
 test("ý tưởng: lưu, kiểm dữ liệu vào, chỉ hiện ở đúng dự án", async (t) => {
@@ -132,6 +133,54 @@ for (const [trackedIgnore, launch] of [[false, true], [true, true], [true, false
       assert.equal(run.steps[0].role, "SPEC_ARCHITECT");
     } else assert.equal(run, undefined);
   });
+}
+
+for (const trackedIgnore of [false, true]) {
+  for (const launch of [false, true]) {
+    test(`dự án phim: thử lại sau khi Git không lưu được khung (.gitignore tracked=${trackedIgnore}, giao Hinata=${launch})`, async (t) => {
+      const { ctl, repo, git, call, createdRepos } = await fixture(t, "CLAUDE_AUDITOR", "slow");
+      if (trackedIgnore) {
+        fs.writeFileSync(path.join(repo, ".gitignore"), "out/\n");
+        git("add", ".gitignore"); git("commit", "-qm", "ignore đầu");
+      }
+      const main = git("rev-parse", "main");
+      fs.writeFileSync(path.join(repo, "ghi-chu-rieng.txt"), "ghi chú của CEO");
+
+      const create = async () => {
+        const created = await call("/du-an-moi", { ten: "phim-thu-lai", yTuong: "Một bộ phim để kiểm thử lại", loai: "phim", caiBoKiem: false, giaoHinata: launch });
+        assert.equal(created.status, 202, JSON.stringify(created));
+        for (let i = 0; i < 200; i++) {
+          const { duAnMoi } = await call("/du-an-moi/" + created.duAnMoi.id);
+          if (duAnMoi.trangThai !== "dang") return duAnMoi;
+          await sleep(50);
+        }
+        assert.fail("Hết giờ tạo khung cho dự án thử");
+      };
+      git("config", "gpg.program", path.join(repo, "gpg-khong-co-trong-fixture"));
+      git("config", "commit.gpgsign", "true");
+      const failed = await create();
+      assert.equal(failed.trangThai, "loi");
+      assert.match(failed.buoc.find((b) => b.id === "khung-phim").ghiChu, /Không commit được khuôn hồ sơ phim.*gpg/s);
+      assert.equal(git("status", "--porcelain"), "?? ghi-chu-rieng.txt");
+      assert.equal(git("rev-parse", "HEAD"), main);
+      assert.equal(ctl.autopilot.list().length, 0);
+
+      git("config", "commit.gpgsign", "false");
+      const retried = await create();
+      assert.equal(retried.trangThai, "xong", JSON.stringify(retried.buoc));
+      assert.deepEqual(createdRepos, ["phim-thu-lai"]);
+      assert.equal(git("rev-parse", "main"), main);
+      assert.equal(git("status", "--porcelain"), "?? ghi-chu-rieng.txt");
+      assert.equal(fs.readFileSync(path.join(repo, "ghi-chu-rieng.txt"), "utf8"), "ghi chú của CEO");
+      assert.equal(git("worktree", "list", "--porcelain").split(/\r?\n/).filter((l) => l.startsWith("worktree ")).length, 1);
+      assert.deepEqual(git("ls-tree", "--name-only", "HEAD").split(/\r?\n/), [".gitignore", "PHIM.md", "agent.md", "kich-ban.md", "phim.json"]);
+      assert.match(git("show", "HEAD:.gitignore"), /^media\/$/m);
+      if (trackedIgnore) assert.match(git("show", "HEAD:.gitignore"), /^out\/$/m);
+      const [run] = ctl.autopilot.list();
+      if (launch) assert.equal(run.steps[0].role, "SPEC_ARCHITECT");
+      else assert.equal(run, undefined);
+    });
+  }
 }
 
 test("ý tưởng: dự án đang bận thì không đổi lượt, không chạy chồng", async (t) => {
