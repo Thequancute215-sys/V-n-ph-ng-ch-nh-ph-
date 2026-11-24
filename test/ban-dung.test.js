@@ -85,10 +85,13 @@ test("máy đo: đọc LUFS ở phần tóm tắt và đoạn khung đen; đánh
 test("cổng duyệt: đúng thứ tự, cổng 3 cần bản dựng còn mới, cổng 4 cần máy đo đạt, bỏ duyệt kéo theo cổng sau", (t) => {
   const d = duAn(tmp(t));
   const log = [];
-  const bd = createBanDung({ audit: { log: (...a) => log.push(a) }, ffmpeg: () => null });
+  const dir = tmp(t);
+  const bd = createBanDung({ dir, audit: { log: (...a) => log.push(a) }, ffmpeg: () => null });
   assert.throws(() => bd.duyetCong(d, { cong: 2, duyet: true }), (e) => e.code === "CHUA_DU_DIEU_KIEN" && /Duyệt cổng 1 trước/.test(e.message));
   bd.duyetCong(d, { cong: 1, duyet: true });
   bd.duyetCong(d, { cong: 2, duyet: true });
+  assert.equal(bd.coDuyetQuay(d, docPhim(d)), true);
+  assert.equal(createBanDung({ dir }).coDuyetQuay(d, docPhim(d)), true);
   assert.throws(() => bd.duyetCong(d, { cong: 3, duyet: true }), /Chưa có bản dựng/);
 
   // Có bản dựng, máy đo chưa đạt: duyệt được cổng 3, chưa được cổng 4.
@@ -151,7 +154,10 @@ test("máy dựng (FFmpeg giả lập): chạy trong thư mục tạm của xư�
     return cb(null, "", "");
   };
   const bd = createBanDung({ ffmpeg: () => "/x/ffmpeg", tam: () => tam, run, phong: [phong] });
-  const b = await bd.dung(d);
+  const b = await bd.dungVaCho(d);
+  assert.equal(bd.trangThai(d).dang, null);
+  await bd.dungVaCho(d);
+  assert.equal(bd.trangThai(d).dang, null);
   assert.equal(b.tong, 5);
   assert.deepEqual(b.take, { C01: "media/quay/C01-t1.mp4", C02: "media/quay/C02-t2.mp4" });
   assert.equal(b.ban[0].file, "media/xuat/9x16.mp4");

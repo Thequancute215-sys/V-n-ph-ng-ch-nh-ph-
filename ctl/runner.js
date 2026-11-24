@@ -12,6 +12,7 @@ const { resolveProgram } = require("./policy");
 const { CHAN_CLAUDE } = require("./ket-noi-danh-muc");
 const phong = require("./mcp-phong");
 const kiemAgent = require("../lib/kiem-agent");
+const { maskSecrets } = require("../lib/mask");
 const kiemHopDong = require("../lib/kiem-hop-dong");
 const songSong = require("./song-song");   // hợp đồng giao tiếp contract/api.json (CEO duyệt 16/11/2026)
 const { createMienHopDong } = require("./mien-hop-dong");
@@ -570,6 +571,37 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     return jobs.start({ kind: "ai", agent: "CLAUDE_REPORTER", workspace: root, argv, timeoutMs: AGENTS.CLAUDE_REPORTER.timeoutMs });
   }
 
+  // Lượt AI của luồng phim (P4, ctl/luong-phim.js): Hinata viết kịch bản, Claude nghiệm thu. KHÔNG đi qua khoá lượt agent.md
+  // (lượt phim không phải lượt phát triển phần mềm, không giành lượt của đội), nhưng dựng lệnh y như run(): cùng điều phối
+  // model/mức suy nghĩ, đổi tài khoản Antigravity/GPT theo hạn mức, mức quyền theo vai (ctl/quyen.js) và cổng rà soát khi toàn quyền.
+  // chiDoc: luôn chỉ đọc (Claude nghiệm thu). Trả Promise { ok, text, loi, jobId } khi lượt kết thúc; text = phần cuối log.
+  function chayPhim({ workspace, role, prompt, chiDoc = false }, actor = "luong-phim") {
+    const root = ws.find(workspace).path;
+    const a = AGENTS[role];
+    if (!a || !a.argv) throw err("BAD_REQUEST", "Vai không chạy được lượt phim: " + role);
+    if (jobs.aiBusy(root)) throw err("AI_BUSY", "Dự án phim này đang có 1 lượt AI chạy hoặc chờ duyệt");
+    const muc = chiDoc ? "doc" : quyen.mucCua(role);
+    guard(root, muc);
+    const base = argvFor(role);
+    const isCodex = !!CODEX_MODEL[role] && base.includes("exec");
+    const d = dieuPhoi.decide({ role, argv: base, focus: String(prompt).slice(0, 2000), quota: quota(), kind: isCodex ? "codex" : null });
+    if (d.kind === "agy" && agyTk) { try { agyTk.truocLuot({ model: modelTrong(dieuPhoi.apply(base, d)) || d.model }); } catch {} }
+    if (d.kind === "codex" && codexTk) { try { codexTk.truocLuot(); } catch {} }
+    const shaped = dieuPhoi.apply(codexArgs(base, role, null, d.kind === "codex" && d.fixed && d.model ? d.model : null), d);
+    const loiGiao = String(prompt) + (muc === "toan" ? FULL_NOTE : "") + (muc === "doc" ? DOC_NOTE : "");
+    const argv = apQuyen(shaped, muc, role).map((x) => (x === "{prompt}" ? loiGiao : x));
+    audit.log(actor, "phim.ai", root, { role, muc, dieuPhoi: { tier: d.tier, model: d.model, effort: d.effort } });
+    return new Promise((ok) => {
+      const job = jobs.start({ kind: "ai", agent: role, workspace: root, argv, timeoutMs: a.timeoutMs, onExit: (j) => {
+        let text = "";
+        try { const r = jobs.readLog(j.id, 0, 4 * 1024 * 1024); text = String((r && (r.text || r.data || r)) || "").slice(-24000); } catch {}
+        const xong = j.status === "done" && j.exit_code === 0;
+        ok({ ok: xong, text, loi: xong ? "" : maskSecrets(`Lượt ${role} kết thúc ${j.status}${j.exit_code != null ? " (mã " + j.exit_code + ")" : ""}`), jobId: j.id });
+      } });
+      if (!job) ok({ ok: false, text: "", loi: "Không khởi chạy được lượt " + role, jobId: null });
+    });
+  }
+
   // Soạn master prompt + chuẩn đầu ra cho lượt `role` để CEO tự làm trên ChatGPT web (web không đọc được repo).
   const WEB_ROLE = { claude: "CLAUDE_WEB_PROMPT", codex: "CODEX_WEB_PROMPT", antigravity: "AGY_WEB_PROMPT" };
   function webPrompt({ workspace, role, task, decisions = "", provider = "Codex", writer = "claude" }) {
@@ -639,7 +671,7 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     return phanChuongTrinh(argvFor({ claude: "CLAUDE_AUDITOR", codex: "CODEX_ASTRA_DEV", agy: "SPEC_ARCHITECT" }[kind]));
   }
 
-  return { run, report, dieuPhoi, quyen, webPrompt, applyWeb, chatArgv, cliOf, fullOn, CODEX_MODEL, DEFAULT_EFFORT, status, approve, answer, reject, ghiNhan, boLoi, conflicts, get: (id) => view(q.get.get(id)), pending: () => q.open.all().map(view), AGENTS };
+  return { run, report, chayPhim, dieuPhoi, quyen, webPrompt, applyWeb, chatArgv, cliOf, fullOn, CODEX_MODEL, DEFAULT_EFFORT, status, approve, answer, reject, ghiNhan, boLoi, conflicts, get: (id) => view(q.get.get(id)), pending: () => q.open.all().map(view), AGENTS };
 }
 
 module.exports = { createRunner, AGENTS, fullAccessArgs, readOnlyArgs, withMcp, FULL_ROLES, phanChuongTrinh, KIEM_HD };

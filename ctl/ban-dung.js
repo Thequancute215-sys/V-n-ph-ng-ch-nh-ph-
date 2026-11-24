@@ -11,7 +11,7 @@
 const fs = require("fs");
 const path = require("path");
 const { execFile } = require("child_process");
-const { kiem, MAY_QUAY, MAY_QUAY_MAC_DINH, duongDanHopLe, docFileTrongPhim } = require("../lib/phim");
+const { kiem, MAY_QUAY, MAY_QUAY_MAC_DINH, duongDanHopLe, docFileTrongPhim, dauKhoanQuay } = require("../lib/phim");
 const { writeAtomic } = require("../lib/ghi-file");
 
 const err = (code, message) => Object.assign(new Error(message), { code });
@@ -199,8 +199,21 @@ function dsCong(phim, { giong = null, coFile = () => true } = {}) {
   return ra;
 }
 
-function createBanDung({ audit = { log() {} }, ffmpeg = () => null, tam = () => null, run = execFile, now = () => new Date(), phong = PHONG, timeoutMs = 20 * 60 * 1000 } = {}) {
+function createBanDung({ dir, audit = { log() {} }, ffmpeg = () => null, tam = () => null, run = execFile, now = () => new Date(), phong = PHONG, timeoutMs = 20 * 60 * 1000 } = {}) {
   const dang = new Map(), loiCuoi = new Map();
+  const fileDuyet = dir && path.join(dir, "duyet-quay.json");
+  let daDuyet = new Map();
+  if (fileDuyet) {
+    try { daDuyet = new Map(JSON.parse(fs.readFileSync(fileDuyet, "utf8"))); }
+    catch (e) { if (e.code !== "ENOENT") audit.log("ctl", "phim.duyet_quay_loi", "", String(e.code || "INVALID_STATE")); }
+  }
+  function ghiDauQuay(root, dau) {
+    const that = fs.realpathSync(root), moi = new Map(daDuyet);
+    if (dau) moi.set(that, dau); else moi.delete(that);
+    if (fileDuyet) writeAtomic(fileDuyet, JSON.stringify([...moi]));
+    daDuyet = moi;
+  }
+  const coDuyetQuay = (root, phim) => daDuyet.get(fs.realpathSync(root)) === dauKhoanQuay(phim);
   const doc = (root) => {
     const phim = docJson(path.join(root, "phim.json"));
     const giong = docJson(path.join(root, "media", "giong", "voice.json"), null);
@@ -286,17 +299,27 @@ function createBanDung({ audit = { log() {} }, ffmpeg = () => null, tam = () => 
   }
 
   // Dựng chạy nền (một clip vài chục giây mất cỡ một phút): trang hỏi lại trạng thái tới khi xong.
-  function batDauDung(root, actor = "ceo") {
+  // Kiểm trước + giữ cờ "đang dựng" cho cả lần dựng: lỗi báo ngay (chưa chọn take, thiếu FFmpeg), không dựng chồng.
+  // Kiểm ném lỗi NGAY (đồng bộ) để CEO bấm sai được báo tức thì; phần dựng trả Promise.
+  function chuanBiDungVoi(root, actor) {
     if (dang.has(root)) throw err("DANG_DUNG", "Phim này đang dựng, chờ xong lần này.");
     const { phim, giong } = doc(root);
-    keHoach(phim, { giong, coFile: coFileTrong(root) });   // báo lỗi ngay (chưa chọn take…) thay vì chạy nền rồi mới lỗi
+    keHoach(phim, { giong, coFile: coFileTrong(root) });
     if (!ffmpeg()) throw err("THIEU_FFMPEG", "Chưa có FFmpeg: bấm Cài xưởng phim ở trang Kết nối.");
     dang.set(root, { buoc: "Đang chuẩn bị…", luc: now().toISOString() });
     loiCuoi.delete(root);
-    dung(root, actor).catch((e) => { loiCuoi.set(root, e.message); audit.log(actor, "phim.dung", path.basename(root), { ok: false, loi: String(e.message).slice(0, 200) }); })
+    return dung(root, actor)
+      .catch((e) => { loiCuoi.set(root, e.message); audit.log(actor, "phim.dung", path.basename(root), { ok: false, loi: String(e.message).slice(0, 200) }); throw e; })
       .finally(() => dang.delete(root));
+  }
+  // CEO bấm Dựng: chạy nền, trả trạng thái ngay.
+  function batDauDung(root, actor = "ceo") {
+    chuanBiDungVoi(root, actor).catch(() => {});
     return trangThai(root);
   }
+  // Luồng phim tự chạy (ctl/luong-phim.js): cùng kiểm và cùng cờ "đang dựng", nhưng CHỜ dựng xong để biết kết quả.
+  // (Gọi thẳng dung() thì cờ "đang dựng" không được gỡ: trang báo đang dựng mãi và không dựng lại được.)
+  function dungVaCho(root, actor = "luong-phim") { return chuanBiDungVoi(root, actor); }
 
   function trangThai(root) {
     const { phim, giong } = doc(root);
@@ -313,8 +336,12 @@ function createBanDung({ audit = { log() {} }, ffmpeg = () => null, tam = () => 
     if (duyet === true) {
       const tt = dsCong(phim, { giong, coFile: coFileTrong(root) })[so - 1];
       if (!tt.duoc) throw err("CHUA_DU_DIEU_KIEN", `Chưa duyệt được cổng ${so} (${CONG[so]}): ${tt.lyDo}`);
+      if (!moi[so]?.luc) for (let i = so + 1; i <= 4; i++) delete moi[i];
+      if (so === 2) ghiDauQuay(root, dauKhoanQuay(phim));
+      else if (so === 1 && !moi[1]?.luc) ghiDauQuay(root, null);
       moi[so] = { luc: now().toISOString() };
     } else if (duyet === false) {
+      if (so <= 2) ghiDauQuay(root, null);
       for (let i = so; i <= 4; i++) delete moi[i];
     } else throw err("BAD_REQUEST", "duyet phải là true hoặc false.");
     phim.cong = moi;
@@ -341,7 +368,7 @@ function createBanDung({ audit = { log() {} }, ffmpeg = () => null, tam = () => 
     return { phim: thu, uocTinh: { usd: tron((c.giay || 0) * (may.usdGiay || 0), 2), luotFlow: may.luot ? 1 : 0 } };
   }
 
-  return { batDauDung, dung, trangThai, duyetCong, quayLai };
+  return { batDauDung, dungVaCho, dung, trangThai, duyetCong, coDuyetQuay, quayLai };
 }
 
 module.exports = { createBanDung, keHoach, lenhDung, ngatDong, docDo, danhGia, banDungCu, dsCong, takeDung, KICH_THUOC, CONG, NHAN_AI };
