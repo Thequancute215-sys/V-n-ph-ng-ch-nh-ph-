@@ -283,15 +283,28 @@ function render(d) {
   if (sel) drawer();
 }
 // Số liệu đẩy liên tục mỗi 2 giây; mất kết nối thì tự hỏi lại mỗi 2 giây.
-let lastAt = 0;
-const es = new EventSource("perf-events");
-es.onmessage = (m) => { lastAt = Date.now(); $("live").className = "live"; try { render(JSON.parse(m.data)); } catch (e) { console.error(e); } };
-es.onerror = () => { $("live").className = "live off"; };
-setInterval(async () => {
-  if (Date.now() - lastAt < 5000) return;
-  try { const r = await fetch("perf", { cache: "no-store" }); if (!r.ok) throw 0; lastAt = Date.now(); render(await r.json()); $("live").className = "live"; } catch { $("live").className = "live off"; }
-}, 2000);
-setInterval(() => { $("clock").textContent = new Date().toLocaleTimeString("vi-VN", { hour12: false }); }, 1000);
+let lastAt = 0, es = null, tPoll = null, tClock = null, hiddenPage = false;
+function startLive() {
+  if (hiddenPage) return;
+  if (!es || es.readyState === EventSource.CLOSED) {
+    es = new EventSource("perf-events");
+    es.onmessage = (m) => { if (hiddenPage) return; lastAt = Date.now(); $("live").className = "live"; try { render(JSON.parse(m.data)); } catch (e) { console.error(e); } };
+    es.onerror = () => { if (!hiddenPage) $("live").className = "live off"; };
+  }
+  if (!tPoll) tPoll = setInterval(async () => {
+    if (hiddenPage || document.hidden || Date.now() - lastAt < 5000) return;
+    try { const r = await fetch("perf", { cache: "no-store" }); if (!r.ok) throw 0; const d = await r.json(); if (hiddenPage) return; lastAt = Date.now(); render(d); $("live").className = "live"; } catch { if (!hiddenPage) $("live").className = "live off"; }
+  }, 2000);
+  if (!tClock) tClock = setInterval(() => { $("clock").textContent = new Date().toLocaleTimeString("vi-VN", { hour12: false }); }, 1000);
+}
+function stopLive() {
+  hiddenPage = true;
+  if (es) { es.close(); es = null; }
+  clearInterval(tPoll); clearInterval(tClock); tPoll = tClock = null;
+}
+startLive();
+window.addEventListener("pagehide", stopLive);
+window.addEventListener("pageshow", (e) => { if (e.persisted && hiddenPage) { hiddenPage = false; lastAt = 0; startLive(); } });
 addEventListener("resize", () => data && render(data));
 addEventListener("keydown", (e) => { if (e.key === "Escape" && sel) { sel = null; drawer(); table(data); } });
 </script>

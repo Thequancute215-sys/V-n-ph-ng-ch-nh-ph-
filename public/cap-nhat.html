@@ -68,7 +68,12 @@ pre { white-space: pre-wrap; font: 13px/1.5 ui-monospace, Consolas, monospace; b
   const CHANNEL = { "phat-hanh": "Bản phát hành (tag vX.Y.Z do CEO phát hành)", main: "Bản mới nhất của main (máy đội phát triển)" };
   const STEPS = [["dang-tat", "Tắt văn phòng"], ["dang-cap-nhat", "Lấy bản mới"], ["dang-khoi-dong", "Bật lại và kiểm tra"]];
   const FINAL = { xong: ["ok", "Cập nhật xong"], "da-quay-lai": ["warn", "Bản mới không chạy được, đã quay về bản cũ"], loi: ["bad", "Cập nhật không thành công"] };
-  let data = null, busy = false, polling = null, sawDown = false;
+  let data = null, busy = false, polling = null, sawDown = false, hiddenPage = false, lifeGen = 0, loadGen = 0, pollGen = 0;
+
+  function stopFollow() {
+    pollGen++;
+    if (polling) { clearInterval(polling); polling = null; }
+  }
 
   async function req(path, body, ms) {
     const r = await fetch("/ctl" + path, { cache: "no-store", method: body ? "POST" : "GET", headers: body ? { "Content-Type": "application/json" } : {},
@@ -120,30 +125,55 @@ pre { white-space: pre-wrap; font: 13px/1.5 ui-monospace, Consolas, monospace; b
   }
 
   async function load(fetchNew) {
+    const lg = lifeGen, mine = ++loadGen;
     busy = true; render();
-    try { data = await req("/cap-nhat" + (fetchNew ? "?fetch=1" : ""), null, fetchNew ? 150000 : 15000); msg(fetchNew ? (data.fetchError ? "" : "Đã kiểm GitHub lúc " + new Date().toLocaleTimeString("vi-VN") + ".") : ""); }
-    catch (e) { if (!data) { $("now").setAttribute("aria-busy", "false"); $("now").innerHTML = `<p class="big bad">Chưa đọc được tình trạng cập nhật</p><p>${esc(e.message)}</p><div class="acts"><button type="button" id="retry">Thử lại</button></div>`; } else msg(e.message, true); }
-    finally { busy = false; render(); if (data && data.busy) follow(); }
+    try {
+      const next = await req("/cap-nhat" + (fetchNew ? "?fetch=1" : ""), null, fetchNew ? 150000 : 15000);
+      if (hiddenPage || lg !== lifeGen || mine !== loadGen) return;
+      data = next;
+      msg(fetchNew ? (data.fetchError ? "" : "Đã kiểm GitHub lúc " + new Date().toLocaleTimeString("vi-VN") + ".") : "");
+    } catch (e) {
+      if (hiddenPage || lg !== lifeGen || mine !== loadGen) return;
+      if (!data) { $("now").setAttribute("aria-busy", "false"); $("now").innerHTML = `<p class="big bad">Chưa đọc được tình trạng cập nhật</p><p>${esc(e.message)}</p><div class="acts"><button type="button" id="retry">Thử lại</button></div>`; }
+      else msg(e.message, true);
+    } finally {
+      if (lg === lifeGen && mine === loadGen) {
+        busy = false;
+        if (!hiddenPage) { render(); if (data && data.busy) follow(); }
+      }
+    }
   }
 
   // Theo dõi lần cập nhật: văn phòng tắt giữa chừng nên lỗi kết nối là bình thường, cứ hỏi lại tới khi có kết quả cuối.
   function follow() {
-    if (polling) return;
-    const started = Date.now();
-    polling = setInterval(async () => {
+    if (polling || hiddenPage) return;
+    const lg = lifeGen, pg = ++pollGen, started = Date.now();
+    let inFlight = false;
+    const alive = () => !hiddenPage && lg === lifeGen && pg === pollGen;
+    const timer = setInterval(async () => {
+      if (!alive() || inFlight) return;
+      inFlight = true;
       try {
         const d = await req("/cap-nhat", null, 5000);
+        if (!alive()) return;
         data = d; msg(""); render();
         if (!d.busy && d.last && FINAL[d.last.status]) {
-          clearInterval(polling); polling = null;
+          if (polling === timer) stopFollow();
           if (sawDown && d.last.status === "xong") msg("Văn phòng đã chạy bản mới. Tải lại các cửa sổ văn phòng khác đang mở để dùng giao diện mới.");
         }
       } catch {
+        if (!alive()) return;
         sawDown = true;
         msg("Văn phòng đang khởi động lại… (" + Math.round((Date.now() - started) / 1000) + " giây)");
-        if (Date.now() - started > 5 * 60 * 1000) { clearInterval(polling); polling = null; msg("Văn phòng chưa bật lại sau 5 phút. Mở lại app (lối tắt Văn phòng AI); bản cũ vẫn còn nếu bản mới lỗi. Log: ~/.van-phong-ao/logs/cap-nhat.log", true); }
+        if (Date.now() - started > 5 * 60 * 1000) {
+          if (polling === timer) stopFollow();
+          msg("Văn phòng chưa bật lại sau 5 phút. Mở lại app (lối tắt Văn phòng AI); bản cũ vẫn còn nếu bản mới lỗi. Log: ~/.van-phong-ao/logs/cap-nhat.log", true);
+        }
+      } finally {
+        inFlight = false;
       }
     }, 2000);
+    polling = timer;
   }
 
   $("now").addEventListener("click", async (e) => {
@@ -151,12 +181,18 @@ pre { white-space: pre-wrap; font: 13px/1.5 ui-monospace, Consolas, monospace; b
     if (e.target.id === "check") return load(true);
     if (e.target.id !== "go" || busy) return;
     if (!confirm(`Cập nhật lên ${data.target.name}? Văn phòng sẽ tắt và bật lại trong khoảng một phút. Dữ liệu giữ nguyên.`)) return;
+    const lg = lifeGen;
     busy = true; render(); msg("Đang bắt đầu cập nhật…");
-    try { data = await req("/cap-nhat", { name: data.target.name }); sawDown = false; msg(""); render(); follow(); }
-    catch (err) { msg(err.message, true); }
-    finally { busy = false; render(); }
+    try {
+      const next = await req("/cap-nhat", { name: data.target.name });
+      if (hiddenPage || lg !== lifeGen) return;
+      data = next; sawDown = false; msg(""); render(); follow();
+    } catch (err) { if (!hiddenPage && lg === lifeGen) msg(err.message, true); }
+    finally { if (lg === lifeGen) { busy = false; if (!hiddenPage) render(); } }
   });
   load(false);
+  window.addEventListener("pagehide", () => { hiddenPage = true; lifeGen++; loadGen++; stopFollow(); busy = false; });
+  window.addEventListener("pageshow", (e) => { if (e.persisted && hiddenPage) { hiddenPage = false; load(false); } });
 })();
 </script>
 </body>

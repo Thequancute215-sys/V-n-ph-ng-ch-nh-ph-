@@ -9,7 +9,7 @@ const CHO_ANH = new Set([...LUONG_CAN_ANH, ...LUONG_CHO]);
 const TT_AI = { active: ["đang làm", "song"], idle: ["rảnh", "phu"], away: ["vắng", "mo"] };
 const NEN = { claude: "Claude", codex: "Codex", antigravity: "Antigravity", gemini: "Gemini", human: "Người" };
 
-export async function mo(vung, { kho, ngan }) {
+export async function mo(vung, { kho, ngan, signal }) {
   vung.innerHTML = `<div class="vung">
     <div class="luoi-2">
       <section class="khung-goc" aria-labelledby="hCanAnh"><div style="display:flex;flex-direction:column;gap:var(--space-sm)">
@@ -24,19 +24,22 @@ export async function mo(vung, { kho, ngan }) {
     </div>
   </div>`;
   const $ = (id) => vung.querySelector("#" + id);
-  let handoffs = null, runs = null, loiCtl = "", hen = null, conSong = true;
+  let handoffs = null, runs = null, loiCtl = "", hen = null, conSong = true, phien = 0;
 
   async function taiCtl() {
     clearTimeout(hen);
     if (!conSong) return;
+    const mine = ++phien;
     if (!document.hidden) {
       const [h, a, q] = await Promise.allSettled([ctl("/handoffs"), ctl("/autopilot"), ctl("/quotas")]);
+      if (!conSong || mine !== phien) return;
       handoffs = h.status === "fulfilled" ? h.value.handoffs || [] : null;
       runs = a.status === "fulfilled" ? a.value.runs || [] : null;
       loiCtl = [h, a].find((x) => x.status === "rejected")?.reason?.message || "";
       veHanMuc(q.status === "fulfilled" ? q.value : null, q.status === "rejected" ? q.reason.message : "");
       veCanAnh(); veLuong();
     }
+    if (!conSong || mine !== phien) return;
     hen = setTimeout(taiCtl, 15000);
   }
 
@@ -109,7 +112,16 @@ export async function mo(vung, { kho, ngan }) {
   });
   const khiHien = () => { if (!document.hidden) taiCtl(); };
   document.addEventListener("visibilitychange", khiHien);
+  function dong() {
+    if (!conSong) return;
+    conSong = false;
+    phien++;
+    clearTimeout(hen);
+    bo();
+    document.removeEventListener("visibilitychange", khiHien);
+  }
+  signal?.addEventListener("abort", dong, { once: true });
   veTuKho();
   taiCtl();
-  return () => { conSong = false; clearTimeout(hen); bo(); document.removeEventListener("visibilitychange", khiHien); };
+  return dong;
 }

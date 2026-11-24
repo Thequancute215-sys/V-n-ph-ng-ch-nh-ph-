@@ -32,11 +32,11 @@
       "cap-nhat.html": "#/he/cap-nhat", "tinnhan.html": "#/tin-nhan",
     };
     const st = document.createElement("style");
-    st.textContent = 'a.back[href="index.html"],a.back[href="/"],a.back[href="./"],nav.views,div.views,button[onclick*="index.html"]{display:none!important}';
+    st.textContent = 'a.back[href="index.html"],a.back[href="/"],a.back[href="./"],header.app-header a.button[href="/"],body>p:first-child:has(>a[href="/"]:only-child),body>p:first-child>a[href="/"],nav.views,div.views,button[onclick*="index.html"]{display:none!important}';
     (document.head || document.documentElement).appendChild(st);
     document.addEventListener("click", (e) => {
       const a = e.target.closest && e.target.closest("a[href]");
-      if (!a || (a.target && a.target !== "_self")) return;
+      if (!a || (a.target && a.target !== "_self" && a.target !== "_top")) return;
       const raw = a.getAttribute("href");
       if (!raw || raw.startsWith("#")) return;
       let u; try { u = new URL(raw, location.href); } catch { return; }

@@ -8,15 +8,18 @@ const NHIP = { "chuan-bi": "Chuẩn bị", tao: "Tạo", "tai-ve": "Tải về" 
 const HOI_NHIP = { "chuan-bi": "Opus mở Flow, tải ảnh lên, dán prompt, dừng trước nút tạo rồi báo anh.", tao: "Opus bấm tạo đúng một lần (tốn credit gói Google), chờ xong rồi báo.", "tai-ve": "Opus tải clip vừa tạo về, văn phòng gắn vào cảnh." };
 const HOI_CONG = { 1: "Duyệt kịch bản và phân cảnh?", 2: "Duyệt khung chính và khoản quay? Sau cổng này văn phòng mới cho quay.", 3: "Duyệt bản dựng này?", 4: "Xuất xưởng phim này? File cuối nằm trong media/xuat/; anh tự tải và tự đăng." };
 
-export async function mo(vung) {
-  let ws = "", data = null, flow = null, loiTai = "", ban = false, hen = null, conSong = true, dsPhim = null, kyCu = "";
+export async function mo(vung, { signal } = {}) {
+  let ws = "", data = null, flow = null, loiTai = "", ban = false, hen = null, conSong = true, dsPhim = null, kyCu = "", phien = 0;
   vung.innerHTML = `<div class="vung" id="phim">${dangTai(4)}</div>`;
   const goc = vung.querySelector("#phim");
   const media = (rel, v) => "/ctl/phim/media?workspace=" + encodeURIComponent(ws) + "&path=" + encodeURIComponent(rel) + (v ? "&v=" + encodeURIComponent(v) : "");
 
   async function batDau() {
-    try { dsPhim = (await ctl("/phim/du-an")).duAn || []; }
-    catch (e) { goc.innerHTML = loi(e.message); return; }
+    let ds = null;
+    try { ds = (await ctl("/phim/du-an")).duAn || []; }
+    catch (e) { if (conSong) goc.innerHTML = loi(e.message); return; }
+    if (!conSong) return;
+    dsPhim = ds;
     if (!dsPhim.length) { goc.innerHTML = rong("Chưa có dự án phim nào", "Tạo một dự án loại Phim AI ở Dự án; văn phòng dựng sẵn phim.json.", `<a class="nut" href="#/code/du-an?loai=phim">Tạo dự án phim</a>`); return; }
     let nho = ""; try { nho = localStorage.getItem("tqos-phim") || ""; } catch {}
     ws = dsPhim.some((d) => d.path === nho) ? nho : dsPhim[0].path;
@@ -26,14 +29,20 @@ export async function mo(vung) {
   async function tai() {
     clearTimeout(hen);
     if (!conSong) return;
+    const mine = ++phien, reqWs = ws;
     if (!document.hidden) {
-      try { data = await ctl("/phim?workspace=" + encodeURIComponent(ws)); loiTai = ""; } catch (e) { loiTai = e.message; }
-      try { flow = (await ctl("/flow")).flow; } catch { flow = null; }
+      let nextData = data, nextLoi = "", nextFlow = null;
+      try { nextData = await ctl("/phim?workspace=" + encodeURIComponent(reqWs)); } catch (e) { nextLoi = e.message; }
+      if (!conSong || mine !== phien || ws !== reqWs) return;
+      try { nextFlow = (await ctl("/flow")).flow; } catch { nextFlow = null; }
+      if (!conSong || mine !== phien || ws !== reqWs) return;
+      data = nextData; loiTai = nextLoi; flow = nextFlow;
       // Không vẽ lại khi dữ liệu không đổi hoặc anh đang xem một clip: vẽ lại sẽ tạo video mới và mất chỗ đang xem.
       const ky = JSON.stringify([data, flow, loiTai]);
       const dangXem = [...goc.querySelectorAll("video")].some((v) => !v.paused && !v.ended);
       if (ky !== kyCu && !dangXem) { kyCu = ky; ve(); }
     }
+    if (!conSong || mine !== phien || ws !== reqWs) return;
     const ban2 = data && (data.mayQuay.dang || (data.banDung && data.banDung.dang)) || (flow && flow.nhipDang);
     hen = setTimeout(tai, ban2 ? 4000 : 20000);
   }
@@ -124,8 +133,8 @@ export async function mo(vung) {
 
   async function lam(fn, xong) {
     ban = true; ve();
-    try { await fn(); if (xong) bao(xong); } catch (e) { bao(e.message, true); }
-    finally { ban = false; kyCu = ""; await tai(); }
+    try { await fn(); if (conSong && xong) bao(xong); } catch (e) { if (conSong) bao(e.message, true); }
+    finally { ban = false; kyCu = ""; if (conSong) await tai(); }
   }
 
   goc.addEventListener("change", (e) => {
@@ -160,7 +169,8 @@ export async function mo(vung) {
     if (d.quay) {
       const c = data.phim.canh.find((x) => x.ma === d.quay), loai = d.loai;
       const opts = { workspace: ws, canh: c.ma, loai, soPhuongAn: loai === "khung" ? (c.so_phuong_an_khung || 3) : 1 };
-      let u; try { u = (await ctl("/phim/uoc-tinh", opts)).uocTinh; } catch (err) { return bao(err.message, true); }
+      let u; try { u = (await ctl("/phim/uoc-tinh", opts)).uocTinh; } catch (err) { if (conSong) bao(err.message, true); return; }
+      if (!conSong) return;
       if (!u.du) return bao(`Vượt ngân sách: lần này khoảng ${usd(u.usd)}, đã chi ${usd(u.daChi)} trên ${usd(u.nganSach)}. Nâng ngân sách trước.`, true);
       if (!confirm(`${loai === "khung" ? "Tạo " + opts.soPhuongAn + " khung" : "Quay video"} cảnh ${c.ma} bằng ${u.moHinh}?\nChi khoảng ${usd(u.usd)}, đã chi ${usd(u.daChi)}, còn ${usd(u.conLai)} trong ngân sách.`)) return;
       return lam(() => ctl("/phim/quay", opts), "Đã bắt đầu. Trang tự cập nhật khi xong.");
@@ -173,6 +183,14 @@ export async function mo(vung) {
   });
   const khiHien = () => { if (!document.hidden && ws) tai(); };
   document.addEventListener("visibilitychange", khiHien);
+  function dong() {
+    if (!conSong) return;
+    conSong = false;
+    phien++;
+    clearTimeout(hen);
+    document.removeEventListener("visibilitychange", khiHien);
+  }
+  signal?.addEventListener("abort", dong, { once: true });
   batDau();
-  return () => { conSong = false; clearTimeout(hen); document.removeEventListener("visibilitychange", khiHien); };
+  return dong;
 }

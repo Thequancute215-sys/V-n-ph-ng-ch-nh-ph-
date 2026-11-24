@@ -6,9 +6,10 @@ import { esc, cat, luc, dangTai, rong, loi, PHONG, chuDau, bao } from "../ui.js"
 
 const TRANG = 60;
 
-export async function mo(vung, { kho, ctl }) {
+export async function mo(vung, { kho, ctl, signal }) {
   const thamSo = new URLSearchParams(location.hash.split("?")[1] || "");
   let ai = thamSo.get("ai") || "", q = "", tin = [], conNua = false, coSo = true, dangTaiTin = false, loiTin = "", moiNhat = 0;
+  let phienTin = 0, taiThemKey = "", tinKey = "", dangTaiDau = false, ctrlTin = null;
   let nguoiHoi = "pain", cheDo = "hoi", henHoi = null, phienHoi = 0, nguCanhHoi = "", conSong = true;
 
   vung.innerHTML = `<div class="vung">
@@ -48,36 +49,80 @@ export async function mo(vung, { kho, ctl }) {
     $("locNguoi").innerHTML = nut("", "Tất cả", null) + nut("ceo", "Việc anh giao", "human") + ds.map((a) => nut(a.key, a.name, a.platform)).join("");
   }
 
+  function datLaiDanhSachTin() {
+    tin = [];
+    conNua = false;
+    loiTin = "";
+    tinKey = "";
+    const el = $("dsTin");
+    if (el) el.innerHTML = dangTai(4);
+  }
+
   // Tải trang đầu (them = false) hoặc trang cũ hơn (them = true).
-  async function taiTin(them = false) {
-    if (dangTaiTin) return;
+  async function taiTin(them = false, { tuDong = false } = {}) {
+    if (!conSong) return;
+    const reqAi = ai, reqQ = q, key = reqAi + "\u0000" + reqQ;
+    if (them) {
+      const qO = ($("timTin")?.value || "").trim().slice(0, 120);
+      if (dangTaiDau || taiThemKey === key || tinKey !== key || qO !== reqQ || !tin.length || !conNua) return;
+      taiThemKey = key;
+    } else {
+      if (tuDong && (dangTaiTin || dangTaiDau || taiThemKey)) return;
+      if (key !== tinKey) datLaiDanhSachTin();
+      taiThemKey = "";
+      dangTaiDau = true;
+      if (ctrlTin) { try { ctrlTin.abort(); } catch {} ctrlTin = null; }
+    }
+    const mine = ++phienTin;
     dangTaiTin = true;
+    const ac = typeof AbortController === "function" ? new AbortController() : null;
+    ctrlTin = ac;
     const tinCuoi = them ? tin.at(-1) : null;
+    const conDung = () => conSong && mine === phienTin && ai === reqAi && q === reqQ;
     try {
       if (coSo) {
         const u = new URLSearchParams({ gioiHan: String(TRANG) });
-        if (ai) u.set("ai", ai);
-        if (q) u.set("q", q);
+        if (reqAi) u.set("ai", reqAi);
+        if (reqQ) u.set("q", reqQ);
         if (tinCuoi) {
           u.set("truoc", String(tinCuoi.t));
           if (tinCuoi.id) u.set("truocId", tinCuoi.id);
         }
-        const r = await fetch("tin-nhan?" + u, { cache: "no-store" });
-        if (r.status === 404) { coSo = false; dangTaiTin = false; return taiTin(them); }
+        const r = await fetch("tin-nhan?" + u, { cache: "no-store", ...(ac ? { signal: ac.signal } : {}) });
+        if (!conDung()) return;
+        if (r.status === 404) {
+          coSo = false;
+          if (mine === phienTin) { dangTaiTin = false; if (!them) dangTaiDau = false; if (ctrlTin === ac) ctrlTin = null; }
+          if (them && taiThemKey === key) taiThemKey = "";
+          return taiTin(them, { tuDong });
+        }
         const d = await r.json();
+        if (!conDung()) return;
         if (!r.ok || d.ok === false) throw new Error(d.error || "Lỗi HTTP " + r.status);
-        tin = them ? tin.concat(d.tin) : d.tin; conNua = !!d.conNua;
+        tin = them ? tin.concat(d.tin) : d.tin; conNua = !!d.conNua; tinKey = key;
         $("ghiChuNguon").textContent = "lưu lâu dài";
       } else {
-        const s = kho.state; if (!s) { dangTaiTin = false; return; }
+        const s = kho.state;
+        if (!s) return;
         const bo = (x) => String(x || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase();
-        tin = s.events.filter((e) => (!ai || e.from === ai || e.to === ai) && (!q || bo(e.title + " " + e.body).includes(bo(q)))).slice().reverse();
-        conNua = false;
+        tin = s.events.filter((e) => (!reqAi || e.from === reqAi || e.to === reqAi) && (!reqQ || bo(e.title + " " + e.body).includes(bo(reqQ)))).slice().reverse();
+        conNua = false; tinKey = key;
         $("ghiChuNguon").textContent = "24 giờ gần nhất (máy chủ chưa có sổ lưu lâu dài)";
       }
       loiTin = "";
-    } catch (e) { loiTin = "Không đọc được tin nhắn: " + e.message; }
-    dangTaiTin = false;
+    } catch (e) {
+      if (e && e.name === "AbortError") return;
+      if (!conDung()) return;
+      loiTin = "Không đọc được tin nhắn: " + e.message;
+    } finally {
+      if (mine === phienTin) {
+        dangTaiTin = false;
+        if (!them) dangTaiDau = false;
+        if (ctrlTin === ac) ctrlTin = null;
+        if (them && taiThemKey === key) taiThemKey = "";
+      }
+    }
+    if (!conDung()) return;
     veTin(!them);
   }
 
@@ -203,13 +248,26 @@ export async function mo(vung, { kho, ctl }) {
     veLoc();
     if (k.duAn !== duAnCu) { duAnCu = k.duAn; veTraLoi({ xoaTruoc: true }); }
     const t = k.state && k.state.events.length ? k.state.events.at(-1).t : 0;
-    if (t && t !== moiNhat) { moiNhat = t; if (tin.length <= TRANG) taiTin(); }
+    if (t && t !== moiNhat) { moiNhat = t; if (tin.length <= TRANG) taiTin(false, { tuDong: true }); }
   });
   if (PHONG[ai]) { nguoiHoi = ai; $("nguoiHoi").value = ai; }
   datCheDo("hoi", false);
   veLoc();
   moiNhat = kho.state && kho.state.events.length ? kho.state.events.at(-1).t : 0;
+  function dong() {
+    if (!conSong) return;
+    conSong = false;
+    phienTin++;
+    taiThemKey = "";
+    tinKey = "";
+    dangTaiDau = false;
+    if (ctrlTin) { try { ctrlTin.abort(); } catch {} ctrlTin = null; }
+    xoaTraLoi();
+    clearTimeout(henTim);
+    bo();
+  }
+  signal?.addEventListener("abort", dong, { once: true });
   taiTin();
   veTraLoi();
-  return () => { conSong = false; xoaTraLoi(); clearTimeout(henTim); bo(); };
+  return dong;
 }

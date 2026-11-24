@@ -168,8 +168,13 @@ function argvOf(line) {
 }
 
 // ---- giám sát (SSE) ----
+let monEs = null, monRetry = null, monStopped = false, tRef = null, tTurn = null;
 function monitor() {
+  if (monStopped) return;
+  clearTimeout(monRetry); monRetry = null;
+  if (monEs && monEs.readyState !== EventSource.CLOSED) return;
   const es = new EventSource("/ctl/monitor/stream");
+  monEs = es;
   es.onmessage = (e) => {
     const m = JSON.parse(e.data); online(); $("live").classList.add("on");
     const cpu = $("kCpu"); cpu.className = "kpi " + (m.cpuPct > 85 ? "bad" : m.cpuPct > 60 ? "warn" : "ok"); cpu.querySelector("b").textContent = m.cpuPct.toFixed(1) + "%";
@@ -180,7 +185,25 @@ function monitor() {
     kj.className = "kpi " + (long ? "warn" : ""); kj.querySelector("b").textContent = m.jobs.length;
     kj.querySelector("span").textContent = long ? long + " việc chạy quá 10 phút" : m.jobs.map((j) => j.agent + (j.memMb != null ? " " + j.memMb + "MB" : "")).join(" · ") || "máy rảnh";
   };
-  es.onerror = () => { $("live").classList.remove("on"); es.close(); setTimeout(monitor, 3000); fetch("/ctl/health").then((r) => r.json()).then((j) => { if (!j.ok) offline(j.error); }).catch(() => offline("Mất kết nối văn phòng")); };
+  es.onerror = () => {
+    $("live").classList.remove("on");
+    es.close();
+    if (monEs === es) monEs = null;
+    if (monStopped) return;
+    monRetry = setTimeout(monitor, 3000);
+    fetch("/ctl/health").then((r) => r.json()).then((j) => { if (!j.ok) offline(j.error); }).catch(() => offline("Mất kết nối văn phòng"));
+  };
+}
+function startTimers() {
+  if (monStopped) return;
+  if (!tRef) tRef = setInterval(() => { if (!document.hidden) refresh(); }, 2000);
+  if (!tTurn) tTurn = setInterval(() => { if (!document.hidden) loadTurn(); }, 5000);
+}
+function stopLive() {
+  monStopped = true;
+  clearTimeout(monRetry); monRetry = null;
+  if (monEs) { monEs.close(); monEs = null; }
+  clearInterval(tRef); clearInterval(tTurn); tRef = tTurn = null;
 }
 
 // ---- workspace ----
@@ -370,9 +393,10 @@ async function refresh() {
   const h = await api("GET", "/health");
   if (!h.ok) { $("wsList").innerHTML = $("turnBox").innerHTML = `<div class="z">OS Controller chưa chạy.</div>`; $("jobs").innerHTML = ""; }
   monitor(); await loadWs(); await refresh();
-  setInterval(() => { if (!document.hidden) refresh(); }, 2000);
-  setInterval(() => { if (!document.hidden) loadTurn(); }, 5000);
+  startTimers();
 })();
+window.addEventListener("pagehide", stopLive);
+window.addEventListener("pageshow", (e) => { if (e.persisted && monStopped) { monStopped = false; monitor(); startTimers(); refresh(); loadTurn(); } });
 </script>
 </body>
 </html>

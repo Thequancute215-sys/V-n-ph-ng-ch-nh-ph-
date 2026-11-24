@@ -73,7 +73,11 @@ function render(s) {
   }
 }
 async function load() { try { const r = await fetch("state", { cache: "no-store" }); if (r.ok) render(await r.json()); } catch {} }
-load(); setInterval(load, 3000);
+let tPoll = null, hiddenPage = false;
+function startPoll() { if (!hiddenPage && !tPoll) tPoll = setInterval(() => { if (!hiddenPage && !document.hidden) load(); }, 3000); }
+load(); startPoll();
+window.addEventListener("pagehide", () => { hiddenPage = true; clearInterval(tPoll); tPoll = null; });
+window.addEventListener("pageshow", (e) => { if (e.persisted && hiddenPage) { hiddenPage = false; load(); startPoll(); } });
 </script>
 </body>
 </html>

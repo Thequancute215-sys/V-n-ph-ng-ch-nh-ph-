@@ -159,9 +159,16 @@ $("q").addEventListener("input", () => renderBook(true));
 function render(d) { D = d; renderRules(); renderTeam(); renderBook(); }
 // Hỏi máy chủ 5 giây/lần, không giữ kết nối mở: trình duyệt chỉ cho 6 kết nối tới cùng localhost, văn phòng 3D đang mở cả 3 bảng.
 async function load() { try { const r = await fetch("docs", { cache: "no-store" }); render(await r.json()); $("live").className = "live"; } catch { $("live").className = "live off"; } }
-load(); setInterval(() => { if (!document.hidden) load(); }, 5000);
-document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
-setInterval(() => { $("clock").textContent = new Date().toLocaleTimeString("vi-VN", { hour12: false }); }, 1000);
+let tLoad = null, tClock = null, hiddenPage = false;
+function startLive() {
+  if (hiddenPage) return;
+  if (!tLoad) tLoad = setInterval(() => { if (!document.hidden) load(); }, 5000);
+  if (!tClock) tClock = setInterval(() => { $("clock").textContent = new Date().toLocaleTimeString("vi-VN", { hour12: false }); }, 1000);
+}
+load(); startLive();
+document.addEventListener("visibilitychange", () => { if (!hiddenPage && !document.hidden) load(); });
+window.addEventListener("pagehide", () => { hiddenPage = true; clearInterval(tLoad); clearInterval(tClock); tLoad = tClock = null; });
+window.addEventListener("pageshow", (e) => { if (e.persisted && hiddenPage) { hiddenPage = false; load(); startLive(); } });
 </script>
 </body>
 </html>

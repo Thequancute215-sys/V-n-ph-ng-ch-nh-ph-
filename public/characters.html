@@ -9,21 +9,23 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Quicksand:wght@600;700;800&display=swap" rel="stylesheet">
 <script>
-tailwind.config = {
-  darkMode: 'class',
-  theme: {
-    extend: {
-      // Đo bằng trình duyệt: tiêu đề 530px + nhãn phụ 216px + 5 nút nhãn đầy đủ 1063px + lề ≈ 1940px
-      // (đo khi còn nút "Duyệt tất cả"; nút đó đã bỏ 20/11/2026 nên nay dư chỗ, giữ mốc cũ cho chắc).
-      // Hẹp hơn thì nút dùng nhãn ngắn / chỉ biểu tượng để đầu trang không bị ép xuống nhiều dòng (P7-M01).
-      screens: { wide: '1940px' },
-      fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'monospace'],
-        chibi: ['"Quicksand"', 'cursive', 'sans-serif'],
+if (window.tailwind) {
+  window.tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        // Đo bằng trình duyệt: tiêu đề 530px + nhãn phụ 216px + 5 nút nhãn đầy đủ 1063px + lề ≈ 1940px
+        // (đo khi còn nút "Duyệt tất cả"; nút đó đã bỏ 20/11/2026 nên nay dư chỗ, giữ mốc cũ cho chắc).
+        // Hẹp hơn thì nút dùng nhãn ngắn / chỉ biểu tượng để đầu trang không bị ép xuống nhiều dòng (P7-M01).
+        screens: { wide: '1940px' },
+        fontFamily: {
+          sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'monospace'],
+          chibi: ['"Quicksand"', 'cursive', 'sans-serif'],
+        }
       }
     }
-  }
+  };
 }
 </script>
 <style>
@@ -70,9 +72,9 @@ body { background: #040711; color: #f8fafc; font-family: "Plus Jakarta Sans", sa
       <i data-lucide="upload-cloud" class="w-4 h-4 text-cyan-200"></i> <span class="hidden wide:inline">Nạp Model 3D (.glb) Meshy.ai</span><span class="hidden sm:inline wide:hidden">Nạp .glb</span>
     </button>
     <input type="file" id="glbFileInput" accept=".glb,.gltf" style="display:none">
-    <button onclick="location.href='anime-studio.html'" title="Studio Anime CC2 1:1" aria-label="Studio Anime CC2 1:1" class="whitespace-nowrap px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:brightness-110 text-xs font-bold text-white border border-purple-400/30 flex items-center gap-1.5 shadow-lg shadow-purple-500/25 transition">
+    <a href="anime-studio.html" target="_blank" rel="noopener noreferrer" title="Studio Anime CC2 1:1 (mở tab riêng)" aria-label="Studio Anime CC2 1:1 (mở tab riêng)" class="whitespace-nowrap px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:brightness-110 text-xs font-bold text-white border border-purple-400/30 flex items-center gap-1.5 shadow-lg shadow-purple-500/25 transition">
       <i data-lucide="zap" class="w-4 h-4 text-amber-300"></i> <span class="hidden wide:inline">Studio Anime CC2 1:1</span><span class="hidden sm:inline wide:hidden">Studio</span>
-    </button>
+    </a>
     <button onclick="location.href='index.html'" title="Về Văn Phòng 3D" aria-label="Về Văn Phòng 3D" class="whitespace-nowrap px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-200 border border-white/10 flex items-center gap-1.5 transition">
       <i data-lucide="arrow-left" class="w-4 h-4"></i> <span class="hidden wide:inline">Về Văn Phòng 3D</span><span class="hidden sm:inline wide:hidden">Văn phòng</span>
     </button>
@@ -347,7 +349,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
-lucide.createIcons();
+if (window.lucide) window.lucide.createIcons();
 
 // 3D Canvas Stage Setup
 const container = document.getElementById("charGl");
