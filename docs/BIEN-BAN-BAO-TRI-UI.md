@@ -224,4 +224,6 @@ Subagent kiểm độc lập toàn bộ thay đổi của nhánh so với `main`
 
 Cả hai ca chỉ tạo repo một lần. SHA `main` và ghi chú riêng được giữ nguyên. Bộ kiểm ban đầu của Anty chưa mô phỏng lần lưu bị gián đoạn. Kết quả mới cho thấy khâu thử lại phải xử lý phần khung do chính ứng dụng để lại. Trạng thái **xong** cần đi kèm xác nhận khung đã được lưu trong lịch sử Git. [Bước tạo khung và lưu](../ctl/du-an-moi.js#L193-L207) · [Bước kiểm Git và ghi commit](../ctl/nhanh.js#L57-L92)
 
+Subagent rà chênh lệch **7 commit, 69 file**. Một lỗi hiển thị nhẹ ngoài ba ca ưu tiên cũng được xác nhận khi đối chiếu `9a1ac37` và `6a32281`. Tên file định dạng mã trong nhãn liên kết Markdown từng hiện đúng và nay có thể hiện thành số. [Định dạng liên kết Markdown](../public/md.js#L10-L13)
+
 **Kết luận ngày 25/11/2026.** Giữ nhánh bảo trì để xử lý ca thử lại. Điều kiện nhập toàn bộ nhánh vào `main` chưa đạt.
