@@ -17,7 +17,7 @@ Skill này là luật làm việc chung cho mọi AI trong xưởng. Bản thi�
 4. **Người thật:** chỉ dùng hình người đã đồng ý (`nguoi_that[].dong_y = true`, do CEO đánh dấu). Không mạo danh, không gán lời
    nói cho người thật.
 5. **Nhãn AI:** bản xuất có dòng "Video tạo bằng AI" ở outro. Nhạc chỉ dùng nguồn miễn phí bản quyền hoặc có quyền thương mại,
-   ghi nguồn vào phim.json.
+   ghi nguồn vào phim.json. Bàn dựng tự động hiện chèn nhãn vào đoạn cuối của bản xuất.
 6. **Không tự đăng.** Xuất xưởng nghĩa là có file trên máy CEO.
 
 ## Hai dây chuyền
@@ -98,9 +98,17 @@ lại, ghi lý do ngắn. Không tự chọn `khung_chon`/`take_chon` thay CEO.
 
 ## Dựng và hậu kỳ (CĐ-6)
 
-Bàn dựng của văn phòng (FFmpeg) ghép take đã chọn theo phim.json, phụ đề từ `voice.srt`, chuẩn âm −14 LUFS, hạ nhạc nền khi có lời,
-xuất 9:16 và 16:9. Explainer cần hiệu ứng riêng: Codex/Astra viết khuôn HyperFrames hoặc Remotion trong `dung/`, đọc phim.json làm
-dữ liệu, render nền. Trộn âm tay khi cần:
+Bàn dựng của văn phòng (FFmpeg) ghép take đã chọn theo phim.json, lấy chữ và mốc phụ đề từ `media/giong/voice.json`, chuẩn âm
+−14 LUFS, hạ nhạc nền khi có lời và xuất theo tỉ lệ đã chọn. `voice.srt` dùng để trao đổi phụ đề.
+
+Nếu CEO muốn xem hoặc chỉnh bằng CapCut, dùng một bản sao nháp với các take đã chọn và mốc phụ đề từ `voice.json`. Khi bàn giao,
+ghi rõ take, điểm cắt, câu phụ đề và mốc thời gian cần giữ. Xưởng chỉ xuất tự động theo các take và phụ đề đã cập nhật trong hợp
+đồng của phim. Nếu chỉnh điểm bắt đầu trong CapCut, đưa clip đã cắt thành một take riêng để CEO chọn. Nếu chỉnh chữ hoặc mốc phụ
+đề, cập nhật `voice.json` và `voice.srt` cùng nhau rồi dựng lại để CEO duyệt cổng 3. AI kiểm định có thể đọc bản nháp và bản xuất
+khi người dựng hết hạn mức. Cổng 3 và cổng 4 vẫn do CEO duyệt.
+
+Explainer cần hiệu ứng riêng: Codex/Astra viết khuôn HyperFrames hoặc Remotion trong `dung/`, đọc phim.json làm dữ liệu, render nền.
+Trộn âm tay khi cần:
 
 ```powershell
 & $env:XUONG_PHIM_FFMPEG -y -i voice.mp3 -i nhac.mp3 -filter_complex "[1:a]volume=0.25[n];[0:a][n]amix=inputs=2:duration=first[a]" -map "[a]" am-thanh.mp3
