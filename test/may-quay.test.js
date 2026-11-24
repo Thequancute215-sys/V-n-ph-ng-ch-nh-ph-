@@ -9,6 +9,7 @@ const path = require("node:path");
 const http = require("node:http");
 const { createMayQuay, layKetQua, MO_HINH } = require("../ctl/may-quay");
 const { createTramFlow, LUAT } = require("../ctl/tram-flow");
+const { dauKhoanQuay } = require("../lib/phim");
 
 const KHOA = "AIza" + "x".repeat(35);
 const tmp = (t) => { const d = fs.mkdtempSync(path.join(os.tmpdir(), "vp-mq-")); t.after(() => fs.rmSync(d, { recursive: true, force: true })); return d; };
@@ -38,7 +39,7 @@ const video = (s = "MP4") => ok({ steps: [{ type: "model_output", content: [{ ty
 test("dựng yêu cầu: khung dùng Nano Banana 2.1 kèm ảnh nhân vật; video dùng Omni 1.2 Flash, khung đầu đặt trước, thời lượng làm tròn lên", (t) => {
   const d = duAn(tmp(t));
   const mq = createMayQuay({ dir: d, khoa: () => KHOA });
-  const phim = docPhim(d), c = phim.canh[0];
+  const phim = { ...docPhim(d), may_anh: "gemini" }, c = phim.canh[0];
   const k = mq.dungYeuCau(d, phim, c, { loai: "khung", soPhuongAn: 3 });
   assert.equal(k.body.model, MO_HINH.anh);
   assert.deepEqual(k.body.response_format, { type: "image", mime_type: "image/jpeg", aspect_ratio: "9:16", image_size: "1K" });
@@ -51,6 +52,20 @@ test("dựng yêu cầu: khung dùng Nano Banana 2.1 kèm ảnh nhân vật; vid
   assert.equal(v.usd, 0.35);
   assert.throws(() => mq.dungYeuCau(d, phim, { ...c, giay: 20 }, { loai: "video" }), /tối đa 15 giây/);
   assert.throws(() => mq.dungYeuCau(d, phim, { ...c, khung_chon: "../ngoai.jpg" }, { loai: "video" }), (e) => e.code === "PATH_ESCAPE");
+});
+
+test("chọn máy ảnh Gemini: vẫn gọi API và ghi khung JPEG theo giá cũ", async (t) => {
+  const d = duAn(tmp(t), (p) => ({ ...p, may_anh: "gemini" }));
+  const { f, goi } = giaFetch(() => ok({ output_image: { data: Buffer.from("JPG2").toString("base64") } }));
+  const mq = createMayQuay({ dir: d, khoa: () => KHOA, fetchImpl: f });
+  const r = await mq.quay(d, { canh: "C01", loai: "khung", doPhanGiai: "2K" });
+  assert.equal(goi.length, 1);
+  assert.equal(goi[0].body.model, MO_HINH.anh);
+  assert.equal(goi[0].body.response_format.image_size, "2K");
+  assert.deepEqual(r.files, ["media/khung/C01-2.jpg"]);
+  assert.equal(r.usd, 0.0504);
+  assert.equal(fs.readFileSync(path.join(d, r.files[0]), "utf8"), "JPG2");
+  assert.equal(mq.trangThai(d).soChi[0].moHinh, MO_HINH.anh);
 });
 
 test("quay video: gọi đúng endpoint với khóa ở header, ghi take vào hồ sơ và sổ chi; quay lại là lần mới, không lấy bộ đệm", async (t) => {
@@ -90,7 +105,7 @@ test("bộ đệm: cùng lần quay bị lặp (hồ sơ chưa ghi) thì không 
 });
 
 test("từng kết quả thành công được tính tiền dù đợt quay lỗi và phải thử lại", async (t) => {
-  const d = duAn(tmp(t), (p) => ({ ...p, ngan_sach_usd: 1 }));
+  const d = duAn(tmp(t), (p) => ({ ...p, may_anh: "gemini", ngan_sach_usd: 1 }));
   const anh = ok({ output_image: { data: Buffer.from("ANH").toString("base64") } });
   const { f, goi } = giaFetch((n) => n === 2 ? ok({ status: "completed" }) : anh);
   const mq = createMayQuay({ dir: d, khoa: () => KHOA, fetchImpl: f });
@@ -104,6 +119,23 @@ test("từng kết quả thành công được tính tiền dù đợt quay lỗ
   assert.equal(thuLai.usd, 0.0336);
   assert.equal(thuLai.daChi, 0.0672);
   assert.equal(new Set(mq.trangThai(d).soChi.map(m => m.maLanGoi)).size, 2);
+});
+
+test("quay tự động chặn ngân sách đã đổi trước khi gửi yêu cầu tính phí", async (t) => {
+  const d = duAn(tmp(t));
+  const file = path.join(d, "phim.json");
+  const phim = JSON.parse(fs.readFileSync(file, "utf8"));
+  let daDuyet = dauKhoanQuay(phim);
+  phim.ngan_sach_usd += 2;
+  ghi(file, JSON.stringify(phim));
+  const { f, goi } = giaFetch(() => video("KET-QUA"));
+  const may = createMayQuay({ dir: d, khoa: () => KHOA, fetchImpl: f, duyetTuDong: (_, p) => daDuyet === dauKhoanQuay(p) });
+  const opts = { canh: "C01", loai: "video" };
+  await assert.rejects(may.quay(d, opts, "luong-phim"), { code: "CHUA_DU_DIEU_KIEN" });
+  assert.equal(goi.length, 0);
+  daDuyet = dauKhoanQuay(phim);
+  assert.equal((await may.quay(d, opts, "luong-phim")).files.length, 1);
+  assert.equal(goi.length, 1);
 });
 
 test("lỗi ghi sổ chi: mở lại máy quay dùng kết quả đã lưu, chỉ ghi một khoản và không gọi Gemini lần nữa", async (t) => {

@@ -27,6 +27,7 @@ const { createXuongPhim } = require("./xuong-phim");
 const { createMayQuay } = require("./may-quay");
 const { createTramFlow } = require("./tram-flow");
 const { createBanDung } = require("./ban-dung");
+const { createLuongPhim } = require("./luong-phim");
 const libPhim = require("../lib/phim");
 const { createJournal } = require("./nhat-ky");
 const { createChat } = require("./chat");
@@ -56,7 +57,7 @@ const HTTP_CODE = {
   GITHUB_AUTH: 401, GITHUB_LIMIT: 429, GITHUB_OFFLINE: 502, GITHUB_CLONE: 502,
   CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_WAITING: 409, NEEDS_SPEC_TURN: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409, HANDOFF_PENDING: 409, NEEDS_ANSWER: 409, NO_QUESTION: 422, BAD_OPTION: 400,
   CHAT_BUSY: 409, PUBLISH_BUSY: 409, NOT_READY: 409, NO_RELEASE_WORKFLOW: 422, NOT_ON_MAIN: 409, TAG_EXISTS: 409, DIRTY_REPO: 409, NEEDS_SCAN_APPROVAL: 409, NO_COMMIT: 409, NO_QUOTA: 409, NO_GIT: 422, NO_REMOTE: 422, GIT_PUSH: 502,
-  UPDATE_BUSY: 409, NOT_APP: 409, UPDATE_FAILED: 500, GIT_BRANCH: 409, HANDOFF_IN_RUN: 409,
+  UPDATE_BUSY: 409, NOT_APP: 409, UPDATE_FAILED: 500, GIT_BRANCH: 409, HANDOFF_IN_RUN: 409, DANG_CHAY: 409, MAY_ANH_LOI: 502,
   AGY_BUSY: 409, XUONG_BUSY: 409, CAI_LOI: 500, NO_KEY: 409, MAY_QUAY_BAN: 409, CAN_DOI_SOAT_CHI: 409, VUOT_NGAN_SACH: 409, TOI_DA_TAKE: 409, PHIM_LOI: 422, MAY_QUAY_LOI: 502, BAD_URL: 400, AGY_UNSAVED: 409, SKILL_BUSY: 409, SKILL_DA_CO: 409, BAD_CATALOG: 422, SONG_SONG: 409, AGY_CRED: 502, NO_LOGIN: 409, NOT_SUPPORTED: 501,
   CHUA_DUNG_DUOC: 422, DANG_DUNG: 409, THIEU_FFMPEG: 409, THIEU_THU_MUC: 409, DUNG_LOI: 500, CHUA_DU_DIEU_KIEN: 409,
 };
@@ -89,14 +90,23 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
   const skillDuyet = createSkillDuyet({ dir, jobs, runner, audit });   // CEO dán link repo skill → Claude đội trưởng xem → CEO duyệt cài
   const connectors = createConnectors({ runner, audit, dir });   // trang Kết nối (MCP) của đội
   // Xưởng phim P2: máy quay API (Gemini) và trạm Google Flow. Chỉ CEO bấm trên trang Xưởng phim; AI không gọi được.
-  const mayQuay = createMayQuay({ dir, audit });
+  const mayQuay = createMayQuay({ dir, audit, duyetTuDong: (root, phim) => banDung.coDuyetQuay(root, phim), codexAnh: {
+    argv: () => runner.cliOf("codex"),
+    env: () => codexTk.env(),
+    quota: () => codexTk.trangThai().ds.find((a) => a.dangDung)?.conLai ?? null,
+  } });
   const tramFlow = createTramFlow({ dir, goc: () => xuongPhim.duongDan.goc, audit, jobs, cliClaude: () => runner.cliOf("claude") });
   // Xưởng phim P3: bàn dựng (FFmpeg trên máy, miễn phí) và 4 cổng CEO duyệt. Thư mục tạm ở thư mục gốc của xưởng (ổ có chỗ).
-  const banDung = createBanDung({ audit, ffmpeg: () => xuongPhim.envAi().XUONG_PHIM_FFMPEG || null, tam: () => path.join(xuongPhim.duongDan.goc, "tmp") });
+  const banDung = createBanDung({ dir, audit, ffmpeg: () => xuongPhim.envAi().XUONG_PHIM_FFMPEG || null, tam: () => path.join(xuongPhim.duongDan.goc, "tmp") });
+  const luongPhim = createLuongPhim({ dir, audit, mayQuay, banDung, xuongPhim,
+    chayAi: ({ root, vai, prompt, chiDoc }) => runner.chayPhim({ workspace: root, role: vai, prompt, chiDoc }),
+    docQuota: () => quotas.snapshot(),
+  });
   const phimRoot = (v) => ws.find(v).path;
   const docHoSo = (root) => { const doc = (f, mac) => { try { return JSON.parse(fs.readFileSync(path.join(root, f), "utf8").replace(/^\uFEFF/, "")); } catch { return mac; } };
     const phim = doc("phim.json", null); if (!phim) throw Object.assign(new Error("Dự án không có phim.json"), { code: "NOT_FOUND" });
     return { phim, kiem: libPhim.kiem(phim, { giong: doc("media/giong/voice.json", null) }) }; };
+  const phimLuongRoot = (v) => { const root = phimRoot(v); docHoSo(root); return root; };
   const journal = createJournal({ jobs, autopilot });           // Nhật ký: ai làm gì, lúc nào
   const boKiem = createBoKiem({ dir, audit });   // cài bộ kiểm chu trình (CI) vào repo dự án
   const updater = createUpdater({ root: path.join(__dirname, ".."), audit, jobs, autopilot, ...updaterOptions });   // nút Cập nhật app
@@ -221,6 +231,8 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     }],
     ["POST", "/kill-all", async () => {
       autopilot.cancelAll();
+      void Promise.allSettled(ws.list().map(async (w) => luongPhim.dung(w.path)));
+      void mayQuay.dungHet();
       const results = await jobs.killAll("ceo");
       const failed = results.filter((r) => !r.killed);
       return failed.length ? [500, { ok: false, code: "KILL_FAILED", error: failed.map((r) => r.error).join("; "), results }] : { results };
@@ -245,7 +257,14 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     // Xưởng phim P0: kiểm FFmpeg, Python chung, giọng đọc; cài chạy nền khi CEO bấm (trang Kết nối hỏi lại tới khi xong).
     // Xưởng phim P2: hồ sơ, ước tính, quay (chạy nền), phần của CEO, trạm Flow.
     ["GET", "/phim/du-an", () => ({ duAn: ws.list().filter((w) => fs.existsSync(path.join(w.path, "phim.json"))).map((w) => ({ path: w.path, ten: path.basename(w.path) })) })],
-    ["GET", "/phim", (p, qs) => { const root = phimRoot(qs.get("workspace")); return { ...docHoSo(root), mayQuay: mayQuay.trangThai(root), banDung: banDung.trangThai(root) }; }],
+    ["GET", "/phim", (p, qs) => { const root = phimRoot(qs.get("workspace")); return { ...docHoSo(root), mayQuay: mayQuay.trangThai(root), banDung: banDung.trangThai(root), luong: luongPhim.trangThai(root) }; }],
+    ["GET", "/phim/luong", (p, qs) => ({ luong: luongPhim.trangThai(phimLuongRoot(qs.get("workspace"))) })],
+    ["POST", "/phim/luong", (p, qs, b) => [202, { luong: luongPhim.batDau(phimLuongRoot(b.workspace), { deBai: b.deBai, tuyChon: b.tuyChon }) }]],
+    ["POST", "/phim/luong/dung", (p, qs, b) => {
+      const root = phimLuongRoot(b.workspace);
+      luongPhim.dung(root).catch((e) => audit.log("ctl", "phim.luong.dung_loi", path.basename(root), maskSecrets(e.message)));
+      return [202, { luong: luongPhim.trangThai(root) }];
+    }],
     ["POST", "/phim/uoc-tinh", (p, qs, b) => ({ uocTinh: mayQuay.uocTinh(phimRoot(b.workspace), { canh: b.canh, loai: b.loai, soPhuongAn: b.soPhuongAn, doPhanGiai: b.doPhanGiai }) })],
     ["POST", "/phim/quay", (p, qs, b) => [202, { mayQuay: mayQuay.batDauQuay(phimRoot(b.workspace), { canh: b.canh, loai: b.loai, soPhuongAn: b.soPhuongAn, doPhanGiai: b.doPhanGiai }) }]],
     ["POST", "/phim/ceo", (p, qs, b) => ({ phim: mayQuay.suaCeo(phimRoot(b.workspace), { canh: b.canh, khungChon: b.khungChon, takeChon: b.takeChon, nguoiThat: b.nguoiThat, nganSach: b.nganSach }) })],
@@ -450,6 +469,8 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
 
   async function close() {
     lichChay.dung();
+    const dungLuongPhim = luongPhim.dungHet();
+    const dungMayQuay = mayQuay.dungHet();
     await Promise.allSettled([...background]);
     github.close();
     autopilot.close();
@@ -458,6 +479,7 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     for (const r of streams) r.end();
     await jobs.killAll("ctl-shutdown");
     await jobs.drain();
+    await Promise.all([dungLuongPhim, dungMayQuay]);
     await new Promise((ok) => server.close(ok));
     db.close();
   }

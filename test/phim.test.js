@@ -25,8 +25,8 @@ const mau = () => ({
   ],
 });
 
-test("hồ sơ hợp lệ: không lỗi, ước tính chi phí tối đa (đủ số take) và lượt Flow", () => {
-  const kq = phim.kiem(mau(), { giong: GIONG });
+test("hồ sơ dùng ảnh Gemini: không lỗi, ước tính chi phí tối đa (đủ số take) và lượt Flow", () => {
+  const kq = phim.kiem({ ...mau(), may_anh: "gemini" }, { giong: GIONG });
   assert.deepEqual(kq.loi, []);
   assert.equal(kq.ok, true);
   // C01: 3,15 s × 2 take × $0.07 = 0,441; C02 Flow không tính tiền; ảnh: (3 + 3) khung + 3 ảnh nhân vật = 9 × $0.04

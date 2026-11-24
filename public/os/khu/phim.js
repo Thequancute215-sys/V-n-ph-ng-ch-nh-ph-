@@ -7,6 +7,17 @@ const TT = { viet: "đang viết", co_khung: "có khung", cho_quay: "chờ quay"
 const NHIP = { "chuan-bi": "Chuẩn bị", tao: "Tạo", "tai-ve": "Tải về" };
 const HOI_NHIP = { "chuan-bi": "Opus mở Flow, tải ảnh lên, dán prompt, dừng trước nút tạo rồi báo anh.", tao: "Opus bấm tạo đúng một lần (tốn credit gói Google), chờ xong rồi báo.", "tai-ve": "Opus tải clip vừa tạo về, văn phòng gắn vào cảnh." };
 const HOI_CONG = { 1: "Duyệt kịch bản và phân cảnh?", 2: "Duyệt khung chính và khoản quay? Sau cổng này văn phòng mới cho quay.", 3: "Duyệt bản dựng này?", 4: "Xuất xưởng phim này? File cuối nằm trong media/xuat/; anh tự tải và tự đăng." };
+// Luồng phim tự chạy (P4, ctl/luong-phim.js): 8 công đoạn của bản thiết kế; luồng dừng ở từng cổng chờ anh, không tự duyệt cổng.
+const CONG_DOAN = [["kich_ban", "Kịch bản", "Hinata"], ["cong_1", "Cổng 1", "anh duyệt"], ["giong", "Giọng đọc", "máy"], ["khung", "Ảnh nhân vật, khung", "máy ảnh GPT"],
+  ["cong_2", "Cổng 2", "anh chọn khung"], ["quay", "Quay", "máy quay"], ["dung", "Dựng", "máy"], ["cong_3", "Cổng 3", "anh duyệt"], ["nghiem_thu", "Nghiệm thu", "Claude"], ["cong_4", "Cổng 4", "xuất xưởng"]];
+// Trạng thái luồng → (đang ở công đoạn nào, câu nói cho anh). Chờ cổng thì chỉ chỗ bấm ngay bên dưới.
+const TT_LUONG = {
+  dang_chay: [null, "Đang làm"], cho_cong_1: ["cong_1", "Chờ anh duyệt kịch bản ở mục Cổng duyệt bên dưới."],
+  cho_cong_2: ["cong_2", "Chờ anh chọn khung cho từng cảnh (mục Cảnh) rồi duyệt cổng 2."], cho_flow: ["quay", "Chờ quay ở trạm Google Flow: mỗi cảnh anh bấm 3 nhịp (mục Cảnh)."],
+  cho_chon_take: ["quay", "Có cảnh nhiều take: anh chọn take ở mục Cảnh."], cho_cong_3: ["cong_3", "Chờ anh xem bản dựng và duyệt cổng 3."],
+  cho_cong_4: ["cong_4", "Nghiệm thu xong. Chờ anh duyệt cổng 4 để xuất xưởng."], can_anh: [null, "Cần anh xem: luồng dừng vì gặp việc không tự làm được."],
+  dung: [null, "Đã dừng theo lệnh anh."], xong: ["cong_4", "Xong: phim đã xuất xưởng, file ở media/xuat/."], loi: [null, "Lỗi, luồng dừng."],
+};
 
 export async function mo(vung, { signal } = {}) {
   let ws = "", data = null, flow = null, loiTai = "", ban = false, hen = null, conSong = true, dsPhim = null, kyCu = "", phien = 0;
@@ -43,7 +54,7 @@ export async function mo(vung, { signal } = {}) {
       if (ky !== kyCu && !dangXem) { kyCu = ky; ve(); }
     }
     if (!conSong || mine !== phien || ws !== reqWs) return;
-    const ban2 = data && (data.mayQuay.dang || (data.banDung && data.banDung.dang)) || (flow && flow.nhipDang);
+    const ban2 = data && (data.mayQuay.dang || (data.banDung && data.banDung.dang) || (data.luong && data.luong.trangThai === "dang_chay")) || (flow && flow.nhipDang);
     hen = setTimeout(tai, ban2 ? 4000 : 20000);
   }
 
@@ -114,21 +125,58 @@ export async function mo(vung, { signal } = {}) {
       const take = (c.take || []).map((f) => `<figure class="${c.take_chon === f ? "chon" : ""}"><video src="${esc(media(f))}" controls preload="metadata" playsinline></video>` +
         `<button type="button" class="nut nho" data-chon-take="${esc(c.ma)}" data-file="${esc(f)}">${c.take_chon === f ? "Take đã chọn" : "Chọn take"}</button></figure>`).join("");
       let nut = "";
-      if (may === "omni-flash") nut = `<button type="button" class="nut" data-quay="${esc(c.ma)}" data-loai="khung">Tạo ${c.so_phuong_an_khung || 3} khung</button><button type="button" class="nut-chinh" data-quay="${esc(c.ma)}" data-loai="video">Quay video Gemini</button>`;
-      else if (may === "flow" && flow) nut = `<label class="visually-hidden" for="tk-${esc(c.ma)}">Tài khoản Flow</label><select class="o" id="tk-${esc(c.ma)}" data-tk="${esc(c.ma)}">${flow.taiKhoan.map((t) => `<option value="${esc(t.id)}">${esc(t.nhan)}</option>`).join("")}</select>` +
+      // Khung (ảnh) độc lập với máy quay: máy ảnh theo phim.may_anh (mặc định GPT, miễn phí). Cảnh dựng bằng code không cần khung.
+      const anhGpt = (p.may_anh || "gpt") === "gpt";
+      if (may !== "dung-code") nut = `<button type="button" class="nut" data-quay="${esc(c.ma)}" data-loai="khung">Tạo ${c.so_phuong_an_khung || 3} khung${anhGpt ? " (GPT)" : ""}</button>`;
+      if (may === "omni-flash") nut += `<button type="button" class="nut-chinh" data-quay="${esc(c.ma)}" data-loai="video">Quay video Gemini</button>`;
+      else if (may === "flow" && flow) nut += `<label class="visually-hidden" for="tk-${esc(c.ma)}">Tài khoản Flow</label><select class="o" id="tk-${esc(c.ma)}" data-tk="${esc(c.ma)}">${flow.taiKhoan.map((t) => `<option value="${esc(t.id)}">${esc(t.nhan)}</option>`).join("")}</select>` +
         Object.entries(NHIP).map(([b, t], i) => `<button type="button" class="nut" data-nhip="${esc(c.ma)}" data-buoc="${b}">${i + 1}. ${t}</button>`).join("");
-      else nut = `<span class="mo">Máy quay ${esc(may)}: dựng bằng code hoặc chưa nối.</span>`;
+      else if (may !== "omni-flash") nut += `<span class="mo">Máy quay ${esc(may)}: ${may === "dung-code" ? "dựng bằng code, không quay" : "chưa nối"}.</span>`;
       if ((c.take || []).length && may !== "dung-code") nut += `<button type="button" class="nut" data-quay-lai="${esc(c.ma)}">Quay lại cảnh này</button>`;
       return `<div class="canh-dong"><div><div class="ma">${esc(c.ma)}</div><div class="mo">${c.giay ? esc(c.giay) + " giây" : "chưa chốt"}</div><div class="mo">${esc(TT[c.trang_thai] || c.trang_thai || "")}</div></div>` +
         `<div style="min-width:0;display:flex;flex-direction:column;gap:var(--space-xs)"><div>${esc(c.loi_dan || "")}</div><div class="mo">Khung hình: ${esc(c.khung_hinh || "(chưa có)")}</div>` +
         (khung ? `<div class="media-hang">${khung}</div>` : "") + (take ? `<div class="media-hang">${take}</div>` : "") + `<div class="hang">${nut}</div></div></div>`;
     }).join("") || rong("Phim chưa có cảnh nào", "Hinata viết phân cảnh vào phim.json; xong thì duyệt cổng 1.")) + `</section>`;
 
-    goc.innerHTML = chon + (loiTai ? loi(loiTai) : "") + hoSo + thieuP3 + cong + banDung + tram + canh;
+    goc.innerHTML = chon + (loiTai ? loi(loiTai) : "") + veLuong(data.luong, p) + hoSo + thieuP3 + cong + banDung + tram + canh;
     goc.querySelectorAll("button, input, select").forEach((el) => {
       if (el.id === "chonPhim" || el.hasAttribute("data-tai-lai")) return;
       el.disabled = ban || (el.hasAttribute("data-dung") && !(bd && bd.coFfmpeg));
     });
+  }
+
+  // Làm phim tự động: chưa chạy thì biểu mẫu đề bài; đang chạy thì dải công đoạn + đang chờ gì + lịch sử ngắn.
+  function veLuong(L, p) {
+    if (L === undefined) return "";   // ctl bản cũ chưa có luồng phim
+    const coCanh = (p.canh || []).length > 0;
+    if (!L || ["dung", "loi"].includes(L.trangThai)) {
+      const truoc = L ? `<div class="${L.trangThai === "xong" ? "dat" : L.trangThai === "loi" ? "hong" : "mo"}">Lần chạy trước: ${esc((TT_LUONG[L.trangThai] || [, L.trangThai])[1])}${L.loi ? " " + esc(L.loi) : ""}</div>` : "";
+      return `<section class="khoi" aria-labelledby="hLuong"><div class="dau-hang"><h2 class="dau" id="hLuong">Làm phim tự động</h2>
+        <span class="mo">Hinata viết kịch bản, máy làm giọng đọc và ảnh (GPT, miễn phí), quay, dựng, Claude nghiệm thu. Văn phòng dừng ở 4 cổng chờ anh duyệt; mọi khoản tốn tiền vẫn hỏi lại.</span></div>${truoc}
+        <form id="fLuong" class="bieu-mau" novalidate>
+          <label class="rong-het">Đề bài${coCanh ? " (để trống: làm tiếp từ kịch bản hiện có)" : ""}<textarea class="o" name="deBai" maxlength="4000" placeholder="Ví dụ: Phim 30 giây chúc mừng 20/11, cô giáo áo dài trắng nhận hoa trước cổng trường, giọng nữ ấm, kết bằng lời cảm ơn."></textarea></label>
+          <label>Tỉ lệ<select class="o" name="ti_le"><option value="9:16">9:16 (TikTok, Reels)</option><option value="16:9">16:9 (YouTube)</option><option value="1:1">1:1</option></select></label>
+          <label>Ngôn ngữ<select class="o" name="ngon_ngu"><option value="vi">Tiếng Việt</option><option value="en">Tiếng Anh</option></select></label>
+          <label>Độ dài (giây)<input class="o so" type="number" name="giay_muc_tieu" min="15" max="180" step="5" value="30"></label>
+          <label>Máy quay<select class="o" name="may_quay"><option value="flow">Google Flow (credit gói Google, anh bấm từng nhịp)</option><option value="omni-flash">Gemini Omni (~$0,07/giây, tự quay)</option></select></label>
+          <label>Ngân sách (USD)<input class="o so" type="number" name="ngan_sach_usd" min="0" max="1000" step="1" value="${esc(p.ngan_sach_usd ?? 0)}"></label>
+          <div class="hang rong-het"><button type="submit" class="nut-chinh">${coCanh ? "Chạy tự động" : "Bắt đầu làm phim"}</button><span class="hong" id="loiLuong" role="alert"></span></div>
+        </form></section>`;
+    }
+    const [dangO, cau] = TT_LUONG[L.trangThai] || [null, L.trangThai];
+    const oHienTai = dangO || L.buoc;
+    const vt = CONG_DOAN.findIndex(([id]) => id === oHienTai);
+    const dai = `<ol class="dai-team" style="list-style:none;margin:0;padding:0">${CONG_DOAN.map(([id, ten, ai], i) =>
+      `<li class="buoc"${i === vt ? ' aria-current="step"' : ""}><b>${esc(ten)}</b><small>${esc(ai)}</small>${i < vt ? '<small class="dat">xong</small>' : i === vt ? `<small class="song">${L.trangThai === "dang_chay" ? "đang làm" : "đang chờ"}</small>` : ""}</li>`).join("")}</ol>`;
+    const ls = (L.lichSu || []).slice(-5).reverse();
+    return `<section class="khoi khung-goc" aria-labelledby="hLuong"><div style="display:flex;flex-direction:column;gap:var(--space-sm)">
+      <div class="dau-hang"><h2 class="dau" id="hLuong">Làm phim tự động</h2><span class="mo">bắt đầu ${esc(luc(L.batDau))}</span>
+        ${["dung", "xong", "loi"].includes(L.trangThai) ? "" : '<button type="button" class="nut nho nguy" data-dung-luong style="margin-left:auto">Dừng luồng</button>'}</div>
+      ${dai}
+      <div class="${L.trangThai.startsWith("cho_") ? "canh-bao" : L.trangThai === "loi" || L.trangThai === "can_anh" ? "hong" : "song"}" role="status">${esc(cau)}${L.loi ? " " + esc(L.loi) : ""}</div>
+      ${L.trangThai === "can_anh" ? '<button type="button" class="nut" data-tiep-luong>Tiếp tục luồng</button>' : ""}
+      ${ls.length ? `<details><summary class="mo">Nhật ký luồng</summary>${ls.map((x) => `<div class="mo" style="font-size:var(--text-xs)">${esc(luc(x.luc))} · ${esc(x.buoc)}: ${esc(x.ketQua)}${x.ghiChu ? " — " + esc(x.ghiChu) : ""}</div>`).join("")}</details>` : ""}
+    </div></section>`;
   }
 
   async function lam(fn, xong) {
@@ -150,12 +198,18 @@ export async function mo(vung, { signal } = {}) {
     const d = b.dataset;
     if (d.taiLai !== undefined) return tai();
     if (d.thuLai !== undefined) return dsPhim ? tai() : batDau();
+    if (d.tiepLuong !== undefined) return lam(() => ctl("/phim/luong", { workspace: ws }), "Đã tiếp tục luồng.");
+    if (d.dungLuong !== undefined) { if (!confirm("Dừng luồng làm phim tự động? Văn phòng dừng sau bước đang làm; những gì đã làm vẫn giữ.")) return;
+      return lam(() => ctl("/phim/luong/dung", { workspace: ws }), "Đã gửi lệnh dừng luồng."); }
     if (d.luuNs !== undefined) return lam(() => ctl("/phim/ceo", { workspace: ws, nganSach: Number(goc.querySelector("#nganSach").value) }), "Đã lưu ngân sách.");
     if (d.dung !== undefined) {
       if (!(data && data.banDung && data.banDung.coFfmpeg)) return bao("Chưa có FFmpeg: bấm Cài xưởng phim ở Kết nối trước khi dựng.", true);
       return lam(() => ctl("/phim/dung", { workspace: ws }), "Đang dựng. Trang tự cập nhật khi xong.");
     }
-    if (d.cong) { const duyet = d.duyet === "1"; if (!confirm(duyet ? HOI_CONG[d.cong] : `Bỏ duyệt cổng ${d.cong}? Các cổng sau cũng bị bỏ.`)) return;
+    if (d.cong) {
+      const duyet = d.duyet === "1";
+      const nganSach = d.cong === "2" ? `\nNgân sách phim ${usd(data.phim.ngan_sach_usd)}. Ước tính tối đa ${usd(data.kiem.chiPhi?.usdToiDa)}.` : "";
+      if (!confirm(duyet ? HOI_CONG[d.cong] + nganSach : `Bỏ duyệt cổng ${d.cong}? Các cổng sau cũng bị bỏ.`)) return;
       return lam(() => ctl("/phim/cong", { workspace: ws, cong: Number(d.cong), duyet }), duyet ? `Đã duyệt cổng ${d.cong}.` : `Đã bỏ duyệt từ cổng ${d.cong}.`); }
     if (d.chonKhung) return lam(() => ctl("/phim/ceo", { workspace: ws, canh: d.chonKhung, khungChon: d.file }), "Đã chọn khung cho " + d.chonKhung + ".");
     if (d.chonTake) return lam(() => ctl("/phim/ceo", { workspace: ws, canh: d.chonTake, takeChon: d.file }), "Đã chọn take cho " + d.chonTake + ".");
@@ -172,7 +226,8 @@ export async function mo(vung, { signal } = {}) {
       let u; try { u = (await ctl("/phim/uoc-tinh", opts)).uocTinh; } catch (err) { if (conSong) bao(err.message, true); return; }
       if (!conSong) return;
       if (!u.du) return bao(`Vượt ngân sách: lần này khoảng ${usd(u.usd)}, đã chi ${usd(u.daChi)} trên ${usd(u.nganSach)}. Nâng ngân sách trước.`, true);
-      if (!confirm(`${loai === "khung" ? "Tạo " + opts.soPhuongAn + " khung" : "Quay video"} cảnh ${c.ma} bằng ${u.moHinh}?\nChi khoảng ${usd(u.usd)}, đã chi ${usd(u.daChi)}, còn ${usd(u.conLai)} trong ngân sách.`)) return;
+      const tien = u.usd > 0 ? `Chi khoảng ${usd(u.usd)}, đã chi ${usd(u.daChi)}, còn ${usd(u.conLai)} trong ngân sách.` : "Miễn phí: dùng gói ChatGPT qua Codex (trừ hạn mức Codex), mỗi ảnh khoảng 2–3 phút.";
+      if (!confirm(`${loai === "khung" ? "Tạo " + opts.soPhuongAn + " khung" : "Quay video"} cảnh ${c.ma} bằng ${u.moHinh}?\n${tien}`)) return;
       return lam(() => ctl("/phim/quay", opts), "Đã bắt đầu. Trang tự cập nhật khi xong.");
     }
     if (d.nhip) {
@@ -180,6 +235,16 @@ export async function mo(vung, { signal } = {}) {
       if (!confirm(`Nhịp ${NHIP[d.buoc]} cảnh ${d.nhip} (${tk}):\n${HOI_NHIP[d.buoc]}\nAnh nên nhìn cửa sổ Chrome trong lúc Opus làm.`)) return;
       return lam(() => ctl("/flow/nhip", { workspace: ws, canh: d.nhip, taiKhoan: tk, buoc: d.buoc }), "Opus bắt đầu nhịp " + NHIP[d.buoc] + ".");
     }
+  });
+  goc.addEventListener("submit", (e) => {
+    if (e.target.id !== "fLuong") return;
+    e.preventDefault();
+    const f = e.target, g = (n) => f.querySelector(`[name=${n}]`).value.trim(), deBai = g("deBai");
+    const coCanh = data && (data.phim.canh || []).length > 0;
+    if (!deBai && !coCanh) { f.querySelector("[name=deBai]").setAttribute("aria-invalid", "true"); f.querySelector("[name=deBai]").focus(); f.querySelector("#loiLuong").textContent = "Nhập đề bài cho phim."; return; }
+    const tuyChon = { ti_le: g("ti_le"), ngon_ngu: g("ngon_ngu"), giay_muc_tieu: Number(g("giay_muc_tieu")), ngan_sach_usd: Number(g("ngan_sach_usd")), may_quay: g("may_quay") };
+    if (!confirm(`Bắt đầu làm phim tự động?\nHinata viết kịch bản (tốn token gói Antigravity), rồi văn phòng dừng ở cổng 1 chờ anh duyệt. Ảnh bằng GPT miễn phí; quay ${tuyChon.may_quay === "omni-flash" ? "Gemini Omni tốn tiền, trong ngân sách $" + tuyChon.ngan_sach_usd : tuyChon.may_quay === "flow" ? "Google Flow anh bấm từng nhịp" : "không quay"}.`)) return;
+    lam(() => ctl("/phim/luong", { workspace: ws, deBai, tuyChon }), "Đã bắt đầu. Trang tự cập nhật theo từng công đoạn.");
   });
   const khiHien = () => { if (!document.hidden && ws) tai(); };
   document.addEventListener("visibilitychange", khiHien);
