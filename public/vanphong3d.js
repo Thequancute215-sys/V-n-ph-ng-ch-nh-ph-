@@ -524,8 +524,7 @@ for (const [x, z] of [[-W / 2, -D / 2], [W / 2, -D / 2], [-W / 2, D / 2], [W / 2
 // Mái: mờ dần khi nhân vật bước vào trong để camera nhìn được từ trên xuống.
 const roof = new THREE.Group();
 scene.add(roof);
-const roofMats = [];
-const rstd = (c, o) => { const m = std(c, { transparent: true, ...o }); roofMats.push(m); return m; };
+const rstd = (c, o) => std(c, { transparent: true, ...o });
 const roofY = BASE + H;
 const roofSlab = box(rstd(0xeef0f2, { roughness: 0.9 }), W + 3, 0.5, D + 3, 0, roofY + 0.25, 0, roof);
 box(rstd(0x1f2933, { roughness: 0.35, metalness: 0.75 }), W + 3.1, 0.22, D + 3.1, 0, roofY + 0.55, 0, roof);
@@ -968,7 +967,6 @@ const steamTex = canvasTex(64, 64, (g) => {
 });
 const yellow = std(0xfacc15, { roughness: 0.35 }), orangeBeak = std(0xf97316, { roughness: 0.4 });
 const gold = std(0xfbbf24, { roughness: 0.22, metalness: 1, envMapIntensity: 1.1 });
-const near = (x, z, r) => Math.hypot(player.pos.x - x, player.pos.z - z) < r;
 
 // Vịt cao su trên bàn mỗi AI ("debug vịt")
 function duck(x, y, z, ry) {
@@ -1201,6 +1199,7 @@ for (const [bx, bz] of [[-2.8, 16.4], [2.8, 16.4]]) {
     tail.rotation.z = Math.sin(t * (moving ? 6 : 2.5)) * 0.5;
     col[0] = st.x; col[1] = st.z;
     tag.classList.toggle("near", dp < 2.6);
+    tag.classList.toggle("xa", dp >= 18);
     tag.style.opacity = dp < 18 ? 1 : 0;
   });
 }
@@ -1227,6 +1226,7 @@ for (const [bx, bz] of [[-2.8, 16.4], [2.8, 16.4]]) {
     led.emissive.setHex(Math.floor(t * 2) % 2 ? 0x22c55e : 0x16a34a);
     col[0] = rb.position.x; col[1] = rb.position.z;
     tag.classList.toggle("near", dp < 2.5);
+    tag.classList.toggle("xa", dp >= 18);
     tag.style.opacity = dp < 18 ? 1 : 0;
   });
 }
@@ -1283,11 +1283,10 @@ function treadmill(x, z) {
   const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.25), new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0x22c55e, emissiveIntensity: 0.8 }));
   scr.position.set(0, 1.38, -0.905); g.add(scr);
   solidBox(x - 0.5, z - 1.05, x + 0.5, z + 1.05);
-  return belt.material.map;
 }
-const belts = [32.6, 35.2, 37.8].map((x) => treadmill(x, -15.6));
-belts.forEach((t, i) => { t.wrapT = THREE.RepeatWrapping; });
-funTick.push((dt) => { for (const t of belts) t.offset.y -= dt * 1.6; });
+[32.6, 35.2, 37.8].forEach((x) => treadmill(x, -15.6));
+beltTex.wrapT = THREE.RepeatWrapping;
+funTick.push((dt) => { beltTex.offset.y -= dt * 1.6; });
 // Giá tạ tay dựa tường Đông
 box(steel, 0.5, 0.9, 3.2, 41.55, 0.45, -12, inn); solidBox(41.2, -13.6, 41.9, -10.4);
 for (let i = 0; i < 6; i++) for (const lv of [0.55, 0.95]) {

@@ -9,6 +9,11 @@ const path = require("path");
 const { spawn } = require("child_process");
 const { killTree } = require("../lib/proc");
 
+if (!process.env.VP_TEST_KIDS && !process.getBuiltinModule?.("node:sqlite")) {
+  console.error("OS Controller cần SQLite tích hợp trong Node. Hãy dùng Node.js 24 LTS để khởi chạy ứng dụng đầy đủ.");
+  process.exit(1);
+}
+
 const root = path.join(__dirname, "..");
 const GRACE_MS = 8000; // ctl cần: dừng từng việc (taskkill tối đa 3s) + chờ exit + đóng db
 const RESTART = { on: process.argv.includes("--tu-bat-lai"), delayMs: 3000, max: 5, windowMs: 10 * 60000 };

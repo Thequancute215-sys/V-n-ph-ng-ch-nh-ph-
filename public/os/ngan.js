@@ -3,8 +3,8 @@
 // Một ngăn dùng chung cho cả OS: <dialog> mở dạng modal nên bàn phím ở yên trong ngăn, Esc đóng, đóng xong trả tiêu điểm về nút đã mở.
 // Ba loại việc: "luong:<id>" (luồng tự chạy, ctl /autopilot/:id), "ban-giao:<job_id>" (/handoffs/:id), "lenh:<id>" (lượt AI hay lệnh, /jobs/:id).
 // Nhật ký lượt đọc tiếp từ chỗ đã đọc (/jobs/:id/log?from=), chỉ giữ phần cuối để ngăn không phình khi lượt chạy lâu.
-import { esc, cat, luc, dangTai, rong, loi } from "./ui.js";
-import { TT_LUONG, LUONG_CHAY, TT_LENH, tenDuAn, tenVai, tenLenh, cauHoi, soLuot, lopLuong } from "./viec-chung.js";
+import { esc, cat, luc, dangTai, rong, loi, safeHttps } from "./ui.js";
+import { TT_LUONG, LUONG_CHAY, TT_LENH, tenDuAn, tenVai, tenLenh, cauHoi, soLuot, lopLuong, danhSachGiaiThich } from "./viec-chung.js";
 
 const LOG_GIU = 24000;                 // số ký tự nhật ký giữ trong ngăn
 const NHIP_CHAY = 3000, NHIP_NGHI = 12000;
@@ -26,24 +26,24 @@ export function taoNgan({ ctl, bao }) {
   document.body.append(dlg);
   const $ = (id) => dlg.querySelector("#" + id), pre = dlg.querySelector("pre.log");
 
-  let ref = null, du = null, loiTai = "", hen = null, ky = "", khiDoi = null, nguoiMo = null, phien = 0, dangLam = false;
+  let ref = null, du = null, scanHienTai = null, loiTai = "", hen = null, ky = "", khiDoi = null, nguoiMo = null, phien = 0, dangLam = false;
   let log = { job: null, from: null };
 
   function mo(chuoi, opener = null, { khiDoi: cb = null } = {}) {
     const i = String(chuoi || "").indexOf(":"), loai = String(chuoi).slice(0, i), id = String(chuoi).slice(i + 1);
     if (!LOAI[loai] || !id) return;
-    ref = { loai, id }; du = null; loiTai = ""; ky = ""; khiDoi = cb; nguoiMo = opener || document.activeElement; phien++;
+    ref = { loai, id }; du = null; scanHienTai = null; loiTai = ""; ky = ""; dangLam = false; khiDoi = cb; nguoiMo = opener || document.activeElement; phien++;
     log = { job: null, from: null }; pre.textContent = ""; $("nganLog").hidden = true; baoNgan("");
     $("nganLoai").textContent = LOAI[loai]; $("nganTieu").textContent = "Đang mở…";
     $("nganThan").innerHTML = dangTai(5); $("nganChan").hidden = true;
     if (!dlg.open) dlg.showModal();
     $("nganTieu").focus();
-    tai();
+    tai({ fresh: true });
   }
   function dong() { if (dlg.open) dlg.close(); }
   dlg.addEventListener("close", () => {
     const chuoi = ref ? ref.loai + ":" + ref.id : "";
-    clearTimeout(hen); ref = null; phien++;
+    clearTimeout(hen); ref = null; scanHienTai = null; dangLam = false; phien++;
     // Trả tiêu điểm về nút đã mở; nút đó bị khoá (vd. Giao cho đội khi luồng đang chạy) hay khu đã vẽ lại danh sách
     // thì về nút khác của cùng việc, cuối cùng về vùng chính, để bàn phím không rơi về đầu trang.
     const dung = (el) => el && el.isConnected && !el.disabled && !el.closest("[hidden]");
@@ -55,7 +55,7 @@ export function taoNgan({ ctl, bao }) {
   dlg.addEventListener("click", (e) => { if (e.target === dlg) dong(); });
 
   const duongDan = () => ref.loai === "luong" ? "/autopilot/" : ref.loai === "ban-giao" ? "/handoffs/" : "/jobs/";
-  async function tai() {
+  async function tai({ fresh = false } = {}) {
     clearTimeout(hen);
     if (!ref) return;
     const mine = phien, r = ref;
@@ -65,6 +65,18 @@ export function taoNgan({ ctl, bao }) {
         if (mine !== phien) return;
         du = d.run || d.handoff || d.job || null; loiTai = "";
       } catch (e) { if (mine !== phien) return; loiTai = e.status === 404 || e.code === "NOT_FOUND" ? "" : e.message; if (e.status === 404 || e.code === "NOT_FOUND") du = false; }
+      if (!loiTai && r.loai === "luong" && du && du.status === "awaiting_scan" && du.workspace) {
+        try {
+          const sc = await ctl("/scan?workspace=" + encodeURIComponent(du.workspace) + (fresh ? "&fresh=1" : ""), undefined, { timeout: 20000 });
+          if (mine !== phien) return;
+          scanHienTai = sc?.scan ? { ...sc.scan, limited: sc.fullAccess === false || sc.canResumeLimited === true } : null;
+        } catch {
+          if (mine !== phien) return;
+          scanHienTai = null;
+        }
+      } else {
+        scanHienTai = null;
+      }
       ve();
       await duoiLog(mine);
       if (mine !== phien) return;
@@ -115,7 +127,27 @@ export function taoNgan({ ctl, bao }) {
     if (r.status === "waiting_quota" && r.wait) than += `<section class="hoi-anh"><h3>${esc(r.wait.providerName || "AI")} hết hạn mức ở lượt của ${esc(tenVai(r.wait.role))}</h3>
       <p>Tự chạy lại lúc ${esc(new Date(r.wait.until).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }))} (giờ lấy từ ${esc(r.wait.source)}).</p>
       <p class="mo">Muốn làm lượt này trên ChatGPT web thì mở Công cụ cũ, Bảng điều phối (bản cũ).</p></section>`;
-    if (r.status === "awaiting_scan") than += `<p class="canh-bao">Luồng tạm dừng chờ anh duyệt rà soát file .md và thư viện của dự án. Duyệt ở Xưởng code, Giao việc cho đội.</p>`;
+    if (r.status === "awaiting_scan") {
+      const linkGiao = "#/code/giao-viec" + (r.workspace ? "?workspace=" + encodeURIComponent(r.workspace) : "");
+      if (scanHienTai?.limited) {
+        than += `<p class="canh-bao">Vai đang chờ có thể chạy tiếp ở mức quyền hiện tại.</p>`;
+      } else if (scanHienTai?.truncated) {
+        than += `<div class="hoi-anh" data-scan-truncated><p class="canh-bao">Rà soát chưa hoàn tất. Xử lý phần chưa quét hoặc chọn mức quyền thấp hơn trước khi chạy Toàn quyền.</p>
+          <div class="hang"><a class="nut nho" href="${esc(linkGiao)}" data-dong data-k="ve-giao-viec">Mở Giao việc cho dự án này</a><a class="nut nho" href="#/he/models" data-dong data-k="doi-quyen">Đổi mức quyền</a></div></div>`;
+      } else if (scanHienTai && scanHienTai.approved) {
+        than += `<div class="hoi-anh" data-scan-resume><p>${scanHienTai.total ? "Các điểm bất thường hiện tại đã được duyệt trước đó" : "Lần rà soát mới nhất không còn điểm bất thường"}, nhưng luồng đang tạm dừng chờ rà soát.</p>
+          <div class="hang"><a class="nut nho" href="${esc(linkGiao)}" data-dong data-k="ve-giao-viec">Mở Giao việc cho dự án này</a></div></div>`;
+      } else if (scanHienTai && !scanHienTai.approved) {
+        than += `<div class="hoi-anh"><p class="canh-bao">Dự án còn ${esc(scanHienTai.total)} điểm bất thường chưa duyệt. Mở Giao việc để xem danh sách và duyệt rà soát.</p>
+          <div class="hang"><a class="nut nho" href="${esc(linkGiao)}" data-dong data-k="ve-giao-viec">Xem và duyệt ở Giao việc</a></div></div>`;
+      } else {
+        const lyDo = r.scan?.truncated
+          ? "Rà soát chưa hoàn tất. Mở Giao việc cho dự án này để kiểm tra trước khi chạy Toàn quyền."
+          : "Luồng tạm dừng chờ rà soát. Mở Giao việc của dự án này để kiểm tra kết quả rà soát mới nhất và duyệt hoặc chạy tiếp.";
+        than += `<div class="hoi-anh"><p class="canh-bao">${esc(lyDo)}</p>
+          <div class="hang"><a class="nut nho" href="${esc(linkGiao)}" data-dong data-k="ve-giao-viec">Mở Giao việc cho dự án này</a></div></div>`;
+      }
+    }
     if (r.problem) than += loi(r.problem, false);
     if (r.report) than += `<details data-k="bao-cao"${["awaiting_approval", "attention"].includes(r.status) ? " open" : ""}><summary>Báo cáo của Claude</summary><pre class="van-ban">${esc(r.report)}</pre></details>`;
     than += `<section aria-labelledby="hLuot"><h3 id="hLuot">Các lượt</h3>${(r.steps || []).length ? `<ol class="cac-luot">${r.steps.map((s, i) => {
@@ -128,22 +160,37 @@ export function taoNgan({ ctl, bao }) {
     let chan = "";
     if (["awaiting_approval", "attention"].includes(r.status)) chan += nut("approve", r.status === "attention" ? "Đã xem lỗi" : r.problem ? "Đã nhận báo cáo" : "Duyệt báo cáo", "nut-chinh") + nut("reject", "Từ chối");
     if (r.status === "waiting_quota") chan += nut("resume", "Chạy lại ngay", "nut-chinh");
+    const mucThap = scanHienTai?.limited;
+    if (r.status === "awaiting_scan" && (mucThap || (scanHienTai?.approved && !scanHienTai.truncated))) {
+      chan += `<button type="button" class="nut-chinh" data-chay-tiep-scan="${esc(scanHienTai.fingerprint || "")}" data-scan-mode="${mucThap ? "limited" : "resume"}" data-scan-workspace="${esc(r.workspace || "")}" data-k="hd-scan-resume"${dangLam ? " disabled" : ""}${dangLam === "scan-resume" ? ' aria-busy="true"' : ""}>${esc(dangLam === "scan-resume" ? "Đang gửi…" : "Chạy tiếp")}</button>`;
+    }
     if (["running", "reporting", "awaiting_answer", "waiting_quota", "awaiting_scan"].includes(r.status)) chan += nut("stop", "Dừng luồng", "nut nguy");
     if (["approved", "acknowledged"].includes(r.status) && r.git && !r.git.pushed) chan += nut("push", "Đẩy nhánh lên GitHub");
-    if (r.git?.pushed?.compareUrl) chan += `<a class="nut" href="${esc(r.git.pushed.compareUrl)}" target="_blank" rel="noopener noreferrer" data-k="pr">Mở trang tạo PR</a>`;
+    const compareUrl = safeHttps(r.git?.pushed?.compareUrl);
+    if (compareUrl) chan += `<a class="nut" href="${esc(compareUrl)}" target="_blank" rel="noopener noreferrer" data-k="pr">Mở trang tạo PR</a>`;
     return { tieu: cat(r.task, 140), than, chan };
   }
 
   function veBanGiao(h) {
     const p = h.payload || {}, ask = p.ask_ceo && !(h.problems || []).length && !h.decided ? p.ask_ceo : null;
     let than = `<div class="hang"><span class="nhan ${h.decided ? "" : "canh-bao"}">${esc(h.decided ? KQ_BG[h.decided] || h.decided : "chờ anh duyệt")}</span>
-      <span class="mo">${esc(tenVai(h.role))} ${h.next_owner || p.next_owner ? "chuyển lượt cho " + esc(tenVai(h.next_owner || p.next_owner)) : "chưa ghi lượt kế tiếp"} ·${esc(tenDuAn(h.workspace))}${h.decided_at ? " · " + esc(luc(h.decided_at)) : ""}</span></div>`;
-    if (p.giai_thich || p.tom_tat) than += `<section aria-labelledby="hGt"><h3 id="hGt">AI giải thích</h3><pre class="van-ban">${esc(p.giai_thich || p.tom_tat)}</pre></section>`;
+      <span class="mo">${esc(tenVai(h.role))} ${h.next_owner || p.next_owner ? "chuyển lượt cho " + esc(tenVai(h.next_owner || p.next_owner)) : "chưa ghi lượt kế tiếp"} · ${esc(tenDuAn(h.workspace))}${h.decided_at ? " · " + esc(luc(h.decided_at)) : ""}</span></div>`;
+    const dsGt = danhSachGiaiThich(p.giai_thich);
+    const gtChuoi = typeof p.giai_thich === "string" ? p.giai_thich.trim() : "";
+    const tomTat = typeof p.tom_tat === "string" ? p.tom_tat.trim() : "";
+    if (dsGt.length) {
+      than += `<section aria-labelledby="hGt"><h3 id="hGt">AI giải thích</h3>${tomTat ? `<p class="mo">${esc(tomTat)}</p>` : ""}<ol class="cac-luot">${dsGt.map((x) =>
+        `<li>${x.van_de ? `<div><b>Vấn đề:</b> ${esc(x.van_de)}</div>` : ""}${x.da_lam ? `<div><b>Đã làm:</b> ${esc(x.da_lam)}</div>` : ""}${x.vi_sao ? `<div><b>Vì sao:</b> ${esc(x.vi_sao)}</div>` : ""}` +
+        (x.phuong_an_khac.length ? `<div><b>Cách khác đã cân nhắc:</b><ul>${x.phuong_an_khac.map((a) => `<li>${esc(a.cach)}${a.vi_sao_khong ? ` — <i>không chọn vì</i> ${esc(a.vi_sao_khong)}` : ""}</li>`).join("")}</ul></div>` : "") + `</li>`).join("")}</ol></section>`;
+    } else if (gtChuoi || tomTat) {
+      than += `<section aria-labelledby="hGt"><h3 id="hGt">AI giải thích</h3><pre class="van-ban">${esc(gtChuoi || tomTat)}</pre></section>`;
+    }
     if ((h.problems || []).length) than += `<div class="loi" role="alert"><span>Bàn giao sai mẫu, không duyệt được: ${esc(h.problems.join("; "))}</span></div>`;
     if (ask) than += chonPhuongAn(ask, "bg");
     const files = p.files || [];
     than += `<section aria-labelledby="hFile"><h3 id="hFile">File đã sửa</h3>${files.length ? `<ul class="ds-file">${files.map((f) => `<li><code>${esc(f)}</code></li>`).join("")}</ul>` : '<p class="mo">AI không khai file nào.</p>'}</section>`;
-    if (p.claim_fixed) than += `<p class="mo">Báo đã sửa: ${esc([].concat(p.claim_fixed).join(", "))}</p>`;
+    const suaXong = [].concat(p.claim_fixed || []).filter(Boolean);
+    if (suaXong.length) than += `<p class="mo">Báo đã sửa: ${esc(suaXong.join(", "))}</p>`;
     if ((p.skill_da_dung || []).length) than += `<p class="mo">Skill đã dùng: ${esc(p.skill_da_dung.join(", "))}</p>`;
     let chan = "";
     if (!h.decided && !ask) chan = ((h.problems || []).length ? "" : nut("approve", "Duyệt chuyển lượt", "nut-chinh")) + nut("reject", "Trả lại");
@@ -213,16 +260,37 @@ export function taoNgan({ ctl, bao }) {
     try {
       const timeout = k === "push" ? 130000 : 60000;
       await ctl(duongDan() + encodeURIComponent(r.id) + "/" + (HD[r.loai][k] ? HD[r.loai][k][0] : k), body, { timeout });
-      bao(xong); baoNgan(xong);
+      bao(xong); if (mine === phien) baoNgan(xong);
       if (khiDoi) try { khiDoi(); } catch {}
-    } catch (e) { bao(e.message, true); baoNgan(e.message, true); }
-    if (mine !== phien) { dangLam = false; return; }
+    } catch (e) { bao(e.message, true); if (mine === phien) baoNgan(e.message, true); }
+    if (mine !== phien) return;
+    dangLam = false; ky = ""; tai();
+  }
+  async function chayTiepScan(workspace, fingerprint, limited) {
+    if (dangLam || !ref || !workspace) return;
+    const mine = phien;
+    dangLam = "scan-resume"; ve();
+    try {
+      const d = limited
+        ? await ctl("/scan/resume", { workspace }, { timeout: 20000 })
+        : await ctl("/scan/approve", { workspace, fingerprint }, { timeout: 20000 });
+      const nRes = (d.resumed || []).length;
+      const thong = nRes ? "Đã chạy tiếp " + nRes + " luồng đang tạm dừng." : "Không còn luồng nào đang chờ.";
+      bao(thong);
+      if (mine === phien) {
+        baoNgan(thong);
+        if (khiDoi) try { khiDoi(); } catch {}
+      }
+    } catch (e) { bao(e.message, true); if (mine === phien) baoNgan(e.message, true); }
+    if (mine !== phien) return;
     dangLam = false; ky = ""; tai();
   }
   dlg.addEventListener("click", (e) => {
     const t = e.target;
     if (t.closest("[data-dong]")) return dong();
-    if (t.closest("[data-thu-lai]")) return tai();
+    if (t.closest("[data-thu-lai]")) return tai({ fresh: true });
+    const sc = t.closest("[data-chay-tiep-scan]");
+    if (sc && !sc.disabled) return chayTiepScan(sc.dataset.scanWorkspace || (du && du.workspace) || "", sc.dataset.chayTiepScan || "", sc.dataset.scanMode === "limited");
     const tl = t.closest("[data-tra-loi]");
     if (tl) return guiHanhDong("answer", { option: tl.dataset.traLoi }, "Đã chọn " + tl.dataset.traLoi + ". Luồng chạy tiếp.");
     const b = t.closest("[data-hd]");

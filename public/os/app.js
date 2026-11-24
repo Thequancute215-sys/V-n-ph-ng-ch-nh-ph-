@@ -7,7 +7,7 @@ import { taoNgan } from "./ngan.js";
 
 // OS-2 (CEO duyệt 21/11/2026): hai xưởng tách hẳn nhau, mỗi xưởng một màu nhận diện (xuong: "code" | "phim");
 // "sapCo" là tính năng của xưởng sẽ cập nhật sau, hiện mờ để CEO biết lộ trình, không bấm được.
-// Đội ngũ học cách tổ chức của Javis OS (phòng sạch, xem D:\VanPhongAI\os-2\replica): Cộng sự, Việc và lịch chạy, Bộ não, Models và quyền.
+// Đội ngũ học cách tổ chức của Javis OS (phòng sạch): Cộng sự, Việc và lịch chạy, Bộ não, Models và quyền.
 // OS-3 (CEO cấp FORCE_OVERRIDE 22/11/2026): "xem ở đâu, xử lý ngay ở đó". Giao việc và Luồng và bàn giao thành khu gốc;
 // thanh bên chỉ giữ khu gốc, trang cũ còn lại gom vào mục "Công cụ cũ" (mảng CU, đường dẫn cũ vẫn mở được).
 const KHU = [
@@ -17,7 +17,7 @@ const KHU = [
   { id: "code/du-an", ten: "Dự án", icon: "du_an", mod: "./khu/code-du-an.js", xuong: "code" },
   { id: "code/giao-viec", ten: "Giao việc cho đội", icon: "giao", mod: "./khu/giao-viec.js", xuong: "code" },
   { id: "code/dieu-khien", ten: "Luồng và bàn giao", icon: "luong", mod: "./khu/luong.js", xuong: "code" },
-  { sapCo: "Phát hành một chạm, kiểm CI, xem PR", xuong: "code" },
+  { sapCo: "Xem PR", xuong: "code" },
   { nhom: "Xưởng phim", xuong: "phim" },
   { id: "phim", ten: "Phim và bàn dựng", icon: "phim", mod: "./khu/phim.js", xuong: "phim" },
   { sapCo: "Kịch bản, phân cảnh, lồng tiếng, xuất bản phim", xuong: "phim" },
@@ -170,10 +170,17 @@ async function moKhu() {
     const khung = document.createElement("div");
     khung.className = "khung-khu";
     vung.replaceChildren(khung);
-    dong = (await m.mo(khung, { kho, ctl, bao, ngan, congCuCu: CU })) || null;
+    // Hủy vòng đời khu ngay khi rời trang, kể cả khi lần tải đầu chưa xong.
+    const vongDoi = new AbortController();
+    const { signal } = vongDoi;
+    dong = () => vongDoi.abort();
+    const dongKhu = await m.mo(khung, { kho, ctl, bao, ngan, congCuCu: CU, signal });
+    // Khu tải chậm có thể mở xong sau khi người dùng đã chuyển trang.
+    if (mine !== phien) { dongKhu?.(); return; }
+    dong = dongKhu || null;
     // Đường dẫn #/<khu>?mo=luong:<id> mở thẳng ngăn của việc đó (rồi bỏ ?mo khỏi địa chỉ để tải lại không mở lại).
     const moNgay = new URLSearchParams(truyVan).get("mo");
-    if (moNgay && mine === phien) { history.replaceState(null, "", "#/" + id); ngan.mo(moNgay); }
+    if (moNgay) { history.replaceState(null, "", "#/" + id); ngan.mo(moNgay); }
   } catch (e) {
     if (mine !== phien) return;
     vung.innerHTML = `<div class="vung"><div class="loi" role="alert"><span>Không mở được khu ${esc(k.ten)}: ${esc(e.message)}</span></div></div>`;

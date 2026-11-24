@@ -58,6 +58,10 @@ button.act:disabled { opacity: .5; cursor: wait; }
 .xp ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 6px 14px; }
 .xp li { font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
 .xp li small { display: block; color: var(--mute); }
+.key-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+.key-item { border: 1.5px solid rgba(27,42,138,.28); background: #fffdf9; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+.key-form { display: flex; gap: 6px; flex-wrap: wrap; }
+.key-form input { flex: 1 1 160px; min-width: 0; padding: 6px 8px; border: 1.5px solid var(--line); font: 13px ui-monospace, Consolas, monospace; background: #fff; color: var(--ink); }
 @media (max-width: 900px) {
   .row.head { display: none; }
   .row { grid-template-columns: 34px 1fr; }
@@ -79,6 +83,7 @@ button.act:disabled { opacity: .5; cursor: wait; }
   <p class="note">Kết nối là của chung văn phòng, nhưng <b>mỗi phòng chỉ bật vài kết nối đúng phần việc</b>: bấm chấm tròn của phòng ở cột "Phòng dùng" để bật/tắt. Lượt chạy của phòng nào chỉ thấy kết nối của phòng đó (đỡ tốn token, đỡ rủi ro). Chấm có viền cam: đã giao nhưng AI của phòng chưa đăng nhập kết nối đó.
   Claude dùng kết nối của tài khoản claude.ai; Codex (Itachi, Sasuke) và Antigravity (Hinata) thêm ở đây rồi đăng nhập một lần. Antigravity chạy nền hiện chưa nạp được kết nối (kiểm 07/11/2026), nên Hinata tạm chỉ được nhắc tên kết nối trong lời giao việc. Chính sách anh chọn: AI chạy toàn quyền được <b>đọc và làm việc</b>; nhóm <b>gửi / triển khai</b> (Gmail, lịch, Zoom, Composio, Vercel, AppDeploy, tạo/sửa/huỷ lịch Notion) <b>bị chặn</b> — cần thì AI hỏi anh.</p>
   <section class="xp" id="xp" aria-live="polite" aria-label="Xưởng phim"><div class="xp-h"><b>🎬 Xưởng phim</b><span class="st none">Đang kiểm FFmpeg, giọng đọc…</span></div></section>
+  <section class="xp" id="keys" aria-live="polite" aria-label="Khóa API"><div class="xp-h"><b>🔑 Khóa API</b><span class="st none">Đang kiểm trạng thái khóa…</span></div></section>
   <div class="giao" id="giao" aria-live="polite"></div>
   <div id="msg" role="status"></div>
   <div class="table" id="table" aria-live="polite"><div class="row"><span></span><span>Đang đọc kết nối của Claude, Codex, Antigravity…</span></div></div>
@@ -117,28 +122,30 @@ button.act:disabled { opacity: .5; cursor: wait; }
       .map(([k, t]) => `<button class="chip" type="button" data-f="${k}" aria-pressed="${filter === k}">${NPC[k] ? `<span class="av" style="background:${NPC[k][2]};width:18px;height:18px;font-size:10px;box-shadow:none;border:0">${NPC[k][1]}</span>` : ""}${esc(t)} <b>${counts[k]}</b></button>`).join("");
     const rows = data.rows.filter((r) => (filter === "all" || (filter === "chan" ? r.chan : filter === "none" ? !r.rooms.length && !r.chan : r.rooms.includes(filter))) && (!q || (r.name + " " + r.id + " " + (GROUP[r.nhom] || "")).toLowerCase().includes(q)));
     $("giao").innerHTML = Object.entries(data.phongAi || {}).map(([k, ai]) => { const ids = data.phong[k] || [];
+      if (!NPC[k]) return "";
       const cho = ids.filter((id) => { const r = data.rows.find((x) => x.id === id); return r && r.ready && r.ready[k] === false; });
-      return `<div><b><span class="av" style="background:${NPC[k][2]};width:20px;height:20px;font-size:10px;box-shadow:none;border:0">${NPC[k][1]}</span>${esc(NPC[k][0])} · ${AI_NAME[ai]}</b>${ids.length ? ids.map((id) => cho.includes(id) ? `<span class="w" title="Chưa đăng nhập">${esc(ten(id))}⚠</span>` : esc(ten(id))).join(", ") : '<span class="st none">Chưa giao kết nối nào</span>'}</div>`; }).join("");
+      return `<div><b><span class="av" style="background:${NPC[k][2]};width:20px;height:20px;font-size:10px;box-shadow:none;border:0">${NPC[k][1]}</span>${esc(NPC[k][0])} · ${esc(AI_NAME[ai] || ai)}</b>${ids.length ? ids.map((id) => cho.includes(id) ? `<span class="w" title="Chưa đăng nhập">${esc(ten(id))}⚠</span>` : esc(ten(id))).join(", ") : '<span class="st none">Chưa giao kết nối nào</span>'}</div>`; }).join("");
     $("table").innerHTML = `<div class="row head"><span></span><span>KẾT NỐI</span><span>NHÓM</span><span>CLAUDE</span><span>CODEX</span><span>ANTIGRAVITY</span><span>PHÒNG DÙNG</span><span></span></div>` + (rows.map((r) => {
       let acts = "";
-      if (r.may && (r.ai.claude === "chua-co" || r.ai.claude === "cu")) acts += `<button class="act" data-cai-may="${r.id}">${r.ai.claude === "cu" ? "Nâng lên " + esc(r.canBan) : "Cài trên máy"}</button>`;
+      if (r.may && (r.ai.claude === "chua-co" || r.ai.claude === "cu")) acts += `<button class="act" data-cai-may="${esc(r.id)}">${r.ai.claude === "cu" ? "Nâng lên " + esc(r.canBan) : "Cài trên máy"}</button>`;
       if (r.url && !r.chan) {
-        if (r.ai.codex === "chua-co") acts += `<button class="act" data-add="${r.id}" data-ai="codex">+ Codex</button>`;
-        else acts += `<button class="act" data-login="${r.id}">Đăng nhập Codex</button>`;
-        if (r.ai.agy === "chua-co") acts += `<button class="act" data-add="${r.id}" data-ai="agy">+ Antigravity</button>`;
+        if (r.ai.codex === "chua-co") acts += `<button class="act" data-add="${esc(r.id)}" data-ai="codex">+ Codex</button>`;
+        else acts += `<button class="act" data-login="${esc(r.id)}">Đăng nhập Codex</button>`;
+        if (r.ai.agy === "chua-co") acts += `<button class="act" data-add="${esc(r.id)}" data-ai="agy">+ Antigravity</button>`;
       }
       let sub = r.note || "";
       if (r.may) sub = (r.phienBan ? "Bản " + r.phienBan + " · " : "") + (r.note || "");
       if (r.nhom === "sang-tao" && !r.web) sub = (r.app ? "Đã cài app trên máy — chờ nối MCP" : "Chưa cài app") + (r.note ? " · " + r.note : "");
       return `<div class="row"><span class="ico" aria-hidden="true">${ICON[r.id] || "🔌"}</span><span class="name">${esc(r.name)}${sub ? `<small>${esc(sub)}</small>` : ""}</span>` +
         `<span><span class="tag">${esc(GROUP[r.nhom] || r.nhom)}</span></span><span><span class="cap">Claude</span>${st(r, "claude")}</span><span><span class="cap">Codex</span>${st(r, "codex")}</span><span><span class="cap">Antigravity</span>${st(r, "agy")}</span>` +
-        `<span class="rooms pick"><span class="cap">Phòng dùng</span>${r.coTheGiao.map((k) => { const on = r.rooms.includes(k), cho = on && r.ready[k] === false;
-          return `<button type="button" class="rt${cho ? " cho" : ""}" style="--c:${NPC[k][2]}" data-room="${k}" data-id="${r.id}" aria-pressed="${on}" title="${esc(NPC[k][0] + (on ? (cho ? ": đã giao, " + AI_NAME[data.phongAi[k]] + " chưa đăng nhập" : ": đang dùng") : ": bấm để giao"))}">${NPC[k][1]}</button>`; }).join("") || '<span class="st none">—</span>'}</span><span class="acts">${acts}</span></div>`;
+        `<span class="rooms pick"><span class="cap">Phòng dùng</span>${r.coTheGiao.filter((k) => NPC[k]).map((k) => { const on = r.rooms.includes(k), cho = on && r.ready[k] === false;
+          return `<button type="button" class="rt${cho ? " cho" : ""}" style="--c:${NPC[k][2]}" data-room="${esc(k)}" data-id="${esc(r.id)}" aria-pressed="${on}" title="${esc(NPC[k][0] + (on ? (cho ? ": đã giao, " + (AI_NAME[data.phongAi[k]] || data.phongAi[k]) + " chưa đăng nhập" : ": đang dùng") : ": bấm để giao"))}">${NPC[k][1]}</button>`; }).join("") || '<span class="st none">—</span>'}</span><span class="acts">${acts}</span></div>`;
     }).join("") || `<div class="row"><span></span><span>Không có kết nối khớp.</span></div>`);
     $("extra").innerHTML = data.extra.length ? `<p class="note">Kết nối khác đang có trên máy: ${data.extra.map((e) => esc(e.ai + " · " + e.name)).join(", ")}.</p>` : "";
     const errs = Object.entries(data.errors || {}).filter(([, v]) => v);
     if (errs.length) msg("Chưa đọc được kết nối của " + errs.map(([k]) => k).join(", ") + ": " + errs.map(([, v]) => v).join("; ").slice(0, 300), true);
-    document.querySelectorAll("button.act, button.rt").forEach((b) => { b.disabled = busy; });
+    $("refresh").disabled = busy;
+    $("table").querySelectorAll("button.act, button.rt").forEach((b) => { b.disabled = busy; });
   }
   async function load(fresh) {
     busy = true; render();
@@ -190,7 +197,7 @@ button.act:disabled { opacity: .5; cursor: wait; }
   function xpRender(loi) {
     const el = $("xp");
     if (!xp) { el.innerHTML = `<div class="xp-h"><b>🎬 Xưởng phim</b><span class="st ${loi ? "warn" : "none"}">${esc(loi || "Đang kiểm FFmpeg, giọng đọc…")}</span></div>`; return; }
-    const canCai = (xp.muc || []).some((m) => !m.ok && m.id !== "ffmpeg" && m.id !== "script-giong");
+    const canCai = (xp.muc || []).some((m) => !m.ok && m.id !== "script-giong");
     const trangThai = xp.dangCai ? `<span class="st warn">${esc(xp.buoc || "Đang cài…")}</span>` : xp.san ? `<span class="st ok">✓ Sẵn sàng làm phim</span>` : `<span class="st warn">⚠ Còn thiếu</span>`;
     el.innerHTML = `<div class="xp-h"><b>🎬 Xưởng phim</b>${trangThai}<span class="acts">${canCai && !xp.dangCai ? '<button class="act" type="button" id="xp-cai">Cài xưởng phim</button>' : ""}<button class="act" type="button" id="xp-kiem"${xp.dangCai ? " disabled" : ""}>Kiểm lại</button></span></div>` +
       `<ul>${(xp.muc || []).map((m) => `<li><span class="st ${m.ok ? "ok" : "warn"}">${m.ok ? "✓" : "⚠"} ${esc(m.ten)}</span><small>${esc(m.chiTiet || "")}${!m.ok && m.cachSua ? " — " + esc(m.cachSua) : ""}</small></li>`).join("")}</ul>` +
@@ -211,6 +218,61 @@ button.act:disabled { opacity: .5; cursor: wait; }
     catch (err) { xpRender(err.message); }
   });
   xpLoad(false);
+
+  // Khóa API (GET /api/accounts, POST /api/accounts/save — chỉ máy chủ cục bộ).
+  const KEY_DEFS = [
+    { id: "claude", ten: "Claude (Anthropic)", ph: "sk-ant-api03-...", moTa: "Dùng khi chạy bằng API Key thay cho claude login." },
+    { id: "gpt", ten: "GPT / Codex (OpenAI)", ph: "sk-...", moTa: "Dùng khi chạy bằng OpenAI API Key thay cho codex login." },
+    { id: "gemini", ten: "Gemini API (Tra cứu & Xưởng phim)", ph: "AIza...", moTa: "Dùng cho MCP tra cứu miễn phí và máy quay Gemini (tạo khóa tại aistudio.google.com/apikey)." },
+  ];
+  let keyState = null, keyBusy = false, keyNote = null;
+  function keyRender(err) {
+    const el = $("keys");
+    if (!keyState) { el.innerHTML = `<div class="xp-h"><b>🔑 Khóa API</b><span class="st ${err ? "warn" : "none"}">${esc(err || "Đang kiểm trạng thái khóa…")}</span></div>`; return; }
+    if (keyState.canManageKeys !== true) {
+      el.innerHTML = `<div class="xp-h"><b>🔑 Khóa API</b><span class="st none">Chỉ xem từ xa</span></div><p class="note" style="margin:0">Quản lý và lưu khóa API chỉ thực hiện trên chính máy tính chạy văn phòng.</p>`;
+      return;
+    }
+    const a = keyState.accounts || {};
+    const notice = keyNote ? `<div class="msg${keyNote.err ? " err" : ""}" role="${keyNote.err ? "alert" : "status"}" style="margin:0">${esc(keyNote.text)}</div>` : "";
+    el.innerHTML = `<div class="xp-h"><b>🔑 Khóa API (lưu trên máy chủ)</b><span class="acts"><button class="act" type="button" id="keys-reload"${keyBusy ? " disabled" : ""}>Kiểm lại</button></span></div>` +
+      `<div class="key-grid">${KEY_DEFS.map((k) => {
+        const info = a[k.id] || {}, has = !!info.hasApiKey;
+        const stText = has ? "✓ Đã có khóa" : (info.connected ? "✓ Đã đăng nhập phiên" : "— Chưa có khóa");
+        return `<div class="key-item"><div class="xp-h"><b>${esc(k.ten)}</b><span class="st ${has || info.connected ? "ok" : "none"}">${stText}</span></div>` +
+          `<small style="color:var(--mute)">${esc(k.moTa)}</small><form class="key-form" method="post" data-key-provider="${esc(k.id)}">` +
+          `<input type="password" name="apiKey" autocomplete="off" spellcheck="false" placeholder="${esc(k.ph)}" aria-label="Khóa API ${esc(k.ten)}"${keyBusy ? " disabled" : ""}>` +
+          `<button class="act" type="submit"${keyBusy ? " disabled" : ""}>Lưu khóa</button></form></div>`;
+      }).join("")}</div>` + notice +
+      `<p class="note" style="margin:0">Khóa lưu riêng ở <code>~/.van-phong-ao/keys.json</code> (không vào repo), không gửi ngược về trình duyệt.</p>`;
+  }
+  async function keyLoad() {
+    try {
+      const r = await fetch("/api/accounts", { cache: "no-store", signal: AbortSignal.timeout(15000) });
+      const d = await r.json();
+      if (!r.ok || !d || d.ok === false) throw new Error((d && d.error) || ("Lỗi HTTP " + r.status));
+      keyState = d; keyRender();
+    } catch (e) { keyState = null; keyRender(e.message); }
+  }
+  $("keys").addEventListener("click", (e) => { if (e.target.id === "keys-reload" && !keyBusy) { keyNote = null; keyLoad(); } });
+  $("keys").addEventListener("submit", async (e) => {
+    const form = e.target.closest("form[data-key-provider]");
+    if (!form) return;
+    e.preventDefault();
+    if (keyBusy || keyState?.canManageKeys !== true) return;
+    const provider = form.dataset.keyProvider, inp = form.querySelector('input[name="apiKey"]'), apiKey = inp ? inp.value.trim() : "";
+    if (!apiKey) { keyNote = { err: true, text: "Vui lòng nhập khóa API trước khi lưu." }; keyRender(); return; }
+    keyBusy = true; keyNote = null; keyRender();
+    try {
+      const r = await fetch("/api/accounts/save", { method: "POST", cache: "no-store", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ provider, apiKey }), signal: AbortSignal.timeout(15000) });
+      let d = null; try { d = await r.json(); } catch {}
+      if (!r.ok || !d || d.ok === false) throw new Error((d && d.error) || ("Lỗi HTTP " + r.status));
+      keyNote = { err: false, text: d.message || "Đã lưu khóa API." };
+      await keyLoad();
+    } catch (err) { keyNote = { err: true, text: err.message }; }
+    finally { keyBusy = false; keyRender(); }
+  });
+  keyLoad();
 })();
 </script>
 </body>

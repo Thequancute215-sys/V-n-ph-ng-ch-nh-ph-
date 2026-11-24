@@ -99,6 +99,29 @@ test("luồng tự chạy: tới lượt Astra thì Astra + Kakashi chạy song 
   assert.ok(!git("branch", "--list").includes("song"), "không tạo nhánh nào");
 });
 
+test("rà soát khi chạy song song: hạ quyền riêng Astra không mở tiếp nếu Kakashi vẫn Toàn quyền", async (t) => {
+  const { ctl, repo, call } = await fixture(t);
+  const runOriginal = ctl.runner.run;
+  t.mock.method(ctl.runner, "run", (opts, actor) => {
+    if (opts.role === "FRONTEND_UIUX_DEV") {
+      throw Object.assign(new Error("Rà soát thử chưa hoàn tất"), {
+        code: "NEEDS_SCAN_APPROVAL", scan: { total: 0, fingerprint: null, truncated: true },
+      });
+    }
+    return runOriginal(opts, actor);
+  });
+  const { run } = await call("/autopilot", { workspace: repo, task: "Thử nhịp song song" });
+  assert.equal(run.status, "awaiting_scan");
+  assert.equal(run.scan.role, "FRONTEND_UIUX_DEV");
+  assert.equal(run.scan.songSong, true);
+
+  const p = "/scan?workspace=" + encodeURIComponent(repo);
+  await call("/quyen", { role: "FRONTEND_UIUX_DEV", muc: "toan" });
+  assert.equal((await call(p)).canResumeLimited, false);
+  await call("/quyen", { role: "FRONTEND_UIUX_DEV", muc: "nhap" });
+  assert.equal((await call(p)).canResumeLimited, true);
+});
+
 test("rào chắn: Kakashi sửa lấn sang thư mục backend thì bị trả lại riêng một lần, sửa xong thì gộp bình thường", async (t) => {
   const { repo, call, wait } = await fixture(t, "lan");
   const r = await call("/autopilot", { workspace: repo, task: "Làm API danh sách bài và giao diện gọi nó" });

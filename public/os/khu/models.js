@@ -5,7 +5,7 @@
 // - Hạn mức: /quotas. Tài khoản AI: /codex-tai-khoan (GPT cho Codex: thêm + đăng nhập trên trình duyệt, dùng, bỏ, tự chuyển) và
 //   /agy-tai-khoan (Antigravity: cất tài khoản đang đăng nhập trong agy, dùng, bỏ, tự chuyển, đọc tài khoản nghỉ).
 //   Trước OS-2 các nút này chỉ có trong hộp thoại văn phòng 3D (public/office-desk.js); máy tính không còn vào 3D nên đặt ở đây.
-import { esc, luc, dangTai, rong, loi, VAI, TEN_NEN } from "../ui.js";
+import { esc, luc, dangTai, rong, loi, safeHttps, VAI, TEN_NEN } from "../ui.js";
 
 const MUC = [["doc", "Đề xuất (chỉ đọc)", "Chỉ đọc repo, trả đề xuất; không sửa file nào."], ["nhap", "Tự làm (ghi nháp)", "Sửa file trong repo, lệnh giới hạn; không cài, không bỏ qua sandbox."],
   ["toan", "Toàn quyền", "Chạy không giới hạn trên máy để kiểm thử thật; vẫn qua cổng rà soát file chữ của dự án."]];
@@ -56,11 +56,11 @@ export async function mo(vung, { ctl, bao }) {
     if (!gpt) { $("tkGpt").innerHTML = loi("Chưa đọc được tài khoản GPT" + (l ? ": " + l : "")); return; }
     $("tkGpt").innerHTML = `<h3 class="dau">GPT cho Codex (Itachi, Sasuke)</h3>
       ${gpt.trung ? '<p class="hong">Hai tài khoản đang cùng một email: bấm Đăng nhập lại ở tài khoản thêm và chọn đúng tài khoản kia.</p>' : ""}
-      ${(gpt.ds || []).map((x) => { const dn = x.dangNhap;
+      ${(gpt.ds || []).map((x) => { const dn = x.dangNhap, dnUrl = safeHttps(dn && dn.url);
         return `<div class="dong"><div><div class="tieu">${esc(x.nhan)} ${x.dangDung ? '<span class="nhan song">đang dùng</span>' : ""}</div>
           <div class="chi-tiet">${esc([x.email, x.plan ? "gói " + x.plan : ""].filter(Boolean).join(" · "))}</div>
           <div class="chi-tiet">${x.loi ? `<span class="hong">${esc(x.loi)}</span>` : "Hạn mức " + esc(conLai(x.conLai)) + (x.hanMuc && x.hanMuc.luc ? ", đọc " + esc(luc(x.hanMuc.luc)) : "")}</div>
-          ${dn && dn.url ? `<div class="chi-tiet canh-bao">Đang chờ anh đăng nhập: <a href="${esc(dn.url)}" target="_blank" rel="noopener noreferrer">mở trang đăng nhập</a> (trình duyệt đang đăng nhập tài khoản GPT khác thì mở link trong cửa sổ ẩn danh).</div>`
+          ${dnUrl ? `<div class="chi-tiet canh-bao">Đang chờ anh đăng nhập: <a href="${esc(dnUrl)}" target="_blank" rel="noopener noreferrer">mở trang đăng nhập</a> (trình duyệt đang đăng nhập tài khoản GPT khác thì mở link trong cửa sổ ẩn danh).</div>`
             : dn && !dn.loi ? '<div class="chi-tiet">Đang mở trang đăng nhập…</div>' : dn && dn.loi ? `<div class="chi-tiet hong">${esc(dn.loi)}</div>` : ""}</div>
           <div class="hang">${x.dangDung || !x.daDangNhap ? "" : `<button type="button" class="nut nho" data-gpt-chuyen="${esc(x.id)}">Dùng</button>`}
             <button type="button" class="nut nho" data-gpt-dn="${esc(x.id)}">${x.daDangNhap ? "Đăng nhập lại" : "Đăng nhập"}</button>
@@ -113,7 +113,7 @@ export async function mo(vung, { ctl, bao }) {
 
   function veQuyen(l) {
     if (!quyen) { $("bangQuyen").innerHTML = loi("Chưa đọc được mức quyền" + (l ? ": " + l : "")); return; }
-    $("bangQuyen").innerHTML = `<table class="bang"><thead><tr><th>Vai</th>${MUC.map(([, t, g]) => `<th title="${esc(g)}">${esc(t)}</th>`).join("")}</tr></thead><tbody>${VAI.map((v) => {
+    $("bangQuyen").innerHTML = (quyen.loi ? loi(quyen.loi, false) : "") + `<table class="bang"><thead><tr><th>Vai</th>${MUC.map(([, t, g]) => `<th title="${esc(g)}">${esc(t)}</th>`).join("")}</tr></thead><tbody>${VAI.map((v) => {
       const m = (quyen.muc || {})[v.role];
       return `<tr><td>${esc(v.ten)}<div class="mo" style="font-size:var(--text-xs)">${esc(v.viec)}</div></td>${MUC.map(([k, t]) =>
         `<td><label class="hang"><input type="radio" name="q-${esc(v.role)}" value="${k}" data-role="${esc(v.role)}"${m === k ? " checked" : ""}><span class="visually-hidden">${esc(v.ten)}: </span>${esc(t)}</label></td>`).join("")}</tr>`; }).join("")}</tbody></table>

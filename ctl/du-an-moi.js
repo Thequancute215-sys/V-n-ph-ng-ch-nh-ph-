@@ -10,9 +10,10 @@ const os = require("os");
 const crypto = require("crypto");
 const { spawn } = require("child_process");
 const { resolveProgram } = require("./policy");
+const nhanh = require("./nhanh");
 const fs = require("fs");
 const path = require("path");
-const { cleanEnv } = require("../lib/mask");
+const { cleanEnv, maskSecrets } = require("../lib/mask");
 const { writeAtomic } = require("../lib/ghi-file");
 
 const err = (code, message) => Object.assign(new Error(message), { code });
@@ -66,25 +67,73 @@ function goiYClaude(yTuong) {
 // .gitignore đã có thì chỉ thêm dòng media/ (ảnh, giọng, clip nặng không vào git).
 const LOAI = ["phan-mem", "phim"];
 const KHUNG_PHIM = path.join(__dirname, "khung", "phim");
+const FILE_KHUNG = ["phim.json", "kich-ban.md", "PHIM.md"];
 const VIEC_PHIM = "DỰ ÁN PHIM (Xưởng phim AI). Đọc PHIM.md trước. Việc của lượt này: viết kịch bản vào kich-ban.md và chia cảnh vào phim.json " +
   "(lời dẫn, khung hình, nhân vật, máy quay, số câu từng cảnh); người thật trong phim khai ở nguoi_that với dong_y: false để CEO xác nhận. " +
   "Chạy `node $env:XUONG_PHIM_CONG_CU kiem` trước khi bàn giao.\n\nÝ TƯỞNG CỦA CEO:\n";
-function datKhungPhim(root, ten) {
+const thongTinFile = (root, f) => fs.lstatSync(path.join(root, f), { throwIfNoEntry: false });
+
+function datKhungPhim(root, ten, giu = new Set()) {
   const da = [];
-  for (const f of ["phim.json", "kich-ban.md", "PHIM.md"]) {
+  for (const f of FILE_KHUNG) {
     const dich = path.join(root, f);
-    if (fs.existsSync(dich)) continue;
+    if (giu.has(f) || thongTinFile(root, f)) continue;
     let noiDung = fs.readFileSync(path.join(KHUNG_PHIM, f), "utf8");
     if (f === "phim.json") { const j = JSON.parse(noiDung); j.ten = ten; noiDung = JSON.stringify(j, null, 2) + "\n"; }
-    fs.writeFileSync(dich, noiDung);
+    fs.writeFileSync(dich, noiDung, { flag: "wx" });
     da.push(f);
   }
-  const gi = path.join(root, ".gitignore");
-  const cu = fs.existsSync(gi) ? fs.readFileSync(gi, "utf8") : null;
-  if (cu === null) { fs.copyFileSync(path.join(KHUNG_PHIM, "gitignore.txt"), gi); da.push(".gitignore"); }
-  else if (!/^\/?media\/?\s*$/m.test(cu)) { fs.appendFileSync(gi, (cu.endsWith("\n") || !cu ? "" : "\n") + "media/\n"); da.push(".gitignore (thêm media/)"); }
+  if (!giu.has(".gitignore")) {
+    const gi = path.join(root, ".gitignore");
+    const info = thongTinFile(root, ".gitignore");
+    if (info && !info.isFile()) throw err("GIT_BRANCH", ".gitignore phải là file thường để đặt khuôn phim.");
+    const cu = info ? fs.readFileSync(gi, "utf8") : null;
+    if (cu === null) { fs.copyFileSync(path.join(KHUNG_PHIM, "gitignore.txt"), gi, fs.constants.COPYFILE_EXCL); da.push(".gitignore"); }
+    else if (!/^\/?media\/?\s*$/m.test(cu)) { fs.appendFileSync(gi, (cu.endsWith("\n") || !cu ? "" : "\n") + "media/\n"); da.push(".gitignore (thêm media/)"); }
+  }
   fs.mkdirSync(path.join(root, "media", "giong"), { recursive: true });
   return { da };
+}
+
+// Chuẩn bị commit trong worktree riêng. Git báo lỗi thì thư mục dự án vẫn sạch để thử lại.
+function luuKhungPhim(root, ten, git) {
+  if (!git) return { ...datKhungPhim(root, ten), giu: [], commit: null };
+
+  const tmp = path.join(os.tmpdir(), "vp-khung-phim-" + crypto.randomBytes(8).toString("hex"));
+  let daTaoWorktree = false;
+  let da, giu, commit;
+  try {
+    nhanh.git(root, ["worktree", "add", "--quiet", "--detach", tmp, git.startHead], { timeout: 60000 });
+    daTaoWorktree = true;
+    const files = [...FILE_KHUNG, ".gitignore"];
+    giu = files.filter((f) => thongTinFile(root, f) && !thongTinFile(tmp, f));
+    if (giu.includes(".gitignore")) {
+      // Giữ nguyên file ngoài Git của CEO, đồng thời tránh để công cụ tự lưu media vào Git.
+      try { nhanh.git(root, ["check-ignore", "-q", "--", "media/"]); }
+      catch { throw err("GIT_BRANCH", "Hãy thêm media/ vào .gitignore đang lưu trên máy rồi thử lại."); }
+    }
+    ({ da } = datKhungPhim(tmp, ten, new Set(giu)));
+    if (da.length) {
+      nhanh.git(tmp, ["add", "--", ...files.filter((f) => !giu.includes(f))]);
+      const saved = nhanh.save(tmp, { branch: "HEAD", baseline: [] }, "chore(phim): đặt khuôn hồ sơ phim");
+      if (saved.secret) throw err("SECRET", "Git phát hiện nội dung giống khóa trong khuôn hồ sơ phim.");
+      if (!saved.commit) throw err("GIT_BRANCH", saved.error || saved.skipped);
+      if (nhanh.branchOf(root) !== git.branch || nhanh.head(root) !== git.startHead) {
+        throw err("GIT_BRANCH", "Nhánh dự án đã thay đổi trong lúc chuẩn bị khuôn phim.");
+      }
+      nhanh.git(root, ["merge", "--ff-only", "--no-overwrite-ignore", "--quiet", nhanh.head(tmp)]);
+      commit = saved.commit;
+    }
+    fs.mkdirSync(path.join(root, "media", "giong"), { recursive: true });
+  } catch (e) {
+    if (e.code === "SECRET") throw e;
+    throw err("GIT_BRANCH", "Không commit được khuôn hồ sơ phim: " + maskSecrets(String(e.stderr || e.message)).slice(0, 250));
+  } finally {
+    if (daTaoWorktree) {
+      try { nhanh.git(root, ["worktree", "remove", "--force", tmp], { timeout: 60000 }); } catch { /* Git có thể còn giữ worktree tạm nếu Windows khóa file. */ }
+    }
+  }
+  return { da, giu, commit };
 }
 
 function createDuAnMoi({ github, ideas, boKiem, dir = null, audit = { log() {} }, goiYAi = goiYClaude, cho = (ms) => new Promise((r) => setTimeout(r, ms)), now = Date.now }) {
@@ -189,15 +238,35 @@ function createDuAnMoi({ github, ideas, boKiem, dir = null, audit = { log() {} }
         op.workspace = o.workspace;
         return o.workspace;
       });
-      await lam("khung-phim", async (s) => { const r = datKhungPhim(root, op.ten); s.ghiChu = r.da.length ? "Đã đặt: " + r.da.join(", ") : "Repo đã có đủ khuôn, không ghi đè"; });
       const phim = op.loai === "phim";
+      const datKhung = (git) => {
+        const s = b("khung-phim");
+        s.trangThai = "dang";
+        try {
+          const { da, giu, commit } = luuKhungPhim(root, op.ten, git);
+          s.ghiChu = da.length ? "Đã đặt: " + da.join(", ") : "Repo đã có đủ khuôn";
+          if (commit) s.ghiChu += " · " + git.branch + " · " + commit;
+          if (giu.length) s.ghiChu += " · Giữ trên máy: " + giu.join(", ");
+          s.trangThai = "xong";
+        } catch (e) {
+          s.trangThai = "loi";
+          s.ghiChu = String(e.message).slice(0, 300);
+          throw e;
+        }
+      };
+      if (phim && b("hinata").trangThai === "bo-qua") {
+        await lam("khung-phim", () => datKhung(nhanh.prepare(root, { task: "khung-phim-" + op.ten, id: op.id })));
+      }
       const idea = await lam("y-tuong", async () => ideas.add({ workspace: root, title: (phim ? "🎬 " : "") + op.ten + ": " + yTuong.split(/\r?\n/)[0].slice(0, 150),
         detail: phim ? VIEC_PHIM + yTuong : yTuong }));
       try {
         await lam("bo-kiem", async (s) => { const r = boKiem.install(root, "ceo"); s.ghiChu = r && r.last && r.last.compareUrl ? "Mở PR: " + r.last.compareUrl : "Đã đẩy nhánh bộ kiểm"; });
       } catch { /* thiếu bộ kiểm không chặn việc giao Hinata: ghi lỗi ở bước, làm tiếp */ }
       // Repo vừa tạo: agent.md mẫu đặt lượt đầu cho Claude; anh đã duyệt tạo dự án kèm "giao Hinata" nên ghi đè lượt sang Hinata.
-      await lam("hinata", async (s) => { const r = ideas.start(idea.id, { force: true }); s.ghiChu = r.runId ? "Luồng " + r.runId : ""; });
+      await lam("hinata", (s) => {
+        const r = ideas.start(idea.id, phim ? { force: true, prepare: datKhung } : { force: true });
+        s.ghiChu = r.runId ? "Luồng " + r.runId : "";
+      });
       op.trangThai = op.buoc.some((x) => x.trangThai === "loi") ? "xong-mot-phan" : "xong";
     } catch { op.trangThai = "loi"; }
     op.xongLuc = new Date().toISOString();

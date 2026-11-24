@@ -5,7 +5,7 @@
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
-const { execFileSync } = require("child_process");
+const nhanh = require("./nhanh");
 const { readTurn, setTurn } = require("./handoff");
 const { maskSecrets } = require("../lib/mask");
 const { writeAtomic } = require("../lib/ghi-file");
@@ -45,17 +45,14 @@ function createIdeas({ dir, ws, runner, autopilot, audit }) {
 
   // Ghi đè lượt chỉ commit agent.md khi file đang được git theo dõi (repo công khai giữ agent.md trên máy thì không commit).
   function commitTurn(root, message) {
-    const git = (args) => execFileSync("git", args, { cwd: root, encoding: "utf8", windowsHide: true, timeout: 15000, stdio: ["ignore", "pipe", "ignore"] }).trim();
-    try {
-      git(["ls-files", "--error-unmatch", "--", "agent.md"]);
-      if (!git(["status", "--porcelain", "--", "agent.md"])) return null;
-      git(["-c", "user.name=" + (safeGit(git, "user.name") || "Van phong AI"), "-c", "user.email=" + (safeGit(git, "user.email") || "van-phong-ai@localhost"), "commit", "-m", message, "--", "agent.md"]);
-      return git(["rev-parse", "--short", "HEAD"]);
-    } catch { return null; }
+    const git = (args) => nhanh.git(root, args).trim();
+    try { git(["ls-files", "--error-unmatch", "--", "agent.md"]); } catch { return null; }
+    if (!git(["status", "--porcelain", "--", "agent.md"])) return null;
+    git(["commit", "-m", message, "--", "agent.md"]);
+    return git(["rev-parse", "--short", "HEAD"]);
   }
-  const safeGit = (git, key) => { try { return git(["config", "--get", key]); } catch { return ""; } };
 
-  function start(id, { force = false } = {}) {
+  function start(id, { force = false, prepare } = {}) {
     const idea = ideas.find((i) => i.id === id);
     if (!idea) throw err("NOT_FOUND", "Không có ý tưởng " + id);
     const current = view(idea).run;
@@ -66,18 +63,35 @@ function createIdeas({ dir, ws, runner, autopilot, audit }) {
     if (autopilot.busy(idea.workspace) || status.aiBusy || status.handoffPending) throw err("AI_BUSY", "Dự án đang có việc hoặc bàn giao chờ duyệt. Xử lý xong rồi giao ý tưởng.");
     autopilot.preflight(idea.workspace);   // repo đang sửa dở thì từ chối trước khi ghi đè lượt
 
-    const owner = readTurn(idea.workspace).nextOwner;
-    if (owner !== "SPEC_ARCHITECT") {
-      if (!force) throw err("NEEDS_SPEC_TURN", `Sổ agent.md đang tới lượt ${owner}. Bước đầu của ý tưởng là Hinata (SPEC_ARCHITECT) đặc tả. Anh xác nhận ghi đè chuyển lượt cho Hinata thì văn phòng mới bắt đầu.`);
-      setTurn(idea.workspace, "CEO", "SPEC_ARCHITECT");
-      const commit = commitTurn(idea.workspace, `chore(agent-sync): CEO -> NEXT: SPEC_ARCHITECT — FORCE_OVERRIDE ý tưởng mới: ${idea.title.slice(0, 60)}`);
-      idea.forcedFrom = owner;
-      audit.log("ceo", "idea.force_turn", idea.id, { from: owner, commit }, "approved");
-    }
+    const checkOwner = () => {
+      const owner = readTurn(idea.workspace).nextOwner;
+      if (owner !== "SPEC_ARCHITECT" && !force) throw err("NEEDS_SPEC_TURN", `Sổ agent.md đang tới lượt ${owner}. Bước đầu của ý tưởng là Hinata (SPEC_ARCHITECT) đặc tả. Anh xác nhận ghi đè chuyển lượt cho Hinata thì văn phòng mới bắt đầu.`);
+      return owner;
+    };
+    checkOwner();
     const task = `Ý TƯỞNG MỚI CỦA CEO: ${idea.title}\n${idea.detail}\n\n` +
       "Bước 1 của chu trình (/bcc): SPEC_ARCHITECT đặc tả ý tưởng vào Vùng [2] của agent.md: vấn đề và phạm vi MVP (bắt buộc / ngoài phạm vi), luồng người dùng đầu-cuối, luồng AI Agent, Design System và 5 trạng thái giao diện, trường hợp biên. " +
       "Sau đó chu trình đi tiếp theo giao thức: Sol lập kế hoạch Vùng [1] và [3], Claude duyệt kiến trúc, Astra viết code, Claude nghiệm thu.";
-    const run = autopilot.start({ workspace: idea.workspace, task });
+    const run = autopilot.start({ workspace: idea.workspace, task }, (git) => {
+      const owner = checkOwner();
+      prepare?.(git);
+      if (owner === "SPEC_ARCHITECT") return;
+
+      const agent = path.join(idea.workspace, "agent.md");
+      const previous = fs.readFileSync(agent);
+      setTurn(idea.workspace, "CEO", "SPEC_ARCHITECT");
+      let commit = null;
+      if (git) {
+        try {
+          commit = commitTurn(idea.workspace, `chore(agent-sync): CEO -> NEXT: SPEC_ARCHITECT — FORCE_OVERRIDE ý tưởng mới: ${idea.title.slice(0, 60)}`);
+        } catch (e) {
+          writeAtomic(agent, previous);
+          throw err("GIT_BRANCH", "Không commit được lượt Hinata trên nhánh " + git.branch + ": " + maskSecrets(String(e.stderr || e.message)).slice(0, 250));
+        }
+      }
+      idea.forcedFrom = owner;
+      audit.log("ceo", "idea.force_turn", idea.id, { from: owner, commit }, "approved");
+    });
     idea.runId = run.id; idea.startedAt = Date.now(); save();
     audit.log("ceo", "idea.start", idea.id, { run: run.id }, "approved");
     return view(idea);

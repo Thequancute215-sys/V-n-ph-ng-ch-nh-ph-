@@ -32,7 +32,7 @@ Agent sẽ tự làm các bước sau. Những bước có thay đổi bên ngo�
 
 ## Cài tay
 
-Cần **Node.js 18+** (https://nodejs.org), cùng với **Claude Code** hoặc **Codex** đã dùng trên máy.
+Chế độ chỉ theo dõi (`npm start`) cần **Node.js 18+** (https://nodejs.org). Dùng **Node.js 24 LTS** cho ứng dụng đầy đủ (`npm run app`, `npm run all`, `npm run ctl`), vì OS Controller dùng SQLite tích hợp trong Node. Cần có **Claude Code** hoặc **Codex** đã dùng trên máy.
 
 ```bash
 git clone https://github.com/vinaichatbot-rgb/van-phong-ao-3d.git

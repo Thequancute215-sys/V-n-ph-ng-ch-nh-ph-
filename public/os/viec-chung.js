@@ -23,3 +23,25 @@ export const cauHoi = (r) => (r && r.question && (r.question.question || r.quest
 export const soLuot = (r) => (r.steps || []).filter((s) => !s.quota).length;
 // Lớp chữ cho nhãn trạng thái luồng.
 export const lopLuong = (s) => LUONG_CAN_ANH.has(s) || LUONG_CHO.has(s) ? "canh-bao" : LUONG_CHAY.has(s) ? "song" : s === "failed" ? "hong" : "";
+
+// Chuẩn hoá trường giai_thich của bàn giao (ctl có thể trả mảng object { van_de, da_lam, vi_sao, phuong_an_khac } hoặc chuỗi).
+export function danhSachGiaiThich(g) {
+  if (!g || typeof g === "string") return [];
+  const raw = Array.isArray(g) ? g : typeof g === "object" ? [g] : [];
+  return raw.map((x) => {
+    if (typeof x === "string") return { van_de: "", da_lam: x.trim(), vi_sao: "", phuong_an_khac: [] };
+    if (!x || typeof x !== "object") return null;
+    const pa = Array.isArray(x.phuong_an_khac) ? x.phuong_an_khac.filter((a) => a && typeof a === "object" && (a.cach || a.vi_sao_khong)).map((a) => ({ cach: String(a.cach || "").trim(), vi_sao_khong: String(a.vi_sao_khong || "").trim() })) : [];
+    return { van_de: String(x.van_de || "").trim(), da_lam: String(x.da_lam || "").trim(), vi_sao: String(x.vi_sao || "").trim(), phuong_an_khac: pa };
+  }).filter((x) => x && (x.van_de || x.da_lam || x.vi_sao || x.phuong_an_khac.length));
+}
+
+export function tomTatGiaiThich(g) {
+  if (!g) return "";
+  if (typeof g === "string") return g.trim();
+  const ds = danhSachGiaiThich(g);
+  if (!ds.length) return "";
+  const dau = ds[0];
+  const chinh = dau.da_lam || dau.van_de || dau.vi_sao || (dau.phuong_an_khac[0] ? dau.phuong_an_khac[0].cach : "");
+  return ds.length > 1 ? `${chinh} (+${ds.length - 1} mục)` : chinh;
+}

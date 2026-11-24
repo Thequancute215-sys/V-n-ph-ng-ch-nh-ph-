@@ -2,6 +2,7 @@
 (() => {
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const safeHttps = (v) => { try { const u = new URL(String(v || "")); return u.protocol === "https:" && !u.username && !u.password ? u.href : null; } catch { return null; } };
   const roles = [
     { key: "ceo", name: "Naruto · Giám đốc", room: "PHÒNG GIÁM ĐỐC", role: "Chủ dự án", color: "#ecc970", symbol: "♛", char: "naruto_ceo", description: "Quyết định và duyệt bàn giao của đội." },
     { key: "spec", name: "Hinata · Antigravity", room: "PHÒNG ĐẶC TẢ", role: "SPEC_ARCHITECT", color: "#a855f7", symbol: "✦", char: "hinata_antigravity", description: "Đặc tả sản phẩm, luồng người dùng và thiết kế giao diện." },
@@ -121,7 +122,7 @@
       return `<article class="panel"><div class="entry-head"><h2>${esc(p.name)}</h2>${badge(status, known && !busy ? "good" : "warn")}</div>${p.error ? `<p class="error muted">${esc(p.error)}</p>` : ""}${p.buckets.length ? p.buckets.map((b) => {
         const isOld = old || expired(b), kind = isOld ? "stale" : b.usedPercent >= 95 ? "bad" : b.usedPercent >= 80 ? "warn" : "";
         return `<div class="quota-window ${kind}"><p class="muted">${esc(b.group)}</p><div class="entry-head"><strong>${esc(b.label)}</strong><strong class="remaining">Còn ${pct(b.remainingPercent)}</strong></div><progress max="100" value="${Math.max(0, Math.min(100, b.remainingPercent))}" aria-label="${esc(p.name + ' · ' + b.group + ' · ' + b.label + ': còn ' + pct(b.remainingPercent))}"></progress><p class="muted">Đã dùng ${pct(b.usedPercent)}${isOld ? " · Bản đọc cũ, chờ xác nhận" : b.usedPercent >= 100 ? " · Đã hết hạn mức này" : ""}</p><p class="muted">${expired(b) ? "Đã qua mốc đặt lại; đang chờ số liệu mới." : b.resetAt ? "Đặt lại lúc " + dateTime(b.resetAt) : b.resetLabel ? "Đặt lại: " + esc(b.resetLabel) : "Chưa có giờ đặt lại."}</p></div>`;
-      }).join("") : `<p class="muted">${busy || p.status === "loading" ? "Đang lấy số liệu từ tài khoản đã đăng nhập…" : "Không suy đoán hạn mức khi chưa có dữ liệu."}</p>`}<div class="quota-foot">${esc(p.source)}${p.plan ? " · Gói " + esc(p.plan) : ""}<br>Cập nhật thành công: ${dateTime(p.lastSuccessAt)}${p.resetCreditsAvailable != null ? "<br>Lượt đặt lại hạn mức sẵn có: " + esc(p.resetCreditsAvailable) : ""}${p.ordinaryUsageAllowed === false ? '<p class="error">Tài khoản hiện chưa được phép dùng hạn mức gói.</p>' : ""}<a href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">Xem tại nhà cung cấp ↗</a></div></article>`;
+      }).join("") : `<p class="muted">${busy || p.status === "loading" ? "Đang lấy số liệu từ tài khoản đã đăng nhập…" : "Không suy đoán hạn mức khi chưa có dữ liệu."}</p>`}<div class="quota-foot">${esc(p.source)}${p.plan ? " · Gói " + esc(p.plan) : ""}<br>Cập nhật thành công: ${dateTime(p.lastSuccessAt)}${p.resetCreditsAvailable != null ? "<br>Lượt đặt lại hạn mức sẵn có: " + esc(p.resetCreditsAvailable) : ""}${p.ordinaryUsageAllowed === false ? '<p class="error">Tài khoản hiện chưa được phép dùng hạn mức gói.</p>' : ""}${safeHttps(p.url) ? `<a href="${esc(safeHttps(p.url))}" target="_blank" rel="noopener noreferrer">Xem tại nhà cung cấp ↗</a>` : ""}</div></article>`;
     }).join(""));
     $("quotaMessage").textContent = quotaError || "Tự kiểm tra tối đa mỗi 2 phút khi văn phòng đang mở; lỗi kết nối chờ ít nhất 5 phút. Giờ đặt lại theo múi giờ trên máy. Mốc đã qua cần số liệu mới để xác nhận.";
   }
@@ -221,22 +222,35 @@
 
   // Một luồng tự động: trạng thái, nhánh git riêng, từng lượt (xem file đã đổi), câu hỏi/chờ hạn mức, báo cáo và nút duyệt.
   function runHtml(r, statuses) {
-    const warn = ["awaiting_approval", "awaiting_answer", "attention", "waiting_quota"].includes(r.status);
+    const warn = ["awaiting_approval", "awaiting_answer", "attention", "waiting_quota", "awaiting_scan"].includes(r.status);
+    let ghiChuScan = "";
+    if (r.status === "awaiting_scan") {
+      const limited = scanInfo?.canResumeLimited || scanInfo?.fullAccess === false;
+      const incomplete = scanInfo?.truncated || (!scanInfo && r.scan?.truncated);
+      const ready = limited || (scanInfo?.approved && !incomplete);
+      const text = limited ? "Vai đang chờ có thể chạy tiếp ở mức quyền hiện tại."
+        : incomplete ? "Rà soát chưa hoàn tất. Xử lý phần chưa quét hoặc hạ quyền vai đang chờ."
+        : ready ? "Lần rà soát mới nhất đã đạt. Bấm Chạy tiếp ở mục rà soát phía trên."
+        : "Luồng tạm dừng chờ duyệt rà soát ở mục rà soát phía trên.";
+      ghiChuScan = `<p class="${ready ? "muted" : "error"}">${text}</p>`;
+    }
     return `<article class="entry"><div class="entry-head"><strong>${esc(r.task)}</strong>${badge(statuses[r.status] || r.status, warn ? "warn" : r.status === "approved" ? "good" : "")}</div>` +
       `<p>${esc(r.steps.filter((s) => !s.quota).length)}/${esc(r.maxSteps)} lượt</p>` + gitHtml(r) + stepsHtml(r) + globalThis.RepoProgress.explainHtml(r) + globalThis.RepoProgress.deleteHtml(r) +
       (r.decisions || []).map((d) => `<p class="muted">✔ Anh đã chọn ${esc(d.option)}: ${esc(d.label)} → ${esc(d.next)}</p>`).join("") +
       (r.status === "awaiting_answer" && r.question ? askHtml(r.question, "data-auto-answer", r.id) : "") +
       (r.status === "waiting_quota" && r.wait ? waitHtml(r) : "") +
+      ghiChuScan +
       (r.problem ? `<p class="error">${esc(r.problem)}</p>` : "") + (r.report ? `<pre>${esc(r.report)}</pre>` : "") +
-      `<div class="actions">${["running", "reporting", "awaiting_answer", "waiting_quota"].includes(r.status) ? `<button data-auto-stop="${esc(r.id)}">Dừng luồng này</button>` : ""}${["awaiting_approval", "attention"].includes(r.status) ? `<button class="primary" data-auto-approve="${esc(r.id)}">${r.status === "attention" ? "Đã xem lỗi" : r.problem ? "Đã nhận báo cáo" : "Duyệt báo cáo Claude"}</button><button data-auto-reject="${esc(r.id)}">Từ chối</button>` : ""}</div></article>`;
+      `<div class="actions">${["running", "reporting", "awaiting_answer", "waiting_quota", "awaiting_scan"].includes(r.status) ? `<button data-auto-stop="${esc(r.id)}">Dừng luồng này</button>` : ""}${["awaiting_approval", "attention"].includes(r.status) ? `<button class="primary" data-auto-approve="${esc(r.id)}">${r.status === "attention" ? "Đã xem lỗi" : r.problem ? "Đã nhận báo cáo" : "Duyệt báo cáo Claude"}</button><button data-auto-reject="${esc(r.id)}">Từ chối</button>` : ""}</div></article>`;
   }
   // Nhánh ai/… của luồng; sau khi duyệt thì đẩy lên GitHub để mở PR (văn phòng không tự push, không merge).
   function gitHtml(r) {
     const g = r.git;
     if (!g) return r.steps.length ? '<p class="muted">Dự án không phải repo git: AI sửa thẳng thư mục, không có diff từng lượt.</p>' : "";
     const done = ["approved", "acknowledged"].includes(r.status);
+    const prUrl = g.pushed ? safeHttps(g.pushed.compareUrl) : null;
     return `<p class="muted">🌿 Nhánh <span class="mono">${esc(g.branch)}</span> · tách từ <span class="mono">${esc(g.from || "?")}</span>${(g.notes || []).map((n) => "<br>" + esc(n)).join("")}</p>` +
-      (g.pushed ? `<p>Đã đẩy nhánh lên GitHub lúc ${esc(hhmm(g.pushed.at))}. ${g.pushed.compareUrl ? `<a href="${esc(g.pushed.compareUrl)}" target="_blank" rel="noopener noreferrer">Mở trang tạo PR ↗</a>` : "Remote không phải GitHub: tạo PR trên trang của remote."}</p>` :
+      (g.pushed ? `<p>Đã đẩy nhánh lên GitHub lúc ${esc(hhmm(g.pushed.at))}. ${prUrl ? `<a href="${esc(prUrl)}" target="_blank" rel="noopener noreferrer">Mở trang tạo PR ↗</a>` : "Remote không phải GitHub: tạo PR trên trang của remote."}</p>` :
         done ? `<div class="actions"><button class="primary" data-auto-push="${esc(r.id)}" data-branch="${esc(g.branch)}">Đẩy nhánh lên GitHub & mở PR</button></div>` : "");
   }
   function stepsHtml(r) {
@@ -281,7 +295,8 @@
     const busy = currentRuns.some((r) => ["running", "reporting", "awaiting_approval", "awaiting_answer", "attention", "waiting_quota", "awaiting_scan"].includes(r.status));
     $("autoStart").disabled = !controller || !active || !turn || busy;
     const statuses = { running: "Đội đang làm việc", reporting: "Claude đang tổng hợp", awaiting_approval: "Chờ bạn duyệt báo cáo", awaiting_answer: "Claude hỏi anh: chọn phương án", waiting_quota: "Chờ hạn mức", awaiting_scan: "Tạm dừng: chờ anh duyệt rà soát", approved: "Bạn đã duyệt", acknowledged: "Bạn đã nhận báo cáo lỗi", rejected: "Đã từ chối", attention: "Claude chưa gửi được báo cáo", stopped: "Đã dừng" };
-    setMarkup("scanBox", scanError ? `<p class="error">${esc(scanError)}</p>` : globalThis.RepoProgress.scanHtml(scanInfo, active));
+    const hasAwaitingScan = currentRuns.some((r) => r.status === "awaiting_scan");
+    setMarkup("scanBox", scanError ? `<p class="error">${esc(scanError)}</p>` : globalThis.RepoProgress.scanHtml(scanInfo, active, "data-scan-approve", { canApprove: true, hasAwaitingScan }));
     setMarkup("autoRuns", !controller ? '<p class="muted">Chưa kết nối được OS Controller.</p>' : currentRuns.length ? currentRuns.slice(0, 8).map((r) => runHtml(r, statuses)).join("") : '<p class="muted">Chưa có việc tự động nào cho dự án này. Giao một việc ở trên để bắt đầu.</p>');
     // Ô dán kết quả GPT web: giữ chữ anh đang dán khi danh sách vẽ lại
     document.querySelectorAll("[data-web-draft]").forEach((ta) => { if (!ta.value && webDrafts[ta.dataset.webDraft]) ta.value = webDrafts[ta.dataset.webDraft]; });
@@ -305,7 +320,7 @@
       let a = accounts?.[key];
       if (key === "gemini" && quotaData?.providers.some((p) => p.id === "antigravity" && p.status === "ready" && !quotaStale(p))) a = { ...a, connected: true, authMode: "Antigravity CLI đã xác thực và cung cấp hạn mức." };
       const known = a && typeof a.connected === "boolean";
-      return `<div class="panel"><h2>${name}</h2><div class="account-status">${badge(!a ? "Chưa có dữ liệu" : !known ? "Chưa xác minh được" : a.connected ? "Đã kết nối" : "Chưa kết nối", known && a.connected ? "good" : "")}</div><p class="muted">${esc(!a ? accountError || "Đang đọc trạng thái…" : a.authMode || "Văn phòng chưa đọc được trạng thái đăng nhập bên trong IDE Antigravity.")}</p>${a && Number.isInteger(a.sessionsCount) ? `<p class="muted">${a.sessionsCount} tệp phiên được phát hiện.</p>` : ""}</div>`;
+      return `<div class="panel"><h2>${name}</h2><div class="account-status">${badge(!a ? "Chưa có dữ liệu" : !known ? "Chưa xác minh được" : a.connected ? "Đã kết nối" : "Chưa kết nối", known && a.connected ? "good" : "")}</div><p class="muted">${esc(!a ? accountError || "Đang đọc trạng thái…" : a.authMode || (known ? (a.connected ? "Đã kết nối trên máy chủ." : "Chưa kết nối trên máy chủ.") : "Văn phòng chưa xác minh được trạng thái đăng nhập."))}</p>${a && Number.isInteger(a.sessionsCount) ? `<p class="muted">${a.sessionsCount} tệp phiên được phát hiện.</p>` : ""}</div>`;
     }).join(""));
   }
 
@@ -319,10 +334,10 @@
     $("workspace").disabled = switching || !workspaces.length;
     $("workspace").title = active;
     const target = active;
-    const [health, jobResult, handoffResult, autoResult] = await Promise.all([request("/ctl/health"), request("/ctl/jobs"), request("/ctl/handoffs"), request("/ctl/autopilot")]);
+    const [health, jobResult, handoffResult, autoResult] = await Promise.all([request("/ctl/health"), request("/ctl/jobs"), request("/ctl/handoffs?scope=manual"), request("/ctl/autopilot")]);
     if (target !== active) return;
     controller = !!health.ok; jobs = jobResult.jobs; handoffs = handoffResult.handoffs; autoRuns = autoResult.runs;
-    if (active) request("/ctl/scan?workspace=" + encodeURIComponent(active), undefined, 20000).then((v) => { if (target === active) { scanInfo = v.scan; scanError = ""; renderBoard(); } }).catch((e) => { scanInfo = null; scanError = "Chưa rà được file .md / thư viện: " + e.message; renderBoard(); });
+    if (active) request("/ctl/scan?workspace=" + encodeURIComponent(active), undefined, 20000).then((v) => { if (target === active) { scanInfo = v.scan ? { ...v.scan, fullAccess: v.fullAccess, canResumeLimited: v.canResumeLimited } : null; scanError = ""; renderBoard(); } }).catch((e) => { scanInfo = null; scanError = "Chưa rà được file .md / thư viện: " + e.message; renderBoard(); });
     if (!active) { turn = null; blockerLines = null; return; }
     const q = encodeURIComponent(active);
     request("/ctl/ideas?workspace=" + q).then((v) => { if (target === active) { ideaList = v.ideas; ideaError = ""; } }).catch((e) => { ideaList = null; ideaError = "Không đọc được ý tưởng: " + e.message; });
@@ -516,7 +531,7 @@
     if (push) {
       if (!confirm("Đẩy nhánh " + push.dataset.branch + " lên GitHub?\nChỉ đẩy nhánh này (không force, không merge). Sau đó anh mở PR và tự merge khi đã xem.")) return;
       push.disabled = true;
-      try { const r = await request("/ctl/autopilot/" + encodeURIComponent(push.dataset.autoPush) + "/push", {}, 130000); const url = r.run.git.pushed.compareUrl; $("autoMessage").textContent = "Đã đẩy nhánh " + r.run.git.branch + "." + (url ? " Đang mở trang tạo PR." : ""); if (url) window.open(url, "_blank", "noopener"); }
+      try { const r = await request("/ctl/autopilot/" + encodeURIComponent(push.dataset.autoPush) + "/push", {}, 130000); const url = safeHttps(r.run.git.pushed.compareUrl); $("autoMessage").textContent = "Đã đẩy nhánh " + r.run.git.branch + "." + (url ? " Đang mở trang tạo PR." : ""); if (url) window.open(url, "_blank", "noopener,noreferrer"); }
       catch (err) { $("autoMessage").textContent = err.message; push.disabled = false; }
       finally { await refresh(); }
       return;
@@ -550,10 +565,23 @@
   });
   $("scanBox").addEventListener("click", async (e) => {
     const b = e.target.closest("[data-scan-approve]"); if (!b) return;
-    if (!confirm("Anh đã đọc các điểm bất thường và đồng ý cho AI chạy toàn quyền trong dự án này?")) return;
+    const limited = b.dataset.scanMode === "limited";
+    const isResume = limited || b.dataset.scanMode === "resume";
+    const ask = limited ? "Chạy tiếp các luồng với mức quyền hiện tại?"
+      : isResume ? "Rà soát mới nhất đã đạt. Chạy tiếp các luồng đang tạm dừng chờ rà soát?"
+      : "Anh đã đọc các điểm bất thường và đồng ý cho AI chạy toàn quyền trong dự án này?";
+    if (!confirm(ask)) return;
     b.disabled = true;
-    try { const r = await request("/ctl/scan/approve", { workspace: b.dataset.scanWorkspace, fingerprint: b.dataset.scanApprove }, 20000); scanInfo = r.scan; $("autoMessage").textContent = "Đã duyệt rà soát." + (r.resumed.length ? " Chạy tiếp " + r.resumed.length + " luồng đang tạm dừng." : ""); }
-    catch (err) { $("autoMessage").textContent = err.message; b.disabled = false; }
+    try {
+      const workspace = b.dataset.scanWorkspace;
+      const r = limited
+        ? await request("/ctl/scan/resume", { workspace }, 20000)
+        : await request("/ctl/scan/approve", { workspace, fingerprint: b.dataset.scanApprove || "" }, 20000);
+      const nRes = (r.resumed || []).length;
+      $("autoMessage").textContent = isResume
+        ? (nRes ? "Đã chạy tiếp " + nRes + " luồng đang tạm dừng." : "Không còn luồng nào đang chờ.")
+        : ("Đã duyệt rà soát." + (nRes ? " Chạy tiếp " + nRes + " luồng đang tạm dừng." : ""));
+    } catch (err) { $("autoMessage").textContent = err.message; b.disabled = false; }
     finally { await refresh(); }
   });
   $("autoRuns").addEventListener("input", (e) => { const ta = e.target.closest("[data-web-draft]"); if (ta) webDrafts[ta.dataset.webDraft] = ta.value; });
@@ -564,7 +592,7 @@
     const old = active;
     if (switching) return;
     switching = true; $("workspace").disabled = true;
-    try { const r = await request("/ctl/workspaces/switch", { path }); active = path; repoFor = ""; if (r.agentMd?.created) createdFor = path; turn = null; blockerLines = null; docText = null; $("logJob").value = ""; $("jobLog").textContent = "Chọn công việc để đọc nhật ký."; }
+    try { const r = await request("/ctl/workspaces/switch", { path }); active = path; repoFor = ""; scanInfo = null; scanError = ""; if (r.agentMd?.created) createdFor = path; turn = null; blockerLines = null; docText = null; $("logJob").value = ""; $("jobLog").textContent = "Chọn công việc để đọc nhật ký."; }
     catch (e) { active = old; controlError = e.message; renderProtocol(); alert("Không chọn được dự án: " + e.message); }
     finally { switching = false; $("workspace").disabled = false; await refresh(); }
   }

@@ -35,7 +35,7 @@
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const when = (v) => v ? new Date(v).toLocaleString("vi-VN") : "—";
-let code = null, tick = null;
+let code = null;
 async function api(path, body) {
   const r = await fetch("/dkx" + path, { cache: "no-store", method: body === undefined ? "GET" : "POST", ...(body === undefined ? {} : { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }) });
   let d = null; try { d = await r.json(); } catch {}
@@ -66,7 +66,11 @@ document.addEventListener("click", async (e) => {
   if (!confirm("Thu hồi máy này? Máy đó sẽ phải ghép lại mới điều khiển được.")) return;
   try { await api("/thu-hoi", { id: b.dataset.revoke }); load(); } catch (err) { alertErr(err); }
 });
-load(); tick = setInterval(() => { if (code) load(); }, 5000);
+let tPoll = null, hiddenPage = false;
+function startPoll() { if (!hiddenPage && !tPoll) tPoll = setInterval(() => { if (code && !document.hidden) load(); }, 5000); }
+load(); startPoll();
+window.addEventListener("pagehide", () => { hiddenPage = true; clearInterval(tPoll); tPoll = null; });
+window.addEventListener("pageshow", (e) => { if (e.persisted && hiddenPage) { hiddenPage = false; load(); startPoll(); } });
 </script>
 </body>
 </html>

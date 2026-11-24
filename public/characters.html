@@ -9,21 +9,23 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Quicksand:wght@600;700;800&display=swap" rel="stylesheet">
 <script>
-tailwind.config = {
-  darkMode: 'class',
-  theme: {
-    extend: {
-      // Đo bằng trình duyệt: tiêu đề 530px + nhãn phụ 216px + 5 nút nhãn đầy đủ 1063px + lề ≈ 1940px
-      // (đo khi còn nút "Duyệt tất cả"; nút đó đã bỏ 20/11/2026 nên nay dư chỗ, giữ mốc cũ cho chắc).
-      // Hẹp hơn thì nút dùng nhãn ngắn / chỉ biểu tượng để đầu trang không bị ép xuống nhiều dòng (P7-M01).
-      screens: { wide: '1940px' },
-      fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'monospace'],
-        chibi: ['"Quicksand"', 'cursive', 'sans-serif'],
+if (window.tailwind) {
+  window.tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        // Đo bằng trình duyệt: tiêu đề 530px + nhãn phụ 216px + 5 nút nhãn đầy đủ 1063px + lề ≈ 1940px
+        // (đo khi còn nút "Duyệt tất cả"; nút đó đã bỏ 20/11/2026 nên nay dư chỗ, giữ mốc cũ cho chắc).
+        // Hẹp hơn thì nút dùng nhãn ngắn / chỉ biểu tượng để đầu trang không bị ép xuống nhiều dòng (P7-M01).
+        screens: { wide: '1940px' },
+        fontFamily: {
+          sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+          mono: ['"JetBrains Mono"', 'monospace'],
+          chibi: ['"Quicksand"', 'cursive', 'sans-serif'],
+        }
       }
     }
-  }
+  };
 }
 </script>
 <style>
@@ -63,16 +65,16 @@ body { background: #040711; color: #f8fafc; font-family: "Plus Jakarta Sans", sa
   </div>
 
   <div class="flex flex-wrap items-center justify-end gap-2 wide:gap-2.5">
-    <a href="https://www.meshy.ai/vi/tags/naruto" title="Mẫu Meshy.ai Naruto" aria-label="Mẫu Meshy.ai Naruto" target="_blank" class="whitespace-nowrap px-3.5 py-2 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 text-xs font-bold flex items-center gap-1.5 transition">
+    <a href="https://www.meshy.ai/vi/tags/naruto" title="Mẫu Meshy.ai Naruto" aria-label="Mẫu Meshy.ai Naruto" target="_blank" rel="noopener noreferrer" class="whitespace-nowrap px-3.5 py-2 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 text-xs font-bold flex items-center gap-1.5 transition">
       <i data-lucide="external-link" class="w-4 h-4"></i> <span class="hidden wide:inline">Mẫu Meshy.ai Naruto</span>
     </a>
     <button onclick="document.getElementById('glbFileInput').click()" title="Nạp Model 3D (.glb) Meshy.ai" aria-label="Nạp Model 3D (.glb) Meshy.ai" class="whitespace-nowrap px-4 py-2 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:brightness-110 text-white text-xs font-extrabold flex items-center gap-2 shadow-lg shadow-sky-500/25 transition">
       <i data-lucide="upload-cloud" class="w-4 h-4 text-cyan-200"></i> <span class="hidden wide:inline">Nạp Model 3D (.glb) Meshy.ai</span><span class="hidden sm:inline wide:hidden">Nạp .glb</span>
     </button>
     <input type="file" id="glbFileInput" accept=".glb,.gltf" style="display:none">
-    <button onclick="location.href='anime-studio.html'" title="Studio Anime CC2 1:1" aria-label="Studio Anime CC2 1:1" class="whitespace-nowrap px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:brightness-110 text-xs font-bold text-white border border-purple-400/30 flex items-center gap-1.5 shadow-lg shadow-purple-500/25 transition">
+    <a href="anime-studio.html" target="_blank" rel="noopener noreferrer" title="Studio Anime CC2 1:1 (mở tab riêng)" aria-label="Studio Anime CC2 1:1 (mở tab riêng)" class="whitespace-nowrap px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:brightness-110 text-xs font-bold text-white border border-purple-400/30 flex items-center gap-1.5 shadow-lg shadow-purple-500/25 transition">
       <i data-lucide="zap" class="w-4 h-4 text-amber-300"></i> <span class="hidden wide:inline">Studio Anime CC2 1:1</span><span class="hidden sm:inline wide:hidden">Studio</span>
-    </button>
+    </a>
     <button onclick="location.href='index.html'" title="Về Văn Phòng 3D" aria-label="Về Văn Phòng 3D" class="whitespace-nowrap px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-200 border border-white/10 flex items-center gap-1.5 transition">
       <i data-lucide="arrow-left" class="w-4 h-4"></i> <span class="hidden wide:inline">Về Văn Phòng 3D</span><span class="hidden sm:inline wide:hidden">Văn phòng</span>
     </button>
@@ -266,7 +268,7 @@ body { background: #040711; color: #f8fafc; font-family: "Plus Jakarta Sans", sa
       <!-- Guide Pill: Meshy Tag Link & Reset (Placed at bottom-right to prevent any top bar collision) -->
       <div id="meshyGuidePill" class="absolute bottom-3 right-3 sm:bottom-6 sm:right-6 max-w-[calc(100%-1.5rem)] z-10 glass-panel px-3.5 py-2 rounded-2xl border border-sky-500/30 text-xs text-sky-200 flex items-center gap-2.5 shadow-xl">
         <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
-        <span>Kéo & thả <b>.glb</b> tải từ <a href="https://www.meshy.ai/vi/tags/naruto" target="_blank" class="underline text-amber-300 font-bold hover:text-white">meshy.ai/vi/tags/naruto</a></span>
+        <span>Kéo & thả <b>.glb</b> tải từ <a href="https://www.meshy.ai/vi/tags/naruto" target="_blank" rel="noopener noreferrer" class="underline text-amber-300 font-bold hover:text-white">meshy.ai/vi/tags/naruto</a></span>
         <button onclick="resetProceduralChar()" id="btnResetProcedural" class="hidden ml-1 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[11px] font-bold border border-white/10">
           ↩ Về 3D Nguyên Tác
         </button>
@@ -347,7 +349,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
-lucide.createIcons();
+if (window.lucide) window.lucide.createIcons();
 
 // 3D Canvas Stage Setup
 const container = document.getElementById("charGl");
@@ -489,7 +491,7 @@ function makeFaceTexture(type) {
     ctx.strokeStyle = "#78350f"; ctx.lineWidth = 4;
     ctx.beginPath(); ctx.moveTo(226, 360); ctx.lineTo(286, 360); ctx.stroke();
 
-  } else if (type === "itachi" || type === "sol") {
+  } else if (type === "itachi") {
     // Itachi Mangekyo Sharingan & 35 deg Tear-Trough Creases (Rãnh lệ)
     for (const sx of [170, 342]) {
       const dir = sx < 256 ? -1 : 1;
@@ -522,7 +524,7 @@ function makeFaceTexture(type) {
     ctx.strokeStyle = "#475569"; ctx.lineWidth = 3.5;
     ctx.beginPath(); ctx.moveTo(230, 365); ctx.lineTo(282, 365); ctx.stroke();
 
-  } else if (type === "sakura" || type === "claude") {
+  } else if (type === "sakura") {
     // Sakura Byakugou Diamond Purple Forehead Seal + Emerald Eyes with 2 Eyelash Spikes
     ctx.fillStyle = "#6d4c82"; // Purple diamond
     ctx.beginPath();
@@ -564,7 +566,7 @@ function makeFaceTexture(type) {
     ctx.strokeStyle = "#db2777"; ctx.lineWidth = 4;
     ctx.beginPath(); ctx.arc(256, 355, 24, 0.2, Math.PI - 0.2); ctx.stroke();
 
-  } else if (type === "hinata" || type === "antigravity") {
+  } else if (type === "hinata") {
     // Hinata Pupilless Lavender-White Byakugan & Temple Veins
     for (const sx of [170, 342]) {
       const dir = sx < 256 ? -1 : 1;
@@ -1025,7 +1027,6 @@ function makeAkatsukiCloakTexture() {
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
-const gAkatsukiTex = makeAkatsukiCloakTexture();
 
 const headbandPlateTex = drawKonohaHeadbandPlate();
 const akatsukiTex = makeAkatsukiCloakTexture();
@@ -1578,6 +1579,7 @@ function loadGlbFile(file) {
   toast.style.opacity = "1";
 
   gltfLoader.load(url, (gltf) => {
+    URL.revokeObjectURL(url);
     const model = gltf.scene;
     const box = new THREE.Box3().setFromObject(model);
     const size = box.getSize(new THREE.Vector3());
@@ -1613,6 +1615,7 @@ function loadGlbFile(file) {
     document.getElementById("jutsuName").textContent = `Đã nạp thành công 3D Meshy: ${file.name}!`;
     setTimeout(() => { toast.style.opacity = "0"; }, 3500);
   }, undefined, (err) => {
+    URL.revokeObjectURL(url);
     console.error("Lỗi nạp file GLB:", err);
     alert("Không thể đọc file 3D (.glb). Vui lòng kiểm tra file tải từ Meshy.ai!");
     toast.style.opacity = "0";

@@ -29,9 +29,16 @@ function fixture(t) {
 test("đọc và ghi ba mức, giữ trường cũ, từ chối vai và mức lạ", (t) => {
   const { quyen, file, log } = fixture(t);
   assert.deepEqual(quyen.doc(), { toanQuyen: true, vai: {} });
-  fs.writeFileSync(file, "{hỏng");
-  assert.deepEqual(quyen.doc(), { toanQuyen: true, vai: {} });
-  assert.equal(quyen.mucCua(ASTRA), "toan");
+  for (const invalid of ["{hỏng", "null", '{"toanQuyen":"false"}', '{"vai":[]}']) {
+    fs.writeFileSync(file, invalid);
+    const { toanQuyen, vai, loi } = quyen.doc();
+    assert.equal(toanQuyen, false);
+    assert.deepEqual(vai, {});
+    assert.match(loi, /Toàn quyền đang tắt/);
+    assert.equal(quyen.mucCua(ASTRA), "nhap");
+  }
+  assert.deepEqual(quyen.dat({ role: ASTRA, muc: "doc" }), { toanQuyen: false, vai: { [ASTRA]: "doc" } });
+  assert.deepEqual(quyen.doc(), { toanQuyen: false, vai: { [ASTRA]: "doc" } });
   fs.writeFileSync(file, JSON.stringify({ toanQuyen: false, vai: { [CLAUDE]: "nhap" }, khac: { giu: true } }));
   assert.equal(quyen.mucCua(ASTRA), "nhap");
   assert.deepEqual([...FULL_ROLES], ROLES_LAM_VIEC);

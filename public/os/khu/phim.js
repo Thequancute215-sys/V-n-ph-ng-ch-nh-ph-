@@ -8,16 +8,19 @@ const NHIP = { "chuan-bi": "Chuẩn bị", tao: "Tạo", "tai-ve": "Tải về" 
 const HOI_NHIP = { "chuan-bi": "Opus mở Flow, tải ảnh lên, dán prompt, dừng trước nút tạo rồi báo anh.", tao: "Opus bấm tạo đúng một lần (tốn credit gói Google), chờ xong rồi báo.", "tai-ve": "Opus tải clip vừa tạo về, văn phòng gắn vào cảnh." };
 const HOI_CONG = { 1: "Duyệt kịch bản và phân cảnh?", 2: "Duyệt khung chính và khoản quay? Sau cổng này văn phòng mới cho quay.", 3: "Duyệt bản dựng này?", 4: "Xuất xưởng phim này? File cuối nằm trong media/xuat/; anh tự tải và tự đăng." };
 
-export async function mo(vung) {
-  let ws = "", data = null, flow = null, loiTai = "", ban = false, hen = null, conSong = true, dsPhim = null, kyCu = "";
+export async function mo(vung, { signal } = {}) {
+  let ws = "", data = null, flow = null, loiTai = "", ban = false, hen = null, conSong = true, dsPhim = null, kyCu = "", phien = 0;
   vung.innerHTML = `<div class="vung" id="phim">${dangTai(4)}</div>`;
   const goc = vung.querySelector("#phim");
   const media = (rel, v) => "/ctl/phim/media?workspace=" + encodeURIComponent(ws) + "&path=" + encodeURIComponent(rel) + (v ? "&v=" + encodeURIComponent(v) : "");
 
   async function batDau() {
-    try { dsPhim = (await ctl("/phim/du-an")).duAn || []; }
-    catch (e) { goc.innerHTML = loi(e.message); return; }
-    if (!dsPhim.length) { goc.innerHTML = rong("Chưa có dự án phim nào", "Tạo một dự án loại Phim AI ở Dự án và giao việc; văn phòng dựng sẵn phim.json.", `<a class="nut" href="#/code/du-an">Tạo dự án phim</a>`); return; }
+    let ds = null;
+    try { ds = (await ctl("/phim/du-an")).duAn || []; }
+    catch (e) { if (conSong) goc.innerHTML = loi(e.message); return; }
+    if (!conSong) return;
+    dsPhim = ds;
+    if (!dsPhim.length) { goc.innerHTML = rong("Chưa có dự án phim nào", "Tạo một dự án loại Phim AI ở Dự án; văn phòng dựng sẵn phim.json.", `<a class="nut" href="#/code/du-an?loai=phim">Tạo dự án phim</a>`); return; }
     let nho = ""; try { nho = localStorage.getItem("tqos-phim") || ""; } catch {}
     ws = dsPhim.some((d) => d.path === nho) ? nho : dsPhim[0].path;
     tai();
@@ -26,14 +29,20 @@ export async function mo(vung) {
   async function tai() {
     clearTimeout(hen);
     if (!conSong) return;
+    const mine = ++phien, reqWs = ws;
     if (!document.hidden) {
-      try { data = await ctl("/phim?workspace=" + encodeURIComponent(ws)); loiTai = ""; } catch (e) { loiTai = e.message; }
-      try { flow = (await ctl("/flow")).flow; } catch { flow = null; }
+      let nextData = data, nextLoi = "", nextFlow = null;
+      try { nextData = await ctl("/phim?workspace=" + encodeURIComponent(reqWs)); } catch (e) { nextLoi = e.message; }
+      if (!conSong || mine !== phien || ws !== reqWs) return;
+      try { nextFlow = (await ctl("/flow")).flow; } catch { nextFlow = null; }
+      if (!conSong || mine !== phien || ws !== reqWs) return;
+      data = nextData; loiTai = nextLoi; flow = nextFlow;
       // Không vẽ lại khi dữ liệu không đổi hoặc anh đang xem một clip: vẽ lại sẽ tạo video mới và mất chỗ đang xem.
       const ky = JSON.stringify([data, flow, loiTai]);
       const dangXem = [...goc.querySelectorAll("video")].some((v) => !v.paused && !v.ended);
       if (ky !== kyCu && !dangXem) { kyCu = ky; ve(); }
     }
+    if (!conSong || mine !== phien || ws !== reqWs) return;
     const ban2 = data && (data.mayQuay.dang || (data.banDung && data.banDung.dang)) || (flow && flow.nhipDang);
     hen = setTimeout(tai, ban2 ? 4000 : 20000);
   }
@@ -53,7 +62,7 @@ export async function mo(vung) {
         <button type="button" class="nut" data-luu-ns>Lưu ngân sách</button>
         <span class="mo">Tối đa ước tính cả phim ${usd(toiDa)}${k.chiPhi && k.chiPhi.luotFlow ? ", " + k.chiPhi.luotFlow + " lượt Flow" : ""}</span></div>
       <div class="thanh-do" role="img" aria-label="Đã chi ${usd(mq.daChi)} trên ngân sách ${usd(ngan)}"><i style="transform:scaleX(${pt(mq.daChi)})"></i></div>
-      ${mq.coKhoa ? "" : `<div class="canh-bao">Chưa có khóa Gemini API (bậc trả phí): dán ở Kết nối hoặc trang Tài khoản AI để dùng máy quay Gemini.</div>`}
+      ${mq.coKhoa ? "" : `<div class="canh-bao">Chưa có khóa Gemini API (bậc trả phí): dán ở <a href="#/he/ket-noi">Kết nối</a> để dùng máy quay Gemini.</div>`}
       ${mq.dang ? `<div class="canh-bao">Đang quay ${esc(mq.dang.loai)} cảnh ${esc(mq.dang.canh)}, một clip có thể mất vài phút.</div>` : ""}
       ${mq.loiCuoi ? `<div class="hong">Lần quay trước lỗi: ${esc(mq.loiCuoi)}</div>` : ""}
       ${k.loi.length ? `<div class="hong"><b>Hồ sơ còn lỗi, chưa quay được:</b><br>${k.loi.map((l) => esc(l.chiTiet)).join("<br>")}</div>` : `<div class="dat">Hồ sơ phim hợp lệ.</div>`}
@@ -72,9 +81,10 @@ export async function mo(vung) {
     let banDung = "";
     if (bd) {
       const b = bd.banDung;
-      banDung = `<section class="khoi" aria-labelledby="hDung"><div class="hang"><h2 class="dau" id="hDung">Bàn dựng</h2><button type="button" class="nut-chinh" data-dung>${b ? "Dựng lại" : "Dựng bản xem thử"}</button>` +
+      const khoaDung = !bd.coFfmpeg;
+      banDung = `<section class="khoi" aria-labelledby="hDung"><div class="hang"><h2 class="dau" id="hDung">Bàn dựng</h2><button type="button" class="nut-chinh" data-dung${khoaDung ? ' disabled aria-describedby="canhBaoFfmpeg" title="Chưa có FFmpeg: bấm Cài xưởng phim ở Kết nối trước khi dựng."' : ""}>${b ? "Dựng lại" : "Dựng bản xem thử"}</button>` +
         `<span class="mo">Miễn phí, chạy trên máy: ghép take đã chọn, phụ đề, giọng đọc, nhạc, chuẩn âm −14 LUFS.</span></div>` +
-        (!bd.coFfmpeg ? `<div class="canh-bao">Chưa có FFmpeg: bấm Cài xưởng phim ở Kết nối.</div>` : "") +
+        (!bd.coFfmpeg ? `<div class="canh-bao" id="canhBaoFfmpeg">Chưa có FFmpeg: bấm Cài xưởng phim ở <a href="#/he/ket-noi">Kết nối</a>.</div>` : "") +
         (bd.dang ? `<div class="canh-bao">${esc(bd.dang.buoc)}</div>` : "") +
         (bd.loiCuoi ? `<div class="hong">Lần dựng trước lỗi: ${esc(bd.loiCuoi)}</div>` : "") +
         (b && bd.cu ? `<div class="canh-bao">Bản dựng này cũ: take hoặc thời lượng cảnh đã đổi. Bấm Dựng lại.</div>` : "") +
@@ -93,7 +103,7 @@ export async function mo(vung) {
       `<table class="bang"><tbody>` + flow.taiKhoan.map((t) => { const c = t.credit; return `<tr><td><b>${esc(t.nhan)}</b></td><td class="${t.dangMo ? "song" : "mo"}">${t.dangMo ? "đang mở" : "tắt"}</td>` +
         `<td class="mo">${c ? (c.conLai === null ? "Flow không hiện số dư" : "còn " + esc(c.conLai) + " credit, đọc " + esc(luc(c.lucDoc))) + ", tháng này " + esc(c.luotTaoThang) + " lượt" : ""}</td>` +
         `<td class="so"><button type="button" class="nut nho" data-mo-flow="${esc(t.id)}">Mở trình duyệt</button></td></tr>`; }).join("") + `</tbody></table>` +
-      (!flow.mcp ? `<div class="canh-bao">Chưa cài Chrome DevTools MCP (Kết nối): Opus chưa lái được Flow.</div>` : "") +
+      (!flow.mcp ? `<div class="canh-bao">Chưa cài Chrome DevTools MCP (<a href="#/he/ket-noi">Kết nối</a>): Opus chưa lái được Flow.</div>` : "") +
       (flow.nhipDang ? `<div class="canh-bao">Opus đang làm nhịp ${esc(NHIP[flow.nhipDang.buoc])} cảnh ${esc(flow.nhipDang.canh)} (${esc(flow.nhipDang.taiKhoan)}).</div>` : "") +
       (flow.ketQuaCuoi ? `<div class="${flow.ketQuaCuoi.ket_qua === "xong" ? "dat" : "canh-bao"}">Nhịp vừa xong, ${esc(NHIP[flow.ketQuaCuoi.buoc])} cảnh ${esc(flow.ketQuaCuoi.canh)}: ${esc(flow.ketQuaCuoi.ket_qua)}. ${esc(flow.ketQuaCuoi.ghi_chu)}</div>` : "") + `</section>` : "";
 
@@ -115,13 +125,16 @@ export async function mo(vung) {
     }).join("") || rong("Phim chưa có cảnh nào", "Hinata viết phân cảnh vào phim.json; xong thì duyệt cổng 1.")) + `</section>`;
 
     goc.innerHTML = chon + (loiTai ? loi(loiTai) : "") + hoSo + thieuP3 + cong + banDung + tram + canh;
-    goc.querySelectorAll("button, input, select").forEach((el) => { if (el.id !== "chonPhim" && !el.hasAttribute("data-tai-lai")) el.disabled = ban; });
+    goc.querySelectorAll("button, input, select").forEach((el) => {
+      if (el.id === "chonPhim" || el.hasAttribute("data-tai-lai")) return;
+      el.disabled = ban || (el.hasAttribute("data-dung") && !(bd && bd.coFfmpeg));
+    });
   }
 
   async function lam(fn, xong) {
     ban = true; ve();
-    try { await fn(); if (xong) bao(xong); } catch (e) { bao(e.message, true); }
-    finally { ban = false; kyCu = ""; await tai(); }
+    try { await fn(); if (conSong && xong) bao(xong); } catch (e) { if (conSong) bao(e.message, true); }
+    finally { ban = false; kyCu = ""; if (conSong) await tai(); }
   }
 
   goc.addEventListener("change", (e) => {
@@ -138,7 +151,10 @@ export async function mo(vung) {
     if (d.taiLai !== undefined) return tai();
     if (d.thuLai !== undefined) return dsPhim ? tai() : batDau();
     if (d.luuNs !== undefined) return lam(() => ctl("/phim/ceo", { workspace: ws, nganSach: Number(goc.querySelector("#nganSach").value) }), "Đã lưu ngân sách.");
-    if (d.dung !== undefined) return lam(() => ctl("/phim/dung", { workspace: ws }), "Đang dựng. Trang tự cập nhật khi xong.");
+    if (d.dung !== undefined) {
+      if (!(data && data.banDung && data.banDung.coFfmpeg)) return bao("Chưa có FFmpeg: bấm Cài xưởng phim ở Kết nối trước khi dựng.", true);
+      return lam(() => ctl("/phim/dung", { workspace: ws }), "Đang dựng. Trang tự cập nhật khi xong.");
+    }
     if (d.cong) { const duyet = d.duyet === "1"; if (!confirm(duyet ? HOI_CONG[d.cong] : `Bỏ duyệt cổng ${d.cong}? Các cổng sau cũng bị bỏ.`)) return;
       return lam(() => ctl("/phim/cong", { workspace: ws, cong: Number(d.cong), duyet }), duyet ? `Đã duyệt cổng ${d.cong}.` : `Đã bỏ duyệt từ cổng ${d.cong}.`); }
     if (d.chonKhung) return lam(() => ctl("/phim/ceo", { workspace: ws, canh: d.chonKhung, khungChon: d.file }), "Đã chọn khung cho " + d.chonKhung + ".");
@@ -153,7 +169,8 @@ export async function mo(vung) {
     if (d.quay) {
       const c = data.phim.canh.find((x) => x.ma === d.quay), loai = d.loai;
       const opts = { workspace: ws, canh: c.ma, loai, soPhuongAn: loai === "khung" ? (c.so_phuong_an_khung || 3) : 1 };
-      let u; try { u = (await ctl("/phim/uoc-tinh", opts)).uocTinh; } catch (err) { return bao(err.message, true); }
+      let u; try { u = (await ctl("/phim/uoc-tinh", opts)).uocTinh; } catch (err) { if (conSong) bao(err.message, true); return; }
+      if (!conSong) return;
       if (!u.du) return bao(`Vượt ngân sách: lần này khoảng ${usd(u.usd)}, đã chi ${usd(u.daChi)} trên ${usd(u.nganSach)}. Nâng ngân sách trước.`, true);
       if (!confirm(`${loai === "khung" ? "Tạo " + opts.soPhuongAn + " khung" : "Quay video"} cảnh ${c.ma} bằng ${u.moHinh}?\nChi khoảng ${usd(u.usd)}, đã chi ${usd(u.daChi)}, còn ${usd(u.conLai)} trong ngân sách.`)) return;
       return lam(() => ctl("/phim/quay", opts), "Đã bắt đầu. Trang tự cập nhật khi xong.");
@@ -166,6 +183,14 @@ export async function mo(vung) {
   });
   const khiHien = () => { if (!document.hidden && ws) tai(); };
   document.addEventListener("visibilitychange", khiHien);
+  function dong() {
+    if (!conSong) return;
+    conSong = false;
+    phien++;
+    clearTimeout(hen);
+    document.removeEventListener("visibilitychange", khiHien);
+  }
+  signal?.addEventListener("abort", dong, { once: true });
   batDau();
-  return () => { conSong = false; clearTimeout(hen); document.removeEventListener("visibilitychange", khiHien); };
+  return dong;
 }

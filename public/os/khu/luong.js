@@ -2,7 +2,7 @@
 // Ba nguồn thật của ctl: luồng tự chạy (/autopilot), bàn giao chờ duyệt (/handoffs), lượt AI và lệnh (/jobs).
 // Bấm một dòng thì mở ngăn trượt bên phải để duyệt, trả lời, xem nhật ký lượt — không rời khu.
 import { esc, cat, luc, dangTai, rong, loi } from "../ui.js";
-import { TT_LUONG, LUONG_CHAY, LUONG_CAN_ANH, LUONG_CHO, TT_LENH, tenDuAn, tenVai, tenLenh, cauHoi, soLuot, lopLuong } from "../viec-chung.js";
+import { TT_LUONG, LUONG_CHAY, LUONG_CAN_ANH, LUONG_CHO, TT_LENH, tenDuAn, tenVai, tenLenh, cauHoi, soLuot, lopLuong, tomTatGiaiThich } from "../viec-chung.js";
 
 const NGAY = 24 * 3600 * 1000;
 
@@ -32,7 +32,7 @@ export async function mo(vung, { kho, ctl, bao, ngan }) {
     clearTimeout(hen);
     if (!conSong) return;
     if (!document.hidden) {
-      const [a, h, j] = await Promise.allSettled([ctl("/autopilot"), ctl("/handoffs"), ctl("/jobs?limit=80")]);
+      const [a, h, j] = await Promise.allSettled([ctl("/autopilot"), ctl("/handoffs?scope=manual"), ctl("/jobs?limit=80")]);
       if (!conSong) return;
       runs = a.status === "fulfilled" ? a.value.runs || [] : runs;
       handoffs = h.status === "fulfilled" ? h.value.handoffs || [] : handoffs;
@@ -66,11 +66,14 @@ export async function mo(vung, { kho, ctl, bao, ngan }) {
       else if (LUONG_CHAY.has(r.status)) chay.push([r.updatedAt, dong("luong:" + r.id, r.task, ct + ((r.steps || []).length ? " · đang ở lượt của " + tenVai(r.steps.at(-1).role) : ""), TT_LUONG[r.status], "song", "Xem tiến độ")]);
       else if (bay - (r.updatedAt || 0) < NGAY) xong.push([r.updatedAt, dong("luong:" + r.id, r.task, ct, TT_LUONG[r.status] || r.status, lopLuong(r.status), "Xem")]);
     }
-    for (const h of (handoffs || []).filter((x) => cuaToi(x.workspace))) {
-      const p = h.payload || {};
-      can.push([h.decided_at || 0, dong("ban-giao:" + h.job_id, cat(p.giai_thich || p.tom_tat || "Bàn giao chờ duyệt", 200),
-        `Bàn giao của ${tenVai(h.role)} cho ${tenVai(h.next_owner || p.next_owner)} · ${tenDuAn(h.workspace)}`, (h.problems || []).length ? "sai mẫu" : p.ask_ceo ? "Claude hỏi anh" : "chờ duyệt", (h.problems || []).length ? "hong" : "canh-bao", p.ask_ceo ? "Trả lời" : "Duyệt", true)]);
-    }
+    const jobById = new Map((jobs || []).map((j) => [j.id, j]));
+    (handoffs || []).filter((x) => cuaToi(x.workspace)).forEach((h, idx) => {
+      const p = h.payload || {}, jh = jobById.get(h.job_id);
+      const t = h.createdAt || h.created_at || h.decided_at || (jh && (jh.ended_at || jh.started_at)) || 0;
+      const tieu = cat(tomTatGiaiThich(p.giai_thich) || p.tom_tat || "Bàn giao chờ duyệt", 200);
+      can.push([t || (bay - idx), dong("ban-giao:" + h.job_id, tieu,
+        `Bàn giao của ${tenVai(h.role)} cho ${tenVai(h.next_owner || p.next_owner)} · ${tenDuAn(h.workspace)}${t ? " · " + luc(t) : ""}`, (h.problems || []).length ? "sai mẫu" : p.ask_ceo ? "Claude hỏi anh" : "chờ duyệt", (h.problems || []).length ? "hong" : "canh-bao", p.ask_ceo ? "Trả lời" : "Duyệt", true)]);
+    });
     for (const j of (jobs || []).filter((x) => cuaToi(x.workspace))) {
       const ct = tenDuAn(j.workspace) + (j.started_at ? " · " + luc(j.started_at) : "");
       if (j.status === "pending_approval") can.push([j.started_at, dong("lenh:" + j.id, tenLenh(j) + ": lệnh chờ anh duyệt", ct, TT_LENH[j.status], "canh-bao", "Xem lệnh", true)]);

@@ -26,7 +26,7 @@ test("ghi đúng tháng, định dạng và id; đọc mới nhất trước", t
   so.ghi(e);
   so.ghi(event({ t: e.t - 120000, title: "Tin cũ" }));
   const r = so.doc();
-  const id = crypto.createHash("sha1").update(`${e.kind}|${e.from}|${e.to}|${Math.floor(e.t / 60000)}|${e.title.slice(0, 60)}`).digest("hex").slice(0, 16);
+  const id = crypto.createHash("sha256").update(JSON.stringify([e.t, e.kind, e.from, e.to, e.title, e.body])).digest("hex").slice(0, 16);
   assert.deepEqual(r, { tin: [{ id, ...e }, r.tin[1]], conNua: false });
   assert.equal(r.tin[1].title, "Tin cũ");
   assert.equal(fs.readFileSync(fileFor(dataDir, e.t), "utf8").trim().split("\n").length, 2);
@@ -40,6 +40,25 @@ test("chống trùng trong phiên và qua hai lần tạo sổ, cả tháng trư
   const restarted = createSoTinNhan({ dataDir });
   for (const e of entries) restarted.ghi(e);
   assert.equal(restarted.doc().tin.length, 2);
+});
+
+test("giữ tin cùng tiêu đề và thời điểm, đọc phân trang qua tin cũ", t => {
+  const { dataDir } = setup(t);
+  const e = event();
+  const idCu = "0011223344556677";
+  fs.mkdirSync(path.dirname(fileFor(dataDir, e.t)), { recursive: true });
+  fs.writeFileSync(fileFor(dataDir, e.t), JSON.stringify({ id: idCu, ...e }) + "\n");
+  const so = createSoTinNhan({ dataDir });
+  so.ghi(e);
+  so.ghi({ ...e, body: "Phản hồi thứ hai" });
+  so.ghi({ ...e, body: "Phản hồi thứ ba" });
+  const tatCa = so.doc().tin;
+  assert.equal(tatCa.length, 3);
+  assert.ok(tatCa.some(tin => tin.id === idCu));
+  const dau = so.doc({ gioiHan: 1 });
+  const sau = so.doc({ truoc: dau.tin[0].t, truocId: dau.tin[0].id, gioiHan: 2 });
+  assert.deepEqual([...dau.tin, ...sau.tin], tatCa);
+  assert.equal(sau.conNua, false);
 });
 
 test("lọc ai, tu, toi riêng và kết hợp", t => {

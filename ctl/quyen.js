@@ -16,12 +16,13 @@ function createQuyen({ dir, audit }) {
 
   function docSo() {
     try {
-      const s = JSON.parse(fs.readFileSync(file, "utf8"));
-      return laSo(s) ? s : {};
+      const s = JSON.parse(fs.readFileSync(file, "utf8").replace(/^\uFEFF/, ""));
+      if (laSo(s) && (!Object.hasOwn(s, "toanQuyen") || typeof s.toanQuyen === "boolean")
+          && (!Object.hasOwn(s, "vai") || laSo(s.vai))) return { s, loi: null };
     } catch (e) {
-      if (e.code === "ENOENT" || e instanceof SyntaxError) return {};
-      throw e;
+      if (e.code === "ENOENT") return { s: {}, loi: null };
     }
+    return { s: { toanQuyen: false }, loi: "Không đọc được cấu hình quyền hợp lệ. Toàn quyền đang tắt cho đến khi lưu lại." };
   }
 
   function chuanHoa(s) {
@@ -30,7 +31,10 @@ function createQuyen({ dir, audit }) {
     return { toanQuyen: s.toanQuyen !== false, vai };
   }
 
-  const doc = () => chuanHoa(docSo());
+  function doc() {
+    const { s, loi } = docSo();
+    return { ...chuanHoa(s), ...(loi ? { loi } : {}) };
+  }
 
   function mucCua(role, s) {
     if (role === "CLAUDE_REPORTER" || /_(CHAT|WEB_PROMPT)$/.test(role)) return "doc";
@@ -50,7 +54,7 @@ function createQuyen({ dir, audit }) {
     } else if (typeof toanQuyen !== "boolean") {
       throw badRequest("toanQuyen phải là true hoặc false");
     }
-    const s = docSo();
+    const { s } = docSo();
     if (theoVai) s.vai = { ...(laSo(s.vai) ? s.vai : {}), [role]: muc };
     else s.toanQuyen = toanQuyen;
     fs.mkdirSync(dir, { recursive: true, mode: 0o700 });

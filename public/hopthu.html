@@ -4,8 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Hòm thư</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#000;--panel:#070707;--panel2:#0b0b0b;--line:#1a1a1a;--line2:#242424;--text:#f2f2f2;--mute:#a6a6a6;--mute2:#6b6b6b;--gold:#ecc970;--ok:#7ccf9b;--warn:#ecc970;--bad:#e8a39b;--claude:#d9734a;--codex:#3f8fd9;--mono:"JetBrains Mono",ui-monospace,monospace}
 *{box-sizing:border-box}
@@ -84,7 +82,11 @@ function render(d) {
   }
 }
 async function load() { try { const r = await fetch("hopthu", { cache: "no-store" }); render(await r.json()); } catch { $("at").textContent = "mất kết nối máy chủ"; } }
-load(); setInterval(load, 30000);
+let tPoll = null, hiddenPage = false;
+function startPoll() { if (!hiddenPage && !tPoll) tPoll = setInterval(() => { if (!hiddenPage && !document.hidden) load(); }, 30000); }
+load(); startPoll();
+window.addEventListener("pagehide", () => { hiddenPage = true; clearInterval(tPoll); tPoll = null; });
+window.addEventListener("pageshow", (e) => { if (e.persisted && hiddenPage) { hiddenPage = false; load(); startPoll(); } });
 </script>
 </body>
 </html>

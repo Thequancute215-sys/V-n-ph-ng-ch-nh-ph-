@@ -75,7 +75,7 @@ button { min-height: 36px; }
 (() => {
   const $ = (id) => document.getElementById(id);
   const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-  let ws = "", data = null, flow = null, ban = false, hen = null;
+  let ws = "", data = null, flow = null, ban = false, hen = null, anTrang = false, phien = 0;
   // Máy tính gọi ctl qua /ctl; điện thoại đã ghép gọi qua /dkx/api (lib/dieu-khien-xa.js chỉ mở lệnh xem, chọn take, cổng, dựng).
   // Trên điện thoại ẩn mọi nút tốn tiền và ngân sách/đồng ý người thật: những việc đó làm trên máy tính.
   let base = "/ctl", dienThoai = false;
@@ -117,7 +117,7 @@ button { min-height: 36px; }
       `<div class="row"><span>Đã chi máy quay Gemini: <span class="tien">${usd(mq.daChi)}</span> / ngân sách</span>${dienThoai ? `<b>${usd(ngan)}</b>` : `<input type="number" id="nganSach" min="0" max="1000" step="1" value="${esc(p.ngan_sach_usd)}" style="width:90px" aria-label="Ngân sách USD"><button type="button" id="luuNS">Lưu ngân sách</button>`}` +
       `<span class="mute">Chi phí tối đa ước tính cả phim: ${usd(toiDa)}${k.chiPhi && k.chiPhi.luotFlow ? " · " + k.chiPhi.luotFlow + " lượt Flow" : ""}</span></div>` +
       `<div class="thanh" role="img" aria-label="Đã chi ${usd(mq.daChi)}, tối đa ước tính ${usd(toiDa)}, ngân sách ${usd(ngan)}"><i class="uoc" style="width:${pt(toiDa)}%"></i><i class="chi" style="width:${pt(mq.daChi)}%"></i></div>` +
-      (mq.coKhoa ? "" : `<div class="warn">⚠ Chưa có khóa Gemini API (bậc trả phí): dán khóa ở màn Tài khoản AI để dùng máy quay Gemini.</div>`) +
+      (mq.coKhoa ? "" : `<div class="warn">⚠ Chưa có khóa Gemini API (bậc trả phí): dán khóa ở trang ${dienThoai ? "Kết nối trên máy tính" : '<a href="ket-noi.html">Kết nối</a>'} để dùng máy quay Gemini.</div>`) +
       (mq.dang ? `<div class="warn">⏳ Đang quay ${esc(mq.dang.loai)} cảnh ${esc(mq.dang.canh)}… (một clip có thể mất vài phút)</div>` : "") +
       (mq.loiCuoi ? `<div class="bad">Lần quay trước lỗi: ${esc(mq.loiCuoi)}</div>` : "") +
       (k.loi.length ? `<div class="bad"><b>Hồ sơ còn lỗi, chưa quay được:</b><br>${k.loi.map((l) => "✖ " + esc(l.chiTiet)).join("<br>")}</div>` : `<div class="ok">✓ Hồ sơ phim hợp lệ</div>`) +
@@ -136,8 +136,9 @@ button { min-height: 36px; }
     $("dung").hidden = !bd;
     if (bd) {
       const b = bd.banDung;
-      $("dung").innerHTML = `<div class="row"><h2>Bàn dựng</h2><button type="button" class="chinh" data-dung="1">${b ? "Dựng lại" : "Dựng bản xem thử"}</button><span class="mute">Miễn phí, chạy trên máy: ghép take đã chọn, phụ đề, giọng đọc, nhạc, chuẩn âm −14 LUFS.</span></div>` +
-        (!bd.coFfmpeg ? `<div class="warn">⚠ Chưa có FFmpeg: bấm Cài xưởng phim ở trang Kết nối.</div>` : "") +
+      const khoaDung = !bd.coFfmpeg;
+      $("dung").innerHTML = `<div class="row"><h2>Bàn dựng</h2><button type="button" class="chinh" data-dung="1"${khoaDung ? ' disabled aria-describedby="canhBaoFfmpeg" title="Chưa có FFmpeg: bấm Cài xưởng phim ở trang Kết nối."' : ""}>${b ? "Dựng lại" : "Dựng bản xem thử"}</button><span class="mute">Miễn phí, chạy trên máy: ghép take đã chọn, phụ đề, giọng đọc, nhạc, chuẩn âm −14 LUFS.</span></div>` +
+        (!bd.coFfmpeg ? `<div class="warn" id="canhBaoFfmpeg">⚠ Chưa có FFmpeg: bấm Cài xưởng phim ở trang Kết nối.</div>` : "") +
         (bd.dang ? `<div class="warn">⏳ ${esc(bd.dang.buoc)}</div>` : "") +
         (bd.loiCuoi ? `<div class="bad">Lần dựng trước lỗi: ${esc(bd.loiCuoi)}</div>` : "") +
         (b && bd.cu ? `<div class="warn">⚠ Bản dựng này cũ: anh đã đổi take hoặc thời lượng cảnh. Bấm Dựng lại.</div>` : "") +
@@ -177,16 +178,28 @@ button { min-height: 36px; }
         `<div><div>${esc(c.loi_dan || "")}</div><div class="mute">Khung hình: ${esc(c.khung_hinh || "(chưa có)")}</div>` +
         (khung ? `<div class="anh">${khung}</div>` : "") + (take ? `<div class="anh">${take}</div>` : "") + `<div class="row">${nut}</div></div></div>`;
     }).join("") || `<p class="mute">Phim chưa có cảnh nào. Hinata viết phân cảnh vào phim.json trước.</p>`;
-    document.querySelectorAll("main button, main input, main select").forEach((b) => { if (b.id !== "chonPhim" && b.id !== "taiLai") b.disabled = ban; });
+    document.querySelectorAll("main button, main input, main select").forEach((b) => {
+      if (b.id === "chonPhim" || b.id === "taiLai") return;
+      b.disabled = ban || (b.hasAttribute("data-dung") && !(bd && bd.coFfmpeg));
+    });
   }
 
   async function load() {
-    clearTimeout(hen);
-    if (!ws) { data = null; render(); return; }
-    try { data = await req("/phim?workspace=" + encodeURIComponent(ws)); } catch (e) { data = null; msg(e.message, true); }
-    try { flow = (await req("/flow")).flow; } catch { flow = null; }
+    clearTimeout(hen); hen = null;
+    if (anTrang) return;
+    const mine = ++phien, reqWs = ws;
+    if (!reqWs) { data = null; flow = null; render(); return; }
+    let nextData = null, nextFlow = null, loi = "";
+    try { nextData = await req("/phim?workspace=" + encodeURIComponent(reqWs)); }
+    catch (e) { loi = e.message; }
+    if (anTrang || mine !== phien || ws !== reqWs) return;
+    try { nextFlow = (await req("/flow")).flow; } catch { nextFlow = null; }
+    if (anTrang || mine !== phien || ws !== reqWs) return;
+    data = nextData;
+    flow = nextFlow;
+    if (loi) msg(loi, true);
     render();
-    if ((data && (data.mayQuay.dang || (data.banDung && data.banDung.dang))) || (flow && flow.nhipDang)) hen = setTimeout(load, 4000);
+    if (!anTrang && mine === phien && ws === reqWs && ((data && (data.mayQuay.dang || (data.banDung && data.banDung.dang))) || (flow && flow.nhipDang))) hen = setTimeout(load, 4000);
   }
   async function lam(fn, thongBao) {
     ban = true; render();
@@ -194,14 +207,17 @@ button { min-height: 36px; }
     finally { ban = false; await load(); }
   }
 
-  $("chonPhim").addEventListener("change", () => { ws = $("chonPhim").value; try { localStorage.setItem("vp-xuong-phim", ws); } catch {} msg(""); load(); });
+  $("chonPhim").addEventListener("change", () => { ws = $("chonPhim").value; try { localStorage.setItem("vp-xuong-phim", ws); } catch {} phien++; data = null; flow = null; render(); msg(""); load(); });
   $("taiLai").addEventListener("click", load);
   document.querySelector("main").addEventListener("click", async (e) => {
     const b = e.target.closest("button"); if (!b || ban) return;
     if (b.id === "luuNS") return lam(() => req("/phim/ceo", { workspace: ws, nganSach: Number($("nganSach").value) }), "Đã lưu ngân sách.");
     if (b.dataset.chonKhung) return lam(() => req("/phim/ceo", { workspace: ws, canh: b.dataset.chonKhung, khungChon: b.dataset.file }), "Đã chọn khung cho " + b.dataset.chonKhung + ".");
     if (b.dataset.chonTake) return lam(() => req("/phim/ceo", { workspace: ws, canh: b.dataset.chonTake, takeChon: b.dataset.file }), "Đã chọn take cho " + b.dataset.chonTake + ".");
-    if (b.dataset.dung) return lam(() => req("/phim/dung", { workspace: ws }), "Đang dựng. Trang tự cập nhật khi xong.");
+    if (b.dataset.dung) {
+      if (!(data && data.banDung && data.banDung.coFfmpeg)) return msg("Chưa có FFmpeg: bấm Cài xưởng phim ở trang Kết nối trước khi dựng.", true);
+      return lam(() => req("/phim/dung", { workspace: ws }), "Đang dựng. Trang tự cập nhật khi xong.");
+    }
     if (b.dataset.cong) {
       const so = Number(b.dataset.cong), duyet = b.dataset.duyet === "1";
       const hoi = duyet ? { 1: "Duyệt kịch bản và phân cảnh?", 2: "Duyệt khung chính và khoản quay?", 3: "Duyệt bản dựng này?", 4: "Xuất xưởng phim này? File cuối nằm trong media/xuat/; anh tự tải và tự đăng." }[so]
@@ -250,6 +266,8 @@ button { min-height: 36px; }
     } catch (e) { msg(e.message, true); }
     load();
   })();
+  window.addEventListener("pagehide", () => { anTrang = true; phien++; clearTimeout(hen); hen = null; });
+  window.addEventListener("pageshow", (e) => { if (e.persisted && anTrang) { anTrang = false; if (ws) load(); } });
 })();
 </script>
 </body>

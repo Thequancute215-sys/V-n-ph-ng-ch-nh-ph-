@@ -9,7 +9,11 @@
   // cửa sổ máy tính kéo hẹp vẫn là máy tính. Chạy trước mọi thứ để máy tính không tải 3D rồi mới chuyển.
   (() => { const ua = navigator.userAgent || "";
     const dienThoai = /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
-    if (!dienThoai) location.replace("os.html" + location.hash); })();
+    if (!dienThoai) location.replace("os.html" + location.hash);
+    else if (location.hash === "#/code/dieu-khien") location.replace("dieu-khien.html");
+    else if (location.hash === "#/code/giao-viec") location.replace("dieu-khien.html#giao-viec");
+    else if (location.hash === "#/phim") location.replace("xuong-phim.html");
+  })();
 </script>
 <title>Văn phòng AI 3D</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -270,7 +274,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
   </a>
 
   <!-- Chu trình tự động, Phase, lượt, blocker của dự án đang chọn (đọc thật từ repo) -->
-  <a class="btn pill" href="prototype.html#board" title="Chọn dự án, xem repo đã đọc, Phase, ai giữ lượt, blocker và giao việc tự động" style="background:linear-gradient(135deg, #22c55e, #0ea5e9);color:#fff;font-weight:800;text-decoration:none;gap:6px">
+  <a class="btn pill" href="prototype.html#board" data-chi-may title="Chọn dự án, xem repo đã đọc, Phase, ai giữ lượt, blocker và giao việc tự động" style="background:linear-gradient(135deg, #22c55e, #0ea5e9);color:#fff;font-weight:800;text-decoration:none;gap:6px">
     <span style="font-size:14px">📋</span>
     <span>Chu trình & dự án</span>
   </a>
@@ -328,7 +332,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
     <span id="badgeGptStatus" style="font-size:10.5px;padding:2px 7px;border-radius:6px;background:rgba(16,185,129,0.25);color:#6ee7b7;border:1px solid rgba(16,185,129,0.4)">GPT...</span>
   </button>
   <!-- Nút Sổ Bài Học & Cơ Chế Tự Học AI -->
-  <button class="btn pill" onclick="window.open('noiquy.html?tab=bai', '_blank')" title="Xem ngân hàng lỗi, bài học đúc kết và cơ chế tự học hỏi giữa các dự án" style="background:rgba(16,185,129,0.18);border:1px solid rgba(52,211,153,0.4);color:#6ee7b7;font-weight:800;gap:7px">
+  <button class="btn pill" onclick="window.open('noiquy.html?tab=bai', '_blank', 'noopener,noreferrer')" title="Xem ngân hàng lỗi, bài học đúc kết và cơ chế tự học hỏi giữa các dự án" style="background:rgba(16,185,129,0.18);border:1px solid rgba(52,211,153,0.4);color:#6ee7b7;font-weight:800;gap:7px">
     <span style="font-size:14px">🧠</span>
     <span>Sổ Bài Học & Tự Học</span>
     <span style="font-size:10.5px;padding:2px 6px;border-radius:6px;background:rgba(52,211,153,0.25);color:#a7f3d0;border:1px solid rgba(52,211,153,0.4)">Ngân hàng lỗi</span>
@@ -487,18 +491,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
           <button class="btn ghost" onclick="copyLoginCmd('claude login')" style="font-size:11px;padding:6px 12px;gap:6px">
             📋 Copy lệnh <code>claude login</code>
           </button>
-          <button class="btn ghost" onclick="toggleApiKeyInput('claude')" style="font-size:11px;padding:6px 12px">
-            🔑 Nhập Anthropic API Key
-          </button>
           <button class="btn ghost" onclick="refreshAccounts()" style="font-size:11px;padding:6px 12px;margin-left:auto">
             🔄 Quét lại
           </button>
-        </div>
-        <div id="claudeApiKeyRow" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(255,255,255,0.1)">
-          <div style="display:flex;gap:8px">
-            <input type="password" id="claudeApiKeyInput" placeholder="sk-ant-api03-..." style="flex:1;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:6px 10px;color:#fff;font-size:11px;font-family:monospace">
-            <button class="btn" onclick="saveApiKey('claude')" style="font-size:11px;padding:6px 14px;background:var(--gold);color:#000;font-weight:700">Lưu Key</button>
-          </div>
         </div>
       </div>
 
@@ -523,18 +518,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
           <button class="btn ghost" onclick="copyLoginCmd('codex login')" style="font-size:11px;padding:6px 12px;gap:6px">
             📋 Copy lệnh <code>codex login</code>
           </button>
-          <button class="btn ghost" onclick="toggleApiKeyInput('gpt')" style="font-size:11px;padding:6px 12px">
-            🔑 Nhập OpenAI API Key
-          </button>
           <button class="btn ghost" onclick="refreshAccounts()" style="font-size:11px;padding:6px 12px;margin-left:auto">
             🔄 Quét lại
           </button>
-        </div>
-        <div id="gptApiKeyRow" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(255,255,255,0.1)">
-          <div style="display:flex;gap:8px">
-            <input type="password" id="gptApiKeyInput" placeholder="sk-..." style="flex:1;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:6px 10px;color:#fff;font-size:11px;font-family:monospace">
-            <button class="btn" onclick="saveApiKey('gpt')" style="font-size:11px;padding:6px 14px;background:var(--gold);color:#000;font-weight:700">Lưu Key</button>
-          </div>
         </div>
       </div>
 
@@ -550,13 +536,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
           </div>
           <span id="geminiKeyBadge" style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;background:rgba(148,163,184,0.2);color:#cbd5e1">○ CHƯA CÓ KHÓA</span>
         </div>
-        <div style="font-size:11.5px;color:#cbd5e1;line-height:1.6;background:rgba(0,0,0,0.25);border-radius:10px;padding:10px 12px;margin-bottom:12px">
-          Tạo khóa miễn phí ở <code>aistudio.google.com/apikey</code> (đăng nhập Google), rồi dán vào đây. Khóa lưu trên máy (<code>keys.json</code>), không vào repo.
-          Văn phòng chỉ gửi câu hỏi ngắn và link công khai ra Google; chặn mã nguồn, khóa, token; tối đa 200 lần/ngày.
-        </div>
-        <div style="display:flex;gap:8px">
-          <input type="password" id="geminiApiKeyInput" placeholder="AIza..." autocomplete="off" style="flex:1;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:6px 10px;color:#fff;font-size:11px;font-family:monospace">
-          <button class="btn" onclick="saveApiKey('gemini')" style="font-size:11px;padding:6px 14px;background:var(--gold);color:#000;font-weight:700">Lưu khóa</button>
+        <div style="font-size:11.5px;color:#cbd5e1;line-height:1.6;background:rgba(0,0,0,0.25);border-radius:10px;padding:10px 12px">
+          Quản lý và lưu khóa API (Claude, GPT, Gemini) chỉ thực hiện trên máy tính chạy văn phòng ở trang <b>Kết nối</b>.
         </div>
       </div>
 
@@ -570,12 +551,12 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
               <div style="font-size:11px;color:var(--mute)">Kiến Trúc Sư Đặc Tả, Thư Ký & UI/UX (Hinata Hyuga)</div>
             </div>
           </div>
-          <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;background:rgba(16,185,129,0.2);color:#34d399;border:1px solid rgba(16,185,129,0.4)">
-            ● ĐANG HOẠT ĐỘNG
+          <span id="agyStatusBadge" style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;background:rgba(148,163,184,0.2);color:#cbd5e1;border:1px solid rgba(148,163,184,0.4)">
+            ● ĐANG KIỂM TRA...
           </span>
         </div>
-        <div style="font-size:11.5px;color:#cbd5e1;line-height:1.6;background:rgba(0,0,0,0.25);border-radius:10px;padding:10px 12px">
-          Phiên IDE trực tiếp qua Google DeepMind Agent Protocol. Tài khoản kết nối: <code style="color:#c084fc">haphuongied@haphuongied.com.vn</code>.
+        <div id="agyDetails" style="font-size:11.5px;color:#cbd5e1;line-height:1.6;background:rgba(0,0,0,0.25);border-radius:10px;padding:10px 12px">
+          Đang kiểm tra trạng thái kết nối từ máy chủ văn phòng...
         </div>
       </div>
 
@@ -595,7 +576,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
   </div>
   <div class="sb-body">
     <!-- Repo Switcher -->
-    <div class="box">
+    <div class="box" data-chi-may>
       <div class="box-title"><span>Dự Án Đã Đăng Ký</span></div>
       <div style="font-size:12px;color:var(--mute)">Chọn dự án trong Tổng quan để xem đường dẫn, Phase và lượt làm việc hiện tại.</div>
       <div style="margin-top:8px;display:flex;gap:6px">
@@ -604,7 +585,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
     </div>
 
     <!-- Protocol v2.2 Mutex Phase Stepper -->
-    <div class="box" style="border-color:rgba(236,201,112,0.3)">
+    <div class="box" data-chi-may style="border-color:rgba(236,201,112,0.3)">
       <div class="box-title"><span>Tiến Trình Protocol v2.2</span></div>
       <div style="font-size:12px;line-height:1.6;color:var(--mute)">Phase và NEXT_OWNER được đọc từ agent.md của dự án trong Tổng quan. Xem bàn giao thực tế trước khi duyệt chuyển lượt.</div>
       <button class="btn" style="width:100%;margin-top:10px;justify-content:center" onclick="location.href='prototype.html#board'">
@@ -616,15 +597,15 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
     <div class="box">
       <div class="box-title"><span>Sổ Cần Thế Quân CEO Duyệt (CAN-ANH.md)</span><span id="askCount" style="color:var(--gold)">0</span></div>
       <div id="askList" style="font-size:11.5px;color:var(--mute)">
-        Hiện không có yêu cầu nào cần Giám đốc xử lý. Mọi việc đang diễn ra suôn sẻ!
+        Chưa có yêu cầu cần xử lý.
       </div>
     </div>
 
     <!-- Khóa DEV -->
     <div class="box">
-      <div class="box-title"><span>Khóa DEV (DEV.lock)</span><span style="color:var(--ok)">Rảnh</span></div>
-      <div style="font-size:11.5px;color:var(--mute)">
-        Không có phiên nào đang chiếm dụng cổng DEV 7788.
+      <div class="box-title"><span>Khóa DEV (DEV.lock)</span><span id="devLockBadge" style="color:var(--mute)">–</span></div>
+      <div id="devLockDetail" style="font-size:11.5px;color:var(--mute)">
+        Đang chờ dữ liệu trực tiếp từ máy chủ văn phòng.
       </div>
     </div>
   </div>
@@ -639,11 +620,11 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
   <div class="sb-body">
     <!-- Selected Character Card -->
     <div class="box" id="agentDetailBox">
-      <div class="box-title"><span>Nhân Sự Được Chọn</span><span id="agentStatusBadge" style="color:var(--ok)">ACTIVE</span></div>
-      <div style="font-size:14px;font-weight:800;color:#fff" id="agentNameTxt">Thế Quân (Chủ Dự Án / CEO)</div>
-      <div style="font-size:11px;color:var(--gold);margin-top:2px" id="agentRoleTxt">Chủ văn phòng / Quyết định tối cao</div>
-      <div style="font-size:11px;color:var(--mute);margin-top:8px;font-style:italic" id="agentLastTextTxt">
-        "Chỉ khi tôi chỉ định thì 6.1 Sol mới có thể code..."
+      <div class="box-title"><span>Nhân Sự Được Chọn</span><span id="agentStatusBadge" style="color:var(--mute)">–</span></div>
+      <div style="font-size:14px;font-weight:800;color:#fff" id="agentNameTxt">Chưa chọn nhân sự</div>
+      <div style="font-size:11px;color:var(--gold);margin-top:2px" id="agentRoleTxt">Bấm vào một nhân vật trong văn phòng 3D</div>
+      <div style="font-size:11px;color:var(--mute);margin-top:8px" id="agentLastTextTxt">
+        Trạng thái và báo cáo gần nhất của nhân sự sẽ hiện ở đây khi kết nối máy chủ.
       </div>
     </div>
 
@@ -656,40 +637,20 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
       <div class="chat-note">Chat chỉ đọc: AI xem repo để trả lời, không sửa file, không chuyển lượt. Việc ngoài phạm vi, AI sẽ chỉ sếp sang đúng phòng kèm prompt soạn sẵn. Mỗi câu hỏi tốn hạn mức gói của AI đó.</div>
     </div>
 
-    <!-- Subagents satellite list -->
-    <div class="box">
-      <div class="box-title"><span>Vệ Tinh Subagents</span><span style="color:var(--purple)">3 Đang Chạy</span></div>
-      <div style="display:flex;flex-direction:column;gap:6px;font-size:11px">
-        <div style="padding:6px 10px;background:rgba(255,255,255,0.03);border-radius:8px;display:flex;justify-content:space-between">
-          <span style="color:var(--cyan)">research</span>
-          <span style="color:var(--mute)">Sandbox Read-only</span>
-        </div>
-        <div style="padding:6px 10px;background:rgba(255,255,255,0.03);border-radius:8px;display:flex;justify-content:space-between">
-          <span style="color:#f472b6">generative_ui</span>
-          <span style="color:var(--ok)">Active</span>
-        </div>
-        <div style="padding:6px 10px;background:rgba(255,255,255,0.03);border-radius:8px;display:flex;justify-content:space-between">
-          <span style="color:#a855f7">image-generator</span>
-          <span style="color:var(--mute)">Idle</span>
-        </div>
-      </div>
-    </div>
-
   </div>
 </aside>
 
 <div class="hint" id="hint">Cuộn chuột để zoom sát từng phòng · Kéo chuột để xoay · Click vào phòng để lướt tới</div>
 <div class="links">
-  <a href="dieukhien.html">⌘ Điều khiển máy</a>
+  <a href="dieukhien.html" data-chi-may>⌘ Điều khiển máy</a>
   <a href="#" data-cai-app hidden onclick="return false" title="Cài Văn phòng AI thành app có cửa sổ và biểu tượng riêng">⬇ Cài app</a>
-  <a href="noiquy.html?tab=bai" target="_blank" style="color:var(--gold);border-color:rgba(236,201,112,0.5);font-weight:700">🧠 Sổ Bài Học & Tự Học</a>
-  <a href="prototype.html">Tổng quan & điều phối</a>
+  <a href="noiquy.html?tab=bai" target="_blank" rel="noopener noreferrer" style="color:var(--gold);border-color:rgba(236,201,112,0.5);font-weight:700">🧠 Sổ Bài Học & Tự Học</a>
+  <a href="prototype.html" data-chi-may>Tổng quan & điều phối</a>
   <a href="hopthu.html">Hòm thư</a>
-  <a href="prototype.html#board">Bảng điều hành</a>
+  <a href="prototype.html#board" data-chi-may>Bảng điều hành</a>
 </div>
 
 <script type="module">
-import { createOffice } from "./vanphong3d.js";
 import { createDesk } from "./office-desk.js";
 import { connectLive, vietnamHour } from "./thoitiet.js";
 
@@ -710,41 +671,49 @@ const NPC_OF = { ceo: "ceo", pain: "pain", antigravity: "hinata", sol: "itachi",
 const KEY_OF = Object.fromEntries(Object.entries(NPC_OF).map(([k, v]) => [v, k]));
 let selected = "ceo";
 
-// ================= VĂN PHÒNG 3D: một map trong + ngoài, nhân vật Thế Quân đi WASD =================
-// Trời theo giờ Việt Nam (UTC+7) và thời tiết thật Hà Nội (thoitiet.js).
 let office = null;
-try {
-  office = createOffice({
-    gl: $("gl"), lbl: $("lbl"), hour: vietnamHour(), cardStyle: "top:76px;right:16px",
-    onNpcClick: (id) => {
-      const a = defaultAgents.find((x) => x.key === (KEY_OF[id] || id));
-      if (!a) return;
-      selected = a.key;
-      updateSidebarAgentInfo(a);
-      chatWith(a.key);
-      openRightSidebar();
-    },
-  });
-  // Trời theo giờ Việt Nam và thời tiết thật của Hà Nội
-  connectLive(office, {
-    onUpdate: ({ place, clock, weather: w }) => {
-      $("wxTxt").textContent = `${place} · ${clock} · ` + (!w ? "đang lấy thời tiết…" : w.error ? "chưa lấy được thời tiết (" + w.error + ", thử lại sau 2 phút)" : `${w.temp}°C · ${w.text}${w.stale ? " (cũ)" : ""}`);
-    },
-  });
-  // Thẻ "Bạn đang ở" nằm ngay dưới thanh trên (trên màn hẹp thanh trên xuống nhiều dòng)
-  const placeCard = () => {
-    const card = document.querySelector(".vp-room"), bar = document.querySelector(".bar");
-    if (card && bar) card.style.top = Math.round(bar.getBoundingClientRect().bottom + 8) + "px";
-  };
-  addEventListener("resize", placeCard);
-  new ResizeObserver(placeCard).observe(document.querySelector(".bar"));
-  placeCard();
-} catch (err) {
-  console.error(err);
-  const msg = document.createElement("div");
-  msg.style.cssText = "position:absolute;inset:0;display:grid;place-items:center;color:#94a3b8;font-size:14px;padding:16px;text-align:center";
-  msg.textContent = "Không vẽ được văn phòng 3D: " + err.message;
-  $("world").appendChild(msg);
+
+// Tải riêng cảnh 3D để bàn làm việc và menu vẫn mở được khi CDN không phản hồi.
+async function startOffice() {
+  try {
+    const { createOffice } = await import("./vanphong3d.js");
+    office = createOffice({
+      gl: $("gl"), lbl: $("lbl"), hour: vietnamHour(), cardStyle: "top:76px;right:16px",
+      onNpcClick: (id) => {
+        const a = defaultAgents.find((x) => x.key === (KEY_OF[id] || id));
+        if (!a) return;
+        selected = a.key;
+        updateSidebarAgentInfo(a);
+        chatWith(a.key);
+        openRightSidebar();
+      },
+    });
+    office.controls.addEventListener("change", () => { zoomRange.value = office.getDistance(); });
+    // Trời theo giờ Việt Nam và thời tiết thật của Hà Nội
+    connectLive(office, {
+      onUpdate: ({ place, clock, weather: w }) => {
+        $("wxTxt").textContent = `${place} · ${clock} · ` + (!w ? "đang lấy thời tiết…" : w.error ? "chưa lấy được thời tiết (" + w.error + ", thử lại sau 2 phút)" : `${w.temp}°C · ${w.text}${w.stale ? " (cũ)" : ""}`);
+      },
+    });
+    // Thẻ "Bạn đang ở" nằm ngay dưới thanh trên (trên màn hẹp thanh trên xuống nhiều dòng)
+    const placeCard = () => {
+      const card = document.querySelector(".vp-room"), bar = document.querySelector(".bar");
+      if (card && bar) card.style.top = Math.round(bar.getBoundingClientRect().bottom + 8) + "px";
+    };
+    addEventListener("resize", placeCard);
+    new ResizeObserver(placeCard).observe(document.querySelector(".bar"));
+    placeCard();
+  } catch (err) {
+    console.warn("Không tải được văn phòng 3D:", err);
+    const msg = document.createElement("div");
+    msg.setAttribute("role", "status");
+    msg.style.cssText = "position:absolute;inset:0;display:grid;place-items:center;color:#94a3b8;font-size:14px;padding:16px;text-align:center";
+    msg.textContent = "Chưa mở được cảnh 3D. Anh vẫn có thể dùng menu và bàn làm việc.";
+    $("world").appendChild(msg);
+    $("hint").hidden = true;
+    $("wxTxt").textContent = "Hà Nội · chưa tải thời tiết";
+    document.querySelectorAll(".rbtn, #zoomRange, #zoomInBtn, #zoomOutBtn").forEach((btn) => { btn.disabled = true; });
+  }
 }
 
 // ================= ĐI TỚI PHÒNG & ZOOM =================
@@ -787,7 +756,6 @@ function focusRoom(roomId) {
   if (office) office.goToRoom(NPC_OF[roomId] || roomId);
   document.querySelectorAll(".rbtn").forEach((b) => b.classList.toggle("active", b.dataset.room === roomId));
 }
-function focusOnAgent(agentKey) { focusRoom(agentKey); }
 document.querySelectorAll(".rbtn").forEach((btn) => {
   btn.addEventListener("click", () => { focusRoom(btn.dataset.room); btn.blur(); });
 });
@@ -797,7 +765,6 @@ zoomRange.addEventListener("input", (e) => office?.setDistance(parseFloat(e.targ
 zoomRange.addEventListener("change", (e) => e.target.blur());
 $("zoomInBtn").addEventListener("click", (e) => { office?.setDistance(office.getDistance() - 3); e.currentTarget.blur(); });
 $("zoomOutBtn").addEventListener("click", (e) => { office?.setDistance(office.getDistance() + 3); e.currentTarget.blur(); });
-office?.controls.addEventListener("change", () => { zoomRange.value = office.getDistance(); });
 
 // ================= GIAO VIỆC CHO MỘT VAI (MỘT LƯỢT AI THẬT) =================
 // Trước đây là hộp "Phân việc ngoài lề (Đặc cách)" chỉ hiện bong bóng và báo "đã ghi nhận vào sổ điều phối và hòm thư" mà không ghi gì,
@@ -857,6 +824,20 @@ $("openBroadcastBtn").addEventListener("click", () => {
 // Tiêu đề việc, tên người nhận, lệnh từ OS Controller… đều là dữ liệu: thoát HTML trước khi chèn bằng innerHTML.
 const escH = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
+// Phân quyền giao diện từ xa (điện thoại): ẩn nút chỉ dùng trên máy tính (/ai/run, prototype.html, dieukhien.html).
+let isRemotePhone = false;
+function applyRemoteAccess(base) {
+  isRemotePhone = base !== "/ctl";
+  $("openOverrideBtn").hidden = isRemotePhone;
+  document.querySelectorAll("[data-chi-may]").forEach((el) => { el.hidden = isRemotePhone; });
+}
+$("claudeLowPill").addEventListener("click", (e) => {
+  if (!isRemotePhone) return;
+  e.preventDefault();
+  document.querySelector('.desk-tools [data-desk="quotas"]')?.click();
+});
+if (globalThis.vpCtlBase) globalThis.vpCtlBase().then(applyRemoteAccess).catch(() => {});
+
 // ================= QUẢN LÝ TASK ĐANG CHẠY & KILL SWITCH =================
 const runningTasksModal = $("runningTasksModal");
 $("openRunningTasksBtn").addEventListener("click", () => {
@@ -866,17 +847,52 @@ $("openRunningTasksBtn").addEventListener("click", () => {
 $("closeRunningTasksBtn").addEventListener("click", () => runningTasksModal.classList.remove("open"));
 
 async function refreshRunningTasks() {
+  if (document.hidden && !runningTasksModal.classList.contains("open")) return;
   try {
-    const res = await fetch("/api/running-tasks");
-    const d = await res.json();
-    if (!d.ok) return;
-
-    const list = d.tasks.filter(t => t.status === "running");
+    const base = globalThis.vpCtlBase ? await globalThis.vpCtlBase() : "/ctl";
+    applyRemoteAccess(base);
     const btn = $("openRunningTasksBtn");
     const txt = $("runningTasksBtnTxt");
+    const killAll = $("killAllTasksBtn");
 
-    const hasWarning = list.some(t => t.isWarning);
-    txt.textContent = `${list.length} Task Đang Chạy ${hasWarning ? '⚠️ (Có task lâu)' : ''}`;
+    if (base === "unpaired") {
+      txt.textContent = "Chưa ghép điện thoại";
+      killAll.disabled = true;
+      $("runningTasksList").innerHTML = `<div style="padding:24px;text-align:center;color:var(--mute);font-size:12px;background:rgba(255,255,255,0.02);border-radius:12px">Điện thoại chưa ghép với máy tính. Mở <a href="dieu-khien.html" style="color:var(--gold)">Bảng điều khiển</a> để ghép rồi quay lại.</div>`;
+      return;
+    }
+
+    let list = [];
+    const allowSingleKill = base === "/ctl";
+    if (base === "/dkx/api") {
+      const res = await fetch("/dkx/api/jobs?status=running", { cache: "no-store" });
+      const d = await res.json();
+      if (!res.ok || !d.ok) {
+        txt.textContent = "Chưa đọc được task";
+        return;
+      }
+      list = (d.jobs || []).map((j) => {
+        const secs = Math.max(0, Math.floor(j.runningS || 0));
+        return {
+          id: j.id,
+          title: j.task || j.agent || j.kind || "Lượt AI",
+          assigneeName: j.agent || "AI",
+          beast: j.workspace ? String(j.workspace).split(/[\\/]/).pop() : "Văn phòng",
+          durationMs: secs * 1000,
+          durationMinutes: Math.floor(secs / 60),
+          isWarning: secs >= 600,
+        };
+      });
+    } else {
+      const res = await fetch("/api/running-tasks", { cache: "no-store" });
+      const d = await res.json();
+      if (!d.ok) return;
+      list = (d.tasks || []).filter((t) => t.status === "running");
+    }
+
+    killAll.disabled = false;
+    const hasWarning = list.some((t) => t.isWarning);
+    txt.textContent = `${list.length} Task Đang Chạy ${hasWarning ? "⚠️ (Có task lâu)" : ""}`;
 
     if (hasWarning) {
       btn.style.background = "rgba(239, 68, 68, 0.3)";
@@ -888,17 +904,16 @@ async function refreshRunningTasks() {
       btn.style.color = "#fca5a5";
     }
 
-    // Render in modal
     if (!list.length) {
       $("runningTasksList").innerHTML = `
         <div style="padding:30px;text-align:center;color:var(--mute);font-size:12px;background:rgba(255,255,255,0.02);border-radius:12px">
-          🎉 Hiện không có task nào đang chạy ngầm. Tài nguyên máy tính 100% rảnh!
+          🎉 Hiện không có task nào đang chạy ngầm.
         </div>
       `;
       return;
     }
 
-    $("runningTasksList").innerHTML = list.map(t => `
+    $("runningTasksList").innerHTML = list.map((t) => `
       <div style="background:${t.isWarning ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.03)'};border:1px solid ${t.isWarning ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.1)'};border-radius:12px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:12px">
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:6px">
@@ -906,15 +921,13 @@ async function refreshRunningTasks() {
             ${t.isWarning ? '<span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#ef4444;color:#fff;font-weight:700">⚠️ Chạy > 10m</span>' : ''}
           </div>
           <div style="font-size:11px;color:var(--mute);margin-top:2px">
-            👤 Phụ trách: <b style="color:#fff">${escH(t.assigneeName)}</b> · Linh vật: <span style="color:#38bdf8">${escH(t.beast)}</span>
+            👤 Phụ trách: <b style="color:#fff">${escH(t.assigneeName)}</b> · ${allowSingleKill ? "Linh vật" : "Dự án"}: <span style="color:#38bdf8">${escH(t.beast)}</span>
           </div>
           <div style="font-size:10.5px;color:${t.isWarning ? '#f87171' : 'var(--mute)'};margin-top:2px;font-family:monospace">
-            ⏱️ Đã chạy: ${t.durationMinutes} phút (${Math.floor(t.durationMs / 1000)}s)
+            ⏱️ Đã chạy: ${escH(t.durationMinutes)} phút (${Math.floor((t.durationMs || 0) / 1000)}s)
           </div>
         </div>
-        <button class="btn" data-kill-task="${escH(t.id)}" onclick="killSingleTask(this.dataset.killTask)" style="padding:6px 14px;font-size:11.5px;background:rgba(239,68,68,0.25);border:1px solid #ef4444;color:#fca5a5;font-weight:800">
-          ⏹️ Dừng Task
-        </button>
+        ${allowSingleKill ? `<button class="btn" data-kill-task="${escH(t.id)}" onclick="killSingleTask(this.dataset.killTask)" style="padding:6px 14px;font-size:11.5px;background:rgba(239,68,68,0.25);border:1px solid #ef4444;color:#fca5a5;font-weight:800">⏹️ Dừng Task</button>` : '<span style="font-size:10.5px;color:var(--mute)">Dùng nút dừng tất cả bên dưới</span>'}
       </div>
     `).join("");
   } catch (err) {
@@ -923,6 +936,7 @@ async function refreshRunningTasks() {
 }
 
 window.killSingleTask = async (taskId) => {
+  if (isRemotePhone) { alert("Dừng từng task chỉ thực hiện trên máy tính; từ điện thoại hãy dùng nút Dừng tất cả."); return; }
   if (!confirm(`Xác nhận dừng task "${taskId}"?`)) return;
   try {
     const res = await fetch("/api/kill-task", {
@@ -941,15 +955,19 @@ window.killSingleTask = async (taskId) => {
 $("killAllTasksBtn").addEventListener("click", async () => {
   if (!confirm("⚠️ PHANH KHẨN CẤP:\nBạn có chắc chắn muốn DỪNG TẤT CẢ các task đang chạy ngầm để thu hồi toàn bộ tài nguyên?")) return;
   try {
-    const res = await fetch("/api/kill-task", {
+    const base = globalThis.vpCtlBase ? await globalThis.vpCtlBase() : "/ctl";
+    if (base === "unpaired") { alert("Điện thoại chưa ghép với máy tính."); return; }
+    const url = base === "/dkx/api" ? "/dkx/api/kill-all" : "/api/kill-task";
+    const body = base === "/dkx/api" ? {} : { all: true };
+    const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ all: true })
+      body: JSON.stringify(body)
     });
     const d = await res.json();
     refreshRunningTasks();
     if (d.ok) runningTasksModal.classList.remove("open");
-    alert(d.message || d.error);
+    alert(d.message || (d.ok ? `Đã dừng ${(d.results || []).length} tác vụ.` : d.error));
   } catch (err) {
     alert("Lỗi dừng tất cả task: " + err.message);
   }
@@ -986,6 +1004,9 @@ $("toggleBubbleBtn").addEventListener("click", () => {
 function updateSidebarAgentInfo(a) {
   $("agentNameTxt").textContent = a.name;
   $("agentRoleTxt").textContent = a.role;
+  const st = a.status === "active" ? "ĐANG LÀM" : a.status === "idle" ? "RẢNH" : a.status === "away" ? "VẮNG" : "–";
+  $("agentStatusBadge").textContent = st;
+  $("agentStatusBadge").style.color = a.status === "active" ? "var(--ok)" : "var(--mute)";
   $("agentLastTextTxt").textContent = a.lastText ? `“${a.lastText}”` : "Chưa có báo cáo mới.";
 }
 
@@ -1011,13 +1032,16 @@ function renderChat(err) {
   if (d) $("chatInp").placeholder = "Nhắn cho " + d.name + " (" + d.room + ")…";
   const msgs = d ? d.messages : [];
   log.innerHTML = (msgs.length ? msgs.map((m) => {
+    const mid = escChat(m.id);
+    const fromCls = m.from === "ceo" ? "ceo" : "ai";
+    const statusCls = ["cho", "xong", "loi"].includes(m.status) ? m.status : "";
     let h = escChat(m.status === "cho" ? (d.name + " đang đọc repo và trả lời…") : m.text);
     if (m.route) h += `<div class="chat-route">➡ Sếp nên sang <b>${escChat(m.route.room)}</b> gặp <b>${escChat(m.route.name)}</b>${m.route.why ? ": " + escChat(m.route.why) : ""}` +
       (m.route.prompt ? `<pre>${escChat(m.route.prompt)}</pre>` : "") +
-      `<div class="chat-acts">${m.route.prompt ? `<button data-copy="${m.id}">Chép prompt</button>` : ""}<button data-go="${escChat(m.route.to)}">Đi tới ${escChat(m.route.room)}</button>` +
-      (m.route.prompt ? `<button class="go" data-ask="${m.id}">Hỏi ${escChat(m.route.name)} luôn</button>` : "") + "</div></div>";
-    else if (m.task) h += `<div class="chat-route">📝 Việc này cần sửa file thật${m.task.why ? ": " + escChat(m.task.why) : ""}. Prompt giao việc:<pre>${escChat(m.task.prompt)}</pre><div class="chat-acts"><button data-copy="${m.id}">Chép prompt giao việc</button></div></div>`;
-    return `<div class="chat-msg ${m.from} ${m.status}">${h}</div>`;
+      `<div class="chat-acts">${m.route.prompt ? `<button data-copy="${mid}">Chép prompt</button>` : ""}<button data-go="${escChat(m.route.to)}">Đi tới ${escChat(m.route.room)}</button>` +
+      (m.route.prompt ? `<button class="go" data-ask="${mid}">Hỏi ${escChat(m.route.name)} luôn</button>` : "") + "</div></div>";
+    else if (m.task) h += `<div class="chat-route">📝 Việc này cần sửa file thật${m.task.why ? ": " + escChat(m.task.why) : ""}. Prompt giao việc:<pre>${escChat(m.task.prompt)}</pre><div class="chat-acts"><button data-copy="${mid}">Chép prompt giao việc</button></div></div>`;
+    return `<div class="chat-msg ${fromCls}${statusCls ? " " + statusCls : ""}">${h}</div>`;
   }).join("") : `<div class="chat-note">Chưa có tin nào. Hỏi ${escChat(d ? d.name : "")} về đúng việc của phòng này nhé.</div>`) +
     (err ? `<div class="chat-msg ai loi">${escChat(err)}</div>` : "");
   log.scrollTop = log.scrollHeight;
@@ -1084,56 +1108,51 @@ window.copyLoginCmd = (cmd) => {
   });
 };
 
-window.toggleApiKeyInput = (p) => {
-  const row = $(p + "ApiKeyRow");
-  if (row) row.style.display = row.style.display === "none" ? "block" : "none";
-};
-
-window.saveApiKey = async (provider) => {
-  const inp = $(provider + "ApiKeyInput");
-  const key = inp ? inp.value.trim() : "";
-  if (!key) return alert("Vui lòng nhập API Key hợp lệ!");
-  try {
-    const res = await fetch("/api/accounts/save", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ provider, apiKey: key })
-    });
-    const d = await res.json();
-    alert(d.message || d.error);
-    if (!d.ok) return;
-    inp.value = "";
-    const row = $(provider + "ApiKeyRow"); if (row) row.style.display = "none";
-    refreshAccounts();
-  } catch (err) {
-    alert("Lỗi khi lưu API Key: " + err.message);
-  }
-};
-
 window.refreshAccounts = async () => {
+  if (document.hidden && !accountsModal.classList.contains("open")) return;
   try {
-    const res = await fetch("/api/accounts");
+    const res = await fetch("/api/accounts", { cache: "no-store" });
     const d = await res.json();
     if (!d.ok || !d.accounts) return;
-    const a = d.accounts;
+    const a = d.accounts, local = d.canManageKeys === true;
     const gk = $("geminiKeyBadge");
-    if (gk) { const on = !!(a.gemini && a.gemini.hasApiKey); gk.textContent = on ? "● ĐÃ CÓ KHÓA" : "○ CHƯA CÓ KHÓA"; gk.style.background = on ? "rgba(16,185,129,0.2)" : "rgba(148,163,184,0.2)"; gk.style.color = on ? "#34d399" : "#cbd5e1"; }
+    if (gk) {
+      const g = a.gemini || {};
+      const known = local && typeof g.hasApiKey === "boolean" ? g.hasApiKey : null;
+      gk.textContent = known === true ? "● ĐÃ CÓ KHÓA" : known === false ? "○ CHƯA CÓ KHÓA" : "● CHỈ QUẢN LÝ TRÊN MÁY CHỦ";
+      gk.style.background = known === true ? "rgba(16,185,129,0.2)" : "rgba(148,163,184,0.2)";
+      gk.style.color = known === true ? "#34d399" : "#cbd5e1";
+    }
+    const agyBadge = $("agyStatusBadge"), agyDet = $("agyDetails");
+    if (agyBadge && agyDet) {
+      const g = a.gemini || {};
+      const ok = !!g.connected;
+      agyBadge.textContent = ok ? "● SẴN SÀNG" : "● CHẠY QUA PHIÊN IDE";
+      agyBadge.style.background = ok ? "rgba(16,185,129,0.2)" : "rgba(148,163,184,0.2)";
+      agyBadge.style.color = ok ? "#34d399" : "#cbd5e1";
+      agyDet.textContent = local
+        ? "Antigravity chạy qua phiên IDE trên máy chủ. Quản lý và chuyển tài khoản Antigravity tại mục Hạn mức."
+        : "Trạng thái và chuyển tài khoản Antigravity quản lý tại mục Hạn mức.";
+    }
 
     // Claude
     const clBadge = $("claudeStatusBadge");
     const clTop = $("badgeClaudeStatus");
-    if (a.claude.connected) {
-      clBadge.textContent = "● ĐÃ KẾT NỐI (PRO/TEAM)";
+    const cl = a.claude || {};
+    if (cl.connected) {
+      clBadge.textContent = "● ĐÃ KẾT NỐI";
       clBadge.style.background = "rgba(16,185,129,0.2)";
       clBadge.style.color = "#34d399";
       clTop.textContent = "Claude: OK";
       clTop.style.background = "rgba(16,185,129,0.25)";
       clTop.style.color = "#6ee7b7";
-      $("claudeDetails").innerHTML = `
-        <b>Trạng thái:</b> ${a.claude.authMode}<br>
-        <b>Mã Tổ Chức:</b> ${a.claude.organization || "Cá nhân (Claude AI)"}<br>
-        <b>Thư mục phiên:</b> <code>${a.claude.path}</code> (${a.claude.sessionsCount} phiên)
-      `;
+      const clLines = [];
+      if (cl.authMode) clLines.push(`<b>Trạng thái:</b> ${escH(cl.authMode)}`);
+      if (local) {
+        clLines.push(`<b>Mã Tổ Chức:</b> ${escH(cl.organization || "Cá nhân (Claude AI)")}`);
+        if (cl.path) clLines.push(`<b>Thư mục phiên:</b> <code>${escH(cl.path)}</code> (${escH(cl.sessionsCount ?? 0)} phiên)`);
+      }
+      $("claudeDetails").innerHTML = clLines.length ? clLines.join("<br>") : "Đã kết nối trên máy chủ. Chi tiết phiên và khóa API chỉ quản lý trên máy tính.";
     } else {
       clBadge.textContent = "○ CHƯA ĐĂNG NHẬP";
       clBadge.style.background = "rgba(239,68,68,0.2)";
@@ -1141,26 +1160,27 @@ window.refreshAccounts = async () => {
       clTop.textContent = "Claude: Chưa login";
       clTop.style.background = "rgba(239,68,68,0.25)";
       clTop.style.color = "#fca5a5";
-      $("claudeDetails").innerHTML = `
-        Chưa phát hiện phiên Claude Code. Hãy chạy lệnh <code>claude login</code> trong terminal hoặc nhập API Key bên dưới.
-      `;
+      $("claudeDetails").innerHTML = local ? "Chưa phát hiện phiên Claude Code. Hãy chạy lệnh <code>claude login</code> trong terminal hoặc nhập API Key ở trang <b>Kết nối</b>." : "Chưa phát hiện phiên Claude Code trên máy chủ. Đăng nhập hoặc lưu API Key trực tiếp trên máy tính.";
     }
 
     // GPT / Codex
     const gptBadge = $("gptStatusBadge");
     const gptTop = $("badgeGptStatus");
-    if (a.gpt.connected) {
-      gptBadge.textContent = "● ĐÃ KẾT NỐI (CHATGPT)";
+    const gp = a.gpt || {};
+    if (gp.connected) {
+      gptBadge.textContent = "● ĐÃ KẾT NỐI";
       gptBadge.style.background = "rgba(16,185,129,0.2)";
       gptBadge.style.color = "#34d399";
       gptTop.textContent = "GPT: OK";
       gptTop.style.background = "rgba(16,185,129,0.25)";
       gptTop.style.color = "#6ee7b7";
-      $("gptDetails").innerHTML = `
-        <b>Trạng thái:</b> ${a.gpt.authMode}<br>
-        <b>Làm mới gần nhất:</b> ${a.gpt.lastRefresh || "Đang hiệu lực"}<br>
-        <b>Thư mục phiên:</b> <code>${a.gpt.path}</code> (${a.gpt.sessionsCount} phiên)
-      `;
+      const gpLines = [];
+      if (gp.authMode) gpLines.push(`<b>Trạng thái:</b> ${escH(gp.authMode)}`);
+      if (local) {
+        gpLines.push(`<b>Làm mới gần nhất:</b> ${escH(gp.lastRefresh || "Đang hiệu lực")}`);
+        if (gp.path) gpLines.push(`<b>Thư mục phiên:</b> <code>${escH(gp.path)}</code> (${escH(gp.sessionsCount ?? 0)} phiên)`);
+      }
+      $("gptDetails").innerHTML = gpLines.length ? gpLines.join("<br>") : "Đã kết nối trên máy chủ. Chi tiết phiên và khóa API chỉ quản lý trên máy tính.";
     } else {
       gptBadge.textContent = "○ CHƯA ĐĂNG NHẬP";
       gptBadge.style.background = "rgba(239,68,68,0.2)";
@@ -1168,9 +1188,7 @@ window.refreshAccounts = async () => {
       gptTop.textContent = "GPT: Chưa login";
       gptTop.style.background = "rgba(239,68,68,0.25)";
       gptTop.style.color = "#fca5a5";
-      $("gptDetails").innerHTML = `
-        Chưa phát hiện phiên Codex / GPT. Hãy chạy lệnh <code>codex login</code> trong terminal hoặc nhập OpenAI API Key.
-      `;
+      $("gptDetails").innerHTML = local ? "Chưa phát hiện phiên Codex / GPT. Hãy chạy lệnh <code>codex login</code> trong terminal hoặc nhập API Key ở trang <b>Kết nối</b>." : "Chưa phát hiện phiên Codex / GPT trên máy chủ. Đăng nhập hoặc lưu API Key trực tiếp trên máy tính.";
     }
   } catch (e) {
     console.error("refreshAccounts err:", e);
@@ -1186,16 +1204,46 @@ es.onmessage = (m) => {
   try {
     const s = JSON.parse(m.data);
     $("clock").textContent = new Date(s.now).toLocaleTimeString("vi-VN", { hour12: false });
+    if (Array.isArray(s.agents)) {
+      const aiList = s.agents.filter((a) => a.platform !== "human");
+      $("k1").textContent = String(aiList.filter((a) => a.status === "active").length);
+      $("k2").textContent = String(aiList.filter((a) => a.flag === "blocked" || a.flag === "waiting").length);
+      for (const liveA of s.agents) {
+        const localA = defaultAgents.find((x) => x.key === liveA.key);
+        if (localA) { localA.status = liveA.status; localA.lastText = liveA.lastText || ""; }
+      }
+      const cur = defaultAgents.find((x) => x.key === selected);
+      if (cur && s.agents.some((x) => x.key === selected)) updateSidebarAgentInfo(cur);
+    }
+    if (s.dev) {
+      const holder = s.dev.holderLabel || s.dev.holder || "";
+      const qLen = Array.isArray(s.dev.queue) ? s.dev.queue.length : 0;
+      $("k3").textContent = holder ? holder : "Rảnh";
+      const badge = $("devLockBadge"), det = $("devLockDetail");
+      if (badge && det) {
+        badge.textContent = holder ? "Đang giữ" : "Rảnh";
+        badge.style.color = holder ? "var(--gold)" : "var(--ok)";
+        det.textContent = holder
+          ? `${holder} đang giữ lượt DEV${s.dev.package ? " (" + s.dev.package + ")" : ""}${qLen ? " · hàng chờ: " + qLen : ""}.`
+          : (qLen ? `DEV đang rảnh · hàng chờ có ${qLen} gói.` : "Chưa có phiên nào giữ khóa DEV.");
+      }
+    }
     if (s.tasks) $("k4").textContent = `${s.tasks.filter(t => t.state === "done").length}/${s.tasks.length}`;
-    if (s.asks) {
+    if (Array.isArray(s.asks)) {
       $("askCount").textContent = s.asks.length;
       if (s.asks.length > 0) {
-        $("askList").innerHTML = s.asks.map(q => `<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);color:#fff">⚠️ ${q.text || q}</div>`).join("");
+        $("askList").innerHTML = s.asks.map((q) => {
+          const txt = typeof q === "string" ? q : (q && q.text != null ? q.text : "");
+          return `<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);color:#fff">⚠️ ${escH(txt)}</div>`;
+        }).join("");
+      } else {
+        $("askList").textContent = "Chưa có yêu cầu cần xử lý.";
       }
     }
   } catch (e) {}
 };
 es.onerror = () => { $("live").className = "live off"; };
+startOffice();
 </script>
 </body>
 </html>

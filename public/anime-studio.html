@@ -828,7 +828,7 @@
 
     // Three.js Globals
     let scene, camera, renderer, clock;
-    let rootGroup, characterMeshGroup, auraGroup;
+    let rootGroup, characterMeshGroup;
     let animatedTailChains = [];
     let animatedEyes = [];
     let animatedCloakOrHair = [];
@@ -843,11 +843,11 @@
       theta: 0.25,
       phi: 1.32,
       radius: 5.4,
-      target: new THREE.Vector3(0, 1.35, 0),
+      target: typeof THREE !== 'undefined' ? new THREE.Vector3(0, 1.35, 0) : null,
       targetTheta: 0.25,
       targetPhi: 1.32,
       targetRadius: 5.4,
-      targetLookAt: new THREE.Vector3(0, 1.35, 0),
+      targetLookAt: typeof THREE !== 'undefined' ? new THREE.Vector3(0, 1.35, 0) : null,
       isDragging: false,
       isPanning: false,
       prevX: 0,
@@ -2117,6 +2117,13 @@
      ***************************************************************************/
     function initThreeScene() {
       const container = document.getElementById('canvasContainer');
+      if (typeof THREE === 'undefined') {
+        container.innerHTML = '<div style="display:grid;place-items:center;height:100%;padding:24px;text-align:center;color:#94a3b8;font-size:13px">Chưa tải được thư viện Three.js (đang ngoại tuyến). Phần mô tả kỹ thuật và prompt vẫn dùng được bình thường.</div>';
+        renderUIEntityList();
+        return;
+      }
+      if (!camState.target) camState.target = new THREE.Vector3(0, 1.35, 0);
+      if (!camState.targetLookAt) camState.targetLookAt = new THREE.Vector3(0, 1.35, 0);
       const w = container.clientWidth || 800;
       const h = container.clientHeight || 600;
 
@@ -2164,13 +2171,41 @@
       animateLoop();
     }
 
+    function disposeObject(obj) {
+      if (!obj) return;
+      const geos = new Set(), mats = new Set(), texs = new Set();
+      obj.traverse((node) => {
+        if (node.geometry) geos.add(node.geometry);
+        const ml = Array.isArray(node.material) ? node.material : node.material ? [node.material] : [];
+        for (const m of ml) {
+          mats.add(m);
+          if (m.map) texs.add(m.map);
+          if (m.uniforms && m.uniforms.uMap && m.uniforms.uMap.value) texs.add(m.uniforms.uMap.value);
+        }
+      });
+      texs.forEach((t) => { if (typeof t.dispose === 'function') t.dispose(); });
+      mats.forEach((m) => { if (typeof m.dispose === 'function') m.dispose(); });
+      geos.forEach((g) => { if (typeof g.dispose === 'function') g.dispose(); });
+    }
+
     function loadEntity(category, entityId) {
       currentCategory = category;
       currentEntityId = entityId;
+      if (typeof THREE === 'undefined' || !rootGroup) {
+        const list = CHARACTER_SPECS[category];
+        const spec = list.find(item => item.id === entityId) || list[0];
+        document.getElementById('hudBadgeType').textContent = spec.badge;
+        document.getElementById('hudCharName').textContent = spec.name;
+        document.getElementById('hudCharSubtitle').textContent = spec.subtitle;
+        renderUIEntityList();
+        return;
+      }
 
-      // Clear previous meshes & arrays
+      // Clear previous meshes & dispose GPU resources
       if (characterMeshGroup) {
         rootGroup.remove(characterMeshGroup);
+        disposeObject(characterMeshGroup);
+        characterMeshGroup = null;
       }
       animatedTailChains = [];
       animatedEyes = [];
@@ -2221,6 +2256,7 @@
 
     function animateLoop() {
       requestAnimationFrame(animateLoop);
+      if (document.hidden) return;
       const elapsed = clock.getElapsedTime();
       const waveSpeed = parseFloat(document.getElementById('sliderWaveSpeed')?.value || 1.0);
 
@@ -2635,16 +2671,25 @@ Hãy viết script hoàn chỉnh (Three.js WebGL hoặc Blender Python bpy) th�
 
     function copyPromptToClipboard() {
       const textarea = document.getElementById('promptOutputTextarea');
-      textarea.select();
-      textarea.setSelectionRange(0, 99999);
-      document.execCommand('copy');
-
       const label = document.getElementById('copyBtnLabel');
       const original = label.textContent;
-      label.textContent = 'Đã Sao Chép Thành Công!';
-      setTimeout(() => {
-        label.textContent = original;
-      }, 2000);
+      const done = () => {
+        label.textContent = 'Đã Sao Chép Thành Công!';
+        setTimeout(() => { label.textContent = original; }, 2000);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textarea.value).then(done).catch(() => {
+          textarea.select();
+          textarea.setSelectionRange(0, 99999);
+          try { document.execCommand('copy'); } catch {}
+          done();
+        });
+      } else {
+        textarea.select();
+        textarea.setSelectionRange(0, 99999);
+        try { document.execCommand('copy'); } catch {}
+        done();
+      }
     }
 
     window.onload = function () {

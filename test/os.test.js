@@ -61,7 +61,10 @@ test("OS-2: máy tính không vào được văn phòng 3D; điện thoại vẫ
   for (const sau of ["fonts.googleapis.com", "<style>", "vanphong3d.js"]) assert.ok(chot < idx.indexOf(sau), "chốt phải đứng trước " + sau);
   // Thử chính đoạn chốt với vài trình duyệt.
   const code = /<script>\s*([\s\S]*?location\.replace\("os\.html" \+ location\.hash\);[\s\S]*?)<\/script>/.exec(idx)[1];
-  const chay = (ua, touch = 0) => { let toi = null; new Function("navigator", "location", code)({ userAgent: ua, maxTouchPoints: touch }, { hash: "", replace: (u) => { toi = u; } }); return toi; };
+  const chay = (ua, touch = 0, hash = "") => { let toi = null; new Function("navigator", "location", code)({ userAgent: ua, maxTouchPoints: touch }, { hash, replace: (u) => { toi = u; } }); return toi; };
+  assert.equal(chay("Windows", 0, "#/code/giao-viec"), "os.html#/code/giao-viec");
+  assert.equal(chay("Android Mobile", 0, "#/code/giao-viec"), "dieu-khien.html#giao-viec");
+  assert.equal(chay("iPhone", 0, "#/phim"), "xuong-phim.html");
   assert.equal(chay("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/150 Safari/537.36 Edg/150"), "os.html");
   assert.equal(chay("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Safari/605.1.15"), "os.html");
   assert.equal(chay("Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 Chrome/150 Mobile Safari/537.36"), null);
@@ -109,7 +112,7 @@ test("OS-3: Tổng quan và Việc mở ngăn trượt tại chỗ thay cho chuy
   }
   const app = doc("os/app.js");
   assert.match(app, /ngan\.dong\(\);/, "đổi khu thì đóng ngăn");
-  assert.match(app, /m\.mo\(khung, \{ kho, ctl, bao, ngan, congCuCu: CU \}\)/);
+  assert.match(app, /m\.mo\(khung, \{ kho, ctl, bao, ngan, congCuCu: CU, signal \}\)/);
   const ngan = doc("os/ngan.js");
   assert.match(ngan, /showModal\(\)/, "ngăn là dialog modal: bàn phím ở yên trong ngăn, Esc đóng");
   assert.match(ngan, /const dich = dung\(nguoiMo\) \? nguoiMo : /, "đóng ngăn trả tiêu điểm về nút đã mở");

@@ -19,9 +19,10 @@
   /* iPhone mở từ màn hình chính (status bar trong suốt): chừa chỗ cho tai thỏ / Dynamic Island và hai mép khi xoay ngang. */
   body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
     padding: 0 calc(16px + env(safe-area-inset-right)) calc(84px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left)); }
-  header { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: calc(14px + env(safe-area-inset-top)) 0 10px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); }
-  header a.btn3d { color: #111; background: var(--accent); border-radius: 10px; padding: 8px 12px; font-weight: 700; font-size: 14px; text-decoration: none; white-space: nowrap; }
-  header h1 { font-size: 18px; margin: 0; flex: 1; }
+  header { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: calc(14px + env(safe-area-inset-top)) 0 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; border-bottom: 1px solid var(--line); }
+  header a.btn3d { color: #111; background: var(--accent); border-radius: 10px; padding: 8px 12px; font-weight: 700; font-size: 14px; text-decoration: none; white-space: nowrap; max-width: 100%; }
+  header h1 { font-size: 18px; margin: 0; flex: 1 1 180px; min-width: 0; }
+  header #who { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .muted { color: var(--muted); font-size: 14px; }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; margin: 12px 0; overflow-wrap: anywhere; }
   .card h3 { margin: 0 0 6px; font-size: 16px; }
@@ -54,7 +55,7 @@
   @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
   .cai { border-color: #5b4a1c; }
   .cai ol { padding-left: 20px; margin: 8px 0; } .cai li { margin: 6px 0; }
-  header button[data-cai-app] { min-height: 36px; padding: 6px 10px; font-size: 14px; }
+  header button[data-cai-app] { min-height: 36px; padding: 6px 10px; font-size: 14px; white-space: nowrap; max-width: 100%; }
 </style>
 </head>
 <body>
@@ -75,7 +76,8 @@ const nameOf = (ws) => String(ws || "").split(/[\\/]/).filter(Boolean).pop() || 
 const ROLE = { SPEC_ARCHITECT: "Hinata · đặc tả", SOL_ARCHITECT_PLANNER: "Itachi · kiến trúc", SOL_ARCHITECT_ADVISOR: "Itachi · đối chiếu", CODEX_ASTRA_DEV: "Sasuke · backend", FRONTEND_UIUX_DEV: "Kakashi · giao diện", CLAUDE_AUDITOR: "Sakura · kiểm duyệt" };
 const STATUS = { running: ["Đang chạy", "run"], reporting: ["Claude đang báo cáo", "run"], awaiting_approval: ["Chờ anh duyệt", "wait"], awaiting_answer: ["Claude hỏi anh", "wait"], attention: ["Cần anh xem", "bad"], waiting_quota: ["Chờ hạn mức", "wait"], awaiting_scan: ["Chờ duyệt rà soát (trên máy tính)", "wait"], approved: ["Đã duyệt", ""], acknowledged: ["Đã xem", ""], rejected: ["Đã trả lại", ""], stopped: ["Đã dừng", ""] };
 const LIVE = new Set(["running", "reporting", "awaiting_approval", "awaiting_answer", "attention", "waiting_quota", "awaiting_scan"]);
-let tab = "tinh-hinh", data = null, loading = false, busy = false, timer = null;
+let tab = location.hash === "#giao-viec" ? "giao-viec" : "tinh-hinh";
+let data = null, loading = false, busy = false, timer = null;
 
 // Cài lên màn hình chính iPhone/iPad (CEO hỏi 17/11/2026): Safari không có nút "Cài app" như Android (nút data-cai-app ở đầu trang,
 // app.js lo), phải qua Chia sẻ → Thêm vào MH chính. Đã mở từ biểu tượng (standalone) thì không nhắc nữa.
@@ -133,7 +135,7 @@ async function load(quiet) {
   if (loading) return; loading = true;
   if (!quiet && !data) $("app").innerHTML = '<div class="skeleton"></div><div class="skeleton"></div>';
   try {
-    const [ws, ap, ho, q, jobs] = await Promise.all([api("/api/workspaces"), api("/api/autopilot"), api("/api/handoffs"), api("/api/quotas").catch(() => null), api("/api/jobs?status=running").catch(() => ({ jobs: [] }))]);
+    const [ws, ap, ho, q, jobs] = await Promise.all([api("/api/workspaces"), api("/api/autopilot"), api("/api/handoffs?scope=manual"), api("/api/quotas").catch(() => null), api("/api/jobs?status=running").catch(() => ({ jobs: [] }))]);
     const turns = await Promise.all(ws.workspaces.map((w) => api("/api/ai/status?workspace=" + encodeURIComponent(w.path)).catch(() => null)));
     data = { workspaces: ws.workspaces, active: ws.active, turns, runs: ap.runs || [], handoffs: ho.handoffs || [], quotas: q, jobs: (jobs && jobs.jobs) || [], at: Date.now() };
     render();

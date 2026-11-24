@@ -8,6 +8,7 @@ const time = (v) => v && Number.isFinite(new Date(v).getTime()) ? new Date(v).to
 const first = (text) => String(text || "").split(/\r?\n/)[0];
 const pendingRun = (r) => ["awaiting_answer", "awaiting_approval", "attention", "waiting_quota", "awaiting_scan"].includes(r.status) || (["approved", "acknowledged"].includes(r.status) && r.git && !r.git.pushed);
 const safeCompare = (value) => { try { const u = new URL(value); return u.protocol === "https:" && u.hostname === "github.com" && !u.username && !u.password ? u.href : null; } catch { return null; } };
+const safeHttps = (value) => { try { const u = new URL(String(value || "")); return u.protocol === "https:" && !u.username && !u.password ? u.href : null; } catch { return null; } };
 
 // Văn phòng 3D mở trên điện thoại (qua Tailscale/đường hầm): /ctl chỉ dùng được trên chính máy tính, nên điện thoại đã ghép
 // gọi qua kênh /dkx/api (lib/dieu-khien-xa.js: chỉ các lệnh trong danh sách điện thoại được phép). Chưa ghép thì báo đi ghép.
@@ -50,17 +51,38 @@ export function createDesk(getOffice) {
   const names = { tasks: "Việc đang làm", approvals: "Việc chờ anh duyệt", assign: "Giao việc cho cả đội", ideas: "Ý tưởng", projects: "Dự án", quotas: "Hạn mức", progress: "Dự án đang ở đâu", publish: "Xuất bản", journal: "Nhật ký" };
   const toolbar = document.createElement("nav"); toolbar.className = "desk-tools"; toolbar.setAttribute("aria-label", "Điều phối dự án");
   toolbar.innerHTML = ["journal", "tasks", "assign", "ideas", "projects", "quotas", "progress", "publish"].map((key) => `<button type="button" class="btn ghost" data-desk="${key}" aria-controls="officeDesk" aria-expanded="false">${names[key]}</button>`).join("") +
-    '<a class="btn ghost" href="ket-noi.html" title="Kết nối (MCP) của đội: Notion, Figma, Google Drive…">Kết nối</a>' +
-    '<a class="btn ghost" href="skill.html" title="Dán link repo GitHub bất kỳ: đội trưởng giải thích, anh quyết cài skill, cài MCP hay lưu tham khảo">Repo &amp; Skill</a>' +
+    '<a class="btn ghost" href="ket-noi.html" data-chi-may title="Kết nối (MCP) của đội: Notion, Figma, Google Drive…">Kết nối</a>' +
+    '<a class="btn ghost" href="skill.html" data-chi-may title="Dán link repo GitHub bất kỳ: đội trưởng giải thích, anh quyết cài skill, cài MCP hay lưu tham khảo">Repo &amp; Skill</a>' +
     '<a class="btn ghost" href="xuong-phim.html" title="Xưởng phim AI: ngân sách, khung hình, quay Gemini, trạm Google Flow">🎬 Xưởng phim</a>' +
-    '<a class="btn ghost" href="dien-thoai.html" title="Ghép điện thoại để điều khiển văn phòng từ xa">Điện thoại</a>' +
-    '<a class="btn ghost" href="cap-nhat.html" id="deskUpdate" title="Phiên bản app và cập nhật">Cập nhật</a>' +
+    '<a class="btn ghost" href="dien-thoai.html" data-chi-may title="Ghép điện thoại để điều khiển văn phòng từ xa">Điện thoại</a>' +
+    '<a class="btn ghost" href="cap-nhat.html" id="deskUpdate" data-chi-may title="Phiên bản app và cập nhật">Cập nhật</a>' +
     '<a class="btn ghost" href="dieu-khien.html" data-chi-dt style="display:none" title="Về bảng điều khiển trên điện thoại">← Bảng điều khiển</a>' +
     '<button type="button" class="btn ghost" data-tai-lai style="display:none" title="Tải lại văn phòng">↻ Tải lại</button>';
   document.querySelector(".bar").append(toolbar);
+  let isRemote = !laMayNay();
+  function applyRemoteUi() {
+    toolbar.querySelector("[data-chi-dt]").style.display = isRemote ? "" : "none";
+    toolbar.querySelectorAll("[data-chi-may]").forEach((el) => { el.hidden = isRemote; });
+    const gl = $("deskGithubLoad"), gm = $("deskGithubMore"), gs = $("deskGithubState"), dp = $("deskPrepare");
+    if (gl) gl.hidden = isRemote;
+    if (gm) gm.hidden = isRemote || !githubMore;
+    if (gs && isRemote) gs.textContent = "Tải repo GitHub có sẵn chỉ thực hiện trên máy tính. Tạo dự án mới (repo riêng tư) ở trên vẫn dùng được từ điện thoại.";
+    if (dp) dp.hidden = isRemote;
+  }
   // App trên màn hình chính iPhone không có nút Back hay nút tải lại của trình duyệt (CEO hỏi 17/11/2026):
-  // điện thoại (không phải máy chạy văn phòng) có nút về bảng điều khiển; mở từ biểu tượng thì có thêm nút tải lại.
-  ctlBase().then((b) => { if (b !== "/ctl") toolbar.querySelector("[data-chi-dt]").style.display = ""; });
+  // điện thoại (không phải máy chạy văn phòng) có nút về bảng điều khiển và ẩn mục chỉ dùng trên máy tính; mở từ biểu tượng thì có thêm nút tải lại.
+  ctlBase().then((b) => {
+    isRemote = b !== "/ctl";
+    applyRemoteUi();
+    render();
+    // Có bản mới thì nút Cập nhật ghi rõ (chỉ máy tính; điện thoại không gọi /cap-nhat để tránh 403).
+    if (!isRemote) {
+      request("/cap-nhat").then((d) => {
+        const s = d.capNhat;
+        if (s && s.state === "co-ban-moi") { const a = $("deskUpdate"); a.textContent = "Cập nhật: có " + s.target.name; a.title = "Có bản mới " + s.target.name + ": bấm để xem và cập nhật"; }
+      }).catch(() => {});
+    }
+  });
   if (navigator.standalone === true || matchMedia("(display-mode: standalone)").matches) {
     const tl = toolbar.querySelector("[data-tai-lai]"); tl.style.display = ""; tl.addEventListener("click", () => location.reload());
   }
@@ -82,11 +104,6 @@ export function createDesk(getOffice) {
     } else if (e.target.closest("[data-tk-quanly]")) show("quotas");
     else if (e.target.closest("[data-tk-ai]")) document.getElementById("openAccountsBtn")?.click();
   });
-  // Có bản mới thì nút Cập nhật ghi rõ (ctl tự hỏi GitHub mỗi 6 giờ; đây chỉ đọc kết quả đã có, không gọi mạng).
-  request("/cap-nhat").then((d) => {
-    const s = d.capNhat;
-    if (s && s.state === "co-ban-moi") { const a = $("deskUpdate"); a.textContent = "Cập nhật: có " + s.target.name; a.title = "Có bản mới " + s.target.name + ": bấm để xem và cập nhật"; }
-  }).catch(() => {});
   const dialog = document.createElement("dialog"); dialog.id = "officeDesk"; dialog.className = "desk-dialog"; dialog.setAttribute("aria-labelledby", "deskTitle");
   dialog.innerHTML = `<div class="desk-head"><h2 id="deskTitle">Dự án đang ở đâu</h2><button type="button" id="deskClose">Thu gọn / Đóng</button></div><div class="desk-body">
     <p id="deskWorkspace" class="muted"></p><p id="deskMessage" class="desk-message" role="status"></p>
@@ -158,16 +175,25 @@ export function createDesk(getOffice) {
   }
   function renderApprovals() {
     const waiting = ownRuns().filter(pendingRun), manual = ownHandoffs();
-    let html = errors.scan ? `<p class="error">${esc(errors.scan)}</p>` : globalThis.RepoProgress.scanHtml(scan, active, "data-scan");
+    const hasAwaitingScan = waiting.some((r) => r.status === "awaiting_scan");
+    let html = errors.scan ? `<p class="error">${esc(errors.scan)}</p>` : globalThis.RepoProgress.scanHtml(scan, active, "data-scan", { canApprove: !isRemote, hasAwaitingScan });
     html += waiting.map((r) => {
       let body = r.problem ? `<p class="error">${esc(r.problem)}</p>` : "";
       if (r.status === "awaiting_answer") body += (r.report ? `<details open><summary>Phân tích của Claude</summary><pre class="desk-report" tabindex="0">${esc(r.report)}</pre></details>` : "") + question(r.question, "autopilot", r.id);
       body += globalThis.RepoProgress.explainHtml(r) + globalThis.RepoProgress.deleteHtml(r);
-      if (r.status === "awaiting_scan") body += '<p class="error">Luồng tạm dừng vì file .md / thư viện có điểm bất thường mới: duyệt ở mục rà soát phía trên để chạy tiếp.</p>';
+      if (r.status === "awaiting_scan") {
+        body += scan?.fullAccess === false || scan?.canResumeLimited === true
+          ? '<p class="muted">Vai đang chờ có thể chạy tiếp ở mức quyền hiện tại trên máy tính.</p>'
+          : (scan?.truncated || (!scan && r.scan?.truncated))
+          ? '<p class="error">Rà soát chưa hoàn tất. Xử lý phần chưa quét hoặc chọn mức quyền thấp hơn trước khi chạy Toàn quyền.</p>'
+          : scan?.approved
+            ? (isRemote ? '<p class="muted">Rà soát mới nhất đã đạt. Bấm Chạy tiếp trên máy tính để tiếp tục luồng.</p>' : '<p class="muted">Rà soát mới nhất đã đạt: bấm Chạy tiếp ở mục rà soát phía trên để tiếp tục luồng.</p>')
+            : (isRemote ? '<p class="error">Luồng tạm dừng vì file .md / thư viện có điểm bất thường mới: duyệt trên máy tính để chạy tiếp.</p>' : '<p class="error">Luồng tạm dừng vì file .md / thư viện có điểm bất thường mới: duyệt ở mục rà soát phía trên để chạy tiếp.</p>');
+      }
       if (r.status === "awaiting_approval") body += `<pre class="desk-report" tabindex="0">${esc(r.report || "Chưa có nội dung báo cáo.")}</pre><div class="desk-actions">${action("autopilot", r.id, "approve", "Duyệt báo cáo")}${action("autopilot", r.id, "reject", "Từ chối")}</div>`;
       if (r.status === "attention") body += action("autopilot", r.id, "approve", "Đã xem lỗi");
-      if (r.status === "waiting_quota") body += `<p>${esc(r.wait?.providerName || r.wait?.role || "AI")} hết hạn mức. Tự chạy lại: ${esc(time(r.wait?.until))}</p><div class="desk-actions">${action("autopilot", r.id, "resume", "Chạy lại ngay")}<a href="prototype.html#board">Dán kết quả GPT web</a></div>`;
-      if (["approved", "acknowledged"].includes(r.status)) body += `<p>Nhánh: ${esc(r.git.branch)}</p>` + action("autopilot", r.id, "push", "Đẩy nhánh lên GitHub & mở PR");
+      if (r.status === "waiting_quota") body += `<p>${esc(r.wait?.providerName || r.wait?.role || "AI")} hết hạn mức. Tự chạy lại: ${esc(time(r.wait?.until))}</p><div class="desk-actions">${action("autopilot", r.id, "resume", "Chạy lại ngay")}${isRemote ? "" : '<a href="prototype.html#board">Dán kết quả GPT web</a>'}</div>`;
+      if (["approved", "acknowledged"].includes(r.status)) body += `<p>Nhánh: ${esc(r.git.branch)}</p>` + (isRemote ? '<p class="muted">Đẩy nhánh lên GitHub chỉ thực hiện trên máy tính.</p>' : action("autopilot", r.id, "push", "Đẩy nhánh lên GitHub & mở PR"));
       return `<article class="desk-entry"><strong>${esc(first(r.task))}</strong><p>${esc(statuses[r.status])}</p>${body}</article>`;
     }).join("");
     html += manual.map((h) => `<article class="desk-entry"><strong>Bàn giao: ${esc(h.role)} → ${esc(h.next_owner || "Chờ phương án")}</strong>${h.problems?.length ? `<p class="error">${esc(h.problems.join("; "))}</p>` : ""}${h.payload?.ask_ceo ? question(h.payload.ask_ceo, "handoffs", h.job_id) : action("handoffs", h.job_id, "approve", "Duyệt chuyển lượt", undefined, !!h.problems?.length)}</article>`).join("");
@@ -218,7 +244,8 @@ export function createDesk(getOffice) {
     if (!dpModels && !dpModelsLoading && !dpModelsError) loadDpModels();
     const b = dieuPhoi.bang || {}, row = (k) => ["nhe", "vua", "nang"].map((t) => `${{ nhe: "nhẹ", vua: "vừa", nang: "nặng" }[t]}: ${esc([b[k]?.[t]?.model, b[k]?.[t]?.effort].filter(Boolean).join(" ") || "mặc định")}`).join(" · ");
     return `<article class="desk-entry"><strong>Điều phối model &amp; mức suy nghĩ</strong>` +
-      `<p><label><input type="checkbox" data-dp-auto ${dieuPhoi.tuDong ? "checked" : ""}> Tự động theo độ khó của lượt và hạn mức còn lại</label></p>` +
+      (isRemote ? `<p class="muted">Chế độ tự động: <b>${dieuPhoi.tuDong ? "đang bật" : "đang tắt"}</b> (bật/tắt tự động trên máy tính; chọn model cố định theo phòng bên dưới dùng được từ điện thoại).</p>`
+        : `<p><label><input type="checkbox" data-dp-auto ${dieuPhoi.tuDong ? "checked" : ""}> Tự động theo độ khó của lượt và hạn mức còn lại</label></p>`) +
       `<p class="muted">Lượt nhẹ (báo cáo, sửa chữ), vừa (việc thường), nặng (kiến trúc, bảo mật, blocker CRITICAL, lượt bị trả lại). AI còn ≤15% hạn mức thì hạ một bậc.<br>Claude — ${row("claude")}<br>Codex — ${row("codex")}<br>Antigravity — ${row("agy")}</p>` +
       `<p class="muted">Chọn model hoặc mức cho phòng nào thì phòng đó dùng đúng như vậy, bỏ qua tự động. ` +
       (dpModelsLoading ? "Đang đọc danh sách model của các AI…" : `<button type="button" class="btn ghost" data-dp-reload data-write>Đọc lại danh sách model</button>`) +
@@ -239,13 +266,14 @@ export function createDesk(getOffice) {
     const rows = (tk.ds || []).map((a) => `<li><strong>${esc(a.nhan)}</strong> · ${esc(a.email)}${a.dangDung ? " · <b>đang dùng</b>" : ""}<br>Gemini ${esc(pct(a.conLai))}` +
       `${a.hanMuc && a.hanMuc.luc ? " · đọc lúc " + esc(time(a.hanMuc.luc)) : ""}<br>` +
       (a.dangDung ? "" : `<button type="button" class="btn ghost" data-agy-chuyen="${esc(a.id)}" data-write>Dùng tài khoản này</button> `) +
-      `<button type="button" class="btn ghost" data-agy-xoa="${esc(a.id)}" data-write>Bỏ</button></li>`).join("");
+      (isRemote ? "" : `<button type="button" class="btn ghost" data-agy-xoa="${esc(a.id)}" data-write>Bỏ</button>`) + `</li>`).join("");
     return `<div class="agy-tk"><strong>Tài khoản Antigravity</strong>${tk.loi ? `<p class="error">${esc(tk.loi)}</p>` : ""}${tk.dangTrao ? "<p>Đang đổi tài khoản để đọc hạn mức…</p>" : ""}` +
       (rows ? `<ul>${rows}</ul>` : "<p class=\"muted\">Chưa cất tài khoản nào.</p>") +
-      `<p><label><input type="checkbox" data-agy-tu data-write ${tk.tuChuyen ? "checked" : ""}> Tự chuyển khi tài khoản đang dùng còn ≤ </label><input type="number" min="1" max="50" value="${esc(tk.nguong)}" data-agy-nguong data-write style="width:4.5em">% Gemini</p>` +
-      `<p><label>Cất tài khoản đang đăng nhập trong Antigravity, đặt tên <input data-agy-nhan maxlength="40" placeholder="vd. Pro" style="width:8em"></label> <button type="button" class="btn ghost" data-agy-cat data-write>Cất</button>` +
-      ((tk.ds || []).length > 1 ? ` <button type="button" class="btn ghost" data-agy-doc data-write>Đọc hạn mức tài khoản đang nghỉ</button>` : "") + "</p>" +
-      `<p class="muted">Thêm tài khoản thứ hai: mở <code>agy</code> trong terminal, gõ <code>/logout</code>, đăng nhập tài khoản kia, rồi bấm Cất. Văn phòng chỉ đổi tài khoản khi không có tiến trình Antigravity CLI nào chạy; ứng dụng Antigravity trên máy có thể dùng chung đăng nhập này.</p></div>`;
+      (isRemote ? `<p class="muted">Đổi tài khoản hoạt động trên điện thoại; cất/bỏ tài khoản và cấu hình tự chuyển thực hiện trên máy tính.</p></div>`
+        : `<p><label><input type="checkbox" data-agy-tu data-write ${tk.tuChuyen ? "checked" : ""}> Tự chuyển khi tài khoản đang dùng còn ≤ </label><input type="number" min="1" max="50" value="${esc(tk.nguong)}" data-agy-nguong data-write style="width:4.5em">% Gemini</p>` +
+          `<p><label>Cất tài khoản đang đăng nhập trong Antigravity, đặt tên <input data-agy-nhan maxlength="40" placeholder="vd. Pro" style="width:8em"></label> <button type="button" class="btn ghost" data-agy-cat data-write>Cất</button>` +
+          ((tk.ds || []).length > 1 ? ` <button type="button" class="btn ghost" data-agy-doc data-write>Đọc hạn mức tài khoản đang nghỉ</button>` : "") + "</p>" +
+          `<p class="muted">Thêm tài khoản thứ hai: mở <code>agy</code> trong terminal, gõ <code>/logout</code>, đăng nhập tài khoản kia, rồi bấm Cất. Văn phòng chỉ đổi tài khoản khi không có tiến trình Antigravity CLI nào chạy; ứng dụng Antigravity trên máy có thể dùng chung đăng nhập này.</p></div>`);
   }
   async function agyTkGoi(path, body, label) {
     try { await request(path, body, 60000); notice(label); quotas = await request("/quotas"); }
@@ -262,23 +290,24 @@ export function createDesk(getOffice) {
     clearTimeout(gptTimer);
     if (dangDN) gptTimer = setTimeout(async () => { try { quotas = await request("/quotas"); renderQuotas(); } catch {} }, 4000);   // chờ anh đăng nhập xong
     const rows = (tk.ds || []).map((a) => {
-      const dn = a.dangNhap;
+      const dn = a.dangNhap, dnUrl = safeHttps(dn && dn.url);
       return `<li><strong>${esc(a.nhan)}</strong>${a.email ? " · " + esc(a.email) : ""}${a.plan ? " · gói " + esc(a.plan) : ""}${a.dangDung ? " · <b>đang dùng</b>" : ""}<br>` +
         (a.loi ? `<span class="error">${esc(a.loi)}</span>` : `GPT ${esc(pct(a.conLai))}${a.hanMuc && a.hanMuc.luc ? " · đọc lúc " + esc(time(a.hanMuc.luc)) : ""}`) + "<br>" +
-        (dn && dn.url ? `<span>Đang chờ anh đăng nhập: <a href="${esc(dn.url)}" target="_blank" rel="noopener noreferrer">mở trang đăng nhập</a> (nếu trình duyệt đang đăng nhập tài khoản GPT khác, chép link mở trong cửa sổ ẩn danh Ctrl+Shift+N). Làm trên máy tính này.</span><br>`
+        (dnUrl ? `<span>Đang chờ anh đăng nhập: <a href="${esc(dnUrl)}" target="_blank" rel="noopener noreferrer">mở trang đăng nhập</a> (nếu trình duyệt đang đăng nhập tài khoản GPT khác, chép link mở trong cửa sổ ẩn danh Ctrl+Shift+N). Làm trên máy tính này.</span><br>`
           : dn && !dn.loi ? "<span>Đang mở trang đăng nhập…</span><br>" : dn && dn.loi ? `<span class="error">${esc(dn.loi)}</span><br>` : "") +
         (a.dangDung || !a.daDangNhap ? "" : `<button type="button" class="btn ghost" data-gpt-chuyen="${esc(a.id)}" data-write>Dùng tài khoản này</button> `) +
-        `<button type="button" class="btn ghost" data-gpt-dn="${esc(a.id)}" data-write>${a.daDangNhap ? "Đăng nhập lại" : "Đăng nhập"}</button> ` +
-        (a.macDinh ? "" : `<button type="button" class="btn ghost" data-gpt-bo="${esc(a.id)}" data-write>Bỏ</button>`) + "</li>";
+        (isRemote ? "" : `<button type="button" class="btn ghost" data-gpt-dn="${esc(a.id)}" data-write>${a.daDangNhap ? "Đăng nhập lại" : "Đăng nhập"}</button> ` +
+          (a.macDinh ? "" : `<button type="button" class="btn ghost" data-gpt-bo="${esc(a.id)}" data-write>Bỏ</button>`)) + "</li>";
     }).join("");
     return `<div class="agy-tk"><strong>Tài khoản GPT (Codex: Itachi, Sasuke)</strong>` +
       (tk.trung ? `<p class="error">Hai tài khoản đang cùng một email: bấm Đăng nhập lại ở tài khoản thêm và chọn đúng tài khoản GPT kia.</p>` : "") +
       `<ul>${rows}</ul>` +
-      `<p><label><input type="checkbox" data-gpt-tu data-write ${tk.tuChuyen ? "checked" : ""}> Tự chuyển khi tài khoản đang dùng còn ≤ </label><input type="number" min="1" max="50" value="${esc(tk.nguong)}" data-gpt-nguong data-write style="width:4em">% ` +
-      `(và đổi ngay khi lượt Codex báo hết hạn mức)</p>` +
-      `<p><label>Thêm tài khoản GPT, đặt tên <input data-gpt-nhan maxlength="40" placeholder="vd. GPT Pro 2" style="width:9em"></label> <button type="button" class="btn ghost" data-gpt-them data-write>Thêm và đăng nhập</button>` +
-      ` <button type="button" class="btn ghost" data-gpt-doc data-write>Đọc hạn mức mọi tài khoản</button></p>` +
-      `<p class="muted">Mỗi tài khoản GPT có thư mục riêng; tài khoản 1 là ~/.codex mà app Codex của anh đang dùng. Đổi tài khoản áp dụng từ lượt Codex kế tiếp, lượt đang chạy không bị ảnh hưởng.</p></div>`;
+      (isRemote ? `<p class="muted">Đổi tài khoản GPT hoạt động trên điện thoại; thêm, đăng nhập và cấu hình tự chuyển thực hiện trên máy tính.</p></div>`
+        : `<p><label><input type="checkbox" data-gpt-tu data-write ${tk.tuChuyen ? "checked" : ""}> Tự chuyển khi tài khoản đang dùng còn ≤ </label><input type="number" min="1" max="50" value="${esc(tk.nguong)}" data-gpt-nguong data-write style="width:4em">% ` +
+          `(và đổi ngay khi lượt Codex báo hết hạn mức)</p>` +
+          `<p><label>Thêm tài khoản GPT, đặt tên <input data-gpt-nhan maxlength="40" placeholder="vd. GPT Pro 2" style="width:9em"></label> <button type="button" class="btn ghost" data-gpt-them data-write>Thêm và đăng nhập</button>` +
+          ` <button type="button" class="btn ghost" data-gpt-doc data-write>Đọc hạn mức mọi tài khoản</button></p>` +
+          `<p class="muted">Mỗi tài khoản GPT có thư mục riêng; tài khoản 1 là ~/.codex mà app Codex của anh đang dùng. Đổi tài khoản áp dụng từ lượt Codex kế tiếp, lượt đang chạy không bị ảnh hưởng.</p></div>`);
   }
   async function gptGoi(path, body, label) {
     try { await request(path, body, 60000); notice(label); quotas = await request("/quotas"); }
@@ -416,12 +445,14 @@ export function createDesk(getOffice) {
     if (errors.workspace || errors.publish || !active || !publish || publish.workspace !== active) { box.innerHTML = messageHtml("publish", "Đang tải…"); return; }
 
     $("deskPrepare").dataset.invalid = String((publish.runs || []).some((r) => ["running", "releasing"].includes(r.status)));
-    let html = `<p>Repo: <span class="mono">${esc(publish.repo || "chưa nhận ra repo GitHub")}</span> · Dockerfile: ${publish.dockerfile ? "có" : '<span class="error">chưa có, giao Astra viết ở Phase Docker</span>'}<br>Cách xuất bản: ${howRelease(publish.release)}${publish.version ? ` · Phiên bản trong code: <b>${esc(publish.version)}</b>` : ""}</p>`;
+    let html = (isRemote ? `<p class="muted">Trên điện thoại chỉ xem trạng thái xuất bản. Kiểm tra, build và xuất bản chỉ thực hiện trên máy tính.</p>` : "") +
+      `<p>Repo: <span class="mono">${esc(publish.repo || "chưa nhận ra repo GitHub")}</span> · Dockerfile: ${publish.dockerfile ? "có" : '<span class="error">chưa có, giao Astra viết ở Phase Docker</span>'}<br>Cách xuất bản: ${howRelease(publish.release)}${publish.version ? ` · Phiên bản trong code: <b>${esc(publish.version)}</b>` : ""}</p>`;
     html += (publish.runs || []).map((r, i) => {
       const steps = (r.steps || []).map((st) => `<li>${STEP[st.status] || "·"} ${esc(st.name)}${st.note ? `<br><small>${esc(st.note)}</small>` : ""}</li>`).join("");
-      const can = i === 0 && r.status === "ready" && publish.release;
+      const can = !isRemote && i === 0 && r.status === "ready" && publish.release;
+      const actUrl = safeHttps(r.release && r.release.actionsUrl);
       return `<article class="desk-entry"><strong>${esc(r.tag || "Lượt " + r.id)}</strong><p>${esc(PUBLISH[r.status] || r.status)} · ${esc(time(r.release?.at || r.createdAt))}</p>${r.problem ? `<p class="error">${esc(r.problem)}</p>` : ""}<ol class="desk-steps">${steps}</ol>` +
-        (r.release ? `<p>Phiên bản <b>${esc(r.release.tag)}</b> · ${r.release.actionsUrl ? `<a href="${esc(r.release.actionsUrl)}" target="_blank" rel="noopener noreferrer">Xem GitHub Actions</a>` : "xem trang Actions của repo"}</p>` : "") +
+        (r.release ? `<p>Phiên bản <b>${esc(r.release.tag)}</b> · ${actUrl ? `<a href="${esc(actUrl)}" target="_blank" rel="noopener noreferrer">Xem GitHub Actions</a>` : "xem trang Actions của repo"}</p>` : "") +
         (can ? `<div class="desk-actions"><label>Phiên bản <input data-version="${esc(r.id)}" value="${esc(publish.version || "")}" placeholder="X.Y.Z" maxlength="20" size="10"></label><button type="button" data-publish="${esc(r.id)}" data-write>Xuất bản qua GitHub</button></div>` : "") + "</article>";
     }).join("") || '<p class="muted">Chưa có lượt kiểm tra nào.</p>';
     box.innerHTML = html;
@@ -437,7 +468,7 @@ export function createDesk(getOffice) {
       : messageHtml("journal", "Chưa có hoạt động nào của dự án này. Giao việc cho cả đội để bắt đầu.");
   }
   function renderProgress() {
-    $("deskProgress").innerHTML = errors.workspace || errors.overview || !overview || overview.workspace !== active ? messageHtml("overview", active ? "Đang đọc tiến độ dự án…" : "Chưa chọn dự án.") : globalThis.RepoProgress.html(overview, runs, ownHandoffs(), errors, { actions: true });
+    $("deskProgress").innerHTML = errors.workspace || errors.overview || !overview || overview.workspace !== active ? messageHtml("overview", active ? "Đang đọc tiến độ dự án…" : "Chưa chọn dự án.") : globalThis.RepoProgress.html(overview, runs, ownHandoffs(), errors, { actions: !isRemote });
   }
   function render() {
     $("deskWorkspace").textContent = errors.workspace || (active ? "Dự án: " + (workspaces.find((w) => w.path === active)?.name || active) : dataReady ? "Chưa chọn dự án." : "Đang đọc dự án…");
@@ -479,7 +510,7 @@ export function createDesk(getOffice) {
         const w = await request("/workspaces"); errors.workspace = "";
         const changed = active !== w.active;
         active = w.active; workspaces = w.workspaces || [];
-        if (changed) { overview = null; runs = []; jobs = []; handoffs = []; ideas = []; turn = null; compareUrl = null; errors = {}; $("deskProject").value = ""; }
+        if (changed) { overview = null; scan = null; runs = []; jobs = []; handoffs = []; ideas = []; turn = null; compareUrl = null; errors = {}; $("deskProject").value = ""; }
         // Tự mở "Dự án đang ở đâu" khi đổi dự án; lần đầu tải trang thì chỉ một lần mỗi phiên trình duyệt (hộp thoại chặn cảnh 3D).
         if (changed && !firstLoad) show("progress");
         else if (firstLoad) { let seen = false; try { seen = sessionStorage.getItem("vp-progress-seen") === active; sessionStorage.setItem("vp-progress-seen", active || ""); } catch {} if (!seen && active) show("progress"); }
@@ -487,10 +518,10 @@ export function createDesk(getOffice) {
         const reads = [
           ["runs", "/autopilot", (d) => { runs = d.runs || []; }],
           ["jobs", "/jobs?status=running", (d) => { jobs = d.jobs || []; }],
-          ["handoffs", "/handoffs", (d) => { handoffs = d.handoffs || []; }],
+          ["handoffs", "/handoffs?scope=manual", (d) => { handoffs = d.handoffs || []; }],
           ["quotas", "/quotas", (d) => { quotas = d; }],
           ["dieuPhoi", "/dieu-phoi", (d) => { dieuPhoi = d.dieuPhoi || null; }],
-          ...(active ? [["scan", "/scan?workspace=" + encodeURIComponent(active), (d) => { scan = d.scan || null; }]] : []),
+          ...(active ? [["scan", "/scan?workspace=" + encodeURIComponent(active), (d) => { scan = d.scan ? { ...d.scan, fullAccess: d.fullAccess, canResumeLimited: d.canResumeLimited } : null; }]] : []),
           ...(active ? [["publish", "/publish?workspace=" + encodeURIComponent(active), (d) => { publish = d.publish || null; }]] : []),
           ...(active ? [["journal", "/nhat-ky?workspace=" + encodeURIComponent(active) + "&limit=120", (d) => { journal = d.nhatKy || null; }]] : []),
           ...(active ? [["turn", "/ai/status?workspace=" + encodeURIComponent(active), (d) => { turn = d; }],
@@ -685,7 +716,7 @@ export function createDesk(getOffice) {
       if (workspace) mutate("Cài bộ kiểm chu trình (kiểm agent.md + lint/test trên mỗi PR) vào repo " + (overview?.name || workspace) + ": văn phòng tạo nhánh mới từ nhánh chính, commit 2 file, ĐẨY NHÁNH lên GitHub rồi mở trang tạo PR để anh merge", async () => {
         const { boKiem } = await request("/bo-kiem", { workspace }, 120000);
         const url = safeCompare(boKiem.last?.compareUrl);
-        if (url) window.open(url, "_blank", "noopener");
+        if (url) window.open(url, "_blank", "noopener,noreferrer");
         overview = null;
       });
       return;
@@ -698,7 +729,18 @@ export function createDesk(getOffice) {
       return;
     }
     const sb = e.target.closest("[data-scan]");
-    if (sb && !sb.disabled) { mutate("Anh đã đọc các điểm bất thường và đồng ý cho AI chạy toàn quyền trong dự án này", async () => { await request("/scan/approve", { workspace: sb.dataset.scanWorkspace, fingerprint: sb.dataset.scan }, 30000); }); return; }
+    if (sb && !sb.disabled && !isRemote) {
+      const limited = sb.dataset.scanMode === "limited";
+      const label = limited ? "Chạy tiếp luồng với mức quyền hiện tại"
+        : sb.dataset.scanMode === "resume" ? "Rà soát mới nhất đã đạt. Chạy tiếp luồng đang tạm dừng"
+        : "Anh đã đọc các điểm bất thường và đồng ý cho AI chạy toàn quyền trong dự án này";
+      const workspace = sb.dataset.scanWorkspace;
+      mutate(label, async () => {
+        if (limited) await request("/scan/resume", { workspace }, 30000);
+        else await request("/scan/approve", { workspace, fingerprint: sb.dataset.scan || "" }, 30000);
+      });
+      return;
+    }
     const room = e.target.closest("[data-room]"); if (room?.dataset.room) { getOffice()?.goToRoom(room.dataset.room); dialog.close(); return; }
     const repo = e.target.closest("[data-repo]"); if (repo && !mutating) { openGithub(repo.dataset.repo); return; }
     const b = e.target.closest("[data-action]"); if (!b || b.disabled) return;
@@ -731,6 +773,7 @@ export function createDesk(getOffice) {
     refreshNow().catch(() => {});   // không bắt CEO chờ cả nhịp đọc (tổng quan dự án có thể tới 35 giây) mới thấy lượt đã chạy
     return d.job;
   }
+  applyRemoteUi();
   render();
   return { syncTurn, turnNow, runTurn, roomOf };
 }

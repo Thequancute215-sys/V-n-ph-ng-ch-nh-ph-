@@ -6,10 +6,11 @@ import { esc, cat, luc, dangTai, rong, loi, PHONG, chuDau, bao } from "../ui.js"
 
 const TRANG = 60;
 
-export async function mo(vung, { kho, ctl }) {
+export async function mo(vung, { kho, ctl, signal }) {
   const thamSo = new URLSearchParams(location.hash.split("?")[1] || "");
   let ai = thamSo.get("ai") || "", q = "", tin = [], conNua = false, coSo = true, dangTaiTin = false, loiTin = "", moiNhat = 0;
-  let nguoiHoi = "pain", cheDo = "hoi", henHoi = null, conSong = true;
+  let phienTin = 0, taiThemKey = "", tinKey = "", dangTaiDau = false, ctrlTin = null;
+  let nguoiHoi = "pain", cheDo = "hoi", henHoi = null, phienHoi = 0, nguCanhHoi = "", conSong = true;
 
   vung.innerHTML = `<div class="vung">
     <div class="tin-khung">
@@ -48,31 +49,80 @@ export async function mo(vung, { kho, ctl }) {
     $("locNguoi").innerHTML = nut("", "Tất cả", null) + nut("ceo", "Việc anh giao", "human") + ds.map((a) => nut(a.key, a.name, a.platform)).join("");
   }
 
+  function datLaiDanhSachTin() {
+    tin = [];
+    conNua = false;
+    loiTin = "";
+    tinKey = "";
+    const el = $("dsTin");
+    if (el) el.innerHTML = dangTai(4);
+  }
+
   // Tải trang đầu (them = false) hoặc trang cũ hơn (them = true).
-  async function taiTin(them = false) {
-    if (dangTaiTin) return;
+  async function taiTin(them = false, { tuDong = false } = {}) {
+    if (!conSong) return;
+    const reqAi = ai, reqQ = q, key = reqAi + "\u0000" + reqQ;
+    if (them) {
+      const qO = ($("timTin")?.value || "").trim().slice(0, 120);
+      if (dangTaiDau || taiThemKey === key || tinKey !== key || qO !== reqQ || !tin.length || !conNua) return;
+      taiThemKey = key;
+    } else {
+      if (tuDong && (dangTaiTin || dangTaiDau || taiThemKey)) return;
+      if (key !== tinKey) datLaiDanhSachTin();
+      taiThemKey = "";
+      dangTaiDau = true;
+      if (ctrlTin) { try { ctrlTin.abort(); } catch {} ctrlTin = null; }
+    }
+    const mine = ++phienTin;
     dangTaiTin = true;
-    const truoc = them && tin.length ? tin[tin.length - 1].t : null;
+    const ac = typeof AbortController === "function" ? new AbortController() : null;
+    ctrlTin = ac;
+    const tinCuoi = them ? tin.at(-1) : null;
+    const conDung = () => conSong && mine === phienTin && ai === reqAi && q === reqQ;
     try {
       if (coSo) {
         const u = new URLSearchParams({ gioiHan: String(TRANG) });
-        if (ai) u.set("ai", ai); if (q) u.set("q", q); if (truoc) u.set("truoc", String(truoc));
-        const r = await fetch("tin-nhan?" + u, { cache: "no-store" });
-        if (r.status === 404) { coSo = false; dangTaiTin = false; return taiTin(them); }
+        if (reqAi) u.set("ai", reqAi);
+        if (reqQ) u.set("q", reqQ);
+        if (tinCuoi) {
+          u.set("truoc", String(tinCuoi.t));
+          if (tinCuoi.id) u.set("truocId", tinCuoi.id);
+        }
+        const r = await fetch("tin-nhan?" + u, { cache: "no-store", ...(ac ? { signal: ac.signal } : {}) });
+        if (!conDung()) return;
+        if (r.status === 404) {
+          coSo = false;
+          if (mine === phienTin) { dangTaiTin = false; if (!them) dangTaiDau = false; if (ctrlTin === ac) ctrlTin = null; }
+          if (them && taiThemKey === key) taiThemKey = "";
+          return taiTin(them, { tuDong });
+        }
         const d = await r.json();
+        if (!conDung()) return;
         if (!r.ok || d.ok === false) throw new Error(d.error || "Lỗi HTTP " + r.status);
-        tin = them ? tin.concat(d.tin) : d.tin; conNua = !!d.conNua;
+        tin = them ? tin.concat(d.tin) : d.tin; conNua = !!d.conNua; tinKey = key;
         $("ghiChuNguon").textContent = "lưu lâu dài";
       } else {
-        const s = kho.state; if (!s) { dangTaiTin = false; return; }
+        const s = kho.state;
+        if (!s) return;
         const bo = (x) => String(x || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase();
-        tin = s.events.filter((e) => (!ai || e.from === ai || e.to === ai) && (!q || bo(e.title + " " + e.body).includes(bo(q)))).slice().reverse();
-        conNua = false;
+        tin = s.events.filter((e) => (!reqAi || e.from === reqAi || e.to === reqAi) && (!reqQ || bo(e.title + " " + e.body).includes(bo(reqQ)))).slice().reverse();
+        conNua = false; tinKey = key;
         $("ghiChuNguon").textContent = "24 giờ gần nhất (máy chủ chưa có sổ lưu lâu dài)";
       }
       loiTin = "";
-    } catch (e) { loiTin = "Không đọc được tin nhắn: " + e.message; }
-    dangTaiTin = false;
+    } catch (e) {
+      if (e && e.name === "AbortError") return;
+      if (!conDung()) return;
+      loiTin = "Không đọc được tin nhắn: " + e.message;
+    } finally {
+      if (mine === phienTin) {
+        dangTaiTin = false;
+        if (!them) dangTaiDau = false;
+        if (ctrlTin === ac) ctrlTin = null;
+        if (them && taiThemKey === key) taiThemKey = "";
+      }
+    }
+    if (!conDung()) return;
     veTin(!them);
   }
 
@@ -91,51 +141,90 @@ export async function mo(vung, { kho, ctl }) {
   }
 
   // ---------- soạn ----------
-  function datCheDo(m) {
+  function xoaTraLoi() {
+    phienHoi++;
+    clearTimeout(henHoi);
+    henHoi = null;
+    nguCanhHoi = "";
+    const el = $("traLoi");
+    if (el) el.innerHTML = "";
+  }
+
+  function datCheDo(m, taiLai = true) {
+    const doi = m !== cheDo;
     cheDo = m;
     vung.querySelectorAll("[data-che-do]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.cheDo === m)));
     $("nguoiHoi").hidden = m !== "hoi";
     $("goiYCheDo").textContent = m === "hoi" ? "AI chỉ đọc repo để trả lời, không sửa file." : "Tạo một luồng tự chạy trong dự án đang chọn; đội làm theo lượt agent.md, anh duyệt báo cáo cuối.";
     $("nutGui").textContent = m === "hoi" ? "Gửi câu hỏi" : "Giao việc";
     $("noiDung").placeholder = m === "hoi" ? "Dự án đang tới lượt ai, và còn vướng gì?" : "Thêm nút xuất CSV cho bảng hạn mức, có test";
+    if (m !== "hoi") xoaTraLoi();
+    else if (taiLai && doi) veTraLoi({ xoaTruoc: true });
   }
 
-  async function veTraLoi() {
+  async function veTraLoi({ xoaTruoc = false } = {}) {
     clearTimeout(henHoi);
-    if (!conSong || cheDo !== "hoi" || !kho.duAn) { $("traLoi").innerHTML = ""; return; }
+    henHoi = null;
+    const mine = ++phienHoi;
+    const ws = kho.duAn, who = nguoiHoi;
+    if (!conSong || cheDo !== "hoi" || !ws) {
+      nguCanhHoi = "";
+      const el = $("traLoi");
+      if (el) el.innerHTML = "";
+      return;
+    }
+    const key = ws + "\u0000" + who;
+    if (xoaTruoc || key !== nguCanhHoi) {
+      nguCanhHoi = key;
+      $("traLoi").innerHTML = "";
+    }
+    const conDung = () => conSong && mine === phienHoi && cheDo === "hoi" && kho.duAn === ws && nguoiHoi === who;
     try {
-      const c = (await ctl("/chat?workspace=" + encodeURIComponent(kho.duAn) + "&who=" + encodeURIComponent(nguoiHoi))).chat;
+      const d = await ctl("/chat?workspace=" + encodeURIComponent(ws) + "&who=" + encodeURIComponent(who));
+      if (!conDung()) return;
+      const c = (d && d.chat) || {};
       const cuoi = (c.messages || []).slice(-2);
-      $("traLoi").innerHTML = cuoi.length ? `<div class="tra-loi">` + cuoi.map((m) => `<div><span class="mo">${m.from === "ceo" ? "Anh hỏi" : esc(c.name || PHONG[nguoiHoi].ten) + (m.status === "cho" ? " đang trả lời…" : " trả lời")}:</span>` +
+      const ten = c.name || (PHONG[who] && PHONG[who].ten) || who;
+      $("traLoi").innerHTML = cuoi.length ? `<div class="tra-loi">` + cuoi.map((m) => `<div><span class="mo">${m.from === "ceo" ? "Anh hỏi" : esc(ten) + (m.status === "cho" ? " đang trả lời…" : " trả lời")}:</span>` +
         `<pre class="van-ban">${esc(m.status === "cho" ? "" : cat(m.text, 1500))}</pre></div>`).join("") + `</div>` : "";
-      if (c.busy) henHoi = setTimeout(veTraLoi, 3000);
-    } catch (e) { $("traLoi").innerHTML = loi("Không đọc được cuộc hỏi: " + e.message, false); }
+      if (c.busy && conDung()) henHoi = setTimeout(() => { if (conDung()) veTraLoi(); }, 3000);
+    } catch (e) {
+      if (!conDung()) return;
+      $("traLoi").innerHTML = loi("Không đọc được cuộc hỏi: " + e.message, false);
+    }
   }
 
   $("soan").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const o = $("noiDung"), text = o.value.trim();
+    const o = $("noiDung"), nhap = o.value, text = nhap.trim();
+    const nut = $("nutGui");
+    if (nut.disabled) return;
     if (!text) { $("loiSoan").textContent = "Gõ nội dung trước đã."; o.setAttribute("aria-invalid", "true"); o.focus(); return; }
     if (!kho.duAn) { $("loiSoan").textContent = "Chọn dự án ở thanh trên trước."; return; }
-    const nut = $("nutGui"); nut.setAttribute("aria-busy", "true"); nut.disabled = true;
+    nut.setAttribute("aria-busy", "true"); nut.disabled = true;
+    const ws = kho.duAn, who = nguoiHoi, mode = cheDo;
+    const conDung = () => conSong && kho.duAn === ws && cheDo === mode && (mode !== "hoi" || nguoiHoi === who);
     try {
-      if (cheDo === "hoi") {
-        await ctl("/chat", { workspace: kho.duAn, who: nguoiHoi, text });
-        o.value = ""; bao("Đã gửi câu hỏi cho " + PHONG[nguoiHoi].ten + ".");
+      if (mode === "hoi") {
+        await ctl("/chat", { workspace: ws, who, text });
+        if (!conDung()) return;
+        if (o.value === nhap) o.value = "";
+        bao("Đã gửi câu hỏi cho " + ((PHONG[who] && PHONG[who].ten) || who) + ".");
         veTraLoi();
       } else {
-        const duAn = (kho.dsDuAn.find((w) => w.path === kho.duAn) || {}).name || kho.duAn.split(/[\\/]/).pop();
+        const duAn = (kho.dsDuAn.find((w) => w.path === ws) || {}).name || ws.split(/[\\/]/).pop();
         if (!confirm(`Giao việc này cho cả đội trong dự án ${duAn}?\n\n${cat(text, 300)}\n\nĐội làm theo lượt agent.md; báo cáo cuối chờ anh duyệt, không tự push hay phát hành.`)) return;
-        const r = await ctl("/autopilot", { workspace: kho.duAn, task: text });
-        o.value = ""; bao("Đã giao việc. Theo dõi ở Tổng quan hoặc Dự án và giao việc.");
-        void r;
+        await ctl("/autopilot", { workspace: ws, task: text });
+        if (!conDung()) return;
+        if (o.value === nhap) o.value = "";
+        bao("Đã giao việc. Theo dõi ở Tổng quan hoặc Dự án và giao việc.");
       }
-    } catch (err) { $("loiSoan").textContent = err.message; }
-    finally { nut.removeAttribute("aria-busy"); nut.disabled = false; }
+    } catch (err) { if (conDung()) $("loiSoan").textContent = err.message; }
+    finally { if (conSong) { nut.removeAttribute("aria-busy"); nut.disabled = false; } }
   });
   $("noiDung").addEventListener("input", () => { $("loiSoan").textContent = ""; $("noiDung").removeAttribute("aria-invalid"); });
   $("noiDung").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) $("soan").requestSubmit(); });
-  $("nguoiHoi").addEventListener("change", (e) => { nguoiHoi = e.target.value; veTraLoi(); });
+  $("nguoiHoi").addEventListener("change", (e) => { nguoiHoi = e.target.value; veTraLoi({ xoaTruoc: true }); });
 
   let henTim = null;
   $("timTin").addEventListener("input", (e) => { clearTimeout(henTim); henTim = setTimeout(() => { q = e.target.value.trim().slice(0, 120); taiTin(); }, 300); });
@@ -145,7 +234,7 @@ export async function mo(vung, { kho, ctl }) {
     if (b.dataset.ai !== undefined) {
       ai = b.dataset.ai; veLoc();
       history.replaceState(null, "", "#/tin-nhan" + (ai ? "?ai=" + encodeURIComponent(ai) : ""));
-      if (PHONG[ai]) { nguoiHoi = ai; $("nguoiHoi").value = ai; veTraLoi(); }
+      if (PHONG[ai] && ai !== nguoiHoi) { nguoiHoi = ai; $("nguoiHoi").value = ai; veTraLoi({ xoaTruoc: true }); }
       return taiTin();
     }
     if (b.hasAttribute("data-them")) return taiTin(true);
@@ -153,17 +242,32 @@ export async function mo(vung, { kho, ctl }) {
     if (b.hasAttribute("data-thu-lai")) return taiTin();
   });
 
-  // Tin mới trong /events → tải lại trang đầu (chỉ khi đang xem trang mới nhất).
+  // Tin mới trong /events → tải lại trang đầu (chỉ khi đang xem trang mới nhất); đổi dự án → xóa cũ và đọc lại cuộc hỏi.
+  let duAnCu = kho.duAn;
   const bo = kho.on((k) => {
     veLoc();
+    if (k.duAn !== duAnCu) { duAnCu = k.duAn; veTraLoi({ xoaTruoc: true }); }
     const t = k.state && k.state.events.length ? k.state.events.at(-1).t : 0;
-    if (t && t !== moiNhat) { moiNhat = t; if (tin.length <= TRANG) taiTin(); }
+    if (t && t !== moiNhat) { moiNhat = t; if (tin.length <= TRANG) taiTin(false, { tuDong: true }); }
   });
   if (PHONG[ai]) { nguoiHoi = ai; $("nguoiHoi").value = ai; }
-  datCheDo("hoi");
+  datCheDo("hoi", false);
   veLoc();
   moiNhat = kho.state && kho.state.events.length ? kho.state.events.at(-1).t : 0;
+  function dong() {
+    if (!conSong) return;
+    conSong = false;
+    phienTin++;
+    taiThemKey = "";
+    tinKey = "";
+    dangTaiDau = false;
+    if (ctrlTin) { try { ctrlTin.abort(); } catch {} ctrlTin = null; }
+    xoaTraLoi();
+    clearTimeout(henTim);
+    bo();
+  }
+  signal?.addEventListener("abort", dong, { once: true });
   taiTin();
   veTraLoi();
-  return () => { conSong = false; clearTimeout(henHoi); clearTimeout(henTim); bo(); };
+  return dong;
 }

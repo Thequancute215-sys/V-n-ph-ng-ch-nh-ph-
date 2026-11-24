@@ -89,6 +89,79 @@ test("bộ đệm: cùng lần quay bị lặp (hồ sơ chưa ghi) thì không 
   assert.equal(r.usd, 0); assert.equal(r.tuBoDem, 1);
 });
 
+test("từng kết quả thành công được tính tiền dù đợt quay lỗi và phải thử lại", async (t) => {
+  const d = duAn(tmp(t), (p) => ({ ...p, ngan_sach_usd: 1 }));
+  const anh = ok({ output_image: { data: Buffer.from("ANH").toString("base64") } });
+  const { f, goi } = giaFetch((n) => n === 2 ? ok({ status: "completed" }) : anh);
+  const mq = createMayQuay({ dir: d, khoa: () => KHOA, fetchImpl: f });
+  const opts = { canh: "C01", loai: "khung", soPhuongAn: 2 };
+  await assert.rejects(mq.quay(d, opts), { code: "MAY_QUAY_LOI" });
+  assert.equal(mq.trangThai(d).daChi, 0.0336);
+  assert.equal(mq.uocTinh(d, opts).usd, 0.0336);
+  const thuLai = await mq.quay(d, opts);
+  assert.equal(goi.length, 3);
+  assert.equal(thuLai.tuBoDem, 1);
+  assert.equal(thuLai.usd, 0.0336);
+  assert.equal(thuLai.daChi, 0.0672);
+  assert.equal(new Set(mq.trangThai(d).soChi.map(m => m.maLanGoi)).size, 2);
+});
+
+test("lỗi ghi sổ chi: mở lại máy quay dùng kết quả đã lưu, chỉ ghi một khoản và không gọi Gemini lần nữa", async (t) => {
+  const d = duAn(tmp(t));
+  const biChan = path.join(d, "media", "so-chi.json.tmp");
+  fs.mkdirSync(biChan);
+  const { f, goi } = giaFetch(() => video("KET-QUA"));
+  const taoMay = () => createMayQuay({ dir: d, khoa: () => KHOA, fetchImpl: f });
+  const opts = { canh: "C01", loai: "video" };
+
+  const may = taoMay();
+  await assert.rejects(may.quay(d, opts), { code: /^(EISDIR|EPERM|EACCES)$/ });
+  assert.equal(goi.length, 1);
+  assert.equal(may.trangThai(d).soChi.length, 0);
+  assert.deepEqual(docPhim(d).canh[0].take || [], []);
+
+  fs.rmdirSync(biChan);
+  const maySauKhoiDong = taoMay();
+  const uocTinh = maySauKhoiDong.uocTinh(d, opts);
+  assert.equal(uocTinh.usd, 0);
+  assert.equal(uocTinh.chiCho, 0.35);
+  const r = await maySauKhoiDong.quay(d, opts);
+  assert.equal(goi.length, 1);
+  assert.equal(r.usd, 0);
+  assert.equal(r.tuBoDem, 1);
+  assert.equal(r.daChi, 0.35);
+  assert.equal(maySauKhoiDong.trangThai(d).soChi.length, 1);
+  assert.equal(fs.readFileSync(path.join(d, r.files[0]), "utf8"), "KET-QUA");
+  assert.equal(maySauKhoiDong.uocTinh(d, { canh: "C02", loai: "khung" }).chiCho, 0);
+});
+
+test("mất phản hồi máy quay: giữ khoản đang đối soát và chặn gửi lại cùng yêu cầu sau khởi động", async (t) => {
+  const d = duAn(tmp(t));
+  const { f, goi } = giaFetch(() => { throw Object.assign(new Error("gián đoạn thử"), { name: "TimeoutError" }); });
+  const taoMay = () => createMayQuay({ dir: d, khoa: () => KHOA, fetchImpl: f });
+  const opts = { canh: "C01", loai: "video" };
+  await assert.rejects(taoMay().quay(d, opts), { code: "MAY_QUAY_LOI" });
+  const may = taoMay();
+  await assert.rejects(may.quay(d, opts), { code: "CAN_DOI_SOAT_CHI" });
+  assert.equal(goi.length, 1);
+  assert.equal(may.trangThai(d).daChi, 0);
+  assert.equal(may.uocTinh(d, { canh: "C02", loai: "khung" }).chiCho, 0.35);
+});
+
+test("tham chiếu phim chỉ chấp nhận đích thật bên trong dự án", (t) => {
+  const root = duAn(tmp(t));
+  const trong = path.join(root, "media", "khung");
+  const ngoai = tmp(t);
+  ghi(path.join(ngoai, "anh.jpg"), "DU LIEU THU");
+  fs.symlinkSync(trong, path.join(root, "trong"), process.platform === "win32" ? "junction" : "dir");
+  fs.symlinkSync(ngoai, path.join(root, "ngoai"), process.platform === "win32" ? "junction" : "dir");
+  const mq = createMayQuay({ dir: root, khoa: () => KHOA });
+  const phim = docPhim(root), canh = phim.canh[0];
+  const dung = (khung_chon) => mq.dungYeuCau(root, phim, { ...canh, khung_chon }, { loai: "video" });
+  assert.equal(dung("trong/C01-1.jpg").body.input[0].mime_type, "image/jpeg");
+  assert.throws(() => dung("ngoai/anh.jpg"), { code: "PATH_ESCAPE" });
+});
+
 test("chặn trước khi tốn tiền: vượt ngân sách, chưa có khóa, hồ sơ lỗi, máy quay flow; lỗi Gemini không lộ khóa", async (t) => {
   // Cả phim ước tối đa $0,95 ≤ $1 (bộ kiểm hồ sơ qua), nhưng đã chi $0,8 nên lần quay $0,35 vượt ngân sách.
   const d = duAn(tmp(t), (p) => ({ ...p, ngan_sach_usd: 1 }));
@@ -130,7 +203,14 @@ test("phần của CEO: chỉ chọn khung/take có trong cảnh, đánh dấu �
 });
 
 test("trạm Flow: mở Chrome hồ sơ riêng không cờ tự động hoá; nhịp chạy Opus chỉ với MCP Flow; tạo có trần lượt; tải về nhận clip mới", async (t) => {
-  const d = tmp(t), goc = path.join(d, "xp"), root = duAn(path.join(d, "phim"));
+  const d = tmp(t), goc = path.join(d, "xp");
+  const khung = "media/khung/C02-1.jpg";
+  const root = duAn(path.join(d, "phim"), (p) => {
+    p.canh[1].khung = [khung];
+    p.canh[1].khung_chon = khung;
+    return p;
+  });
+  ghi(path.join(root, khung), "KHUNG-THU");
   ghi(path.join(goc, ".keep"), "");
   const cdt = require("../ctl/chrome-devtools");
   const entry = path.join(d, "mcp", cdt.ID, "node_modules", cdt.GOI);
@@ -177,9 +257,14 @@ test("trạm Flow: mở Chrome hồ sơ riêng không cờ tự động hoá; nh
   phu = (await flow.trangThai()).taiKhoan.find((x) => x.id === "phu");
   assert.equal(phu.credit.luotTaoThang, 1); assert.equal(phu.credit.conLai, 870);
   viec.splice(1, 1);
-  // Nhịp tải về: clip .mp4 mới xuất hiện trong thư mục tải của hồ sơ → take của cảnh
+  // Sau khi tạo xong, đổi tên khung nguồn. Tải clip vẫn chạy, nhịp chuẩn bị vẫn cần file.
+  fs.renameSync(path.join(root, khung), path.join(root, "media/khung/C02-doi-ten.jpg"));
+  await assert.rejects(flow.nhip(root, { canh: "C02", taiKhoan: "phu", buoc: "chuan-bi" }), { code: "NOT_FOUND" });
   ketQua = { ket_qua: "xong", ghi_chu: "đã tải", credit_con_lai: "0 credits" };
   await flow.nhip(root, { canh: "C02", taiKhoan: "phu", buoc: "tai-ve" });
+  const promptTai = viec[1].argv[viec[1].argv.indexOf("-p") + 1];
+  assert.match(promptTai, /NHỊP: TẢI VỀ/);
+  assert.ok(!promptTai.includes("C02-1.jpg"));
   ghi(path.join(goc, "flow", "phu-tai-ve", "flow_video.mp4"), "FLOWCLIP");
   viec[1].onExit({ id: "j2" });
   tt = await flow.trangThai();

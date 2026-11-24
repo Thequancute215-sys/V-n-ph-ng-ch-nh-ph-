@@ -3,6 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>
+// Máy tính dùng Thế Quân OS (os.html), văn phòng 3D giữ cho điện thoại / máy bảng cảm ứng.
+if (!/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) && !(/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1)) {
+  location.replace("os.html" + location.hash);
+}
+</script>
 <title>Văn phòng 3D</title>
 <link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">
 <meta name="theme-color" content="#0b1220">

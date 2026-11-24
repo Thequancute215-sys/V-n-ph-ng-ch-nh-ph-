@@ -115,7 +115,7 @@ test("Dự án mới loại Phim: có bước khuôn phim, việc giao Hinata l�
   const d = tmp(t), goi = [];
   const github = { login: async () => "oanh", exists: async () => false, createRepo: async ({ name }) => ({ fullName: "oanh/" + name, url: "u" }),
     open: () => ({ id: "op1", status: "running" }), get: () => ({ id: "op1", status: "done", workspace: d }) };
-  const ideas = { add: (x) => { goi.push(x); return { id: "i1" }; }, start: () => ({ runId: "auto-1" }) };
+  const ideas = { add: (x) => { goi.push(x); return { id: "i1" }; }, start: (id, { prepare }) => { prepare?.(null); return { runId: "auto-1" }; } };
   const dam = createDuAnMoi({ github, ideas, boKiem: { install: () => ({}) }, cho: async () => {} });
   assert.throws(() => dam.tao({ ten: "phim-thu", yTuong: "Phim chúc mừng thầy cô 20/11", loai: "game" }), { code: "BAD_REQUEST" });
   const op = dam.tao({ ten: "phim-thu", yTuong: "Phim chúc mừng thầy cô 20/11", loai: "phim" });
