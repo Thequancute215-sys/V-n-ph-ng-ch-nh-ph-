@@ -166,3 +166,62 @@ Codex và Anty mở Giao việc khi đã có dự án, giữ lượt đọc kh�
 - Anty ghi từ đọc mã, chưa tái hiện riêng. Gồm bộ lọc danh sách Tin nhắn có thể bỏ thay đổi khi lần đọc trước còn chờ, Phim và Tổng quan có thể cập nhật sau khi rời khu, hướng dẫn dán khóa ở Xưởng phim cũ chưa đồng bộ, một số trang cũ còn polling hoặc EventSource tới khi bị tháo.
 - Phạm vi chưa kiểm gồm điện thoại thật, cảnh WebGL khi CDN hoạt động, khả năng tiếp cận WCAG đầy đủ và thao tác thật với nhà cung cấp AI. Hai lượt đầu dừng trước khi xác nhận tạo repo, cài CI, build và xuất bản. Những ca GET của vòng đời được đo ở Giao việc → Dự án, các khu khác chưa có số đo tương đương.
 - Claude có thể bắt đầu từ diff `b5e8534..ee717f6`, kiểm lại bốn ca trên và đề xuất đợt sửa tiếp theo để chủ dự án duyệt. Có thể xem cả lịch sử bảo trì để review những thay đổi trước UI. [Lịch sử nhánh so với main](https://github.com/Thequancute215-sys/V-n-ph-ng-ch-nh-ph-/compare/main...fix/bao-tri-van-phong-ai-20261124)
+
+## Ba lỗi ưu tiên cao ngày 25/11/2026
+
+Đối chiếu mã cũ `cd8d4dd` và bản vá `6a32281`. Anty chạy cùng một bộ kiểm trên hai bản chụp Git độc lập, với Chrome 158.0.8127.88 ở 1440×900, máy chủ và Git thật, repo thử trên máy và CLI AI giả. Các mã commit trong bảng là của repo thử, dùng để đối chiếu từng lần chạy. [Diff ba lỗi](https://github.com/Thequancute215-sys/V-n-ph-ng-ch-nh-ph-/compare/cd8d4ddae32c4ba1378d09c296ab29437736e0f9...6a322811818e1a4fd6e73d984223bee2f31ebdb4)
+
+### 1. Tạo dự án phim giữ đủ hồ sơ trên nhánh làm việc
+
+Văn phòng từng tạo khung trước khi tách nhánh. Git vì vậy coi các file vừa tạo là file cũ để lại trên máy, hoặc thấy `.gitignore` đang sửa và dừng. Bản vá tách nhánh trước, lưu khung phim rồi mới cho Hinata làm việc.
+
+| Ca thử của Anty | Trước sửa | Sau sửa |
+| --- | --- | --- |
+| Repo chưa có `.gitignore` | **0/4** file khung trong lịch sử Git. Cả 4 file nằm ngoài Git, kể cả sau khi Hinata chỉnh kịch bản. | **4/4** file khung có trong lịch sử nhánh. Hinata lưu cả kịch bản và cảnh C01. |
+| Repo có `.gitignore` đã lưu trong Git | Dừng ở bước giao Hinata với `DIRTY_REPO`. | Tạo khung và giao Hinata đều hoàn tất. Hai dòng bỏ qua cũ vẫn còn, thêm `media/` trên nhánh làm việc. |
+| Repo có hồ sơ phim của người dùng | `PHIM.md` và `kich-ban.md` nằm ngoài Git. | Cả hai file thiếu được lưu vào Git. Tên phim đã có của người dùng được giữ. |
+
+Sau vá, cả ba ca giữ nguyên SHA `main`, giữ nội dung ghi chú riêng trên đĩa và không đưa ghi chú vào Git. Anty kiểm thêm hai ca sau vá. Tắt giao Hinata vẫn lưu đủ **4/4** file khung trên nhánh riêng. Khi tạo khung đồng thời với đổi lượt bắt buộc, cả hai thay đổi đều nằm trên cùng nhánh làm việc.
+
+### 2. Bàn giao tự động dùng đúng đường trả lời
+
+Trước sửa, một câu hỏi của luồng tự động có thể xuất hiện thêm dưới dạng bàn giao chạy tay. Bấm thẻ chạy tay ghi nhận lựa chọn ở bàn giao, bỏ sót bước báo cho luồng tự động chạy tiếp. Bản vá ẩn thẻ chạy tay bị trùng và chặn đường ghi nhầm ở máy chủ.
+
+| Khu OS | Thẻ chạy tay trùng với câu hỏi tự động | Thẻ chạy tay trùng với báo cáo cuối tự động | Thẻ của bàn giao chạy tay riêng |
+| --- | ---: | ---: | ---: |
+| Tổng quan | 1 → 0 | 1 → 0 | 1 → 1 |
+| Luồng và bàn giao | 1 → 0 | 1 → 0 | 1 → 1 |
+| Việc và lịch chạy | 1 → 0 | 1 → 0 | 1 → 1 |
+
+Anty đo trước sửa, đường trả lời chạy tay nhận **200**, luồng vẫn chờ, gọi tiếp đường tự động nhận **409 `DECIDED`**. Lượt đo cũ của Codex dùng hành động **duyệt** ở lần gọi tiếp nên nhận **409 `NOT_PENDING`**. Cả hai đều quan sát thấy luồng mắc ở trạng thái chờ câu trả lời.
+
+Sau sửa, cả **6/6** tổ hợp duyệt, từ chối và trả lời qua đường chạy tay đối với bàn giao thuộc luồng đều nhận **409 `HANDOFF_IN_RUN`**. Bấm trả lời trong luồng nhận **200**, đội chạy tiếp tới lúc chờ duyệt báo cáo. Bấm trả lời bàn giao chạy tay riêng vẫn nhận **200**. Chrome ghi **0 ngoại lệ JavaScript**. Với fixture chứa ba bàn giao, danh sách đầy đủ vẫn trả **3**, danh sách chạy tay trả **1**, kể cả trên đường API dành cho điện thoại đã ghép.
+
+### 3. Đổi lượt khẩn cấp nằm trên nhánh riêng
+
+Trước sửa, thao tác xác nhận đổi lượt sang Hinata ghi thay đổi lên `main` trước khi mở nhánh. Bản vá tạo nhánh làm việc rồi mới ghi đổi lượt và bắt đầu giao việc.
+
+| Ca thử | Trước sửa | Sau sửa |
+| --- | --- | --- |
+| Sổ giao việc được theo dõi trên `main` | Lệnh đã xác nhận thêm **1** commit lên `main`, từ `b0b232573b70` sang `8c7020632e2f`. | Thêm **0** commit lên `main`, SHA `4722a7d736c5` giữ nguyên. Commit đổi lượt và sản phẩm của Hinata nằm trên nhánh `ai/…`. |
+| Sổ chỉ lưu trên máy | Sổ nằm ngoài Git. | Sổ vẫn ngoài Git, sản phẩm của Hinata được lưu trên nhánh riêng. |
+| Từ chối hoặc không tạo được nhánh | Repo có sửa dở đã bị chặn. Khi Git từ chối tạo nhánh, ca Codex ghi nhận mã cũ đã đổi lượt trên `main`. | Repo có sửa dở vẫn bị chặn. Khi không tạo được nhánh, không đổi lượt, không tạo luồng và SHA `main` giữ nguyên. |
+
+### Kết quả kiểm chứng của đợt vá
+
+- **Anty** đạt **3/3** nhóm lỗi sau sửa, **8/8** kiểm tra bổ sung và **95/95** test trọng tâm trong 9 file. Ghi chú của Anty về lỗi khi lưu khung sau khi đã tách nhánh cần được kiểm riêng với tình huống thử lại.
+- **Codex** chạy cùng **8 ca** trên hai mốc. Mã cũ qua **1/8**, bản vá qua **8/8**. Bộ test toàn repo ở mốc bản vá đạt **461/461**, không bỏ qua ca nào. Chrome của Codex xác nhận số thẻ trùng sau sửa là **0** tại cả ba khu, bấm trả lời nhận **200** và Sol bắt đầu lượt tiếp theo.
+- **Môi trường** dùng Git, Chrome, Controller và máy chủ thật với dữ liệu tổng hợp. Kết quả trên điện thoại là qua API đã ghép trong môi trường thử. Điện thoại vật lý, tài khoản AI thật và bản cài đang dùng chưa thuộc lượt kiểm này.
+
+### Điều kiện nhập vào main
+
+Subagent kiểm độc lập toàn bộ thay đổi của nhánh so với `main` ở mốc `9a1ac37`, chạy lại **84/84** test trong 8 file trên bản chụp `6a32281`, rồi thử tình huống Git không lưu được khung phim. Phép thử dùng repo mẫu, Git và HTTP thật, tắt giao Hinata để cô lập bước tạo khung. Sau lần lưu lỗi, subagent khôi phục cấu hình Git trong repo thử rồi bấm thử lại cùng dự án.
+
+| Repo thử | Lần lưu gặp lỗi | Lần thử lại khi Git đã hoạt động |
+| --- | --- | --- |
+| Chưa có `.gitignore` trong Git | Ứng dụng báo lỗi, 4 file khung đã tạo trên đĩa. | Ứng dụng báo **xong**, Git vẫn chứa **0/4** file khung. |
+| Đã có `.gitignore` trong Git | Ứng dụng báo lỗi, để lại `.gitignore` đã đổi và 3 file khung mới trên đĩa. | Ứng dụng báo **lỗi** vì `.gitignore` còn thay đổi từ lần thử trước. |
+
+Cả hai ca chỉ tạo repo một lần. SHA `main` và ghi chú riêng được giữ nguyên. Bộ kiểm ban đầu của Anty chưa mô phỏng lần lưu bị gián đoạn. Kết quả mới cho thấy khâu thử lại phải xử lý phần khung do chính ứng dụng để lại. Trạng thái **xong** cần đi kèm xác nhận khung đã được lưu trong lịch sử Git. [Bước tạo khung và lưu](../ctl/du-an-moi.js#L193-L207) · [Bước kiểm Git và ghi commit](../ctl/nhanh.js#L57-L92)
+
+**Kết luận ngày 25/11/2026.** Giữ nhánh bảo trì để xử lý ca thử lại. Điều kiện nhập toàn bộ nhánh vào `main` chưa đạt.
