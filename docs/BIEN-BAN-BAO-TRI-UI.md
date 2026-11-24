@@ -227,3 +227,16 @@ Cả hai ca chỉ tạo repo một lần. SHA `main` và ghi chú riêng đượ
 Subagent rà chênh lệch **7 commit, 69 file**. Một lỗi hiển thị nhẹ ngoài ba ca ưu tiên cũng được xác nhận khi đối chiếu `9a1ac37` và `6a32281`. Tên file định dạng mã trong nhãn liên kết Markdown từng hiện đúng và nay có thể hiện thành số. [Định dạng liên kết Markdown](../public/md.js#L10-L13)
 
 **Kết luận ngày 25/11/2026.** Giữ nhánh bảo trì để xử lý ca thử lại. Điều kiện nhập toàn bộ nhánh vào `main` chưa đạt.
+
+### Kiểm lại sau bản vá thử lại
+
+Bản vá `7513e3693724fb84756594de73207062d02ed3c5` chuẩn bị khung trong worktree tạm. Nếu Git không lưu được, thư mục dự án vẫn sạch. Khi Git hoạt động lại, thử lại cùng dự án sẽ lưu khung trên nhánh làm việc. Nhãn Markdown nay hiển thị tên file và kiểu chữ bên trong liên kết.
+
+| Phép thử độc lập của Antigravity | `3652f97` trước sửa | `7513e36` sau sửa |
+| --- | ---: | ---: |
+| Thử lại sau lỗi lưu khung phim | 0/5 | 5/5 |
+| Nhãn liên kết và định dạng Markdown | 4/11 | 11/11 |
+
+Lượt bổ sung xác nhận lần lưu lỗi giữ nguyên thư mục dự án và dọn worktree tạm. Tệp phim riêng và `.gitignore` ngoài Git có quy tắc bỏ qua `media/` được giữ trên máy. Nếu file bỏ qua ngoài Git thiếu quy tắc này, ứng dụng báo rõ và dừng trước khi sửa hồ sơ. Hai phép thử Markdown bổ sung cũng đạt.
+
+Codex chạy 5 ca hồi quy mới trên mã cũ và tái hiện lỗi ở cả 5 ca. Bộ kiểm liên quan trên bản vá đạt **26/26**, gồm bốn tổ hợp có hoặc không có `.gitignore` trong Git và có hoặc không giao Hinata. Phép thử dùng Git và HTTP thật trên repo mẫu, với CLI AI giả. [Bản vá thử lại](https://github.com/Thequancute215-sys/V-n-ph-ng-ch-nh-ph-/compare/3652f9716035da511ffe9c2ac9e9502416d8343a...7513e3693724fb84756594de73207062d02ed3c5) · [PR bảo trì](https://github.com/Thequancute215-sys/V-n-ph-ng-ch-nh-ph-/pull/74)
