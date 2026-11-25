@@ -22,7 +22,7 @@ export const usd = (x) => "$" + (Math.round((Number(x) || 0) * 100) / 100).toFix
 export async function ctl(p, body, { timeout = 60000 } = {}) {
   let r;
   try {
-    r = await fetch("/ctl" + p, { cache: "no-store", method: body === undefined ? "GET" : "POST", signal: AbortSignal.timeout(timeout),
+    r = await fetch("/ctl" + p, { cache: "no-store", method: body === undefined ? "GET" : "POST", signal: timeout ? AbortSignal.timeout(timeout) : undefined,
       ...(body === undefined ? {} : { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }) });
   } catch (e) { throw Object.assign(new Error(e.name === "TimeoutError" ? "Bộ điều khiển trả lời quá lâu." : "Không nối được bộ điều khiển (ctl). Kiểm tra văn phòng đang chạy."), { code: "CTL_OFFLINE" }); }
   let d = null; try { d = await r.json(); } catch {}

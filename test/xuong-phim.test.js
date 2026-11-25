@@ -153,3 +153,48 @@ test("tts_sync.py: kịch bản rỗng (kể cả chỉ có BOM) và tham số s
   assert.equal(r.status, 1, r.stderr);
   assert.ok(!fs.existsSync(path.join(d, "ra", "v.mp3")));
 });
+
+test("tts_sync.py: rút câu trước khi chồng mốc 50 ms (3125 -> 3075), giữ nguyên startMs, âm thanh và hai câu liền mốc (5275 -> 5275)", { skip: !PY && "không có Python" }, (t) => {
+  const d = tmp(t), script = path.join(__dirname, "..", "tools", "xuong-phim", "tts_sync.py");
+  const fakeAudio = Buffer.from("ID3-FAKE-AUDIO-KHONG-DOI-BYTE-NAO");
+  ghi(path.join(d, "pylib", "edge_tts.py"), [
+    "class SubMaker:",
+    "    def feed(self, chunk): pass",
+    "    def get_srt(self):",
+    "        return (",
+    "            '1\\n00:00:00,100 --> 00:00:03,125\\nMỗi thước phim bắt đầu từ một ý tưởng.\\n\\n'",
+    "            '2\\n00:00:03,075 --> 00:00:05,275\\nCắt cảnh đúng nhịp lời đọc.\\n\\n'",
+    "            '3\\n00:00:05,275 --> 00:00:07,862\\nXem lại toàn bộ trước khi xuất.\\n'",
+    "        )",
+    "class Communicate:",
+    "    def __init__(self, text, voice, rate='+0%', volume='+0%'): pass",
+    "    async def stream(self):",
+    `        yield {'type': 'audio', 'data': ${JSON.stringify(fakeAudio.toString("latin1"))}.encode('latin1')}`,
+    "        yield {'type': 'WordBoundary'}",
+  ].join("\n") + "\n");
+
+  const outBase = path.join(d, "out", "voice");
+  const env = { ...process.env, PYTHONPATH: path.join(d, "pylib") + (process.env.PYTHONPATH ? path.delimiter + process.env.PYTHONPATH : "") };
+  const r = spawnSync(PY, [script, "--text", "Ba câu thử giọng Việt.", "--voice", "vi-nu", "--output", outBase], { encoding: "utf8", env });
+  assert.equal(r.status, 0, r.stderr || r.stdout);
+
+  // 1. Âm thanh giữ nguyên tuyệt đối
+  assert.deepEqual(fs.readFileSync(outBase + ".mp3"), fakeAudio);
+
+  // 2. JSON rút câu 1 từ 3125 ms về đúng 3075 ms (= startMs câu 2), giữ nguyên startMs và cho phép câu 2–3 liền mốc ở 5275 ms
+  const rows = JSON.parse(fs.readFileSync(outBase + ".json", "utf8"));
+  assert.deepEqual(rows, [
+    { index: 1, startMs: 100, endMs: 3075, startSec: 0.1, endSec: 3.075, durationMs: 2975, text: "Mỗi thước phim bắt đầu từ một ý tưởng." },
+    { index: 2, startMs: 3075, endMs: 5275, startSec: 3.075, endSec: 5.275, durationMs: 2200, text: "Cắt cảnh đúng nhịp lời đọc." },
+    { index: 3, startMs: 5275, endMs: 7862, startSec: 5.275, endSec: 7.862, durationMs: 2587, text: "Xem lại toàn bộ trước khi xuất." },
+  ]);
+
+  // 3. SRT khớp từng mili-giây với JSON, không còn chồng mốc 03,125 > 03,075
+  const srt = fs.readFileSync(outBase + ".srt", "utf8").replace(/\r\n/g, "\n");
+  assert.equal(
+    srt,
+    "1\n00:00:00,100 --> 00:00:03,075\nMỗi thước phim bắt đầu từ một ý tưởng.\n\n" +
+    "2\n00:00:03,075 --> 00:00:05,275\nCắt cảnh đúng nhịp lời đọc.\n\n" +
+    "3\n00:00:05,275 --> 00:00:07,862\nXem lại toàn bộ trước khi xuất.\n"
+  );
+});
