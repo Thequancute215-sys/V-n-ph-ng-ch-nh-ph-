@@ -88,15 +88,24 @@ test("OS-2: máy tính quản lý được tài khoản AI ngay trong OS (hộp 
 });
 
 // OS-3 (CEO cấp FORCE_OVERRIDE 22/11/2026): "xem ở đâu, xử lý ngay ở đó".
-test("OS-3: thanh bên chỉ còn khu gốc (không nhúng trang cũ), trang cũ gom vào Công cụ cũ", () => {
+test("OS-3: thanh bên chỉ còn khu gốc (không nhúng trang cũ, không còn nhãn Sắp có), Xưởng code có Xem PR và Xưởng phim tách 3 phần", () => {
   const app = doc("os/app.js");
   const khu = app.slice(app.indexOf("const KHU = ["), app.indexOf("];", app.indexOf("const KHU = [")));
   const muc = khu.split("\n").filter((l) => /^\s*\{ id: /.test(l));
-  assert.ok(muc.length <= 11, "thanh bên tối đa 11 mục chính, đang có " + muc.length);
+  assert.ok(muc.length <= 14, "thanh bên tối đa 14 mục chính (theo thiết kế os.css), đang có " + muc.length);
+  assert.doesNotMatch(khu, /sapCo:/, "không còn mục Sắp có trên thanh bên");
   for (const l of muc) assert.doesNotMatch(l, /nhung: /, "mục trên thanh bên phải là khu gốc: " + l.trim());
   assert.match(khu, /id: "cu", ten: "Công cụ cũ", icon: "\w+", mod: "\.\/khu\/cong-cu-cu\.js"/);
   assert.match(khu, /id: "code\/giao-viec", [^\n]*mod: "\.\/khu\/giao-viec\.js", xuong: "code"/);
   assert.match(khu, /id: "code\/dieu-khien", [^\n]*mod: "\.\/khu\/luong\.js", xuong: "code"/);
+  assert.match(khu, /id: "code\/pr", [^\n]*mod: "\.\/khu\/code-pr\.js", xuong: "code"/);
+  assert.match(khu, /id: "phim", [^\n]*mod: "\.\/khu\/phim\.js", xuong: "phim"/);
+  assert.match(khu, /id: "phim\/canh", [^\n]*mod: "\.\/khu\/phim-canh\.js", xuong: "phim"/);
+  assert.match(khu, /id: "phim\/ban-dung", [^\n]*mod: "\.\/khu\/phim-ban-dung\.js", xuong: "phim"/);
+  // Khóa cuộn trang ngoài để .visually-hidden bên trong .chinh không tạo thanh cuộn thứ hai đẩy trôi thanh bên.
+  const css = doc("os/os.css");
+  assert.match(css, /html:has\(> body > \.os\),\s*body:has\(> \.os\)\s*\{[^}]*overflow:\s*hidden/);
+  assert.match(css, /\.chinh\s*\{[^}]*position:\s*relative/);
   // Đường dẫn cũ vẫn mở được: mọi trang từng có trên thanh bên vẫn có trong CU.
   const cu = app.slice(app.indexOf("const CU = ["), app.indexOf("];", app.indexOf("const CU = [")));
   for (const id of ["code/skill", "code/hop-thu", "phim/nhan-vat", "phim/xuong-cu", "doi/hieu-suat", "doi/noi-quy", "he/ket-noi", "he/dien-thoai", "he/cap-nhat"]) assert.ok(cu.includes(`id: "${id}"`), "mất đường dẫn cũ " + id);
@@ -125,7 +134,7 @@ test("OS-3: mọi đường dẫn ctl mà ngăn trượt và hai khu mới gọi
     ["POST", "/autopilot/:id/stop"], ["POST", "/autopilot/:id/resume"], ["POST", "/autopilot/:id/push"],
     ["GET", "/handoffs/:id"], ["POST", "/handoffs/:id/approve"], ["POST", "/handoffs/:id/reject"], ["POST", "/handoffs/:id/answer"],
     ["GET", "/jobs/:id"], ["POST", "/jobs/:id/approve"], ["POST", "/jobs/:id/reject"], ["POST", "/jobs/:id/kill"], ["POST", "/kill-all"],
-    ["GET", "/ai/status"], ["GET", "/scan"], ["POST", "/scan/approve"], ["GET", "/github/repos"], ["POST", "/github/open"], ["GET", "/github/operations/:id"]];
+    ["GET", "/ai/status"], ["GET", "/scan"], ["POST", "/scan/approve"], ["GET", "/github/repos"], ["GET", "/github/pulls"], ["GET", "/github/pulls/:number"], ["POST", "/github/open"], ["GET", "/github/operations/:id"]];
   for (const [m, p] of can) assert.ok(main.includes(`["${m}", "${p}"`), "ctl thiếu " + m + " " + p);
   assert.ok(main.includes("/^\\/jobs\\/([^/]+)\\/log$/"), "ctl có /jobs/:id/log cho nhật ký lượt");
   assert.match(fs.readFileSync(path.join(__dirname, "..", "lib", "ctlbridge.js"), "utf8"), /"x-next-offset", "x-size"/, "cầu nối chuyển tiếp X-Next-Offset và X-Size");

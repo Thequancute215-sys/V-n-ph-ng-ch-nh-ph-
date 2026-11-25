@@ -17,10 +17,11 @@ const KHU = [
   { id: "code/du-an", ten: "Dự án", icon: "du_an", mod: "./khu/code-du-an.js", xuong: "code" },
   { id: "code/giao-viec", ten: "Giao việc cho đội", icon: "giao", mod: "./khu/giao-viec.js", xuong: "code" },
   { id: "code/dieu-khien", ten: "Luồng và bàn giao", icon: "luong", mod: "./khu/luong.js", xuong: "code" },
-  { sapCo: "Xem PR", xuong: "code" },
+  { id: "code/pr", ten: "Xem PR", icon: "pr", mod: "./khu/code-pr.js", xuong: "code" },
   { nhom: "Xưởng phim", xuong: "phim" },
-  { id: "phim", ten: "Phim và bàn dựng", icon: "phim", mod: "./khu/phim.js", xuong: "phim" },
-  { sapCo: "Kịch bản, phân cảnh, lồng tiếng, xuất bản phim", xuong: "phim" },
+  { id: "phim", ten: "Kịch bản và giọng đọc", icon: "luat", mod: "./khu/phim.js", xuong: "phim" },
+  { id: "phim/canh", ten: "Phân cảnh và quay", icon: "canh", mod: "./khu/phim-canh.js", xuong: "phim" },
+  { id: "phim/ban-dung", ten: "Bàn dựng và xuất xưởng", icon: "xuat", mod: "./khu/phim-ban-dung.js", xuong: "phim" },
   { nhom: "Đội ngũ" },
   { id: "doi/cong-su", ten: "Cộng sự và team", icon: "doi", mod: "./khu/cong-su.js" },
   { id: "doi/viec", ten: "Việc và lịch chạy", icon: "lich", mod: "./khu/viec.js" },
@@ -156,6 +157,7 @@ async function moKhu() {
   os.classList.remove("mo-ben"); nutMenu.setAttribute("aria-expanded", "false");
   if (dong) { try { dong(); } catch {} dong = null; }
   const vung = document.getElementById("vung"), mine = ++phien;
+  window.scrollTo(0, 0);
   document.querySelector(".chinh").scrollTop = 0;   // khu mới mở từ đầu, không giữ chỗ cuộn của khu trước
   if (k.nhung) {
     vung.innerHTML = `<div class="nhung"><iframe src="${esc(k.nhung)}" title="${esc(k.ten)}"></iframe></div>`;

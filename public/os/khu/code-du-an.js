@@ -189,7 +189,7 @@ export async function mo(vung, { kho, ctl, bao, signal }) {
         <span class="ten">${esc(w.name || w.path.split(/[\\/]/).pop())}${dang ? '<span class="nhan song" style="margin-left:auto">đang làm</span>' : ""}</span>
         <span class="viec" title="${esc(w.path)}">${esc(cat(w.path, 70))}${o && o.readAt ? " · đọc " + esc(luc(o.readAt)) : ""}</span>
         ${trangThai}
-        <span class="hang">${dang ? "" : `<button type="button" class="nut nho" data-chon="${esc(w.path)}">Làm dự án này</button>`}<button type="button" class="nut nho" data-luong="${esc(w.path)}">Luồng và bàn giao</button>${canBoKiem ? `<button type="button" class="nut nho" data-bo-kiem="${esc(w.path)}"${boKiemBan === w.path || bk.busy ? ' disabled aria-busy="true"' : ""}>${bk.state === "cu" ? "Cập nhật CI" : "Cài bộ kiểm CI"}</button>` : ""}${o && o.isRepo !== false ? `<button type="button" class="nut nho" data-xuat-ban="${esc(w.path)}" aria-expanded="${pubWs === w.path}">Xuất bản</button>` : ""}</span>
+        <span class="hang">${dang ? "" : `<button type="button" class="nut nho" data-chon="${esc(w.path)}">Làm dự án này</button>`}<button type="button" class="nut nho" data-luong="${esc(w.path)}">Luồng và bàn giao</button>${o && o.isRepo !== false ? `<button type="button" class="nut nho" data-pr="${esc(w.path)}">Xem PR</button>` : ""}${canBoKiem ? `<button type="button" class="nut nho" data-bo-kiem="${esc(w.path)}"${boKiemBan === w.path || bk.busy ? ' disabled aria-busy="true"' : ""}>${bk.state === "cu" ? "Cập nhật CI" : "Cài bộ kiểm CI"}</button>` : ""}${o && o.isRepo !== false ? `<button type="button" class="nut nho" data-xuat-ban="${esc(w.path)}" aria-expanded="${pubWs === w.path}">Xuất bản</button>` : ""}</span>
       </div>`;
     }).join("");
   }
@@ -281,9 +281,11 @@ export async function mo(vung, { kho, ctl, bao, signal }) {
     }
     const c = t.closest("[data-chon]");
     if (c) { try { await ctl("/workspaces/switch", { path: c.dataset.chon }); kho.duAn = c.dataset.chon; const sel = document.getElementById("chonDuAn"); if (sel) sel.value = c.dataset.chon; kho.bao(); bao("Đã chuyển dự án đang làm."); ve(); } catch (err) { bao(err.message, true); } return; }
-    // Xem luồng của dự án khác: chuyển dự án đang làm trước, để trang luồng không hiện nhầm dự án cũ.
+    // Xem luồng hoặc PR của dự án khác: chuyển dự án đang làm trước, để trang đích không hiện nhầm dự án cũ.
     const l = t.closest("[data-luong]");
     if (l) { if (l.dataset.luong !== kho.duAn) { try { await ctl("/workspaces/switch", { path: l.dataset.luong }); kho.duAn = l.dataset.luong; const sel = document.getElementById("chonDuAn"); if (sel) sel.value = l.dataset.luong; kho.bao(); } catch (err) { bao(err.message, true); return; } } location.hash = "#/code/dieu-khien"; return; }
+    const pr = t.closest("[data-pr]");
+    if (pr) { if (pr.dataset.pr !== kho.duAn) { try { await ctl("/workspaces/switch", { path: pr.dataset.pr }); kho.duAn = pr.dataset.pr; const sel = document.getElementById("chonDuAn"); if (sel) sel.value = pr.dataset.pr; kho.bao(); } catch (err) { bao(err.message, true); return; } } location.hash = "#/code/pr"; return; }
     if (t.closest("[data-thu-lai]")) tai();
   });
 

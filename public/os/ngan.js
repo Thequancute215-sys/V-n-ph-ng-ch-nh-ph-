@@ -48,7 +48,7 @@ export function taoNgan({ ctl, bao }) {
     // thì về nút khác của cùng việc, cuối cùng về vùng chính, để bàn phím không rơi về đầu trang.
     const dung = (el) => el && el.isConnected && !el.disabled && !el.closest("[hidden]");
     const dich = dung(nguoiMo) ? nguoiMo : [...document.querySelectorAll("[data-ngan]")].find((el) => el.dataset.ngan === chuoi && dung(el)) || document.getElementById("vung");
-    if (dich) dich.focus();
+    if (dich) dich.focus({ preventScroll: true });
     nguoiMo = null;
   });
   // Bấm vào nền mờ ngoài ngăn thì đóng (nền mờ thuộc chính <dialog>, nên đích của cú bấm là dlg).

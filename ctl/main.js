@@ -338,6 +338,8 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     }],
     ["POST", "/scan/approve", (p, qs, b) => { const root = ws.find(wsOf(b.workspace)).path; const scan = scanner.approve(root, String(b.fingerprint || "")); return { scan, resumed: autopilot.resumeScan(root) }; }],
     ["GET", "/github/repos", (p, qs) => github.list(qs.get("page") || 1)],
+    ["GET", "/github/pulls", (p, qs) => github.pulls(ws.find(wsOf(qs.get("workspace"))).path, { state: qs.get("state") || "open", page: qs.get("page") || 1, q: qs.get("q") || "" })],
+    ["GET", "/github/pulls/:number", (p, qs) => github.pullDetail(ws.find(wsOf(qs.get("workspace"))).path, p.number)],
     ["POST", "/github/open", (p, qs, b) => [202, { operation: github.open(b.fullName) }]],
     ["GET", "/github/operations/:id", (p) => ({ operation: github.get(p.id) })],
     ["POST", "/workspaces", (p, qs, b) => { const w = ws.add(b.path, "ceo"); protectPublic(w.path); return [201, { workspace: w }]; }],
