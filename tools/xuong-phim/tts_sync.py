@@ -116,6 +116,17 @@ def dong(index, start_ms, end_ms, text):
     }
 
 
+def chuan_hoa_moc(cac_dong):
+    """Rút câu trước nếu chồng mốc, giữ nguyên mốc bắt đầu và số thứ tự."""
+    ra = []
+    for i, d in enumerate(cac_dong):
+        start, end = d["startMs"], d["endMs"]
+        if i + 1 < len(cac_dong):
+            end = min(end, cac_dong[i + 1]["startMs"])
+        ra.append(dong(d["index"], start, max(start, end), d["text"]))
+    return ra
+
+
 def srt_sang_json(srt):
     mau = re.compile(
         r"(\d+)\r?\n(\d{2}):(\d{2}):(\d{2}),(\d{3}) --> (\d{2}):(\d{2}):(\d{2}),(\d{3})\r?\n([\s\S]*?)(?=\r?\n\r?\n|\Z)"
@@ -130,6 +141,7 @@ def srt_sang_json(srt):
 
 
 def ghi_phu_de(output_base, cac_dong):
+    cac_dong = chuan_hoa_moc(cac_dong)
     with open(output_base + ".srt", "w", encoding="utf-8") as f:
         f.write("\n".join(f"{d['index']}\n{ms_srt(d['startMs'])} --> {ms_srt(d['endMs'])}\n{d['text']}\n" for d in cac_dong))
     with open(output_base + ".json", "w", encoding="utf-8") as f:

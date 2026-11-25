@@ -36,11 +36,23 @@ const PHAN_DUONG = { "kich-ban": "#/phim", canh: "#/phim/canh", "ban-dung": "#/p
 
 const takeSan = (c) => c.take_chon || ((c.take || []).length === 1 ? c.take[0] : null);
 
+function docTep(file) {
+  if (file.size > 16 * 1024 * 1024) return Promise.reject(Error(file.name + " vượt 16 MiB."));
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",", 2)[1]);
+    reader.onerror = () => reject(Error("Không đọc được " + file.name));
+    reader.readAsDataURL(file);
+  });
+}
+
 export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, signal, phan = "kich-ban" } = {}) {
   let ws = "", data = null, flow = null, nghiemThu = null, loiTai = "", ban = false, hen = null, conSong = true, dsPhim = null, kyCu = "", phien = 0;
+  let taiLieu = [], loiTaiLieu = "", xem = null, goi = null;
   vung.innerHTML = `<div class="vung" id="phim">${dangTai(4)}</div>`;
   const goc = vung.querySelector("#phim");
   const media = (rel, v) => "/ctl/phim/media?workspace=" + encodeURIComponent(ws) + "&path=" + encodeURIComponent(rel) + (v ? "&v=" + encodeURIComponent(v) : "");
+  const tep = (id) => "/ctl/phim/tai-lieu/tep?workspace=" + encodeURIComponent(ws) + "&id=" + encodeURIComponent(id);
 
   async function batDau() {
     let ds = null;
@@ -62,6 +74,13 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
       let nextData = data, nextLoi = "", nextFlow = null, nextNt = nghiemThu;
       try { nextData = await ctl("/phim?workspace=" + encodeURIComponent(reqWs)); } catch (e) { nextLoi = e.message; }
       if (!conSong || mine !== phien || ws !== reqWs) return;
+      if (phan === "kich-ban") {
+        let ds = [], error = "";
+        try { ds = (await ctl("/phim/tai-lieu?workspace=" + encodeURIComponent(reqWs))).taiLieu || []; }
+        catch (e) { error = e.message; }
+        if (!conSong || mine !== phien || ws !== reqWs) return;
+        taiLieu = ds; loiTaiLieu = error;
+      }
       if (phan === "canh") {
         try { nextFlow = (await ctl("/flow")).flow; } catch { nextFlow = null; }
         if (!conSong || mine !== phien || ws !== reqWs) return;
@@ -73,9 +92,9 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
       } else if (phan === "ban-dung") nextNt = null;
       data = nextData; loiTai = nextLoi; flow = nextFlow; nghiemThu = nextNt;
       // Không vẽ lại khi dữ liệu không đổi hoặc anh đang xem/nghe một clip hay giọng đọc.
-      const ky = JSON.stringify([phan, data, flow, nghiemThu, loiTai]);
+      const ky = JSON.stringify([phan, data, flow, nghiemThu, loiTai, taiLieu, loiTaiLieu, goi]);
       const dangXem = [...goc.querySelectorAll("video, audio")].some((v) => v.paused === false && !v.ended);
-      if (ky !== kyCu && !dangXem) { kyCu = ky; ve(); }
+      if (ky !== kyCu && !dangXem && !xem && !ban) { kyCu = ky; ve(); }
     }
     if (!conSong || mine !== phien || ws !== reqWs) return;
     const ban2 = data && (data.mayQuay.dang || (data.banDung && data.banDung.dang) || (data.luong && data.luong.trangThai === "dang_chay")) || (flow && flow.nhipDang);
@@ -190,7 +209,66 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
         : rong("Phim chưa có cảnh nào", "Nhập đề bài ở mục Làm phim tự động phía trên để Hinata viết kịch bản và phân cảnh.")}
     </section>`;
 
-    return veLuong(data.luong, p, false) + hoSo + veCong(bd, [1], "Cổng 1 · Duyệt kịch bản", "Duyệt kịch bản xong máy mới tạo giọng đọc và khung hình") + giongHtml;
+    return veTaiLieu(p) + veLuong(data.luong, p, false) + hoSo + veCong(bd, [1], "Cổng 1 · Duyệt kịch bản", "Duyệt kịch bản xong máy mới tạo giọng đọc và khung hình") + giongHtml;
+  }
+
+  function veTaiLieu(p) {
+    const rows = taiLieu.filter((item) => !/\.mp4$/i.test(item.ten)).map((item) => `<li class="hang">
+        <a href="${esc(tep(item.id))}" download="${esc(item.ten)}">${esc(item.ten)}</a>
+        <span class="mo">${(item.bytes / 1024).toLocaleString("vi-VN", { maximumFractionDigits: 1 })} KiB</span>
+        ${item.moHinh ? `<button type="button" class="nut nho" data-xem-mo-hinh="${esc(item.id)}">Xem 3D</button>` : ""}
+        ${p.mo_hinh_duyet?.id === item.id ? '<span class="nhan song">Đã duyệt</span>' : ""}
+      </li>`).join("");
+    return `<section class="khoi" aria-labelledby="hTaiLieuPhim">
+      <h2 class="dau" id="hTaiLieuPhim">Tài liệu và mô hình</h2>
+      <p class="mo">Đính kèm PDF, tài liệu Office, tệp văn bản, ZIP của dự án, ảnh hoặc GLB. Tối đa 16 MiB mỗi tệp. Với tài liệu quét, kèm bản TXT hoặc Markdown để tiện đối chiếu nguồn.</p>
+      <label class="hang">Chọn tệp <input class="o phim-dinh-kem" type="file" id="tepPhim" multiple accept=".pdf,.docx,.pptx,.xlsx,.txt,.md,.csv,.json,.zip,.glb,.png,.jpg,.jpeg,.webp"></label>
+      ${loiTaiLieu ? loi(loiTaiLieu) : rows ? `<ul class="cot-doc phim-ds-tep">${rows}</ul>` : '<p class="mo">Chưa có tệp đính kèm.</p>'}
+      <dialog id="xemMoHinh" class="phim-dialog" aria-labelledby="tenMoHinh">
+        <div class="hang"><h3 class="dau" id="tenMoHinh"></h3><button class="nut nho" type="button" data-dong-3d>Đóng</button></div>
+        <div class="phim-khung-3d"></div>
+        <p class="mo" id="trangThaiMoHinh" role="status"></p>
+        <div class="hang">
+          <button class="nut nho" type="button" data-xoay-3d disabled>Xoay 90°</button>
+          <button class="nut nho" type="button" data-ve-goc-3d disabled>Về góc đầu</button>
+          <button class="nut nho" type="button" data-anh-3d disabled>Lưu góc này làm ảnh tham chiếu</button>
+          <button class="nut-chinh" type="button" data-duyet-3d disabled>Duyệt mô hình này</button>
+        </div>
+      </dialog>
+    </section>`;
+  }
+
+  function dongXem() {
+    if (!xem) return;
+    const c = xem;
+    xem = null;
+    c.abort.abort();
+    c.dialog.close();
+  }
+
+  async function moXem(id) {
+    const item = taiLieu.find((x) => x.id === id && x.moHinh);
+    if (!item || xem) return;
+    const dialog = goc.querySelector("#xemMoHinh");
+    const abort = new AbortController();
+    const c = { dialog, abort, id, controls: null, name: item.ten };
+    xem = c;
+    const actions = dialog.querySelectorAll("[data-xoay-3d], [data-ve-goc-3d], [data-anh-3d], [data-duyet-3d]");
+    for (const b of actions) b.disabled = true;
+    dialog.querySelector("#tenMoHinh").textContent = item.ten;
+    const status = dialog.querySelector("#trangThaiMoHinh");
+    status.textContent = "Đang tải mô hình…";
+    dialog.addEventListener("close", () => { if (xem === c) { dongXem(); tai(); } }, { once: true });
+    dialog.showModal();
+    try {
+      const { xem3D } = await import("./phim-xem-3d.js");
+      c.controls = await xem3D(dialog.querySelector(".phim-khung-3d"), tep(id), abort.signal);
+      if (xem !== c) return;
+      status.textContent = "Kéo để xoay và cuộn để phóng to.";
+      for (const b of actions) b.disabled = false;
+    } catch (e) {
+      if (xem === c) status.textContent = "Không mở được mô hình: " + e.message;
+    }
   }
 
   function vePhanCanhVaQuay(p, k, mq, bd) {
@@ -242,6 +320,7 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
             </div>
             <div class="canh-nhom">
               <div class="hang"><b class="phu">Video đã quay (${(c.take || []).length} take)</b>${takeSan(c) ? '<span class="nhan song">đã sẵn sàng dựng</span>' : '<span class="nhan">chưa có take</span>'}${nutQuay}</div>
+              ${bd?.cong?.[1]?.duyet ? `<label class="hang">Nhập MP4 từ Flow hoặc phần mềm dựng <input class="o phim-dinh-kem" type="file" accept=".mp4,video/mp4" data-nhap-take="${esc(c.ma)}"></label>` : ""}
               ${take ? `<div class="media-hang">${take}</div>` : `<span class="mo">Duyệt Cổng 2 rồi quay cảnh này.</span>`}
             </div>
           </div>
@@ -285,7 +364,12 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
       ${bd?.cong?.[3]?.duyet ? `<div class="dat"><b>Đã xuất xưởng:</b> tệp video hoàn chỉnh nằm tại <code>${esc(ws)}\\media\\xuat\\</code>. Anh tự kiểm và đăng tải.</div>` : ""}
     </section>`;
 
-    return veLuong(data.luong, p, true) + banDungHtml + veCong(bd, [3, 4], "Cổng 3 & Cổng 4 · Duyệt bản dựng và xuất xưởng", "Duyệt Cổng 3 để nghiệm thu; máy đo đạt thì duyệt Cổng 4 xuất xưởng") + ntHtml;
+    const capcut = dsCanh.length && !thieuTake.length ? `<section class="khoi" aria-labelledby="hCapCut">
+      <div class="hang"><h2 class="dau" id="hCapCut">Chuyển sang CapCut</h2><button class="nut nho" type="button" data-goi-capcut>Tạo gói nhập</button></div>
+      <p class="mo">Nhập clip theo thứ tự trong bảng thời lượng, rồi nhập giọng đọc và SRT qua mục Phụ đề của CapCut.</p>
+      ${goi ? `<p class="phu phim-capcut-path" role="status">Thư mục: <code>${esc(goi.folder)}</code></p>` : ""}
+    </section>` : "";
+    return veLuong(data.luong, p, true) + banDungHtml + capcut + veCong(bd, [3, 4], "Cổng 3 & Cổng 4 · Duyệt bản dựng và xuất xưởng", "Duyệt Cổng 3 để nghiệm thu; máy đo đạt thì duyệt Cổng 4 xuất xưởng") + ntHtml;
   }
 
   function ve() {
@@ -301,6 +385,7 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
     goc.innerHTML = veDauTrang(p, k, bd) + (loiTai ? loi(loiTai) : "") + than;
     goc.querySelectorAll("button, input, select").forEach((el) => {
       if (el.id === "chonPhim" || el.hasAttribute("data-tai-lai")) return;
+      if (el.closest("dialog")) return;
       el.disabled = ban || (el.hasAttribute("data-dung") && !(bd && bd.coFfmpeg));
     });
   }
@@ -313,7 +398,28 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
 
   goc.addEventListener("change", (e) => {
     const t = e.target;
-    if (t.id === "chonPhim") { ws = t.value; try { localStorage.setItem("tqos-phim", ws); } catch {} data = null; nghiemThu = null; ve(); return tai(); }
+    if (t.id === "chonPhim") { dongXem(); ws = t.value; try { localStorage.setItem("tqos-phim", ws); } catch {} data = null; nghiemThu = null; taiLieu = []; loiTaiLieu = ""; goi = null; ve(); return tai(); }
+    if (t.id === "tepPhim" && t.files?.length) {
+      const files = [...t.files], workspace = ws;
+      t.value = "";
+      return lam(async () => {
+        for (const file of files) {
+          const base64 = await docTep(file);
+          if (!conSong || workspace !== ws) return;
+          await ctl("/phim/tai-lieu", { workspace, name: file.name, base64 });
+        }
+      }, "Đã đính kèm tệp.");
+    }
+    if (t.dataset.nhapTake && t.files?.length) {
+      const file = t.files[0], canh = t.dataset.nhapTake, workspace = ws;
+      t.value = "";
+      return lam(async () => {
+        const base64 = await docTep(file);
+        if (!conSong || workspace !== ws) return;
+        const { taiLieu } = await ctl("/phim/tai-lieu", { workspace, name: file.name, base64 });
+        await ctl("/phim/take-nhap", { workspace, canh, id: taiLieu.id });
+      }, "Đã nhập clip vào cảnh.");
+    }
     if (t.dataset && t.dataset.dongY) {
       if (t.checked && !confirm(`Xác nhận ${t.dataset.dongY} đã đồng ý cho dùng hình trong phim này?`)) { t.checked = false; return; }
       lam(() => ctl("/phim/ceo", { workspace: ws, nguoiThat: { ma: t.dataset.dongY, dongY: t.checked } }), "Đã ghi đồng ý dùng hình.");
@@ -322,6 +428,29 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
   goc.addEventListener("click", async (e) => {
     const b = e.target.closest("button"); if (!b || ban) return;
     const d = b.dataset;
+    if (d.goiCapcut !== undefined) {
+      const workspace = ws;
+      return lam(async () => {
+        const result = await ctl("/phim/capcut", { workspace }, { timeout: 0 });
+        if (ws === workspace) goi = result.goi;
+      }, "Đã tạo gói nhập CapCut.");
+    }
+    if (d.xemMoHinh) return moXem(d.xemMoHinh);
+    if (b.hasAttribute("data-dong-3d")) { dongXem(); return tai(); }
+    if (b.hasAttribute("data-xoay-3d")) return xem?.controls?.rotate();
+    if (b.hasAttribute("data-ve-goc-3d")) return xem?.controls?.reset();
+    if (b.hasAttribute("data-anh-3d") && xem?.controls) {
+      const { id, name, controls } = xem;
+      const base64 = controls.capture().split(",")[1];
+      const workspace = ws;
+      dongXem();
+      return lam(() => ctl("/phim/tai-lieu", { workspace, name: name.slice(0, 80) + "-" + id.slice(0, 8) + ".png", base64 }), "Đã lưu ảnh tham chiếu.");
+    }
+    if (b.hasAttribute("data-duyet-3d") && xem?.controls) {
+      const id = xem.id;
+      dongXem();
+      return lam(() => ctl("/phim/mo-hinh/duyet", { workspace: ws, id }), "Đã duyệt mô hình.");
+    }
     if (d.taiLai !== undefined) return tai();
     if (d.thuLai !== undefined) return dsPhim ? tai() : batDau();
     if (d.tiepLuong !== undefined) return lam(() => ctl("/phim/luong", { workspace: ws }), "Đã tiếp tục luồng.");
@@ -378,6 +507,7 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
   function dong() {
     if (!conSong) return;
     conSong = false;
+    dongXem();
     phien++;
     clearTimeout(hen);
     document.removeEventListener("visibilitychange", khiHien);

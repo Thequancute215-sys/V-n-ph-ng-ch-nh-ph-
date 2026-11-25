@@ -44,10 +44,33 @@ test("kế hoạch dựng: cảnh một take dùng luôn, nhiều take phải ch
   assert.throws(() => keHoach(nhac), /nhac.file phải là file trong media/);
 });
 
-test("ngắt dòng phụ đề theo từ, tối đa 3 dòng", () => {
-  assert.deepEqual(ngatDong("Chúc mừng ngày Nhà giáo Việt Nam", 12), ["Chúc mừng", "ngày Nhà", "giáo Việt Nam"]);
+test("ngắt dòng phụ đề theo từ, giữ lề cả với đoạn dài", () => {
+  assert.deepEqual(ngatDong("Chúc mừng ngày Nhà giáo Việt Nam", 12), ["Chúc mừng", "ngày Nhà", "giáo Việt", "Nam"]);
   assert.deepEqual(ngatDong("  ngắn  ", 20), ["ngắn"]);
-  assert.equal(ngatDong("a b c d e f g h", 1).length, 3);
+  assert.deepEqual(ngatDong("abcdef gh", 3), ["abc", "def", "gh"]);
+});
+
+test("câu dài được chia trang phụ đề liền mốc, tối đa ba dòng một trang", () => {
+  const kh = keHoach(PHIM());
+  const cau = "Ở lần đầu, hệ thống phải tính kết quả, rồi bộ nhớ đệm giữ lại để trả lời nhanh khi có yêu cầu giống nhau.";
+  kh.phuDe = [{ batDau: 0.1, ketThuc: 4.9, chu: cau }];
+  const l = lenhDung(kh, "9:16", { takeAbs: ["a.mp4", "b.mp4"], coTieng: [false, false], ra: "out.mp4", phong: true });
+  const cards = l.chu.filter((card) => card.ten.startsWith("pd-"));
+  assert.equal(cards.length, 2);
+  assert.equal(cards.map((card) => card.noiDung.replaceAll("\n", " ")).join(" "), cau);
+  assert.ok(cards.every((card) => card.noiDung.split("\n").length <= 3));
+  const ranges = Array.from(l.doThi.matchAll(/gte\(t,([\d.]+)\)\*lt\(t,([\d.]+)\)/g));
+  assert.equal(ranges[0][2], ranges[1][1]);
+});
+
+test("hai câu đọc chồng 50 ms: bản dựng dùng đúng mốc bắt đầu câu sau", () => {
+  const giong = [
+    { text: "Câu một.", startMs: 100, endMs: 3125 },
+    { text: "Câu hai.", startMs: 3075, endMs: 5000 },
+  ];
+  const kh = keHoach(PHIM(), { giong });
+  assert.equal(kh.phuDe[0].ketThuc, 3.075);
+  assert.equal(kh.phuDe[1].batDau, 3.075);
 });
 
 test("lệnh FFmpeg: khung 720×1280, clip ngắn kéo dài, clip câm có tiếng lặng, chữ đọc từ file tương đối, nhạc hạ khi có lời", () => {

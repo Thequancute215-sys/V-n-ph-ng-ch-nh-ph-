@@ -9,6 +9,8 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const crypto = require("crypto");
+const { execFile } = require("node:child_process");
+const { promisify } = require("node:util");
 const guard = require("../lib/guard");
 const { open, home } = require("./db");
 const { createAudit } = require("./audit");
@@ -28,6 +30,8 @@ const { createMayQuay } = require("./may-quay");
 const { createTramFlow } = require("./tram-flow");
 const { createBanDung } = require("./ban-dung");
 const { createLuongPhim } = require("./luong-phim");
+const phimTaiLieu = require("./phim-tai-lieu");
+const { goiCapCut } = require("./phim-capcut");
 const libPhim = require("../lib/phim");
 const { createJournal } = require("./nhat-ky");
 const { createChat } = require("./chat");
@@ -98,6 +102,7 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
   const tramFlow = createTramFlow({ dir, goc: () => xuongPhim.duongDan.goc, audit, jobs, cliClaude: () => runner.cliOf("claude") });
   // Xưởng phim P3: bàn dựng (FFmpeg trên máy, miễn phí) và 4 cổng CEO duyệt. Thư mục tạm ở thư mục gốc của xưởng (ổ có chỗ).
   const banDung = createBanDung({ dir, audit, ffmpeg: () => xuongPhim.envAi().XUONG_PHIM_FFMPEG || null, tam: () => path.join(xuongPhim.duongDan.goc, "tmp") });
+  const capcutDangXuat = new Map();
   const luongPhim = createLuongPhim({ dir, audit, mayQuay, banDung, xuongPhim,
     chayAi: ({ root, vai, prompt, chiDoc }) => runner.chayPhim({ workspace: root, role: vai, prompt, chiDoc }),
     docQuota: () => quotas.snapshot(),
@@ -257,6 +262,37 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     // Xưởng phim P0: kiểm FFmpeg, Python chung, giọng đọc; cài chạy nền khi CEO bấm (trang Kết nối hỏi lại tới khi xong).
     // Xưởng phim P2: hồ sơ, ước tính, quay (chạy nền), phần của CEO, trạm Flow.
     ["GET", "/phim/du-an", () => ({ duAn: ws.list().filter((w) => fs.existsSync(path.join(w.path, "phim.json"))).map((w) => ({ path: w.path, ten: path.basename(w.path) })) })],
+    ["GET", "/phim/tai-lieu", (p, qs) => ({ taiLieu: phimTaiLieu.list(phimLuongRoot(qs.get("workspace"))) })],
+    ["POST", "/phim/tai-lieu", (p, qs, b) => [201, { taiLieu: phimTaiLieu.save(phimLuongRoot(b.workspace), b) }]],
+    ["POST", "/phim/mo-hinh/duyet", (p, qs, b) => ({ moHinh: phimTaiLieu.approve(phimLuongRoot(b.workspace), b.id) })],
+    ["POST", "/phim/take-nhap", async (p, qs, b) => {
+      const root = phimLuongRoot(b.workspace);
+      const { item, real } = phimTaiLieu.file(root, b.id);
+      if (path.extname(item.ten).toLowerCase() !== ".mp4") throw Object.assign(Error("Nhập cảnh dưới dạng MP4."), { code: "BAD_REQUEST" });
+      const probe = xuongPhim.envAi().XUONG_PHIM_FFPROBE;
+      if (!probe) throw Object.assign(Error("Cần FFmpeg để kiểm clip trước khi nhập."), { code: "THIEU_FFMPEG" });
+      try {
+        const result = await promisify(execFile)(probe, ["-v", "error", "-select_streams", "v:0", "-show_entries", "stream=codec_type", "-of", "csv=p=0", real], { timeout: 10000, windowsHide: true });
+        if (result.stdout.trim() !== "video") throw Error("Không có video");
+      } catch {
+        throw Object.assign(Error("FFprobe không đọc được luồng hình trong MP4."), { code: "BAD_REQUEST" });
+      }
+      const { phim } = docHoSo(root);
+      if (!libPhim.congDaDuyet(phim, 2) || !banDung.coDuyetQuay(root, phim)) {
+        throw Object.assign(Error("Cần duyệt Cổng 2 cho phương án hiện tại trước khi nhập clip."), { code: "CHUA_DU_DIEU_KIEN" });
+      }
+      return { take: phimTaiLieu.importTake(root, phim, b.canh, b.id) };
+    }],
+    ["POST", "/phim/capcut", async (p, qs, b) => {
+      const root = phimLuongRoot(b.workspace);
+      let viec = capcutDangXuat.get(root);
+      if (!viec) {
+        viec = goiCapCut(root, docHoSo(root).phim, xuongPhim.envAi().XUONG_PHIM_FFMPEG)
+          .finally(() => capcutDangXuat.delete(root));
+        capcutDangXuat.set(root, viec);
+      }
+      return { goi: await viec };
+    }],
     ["GET", "/phim", (p, qs) => { const root = phimRoot(qs.get("workspace")); return { ...docHoSo(root), mayQuay: mayQuay.trangThai(root), banDung: banDung.trangThai(root), luong: luongPhim.trangThai(root) }; }],
     ["GET", "/phim/luong", (p, qs) => ({ luong: luongPhim.trangThai(phimLuongRoot(qs.get("workspace"))) })],
     ["POST", "/phim/luong", (p, qs, b) => [202, { luong: luongPhim.batDau(phimLuongRoot(b.workspace), { deBai: b.deBai, tuyChon: b.tuyChon }) }]],
@@ -451,12 +487,31 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
       }
       // Ảnh/giọng/clip của phim cho trang Xưởng phim xem: chỉ trong media/ của workspace đã đăng ký, có Range để tua video.
       if (req.method === "GET" && url.pathname === "/phim/media") return guiMedia(req, res, url);
+      if (req.method === "GET" && url.pathname === "/phim/tai-lieu/tep") {
+        const root = phimLuongRoot(url.searchParams.get("workspace"));
+        const { real, item } = phimTaiLieu.file(root, url.searchParams.get("id"));
+        res.writeHead(200, {
+          "Content-Type": item.moHinh ? "model/gltf-binary" : "application/octet-stream",
+          "Content-Length": item.bytes,
+          "Content-Disposition": "attachment; filename*=UTF-8''" + encodeURIComponent(item.ten).replace(/['()]/g, (c) => "%" + c.charCodeAt(0).toString(16)),
+          "Cache-Control": "no-store",
+          "X-Content-Type-Options": "nosniff",
+        });
+        const stream = fs.createReadStream(real);
+        stream.on("error", () => res.destroy());
+        res.on("close", () => stream.destroy());
+        return stream.pipe(res);
+      }
       for (const [method, pattern, fn] of routes) {
         if (method !== req.method) continue;
         const params = match(pattern, url.pathname);
         if (!params) continue;
         let body = {};
-        if (method === "POST") { body = await guard.readJson(req, 3 * 1024 * 1024); if (!body) return fail(res, 400, "BAD_REQUEST", "Thân yêu cầu không phải JSON hợp lệ"); }
+        if (method === "POST") {
+          const limit = pattern === "/phim/tai-lieu" ? phimTaiLieu.UPLOAD_LIMIT : 3 * 1024 * 1024;
+          body = await guard.readJson(req, limit);
+          if (!body) return fail(res, 400, "BAD_REQUEST", "Thân yêu cầu không phải JSON hợp lệ hoặc tệp vượt giới hạn.");
+        }
         const out = await fn(params, url.searchParams, body);
         const [code, obj] = Array.isArray(out) ? out : [200, out];
         return send(res, code, { ok: code < 400, ...obj });

@@ -7,6 +7,7 @@ const os = require("node:os");
 const path = require("node:path");
 const { createHash } = require("node:crypto");
 const { createLuongPhim } = require("../ctl/luong-phim");
+const { save: dinhKem } = require("../ctl/phim-tai-lieu");
 const { dauKhoanQuay } = require("../lib/phim");
 
 function tao(t, { may = ["omni-flash", "flow"], coPhim = false } = {}) {
@@ -115,6 +116,19 @@ function tao(t, { may = ["omni-flash", "flow"], coPhim = false } = {}) {
   const denCong2 = async () => { batDau(); await tiep(); duyet(1); await tiep(); };
   return { root, deps, calls, mo, doc, sua, media, capTake, duyet, chonKhung, batDau, tiep, tt, stateFile, denCong2 };
 }
+
+test("lượt viết kịch bản nhận danh mục tài liệu để dẫn nguồn", async (t) => {
+  const f = tao(t);
+  const taiLieu = dinhKem(f.root, { name: "Ghi chú nghiên cứu.md", base64: Buffer.from("Nội dung tài liệu mẫu").toString("base64") });
+  f.mo();
+  f.batDau({ deBai: "Giải thích cách hoạt động của hệ thống." });
+  await f.tiep();
+  const input = f.calls.ai.find((call) => call.vai === "SPEC_ARCHITECT");
+  assert.ok(input.prompt.includes(taiLieu.path));
+  assert.match(input.prompt, /ghi tên nguồn và trang hoặc mục/);
+  assert.ok(!input.prompt.includes("Nội dung tài liệu mẫu"));
+  assert.equal(f.tt().trangThai, "cho_cong_1");
+});
 
 test("luồng phim chờ CEO tạo khung riêng khi máy ảnh tính phí", async (t) => {
   const f = tao(t, { coPhim: true });

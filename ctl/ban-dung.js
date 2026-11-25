@@ -48,7 +48,7 @@ function keHoach(phim, { giong = null, coFile = () => true } = {}) {
   for (const c of canh) {
     const may = MAY_QUAY[c.may_quay || phim.may_quay_mac_dinh || MAY_QUAY_MAC_DINH];
     const tk = takeDung(c);
-    if (may && may.khongQuay) { loi.push(`${c.ma}: cảnh dựng bằng code chưa ghép được ở bàn dựng này.`); continue; }
+    if (may?.khongQuay && !tk) { loi.push(`${c.ma}: nhập và chọn clip đã render từ công cụ dựng bằng code.`); continue; }
     if (!(typeof c.giay === "number" && c.giay > 0)) { loi.push(`${c.ma}: chưa chốt thời lượng (giay).`); continue; }
     if (!tk) { loi.push(`${c.ma}: ${(c.take || []).length ? "chưa chọn take" : "chưa quay"}.`); continue; }
     if (!fileMedia(tk)) { loi.push(`${c.ma}: take phải nằm trong media/.`); continue; }
@@ -65,7 +65,9 @@ function keHoach(phim, { giong = null, coFile = () => true } = {}) {
   } else {
     phuDe = ds.map((d) => { const c = canh.find((x) => x.ma === d.ma); return c.loi_dan && String(c.loi_dan).trim() ? { batDau: d.batDau, ketThuc: tron(d.batDau + d.giay), chu: String(c.loi_dan).trim() } : null; }).filter(Boolean);
   }
-  phuDe = phuDe.filter((p) => p.ketThuc > p.batDau);
+  phuDe = phuDe.filter((p) => p.ketThuc > p.batDau).sort((a, b) => a.batDau - b.batDau);
+  phuDe = phuDe.map((p, i) => ({ ...p, ketThuc: Math.min(p.ketThuc, phuDe[i + 1]?.batDau ?? p.ketThuc) }))
+    .filter((p) => p.ketThuc > p.batDau);
   let nhac = null;
   if (phim.nhac !== undefined && phim.nhac !== null) {
     const f = phim.nhac && phim.nhac.file;
@@ -76,15 +78,43 @@ function keHoach(phim, { giong = null, coFile = () => true } = {}) {
   return { canh: ds, tong, phuDe, nhac, take: Object.fromEntries(ds.map((d) => [d.ma, d.take])) };
 }
 
-// Ngắt dòng theo từ, mỗi dòng tối đa toiDa ký tự, tối đa 3 dòng (phần thừa dồn vào dòng cuối).
+function keHoachTrong(root, phim) {
+  const coFile = coFileTrong(root);
+  const voice = "media/giong/voice.json";
+  const giong = coFile(voice) ? docJson(docFileTrongPhim(root, voice)) : null;
+  return keHoach(phim, { giong, coFile });
+}
+
+// Ngắt dòng theo từ và ngắt cả từ quá dài để giữ lề.
 function ngatDong(chu, toiDa) {
   const dong = [];
   for (const tu of String(chu).replace(/\s+/g, " ").trim().split(" ")) {
+    const kyTu = Array.from(tu.normalize("NFC"));
+    if (kyTu.length > toiDa) {
+      for (let i = 0; i < kyTu.length; i += toiDa) dong.push(kyTu.slice(i, i + toiDa).join(""));
+      continue;
+    }
     const cuoi = dong.length ? dong[dong.length - 1] : null;
     if (cuoi !== null && (cuoi + " " + tu).length <= toiDa) dong[dong.length - 1] = cuoi + " " + tu;
     else dong.push(tu);
   }
-  return dong.length > 3 ? [...dong.slice(0, 2), dong.slice(2).join(" ")] : dong;
+  return dong;
+}
+
+function trangPhuDe(cue, toiDa) {
+  const dong = ngatDong(cue.chu, toiDa);
+  const soDongMoiTrang = Math.ceil(dong.length / Math.ceil(dong.length / 3));
+  const tong = dong.join("").length;
+  const trang = [];
+  let tu = cue.batDau, daDoc = 0;
+  for (let i = 0; i < dong.length; i += soDongMoiTrang) {
+    const nhom = dong.slice(i, i + soDongMoiTrang);
+    daDoc += nhom.join("").length;
+    const den = tron(cue.batDau + (cue.ketThuc - cue.batDau) * daDoc / tong, 6);
+    trang.push({ tu, den, chu: nhom.join("\n") });
+    tu = den;
+  }
+  return trang;
 }
 
 // Lệnh FFmpeg cho một tỉ lệ. Trả về tham số, đồ thị lọc (ghi ra file trong thư mục tạm) và các file chữ phụ đề cần ghi.
@@ -109,12 +139,12 @@ function lenhDung(kh, tiLe, vao) {
   // Chữ: phụ đề ở dưới, nhãn AI góc trên trong 3 giây cuối. Mỗi đoạn chữ một file (không phải thoát ký tự trong bộ lọc).
   const ve = [];
   if (vao.phong) {
-    const co = Math.round(Math.min(w, h) * 0.06), toiDa = Math.max(14, Math.floor(w / (co * 0.56)) - 2);
+    const co = Math.round(Math.min(w, h) * 0.06), toiDa = Math.max(14, Math.floor(w / (co * 0.65)) - 3);
     const chung = `fontfile=font.ttf:expansion=none:fontcolor=white:borderw=${Math.max(2, Math.round(co / 14))}:bordercolor=black@0.85:text_align=C`;
-    kh.phuDe.forEach((p, i) => {
+    kh.phuDe.flatMap((cue) => trangPhuDe(cue, toiDa)).forEach((p, i) => {
       const ten = `pd-${String(i + 1).padStart(3, "0")}.txt`;
-      chu.push({ ten, noiDung: ngatDong(p.chu, toiDa).join("\n") });
-      ve.push(`drawtext=${chung}:textfile=${ten}:fontsize=${co}:line_spacing=${Math.round(co * 0.25)}:x=(w-text_w)/2:y=h-text_h-h*0.13:enable='between(t,${p.batDau},${p.ketThuc})'`);
+      chu.push({ ten, noiDung: p.chu });
+      ve.push(`drawtext=${chung}:textfile=${ten}:fontsize=${co}:line_spacing=${Math.round(co * 0.25)}:x=(w-text_w)/2:y=h-text_h-h*0.13:enable='gte(t,${p.tu})*lt(t,${p.den})'`);
     });
     chu.push({ ten: "nhan-ai.txt", noiDung: NHAN_AI });
     const coNho = Math.round(co * 0.55);
@@ -371,4 +401,4 @@ function createBanDung({ dir, audit = { log() {} }, ffmpeg = () => null, tam = (
   return { batDauDung, dungVaCho, dung, trangThai, duyetCong, coDuyetQuay, quayLai };
 }
 
-module.exports = { createBanDung, keHoach, lenhDung, ngatDong, docDo, danhGia, banDungCu, dsCong, takeDung, KICH_THUOC, CONG, NHAN_AI };
+module.exports = { createBanDung, keHoach, keHoachTrong, lenhDung, ngatDong, docDo, danhGia, banDungCu, dsCong, takeDung, KICH_THUOC, CONG, NHAN_AI, FPS };
