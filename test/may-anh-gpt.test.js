@@ -53,6 +53,9 @@ function lap(t, { hanMuc = null, tinhHuong = "", timeoutMs, sua = () => {} } = {
         fs.appendFileSync("giu.txt", " đã sửa");
 
       }
+      const ref = "media/tham-chieu/co.png";
+      if (process.env.TINH_HUONG === "moc-sua") fs.utimesSync(ref, new Date(0), new Date(0));
+      if (process.env.TINH_HUONG === "sua-byte") fs.appendFileSync(ref, "sửa ảnh tham chiếu");
     }
   `);
   const codexAnh = {
@@ -132,6 +135,15 @@ test("GPT bỏ kết quả có file lạ, giữ nguyên dữ liệu dự án và
   assert.equal(fs.readFileSync(path.join(root, "giu.txt"), "utf8"), "dữ liệu của CEO");
   assert.deepEqual(doc("media/so-chi.json"), soChi);
   assert.equal(doc("phim.json").canh[0].khung, undefined);
+});
+
+test("GPT so nội dung ảnh tham chiếu, chấp nhận đổi mốc thời gian và chặn đổi byte", async (t) => {
+  const moc = lap(t, { tinhHuong: "moc-sua" });
+  const kq = await moc.may.quay(moc.root, opts);
+  assert.equal(kq.files.length, 1);
+  const byte = lap(t, { tinhHuong: "sua-byte" });
+  await assert.rejects(byte.may.quay(byte.root, opts), (e) => e.code === "MAY_ANH_LOI" && /co\.png/.test(e.message));
+  assert.deepEqual(fs.readFileSync(path.join(byte.root, thamChieu)), Buffer.from(PNG, "base64"));
 });
 
 test("GPT chọn tên đích mới khi số khung trong hồ sơ trùng với file đã có", async (t) => {

@@ -99,15 +99,18 @@ function anhThamChieuGpt(root, rel) {
   return { duongDan: trongRepo.split(path.sep).join("/"), hash: crypto.createHash("sha256").update(fs.readFileSync(real)).digest("hex") };
 }
 
-function anhChupFile(root) {
+function anhChupFile(root, anhDich) {
   const ds = new Map();
   function duyet(rel) {
     for (const ten of fs.readdirSync(path.join(root, rel))) {
       const f = rel ? rel + "/" + ten : ten;
-
-      const st = fs.lstatSync(path.join(root, f), { bigint: true });
+      if (f === anhDich) continue;
+      const file = path.join(root, f);
+      const st = fs.lstatSync(file);
       if (st.isDirectory()) duyet(f);
-      else ds.set(f, [st.size, st.mtimeNs, st.ctimeNs, st.ino].join(":"));
+      else if (!st.isFile() || st.nlink !== 1 || st.size > GIOI_HAN_ANH) ds.set(f, "tep-khong-hop-le");
+      // Công cụ xem ảnh có thể đổi mốc thời gian của bản sao trên Windows. So byte để bắt sửa nội dung.
+      else ds.set(f, crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex"));
     }
   }
   duyet("");
@@ -381,10 +384,10 @@ function createMayQuay({ dir, audit = { log() {} }, khoa = () => khoaGemini(dir)
         fs.copyFileSync(docFileTrongPhim(root, rel), file, fs.constants.COPYFILE_EXCL);
       }
       fs.mkdirSync(path.dirname(path.join(tam, dich)), { recursive: true });
-      const truoc = anhChupFile(tam);
+      const truoc = anhChupFile(tam, dich);
       await chayCodexAnh(cli.argv, cli.env, tam, loiNhac + "Lưu ảnh dạng PNG đúng tên file tương đối: " + dich, cli.huy.signal, timeoutMs);
-      const sau = anhChupFile(tam);
-      const la = [...new Set([...truoc.keys(), ...sau.keys()])].filter((f) => f !== dich && truoc.get(f) !== sau.get(f)).sort();
+      const sau = anhChupFile(tam, dich);
+      const la = [...new Set([...truoc.keys(), ...sau.keys()])].filter((f) => truoc.get(f) !== sau.get(f)).sort();
       if (la.length) throw err("MAY_ANH_LOI", "Có file ngoài ảnh đích thay đổi: " + la.map(maskText).join(", "));
       let anh;
       try { anh = docFileTrongPhim(tam, dich); }
