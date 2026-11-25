@@ -175,7 +175,7 @@ function layKetQua(j, loai) {
 }
 
 function createMayQuay({ dir, audit = { log() {} }, khoa = () => khoaGemini(dir), fetchImpl = (...a) => fetch(...a), now = () => new Date(),
-  timeoutMs = 10 * 60 * 1000, codexAnh, duyetTuDong = () => false } = {}) {
+  timeoutMs = 10 * 60 * 1000, codexAnh, duyetTuDong = () => false, thuMucTam = () => os.tmpdir() } = {}) {
   const dang = new Map();   // root → { canh, loai, batDau }
   const loiCuoi = new Map();
   const dangChay = new Set();
@@ -227,6 +227,8 @@ function createMayQuay({ dir, audit = { log() {} }, khoa = () => khoaGemini(dir)
     for (const ma of Array.isArray(c.nhan_vat) ? c.nhan_vat : []) for (const a of ((nv.get(ma) || {}).tham_chieu || []).slice(0, loai === "video" ? 3 : 6)) thamChieu.push(a);
     if (loai === "khung") {
       if (!c.khung_hinh) throw err("BAD_REQUEST", c.ma + ": chưa có mô tả khung hình (khung_hinh).");
+      const moTa = [c.khung_hinh, c.goc_may && "Góc máy: " + c.goc_may, phim.helper_tong_mau && "Tông màu: " + phim.helper_tong_mau]
+        .filter(Boolean).join(". ");
       const kc = doPhanGiai || "1K";
       if (!Object.hasOwn(GIA.anh, kc)) throw err("BAD_REQUEST", "Cỡ ảnh phải là " + Object.keys(GIA.anh).join(" hoặc ") + ".");
       if (!Number.isInteger(soPhuongAn) || soPhuongAn < 1 || soPhuongAn > 6) throw err("BAD_REQUEST", "Số phương án khung từ 1 tới 6.");
@@ -236,10 +238,15 @@ function createMayQuay({ dir, audit = { log() {} }, khoa = () => khoaGemini(dir)
           const anh = (v.tham_chieu || []).map((a) => anhThamChieuGpt(root, a));
           return { ma, ten: v.ten, mo_ta: v.mo_ta, tham_chieu: anh.map((a) => a.duongDan), hashAnh: anh.map((a) => a.hash) };
         });
-        return { gpt: true, body: { model: MO_HINH_GPT, ti_le: tiLe, co_anh: kc, khung_hinh: c.khung_hinh, nhan_vat: nhanVat },
+        if (c.helper_boi_canh) {
+          const a = anhThamChieuGpt(root, c.helper_boi_canh);
+          nhanVat.push({ ma: "boi-canh", mo_ta: "Không gian tham chiếu, không phải nhân vật.", tham_chieu: [a.duongDan], hashAnh: [a.hash] });
+        }
+        return { gpt: true, body: { model: MO_HINH_GPT, ti_le: tiLe, co_anh: kc, khung_hinh: moTa, nhan_vat: nhanVat },
           usd: 0, soLuong: soPhuongAn, doDai: null };
       }
-      const input = [...thamChieu.slice(0, 14).map((a) => phanAnh(root, a)), { type: "text", text: "Khung hình mở đầu một cảnh phim, tỉ lệ " + tiLe + ". " + c.khung_hinh + ". Không chữ, không logo trên hình." }];
+      if (c.helper_boi_canh) thamChieu.unshift(c.helper_boi_canh);
+      const input = [...thamChieu.slice(0, 14).map((a) => phanAnh(root, a)), { type: "text", text: "Khung hình mở đầu một cảnh phim, tỉ lệ " + tiLe + ". " + moTa + ". Không chữ, không logo trên hình." }];
       return { body: { model: MO_HINH.anh, input, response_format: { type: "image", mime_type: "image/jpeg", aspect_ratio: tiLe, image_size: kc } },
         usd: tron(GIA.anh[kc] * soPhuongAn), soLuong: soPhuongAn, doDai: null };
     }
@@ -306,24 +313,43 @@ function createMayQuay({ dir, audit = { log() {} }, khoa = () => khoaGemini(dir)
     if (actor === "luong-phim" && opts.loai === "video" && uocChi > 0 && !duyetTuDong(root, phim)) {
       throw err("CHUA_DU_DIEU_KIEN", "Phương án hoặc ngân sách đã đổi: duyệt lại cổng 2 trước khi quay tự động.");
     }
-    let cli;
-    if (yc.gpt) {
-      const argv = codexAnh?.argv?.();
-      if (!Array.isArray(argv) || !argv[0] || !argv.every((a) => typeof a === "string")) {
-        throw err("NO_CLI", "Máy ảnh GPT chưa nối Codex");
-      }
-      kiemQuota();
-      const env = cleanEnv({ ...process.env, ...codexAnh.env?.() });
-      // cleanEnv đã bỏ GIT_CONFIG_KEY_n. Bỏ cả phần còn lại để Git trong Codex không nhận cấu hình thiếu khóa.
-      for (const k of Object.keys(env)) if (/^GIT_CONFIG_(COUNT|VALUE_\d+)$/i.test(k)) delete env[k];
-      cli = { argv, env, huy: new AbortController() };
-    }
+    const cli = yc.gpt ? chuanBiCodex() : null;
     return { phim, c, yc, boDem, lanGoi, cli };
   }
 
-  async function taoKhungGpt(root, boDem, c, body, i, soTu, cli) {
+  function chuanBiCodex() {
+    const argv = codexAnh?.argv?.();
+    if (!Array.isArray(argv) || !argv[0] || !argv.every((a) => typeof a === "string")) throw err("NO_CLI", "Máy ảnh GPT chưa nối Codex");
+    kiemQuota();
+    const env = cleanEnv({ ...process.env, ...codexAnh.env?.() });
+    // cleanEnv bỏ khóa cấu hình Git. Loại số lượng và giá trị tương ứng để Git không gặp cấu hình khuyết.
+    for (const k of Object.keys(env)) if (/^GIT_CONFIG_(COUNT|VALUE_\d+)$/i.test(k)) delete env[k];
+    return { argv, env, huy: new AbortController() };
+  }
+
+  async function veHelper(root, { ma, slot, prompt, source }) {
+    if (dang.has(root)) throw err("MAY_QUAY_BAN", "Xưởng đang tạo ảnh hoặc quay cảnh.");
+    const cli = chuanBiCodex();
+    const refs = source.map((a) => anhThamChieuGpt(root, a.path));
+    const { directory } = require("./phim-tai-lieu");
+    const boDem = directory(root, true, "bo-dem");
+    directory(root, true, "helper");
+    const yc = { model: MO_HINH_GPT, ti_le: "1:1", co_anh: "1K", khung_hinh: prompt,
+      nhan_vat: [{ ma, tham_chieu: refs.map((a) => a.duongDan), hashAnh: refs.map((a) => a.hash) }] };
+    dang.set(root, { canh: ma, loai: "AI Helper", batDau: now().toISOString() });
+    huyGpt.set(root, cli.huy);
+    try {
+      const result = await taoKhungGpt(root, boDem, { ma: ma + "-" + slot }, yc, 0, 1, cli, "media/helper");
+      return docAnhGpt(docFileTrongPhim(root, result.file));
+    } finally {
+      dang.delete(root);
+      huyGpt.delete(root);
+    }
+  }
+
+  async function taoKhungGpt(root, boDem, c, body, i, soTu, cli, folder = "media/khung") {
     let ten;
-    do { ten = "media/khung/" + c.ma + "-" + soTu++; }
+    do { ten = folder + "/" + c.ma + "-" + soTu++; }
     while ([".png", ".jpg"].some((ext) => fs.lstatSync(path.join(root, ten + ext), { throwIfNoEntry: false })));
     const { model, nhan_vat, ...moTaCanh } = body;
     const moTa = JSON.stringify({ ...moTaCanh, nhan_vat: nhan_vat.map(({ hashAnh, ...v }) => v) }, null, 2)
@@ -344,7 +370,9 @@ function createMayQuay({ dir, audit = { log() {} }, khoa = () => khoaGemini(dir)
     }
     if (i > 0) kiemQuota();
     const dich = ten + ".png";
-    const tam = fs.mkdtempSync(path.join(os.tmpdir(), "vp-may-anh-"));
+    const dir = thuMucTam();
+    fs.mkdirSync(dir, { recursive: true });
+    const tam = fs.mkdtempSync(path.join(dir, "vp-may-anh-"));
     try {
       // Máy ảnh chỉ cần các ảnh tham chiếu và một chỗ xuất ảnh, không cần quyền ghi vào hồ sơ hay sổ chi.
       for (const rel of new Set(nhan_vat.flatMap((v) => v.tham_chieu))) {
@@ -525,7 +553,7 @@ function createMayQuay({ dir, audit = { log() {} }, khoa = () => khoaGemini(dir)
     return phim;
   }
 
-  return { uocTinh, quay, batDauQuay, dung, dungHet, trangThai, dungYeuCau, suaCeo };
+  return { uocTinh, quay, batDauQuay, veHelper, dung, dungHet, trangThai, dungYeuCau, suaCeo };
 }
 
 module.exports = { createMayQuay, layKetQua, MO_HINH, GIA, ENDPOINT };

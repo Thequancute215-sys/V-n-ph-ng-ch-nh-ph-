@@ -6,7 +6,7 @@ const { renameRetry } = require("../lib/ghi-file");
 
 const MAX_BYTES = 16 * 1024 * 1024;
 const UPLOAD_LIMIT = Math.ceil(MAX_BYTES / 3) * 4 + 4096;
-const EXTENSIONS = new Set([".pdf", ".docx", ".pptx", ".xlsx", ".txt", ".md", ".csv", ".json", ".zip", ".glb", ".png", ".jpg", ".jpeg", ".webp", ".mp4"]);
+const EXTENSIONS = new Set([".pdf", ".docx", ".pptx", ".xlsx", ".txt", ".md", ".csv", ".json", ".zip", ".glb", ".png", ".jpg", ".jpeg", ".webp", ".mp4", ".mp3", ".wav", ".webm"]);
 const REL = "media/tu-lieu/";
 const NAME = /^([a-f0-9]{64})-([\p{L}\p{M}\p{N}_.() -]{1,128})$/u;
 const err = (code, message) => Object.assign(new Error(message), { code });
@@ -134,4 +134,24 @@ function importTake(root, phim, canh, id) {
   return rel;
 }
 
-module.exports = { list, save, file, approve, importTake, UPLOAD_LIMIT };
+function hoSo(root) {
+  const profile = path.join(fs.realpathSync(root), "phim.json");
+  if (!fs.lstatSync(profile, { throwIfNoEntry: false })?.isFile()) throw err("PATH_ESCAPE", "Hồ sơ phim phải nằm trực tiếp trong dự án.");
+  return { profile, phim: JSON.parse(fs.readFileSync(profile, "utf8").replace(/^\uFEFF/, "")) };
+}
+
+function suaHoSo(root, update) {
+  const { profile, phim } = hoSo(root);
+  const result = update(phim);
+  writeFile(profile, JSON.stringify(phim, null, 2) + "\n", 0o644);
+  return result;
+}
+
+function fileXacThuc(root, id) {
+  const { item, real } = file(root, id);
+  const bytes = fs.readFileSync(real);
+  if (createHash("sha256").update(bytes).digest("hex") !== item.sha256) throw err("CHANGED", "Tệp đã thay đổi. Đính kèm lại để tiếp tục.");
+  return { item, real, bytes };
+}
+
+module.exports = { list, save, file, fileXacThuc, approve, importTake, hoSo, suaHoSo, directory, writeFile, UPLOAD_LIMIT };
