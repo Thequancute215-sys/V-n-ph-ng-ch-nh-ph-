@@ -7,11 +7,12 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const http = require("node:http");
-const { createMayQuay, layKetQua, MO_HINH } = require("../ctl/may-quay");
+const { createMayQuay: taoMayQuay, layKetQua, MO_HINH } = require("../ctl/may-quay");
 const { createTramFlow, LUAT } = require("../ctl/tram-flow");
 const { dauKhoanQuay } = require("../lib/phim");
 
 const KHOA = "AIza" + "x".repeat(35);
+const createMayQuay = (opts) => taoMayQuay({ coDuyetQuay: () => true, ...opts });
 const tmp = (t) => { const d = fs.mkdtempSync(path.join(os.tmpdir(), "vp-mq-")); t.after(() => fs.rmSync(d, { recursive: true, force: true })); return d; };
 const ghi = (p, s) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, s); return p; };
 function duAn(d, sua = (p) => p) {
@@ -121,7 +122,7 @@ test("từng kết quả thành công được tính tiền dù đợt quay lỗ
   assert.equal(new Set(mq.trangThai(d).soChi.map(m => m.maLanGoi)).size, 2);
 });
 
-test("quay tự động chặn ngân sách đã đổi trước khi gửi yêu cầu tính phí", async (t) => {
+test("quay thủ công và tự động đều chặn ngân sách đã đổi trước khi gửi yêu cầu tính phí", async (t) => {
   const d = duAn(tmp(t));
   const file = path.join(d, "phim.json");
   const phim = JSON.parse(fs.readFileSync(file, "utf8"));
@@ -129,9 +130,10 @@ test("quay tự động chặn ngân sách đã đổi trước khi gửi yêu c
   phim.ngan_sach_usd += 2;
   ghi(file, JSON.stringify(phim));
   const { f, goi } = giaFetch(() => video("KET-QUA"));
-  const may = createMayQuay({ dir: d, khoa: () => KHOA, fetchImpl: f, duyetTuDong: (_, p) => daDuyet === dauKhoanQuay(p) });
+  const may = taoMayQuay({ dir: d, khoa: () => KHOA, fetchImpl: f, coDuyetQuay: (_, p) => daDuyet === dauKhoanQuay(p) });
   const opts = { canh: "C01", loai: "video" };
   await assert.rejects(may.quay(d, opts, "luong-phim"), { code: "CHUA_DU_DIEU_KIEN" });
+  assert.throws(() => may.batDauQuay(d, opts), { code: "CHUA_DU_DIEU_KIEN" });
   assert.equal(goi.length, 0);
   daDuyet = dauKhoanQuay(phim);
   assert.equal((await may.quay(d, opts, "luong-phim")).files.length, 1);
@@ -253,7 +255,7 @@ test("trạm Flow: mở Chrome hồ sơ riêng không cờ tự động hoá; nh
   let ketQua = { ket_qua: "xong", ghi_chu: "ok", credit_con_lai: 870 };
   const jobs = { start: (o) => { viec.push(o); return { id: "j" + viec.length }; }, rawLog: () => JSON.stringify({ type: "result", result: "Đã xong.\n" + JSON.stringify(ketQua) }) };
   const flow = createTramFlow({ dir: d, goc, jobs, cliClaude: () => ["claude"], env: { ProgramFiles: path.join(d, "pf") },
-    spawnImpl: (p, a) => { sinh.push([p, a]); return { unref() {} }; }, thu: async (cong) => moCong.has(cong) });
+    coDuyetQuay: () => true, spawnImpl: (p, a) => { sinh.push([p, a]); return { unref() {} }; }, thu: async (cong) => moCong.has(cong) });
   ghi(path.join(d, "pf", "Google", "Chrome", "Application", "chrome.exe"), "");
   await assert.rejects(flow.nhip(root, { canh: "C02", taiKhoan: "phu", buoc: "chuan-bi" }), (e) => e.code === "NOT_READY");
   await flow.mo("phu");
@@ -331,7 +333,7 @@ test("credit: ghi chi phí lần tạo ở nhịp chuẩn bị, cộng vào thá
   ghi(path.join(entry, "build/src/bin/chrome-devtools-mcp.js"), "");
   let ket = null; const viec = [];
   const flow = createTramFlow({ dir: d, goc: path.join(d, "xp"), jobs: { start: (o) => { viec.push(o); return { id: "j" }; }, rawLog: () => JSON.stringify({ result: JSON.stringify(ket), type: "result" }) },
-    cliClaude: () => ["claude"], thu: async () => true });
+    cliClaude: () => ["claude"], thu: async () => true, coDuyetQuay: () => true });
   const chay = async (buoc, k) => { ket = k; await flow.nhip(root, { canh: "C02", taiKhoan: "phu", buoc }); viec[viec.length - 1].onExit({ id: "j" }); };
   await chay("chuan-bi", { ket_qua: "xong", ghi_chu: "", credit_con_lai: "1.000 credits", credit_lan_tao: "15 tín dụng" });
   let c = (await flow.trangThai()).taiKhoan.find((x) => x.id === "phu").credit;
@@ -369,6 +371,16 @@ test("xem media qua ctl: chỉ file trong media/ của workspace đã đăng ký
   assert.equal((await goi("/phim/media?workspace=" + encodeURIComponent(d) + "&path=media/quay/C01-t1.mp4")).status, 403, "workspace chưa đăng ký");
   const ds = JSON.parse((await goi("/phim/du-an")).body).duAn;
   assert.deepEqual(ds.map((x) => x.ten), ["phim"]);
+  const goc = docPhim(root);
+  for (const sai of [{ ten: "Thiếu cảnh" }, { ...goc, canh: null }, { ...goc, canh: [null] },
+    { ...goc, nhan_vat: {} }, { ...goc, nhan_vat: [null] }]) {
+    ghi(path.join(root, "phim.json"), JSON.stringify(sai));
+    const hoSo = await goi("/phim?workspace=" + encodeURIComponent(root));
+    assert.equal(hoSo.status, 200, hoSo.body);
+    const data = JSON.parse(hoSo.body);
+    assert.ok(data.kiem.loi.some((x) => x.ma === "SAI_CAU_TRUC"));
+    assert.equal(data.banDung.cong[1].duyet, false);
+  }
 });
 
 test("cổng CEO (P3): tạo khung cần cổng 1, quay video và lượt tạo Flow cần cổng 2, chưa duyệt thì chặn trước khi tốn tiền", async (t) => {
@@ -390,8 +402,12 @@ test("cổng CEO (P3): tạo khung cần cổng 1, quay video và lượt tạo 
   ghi(path.join(entry, "package.json"), JSON.stringify({ name: cdt.GOI, version: cdt.PHIEN_BAN, bin: { [cdt.GOI]: "./build/src/bin/chrome-devtools-mcp.js" } }));
   ghi(path.join(entry, "build/src/bin/chrome-devtools-mcp.js"), "");
   const viec = [];
-  const flow = createTramFlow({ dir: d, goc, jobs: { start: (o) => { viec.push(o); return { id: "j" }; }, rawLog: () => "" }, cliClaude: () => ["claude"], thu: async () => true });
+  const flow = createTramFlow({ dir: d, goc, jobs: { start: (o) => { viec.push(o); return { id: "j" }; }, rawLog: () => "" },
+    cliClaude: () => ["claude"], thu: async () => true, coDuyetQuay: (_, p) => p.ngan_sach_usd === 5 });
   await assert.rejects(flow.nhip(chuaDuyet, { canh: "C02", taiKhoan: "phu", buoc: "chuan-bi" }), (e) => e.code === "CHUA_DU_DIEU_KIEN" && /cổng 1/.test(e.message));
   await assert.rejects(flow.nhip(motCong, { canh: "C02", taiKhoan: "phu", buoc: "tao" }), (e) => e.code === "CHUA_DU_DIEU_KIEN" && /cổng 2/.test(e.message));
+  const hetHieuLuc = duAn(tmp(t), (p) => ({ ...p, ngan_sach_usd: 6 }));
+  await assert.rejects(flow.nhip(hetHieuLuc, { canh: "C02", taiKhoan: "phu", buoc: "tao" }),
+    { code: "CHUA_DU_DIEU_KIEN", message: /Duyệt lại Cổng 2/ });
   assert.equal(viec.length, 0, "không giao Opus lượt nào khi chưa qua cổng");
 });

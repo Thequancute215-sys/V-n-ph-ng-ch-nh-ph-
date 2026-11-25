@@ -246,7 +246,10 @@ function createBanDung({ dir, audit = { log() {} }, ffmpeg = () => null, tam = (
     if (fileDuyet) writeAtomic(fileDuyet, JSON.stringify([...moi]));
     daDuyet = moi;
   }
-  const coDuyetQuay = (root, phim) => daDuyet.get(fs.realpathSync(root)) === dauKhoanQuay(phim);
+  function coDuyetQuay(root, phim) {
+    const dau = dauKhoanQuay(phim);
+    return !!dau && daDuyet.get(fs.realpathSync(root)) === dau;
+  }
   const doc = (root) => {
     const phim = docJson(path.join(root, "phim.json"));
     const giong = docJson(path.join(root, "media", "giong", "voice.json"), null);

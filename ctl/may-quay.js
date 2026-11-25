@@ -15,6 +15,7 @@ const path = require("path");
 const os = require("os");
 const crypto = require("crypto");
 const { spawn } = require("child_process");
+const { createInterface } = require("node:readline");
 const { kiem, MAY_ANH_MAC_DINH, MAY_QUAY_MAC_DINH, congDaDuyet, duongDanHopLe, docFileTrongPhim } = require("../lib/phim");
 const { writeAtomic } = require("../lib/ghi-file");
 const { cleanEnv, maskText } = require("../lib/mask");
@@ -128,13 +129,33 @@ function docAnhGpt(f) {
   throw err("MAY_ANH_LOI", "Ảnh GPT sai chữ ký PNG/JPEG: " + ten);
 }
 
+function anhCodexDaTao(env, threadId) {
+  if (!threadId) return null;
+  const home = env.CODEX_HOME || path.join(os.homedir(), ".codex");
+  const dir = path.join(home, "generated_images", threadId);
+  const stat = fs.lstatSync(dir, { throwIfNoEntry: false });
+  if (!stat?.isDirectory() || stat.isSymbolicLink()) return null;
+  const anh = fs.readdirSync(dir, { withFileTypes: true }).filter((f) => /^exec-[\da-f-]+\.png$/i.test(f.name));
+  if (anh.length !== 1 || !anh[0].isFile()) return null;
+  return docAnhGpt(path.join(dir, anh[0].name));
+}
+
 function chayCodexAnh(argv, env, root, prompt, signal, timeoutMs) {
   const args = [...argv.slice(1), "exec", "--json", "-m", "gpt-6.2-sol", "-c", "model_reasoning_effort=low",
     "-s", "workspace-write", "--skip-git-repo-check", "-C", root, prompt];
   return new Promise((resolve, reject) => {
     if (signal.aborted) return reject(err("MAY_ANH_LOI", "Máy ảnh GPT đã dừng."));
-    const child = spawn(argv[0], args, { cwd: root, env, shell: false, windowsHide: true, detached: process.platform !== "win32", stdio: "ignore" });
-    let loi, dangDung;
+    const child = spawn(argv[0], args, { cwd: root, env, shell: false, windowsHide: true,
+      detached: process.platform !== "win32", stdio: ["ignore", "pipe", "ignore"] });
+    let loi, dangDung, threadId;
+    createInterface({ input: child.stdout, crlfDelay: Infinity }).on("line", (line) => {
+      if (threadId || !line.includes('"thread.started"')) return;
+      try {
+        const event = JSON.parse(line);
+        if (event.type === "thread.started" && typeof event.thread_id === "string" &&
+            /^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(event.thread_id)) threadId = event.thread_id;
+      } catch {}
+    });
     function dung(message) {
       if (dangDung) return;
       loi = err("MAY_ANH_LOI", message);
@@ -152,7 +173,7 @@ function chayCodexAnh(argv, env, root, prompt, signal, timeoutMs) {
       await dangDung;
       if (loi) reject(loi);
       else if (code !== 0) reject(err("MAY_ANH_LOI", "Codex tạo ảnh thất bại (" + (sig || "mã thoát " + code) + ")."));
-      else resolve();
+      else resolve(threadId);
     });
   });
 }
@@ -178,7 +199,7 @@ function layKetQua(j, loai) {
 }
 
 function createMayQuay({ dir, audit = { log() {} }, khoa = () => khoaGemini(dir), fetchImpl = (...a) => fetch(...a), now = () => new Date(),
-  timeoutMs = 10 * 60 * 1000, codexAnh, duyetTuDong = () => false, thuMucTam = () => os.tmpdir() } = {}) {
+  timeoutMs = 10 * 60 * 1000, codexAnh, coDuyetQuay = () => false, thuMucTam = () => os.tmpdir() } = {}) {
   const dang = new Map();   // root → { canh, loai, batDau }
   const loiCuoi = new Map();
   const dangChay = new Set();
@@ -309,14 +330,14 @@ function createMayQuay({ dir, audit = { log() {} }, khoa = () => khoaGemini(dir)
     return { usd, daChi: daVaoSo, chiCho, nganSach: ngan, conLai, du: usd === 0 || chi + usd <= ngan + 1e-9, moHinh: yc.body.model };
   }
 
-  function kiemLanQuay(root, opts, actor) {
+  function kiemLanQuay(root, opts) {
     if (dang.has(root)) throw err("MAY_QUAY_BAN", "Phim này đang quay cảnh " + dang.get(root).canh + ". Chờ xong rồi bấm tiếp.");
     const { phim, c, yc, chi, ngan, boDem, lanGoi, usd: uocChi } = chuanBi(root, opts);
     if (opts.loai === "khung" && congDaDuyet(phim, 2)) throw err("CHUA_DU_DIEU_KIEN", "Bỏ duyệt Cổng 2 trước khi tạo thêm khung.");
-    if (uocChi > 0 && chi + uocChi > ngan + 1e-9) throw err("VUOT_NGAN_SACH", `Lần quay này ~$${uocChi}, đã tính $${chi} vào ngân sách $${ngan}. Nâng ngân sách hoặc giảm số phương án.`);
-    if (actor === "luong-phim" && opts.loai === "video" && uocChi > 0 && !duyetTuDong(root, phim)) {
-      throw err("CHUA_DU_DIEU_KIEN", "Phương án hoặc ngân sách đã đổi: duyệt lại cổng 2 trước khi quay tự động.");
+    if (opts.loai === "video" && !coDuyetQuay(root, phim)) {
+      throw err("CHUA_DU_DIEU_KIEN", "Duyệt lại Cổng 2 cho phương án và ngân sách đang dùng trước khi quay.");
     }
+    if (uocChi > 0 && chi + uocChi > ngan + 1e-9) throw err("VUOT_NGAN_SACH", `Lần quay này ~$${uocChi}, đã tính $${chi} vào ngân sách $${ngan}. Nâng ngân sách hoặc giảm số phương án.`);
     const cli = yc.gpt ? chuanBiCodex() : null;
     return { phim, c, yc, boDem, lanGoi, cli };
   }
@@ -386,14 +407,15 @@ function createMayQuay({ dir, audit = { log() {} }, khoa = () => khoaGemini(dir)
       }
       fs.mkdirSync(path.dirname(path.join(tam, dich)), { recursive: true });
       const truoc = anhChupFile(tam, dich);
-      await chayCodexAnh(cli.argv, cli.env, tam, loiNhac + "Lưu ảnh dạng PNG đúng tên file tương đối: " + dich, cli.huy.signal, timeoutMs);
+      const threadId = await chayCodexAnh(cli.argv, cli.env, tam, loiNhac + "Lưu ảnh dạng PNG đúng tên file tương đối: " + dich, cli.huy.signal, timeoutMs);
       const sau = anhChupFile(tam, dich);
       const la = [...new Set([...truoc.keys(), ...sau.keys()])].filter((f) => truoc.get(f) !== sau.get(f)).sort();
       if (la.length) throw err("MAY_ANH_LOI", "Có file ngoài ảnh đích thay đổi: " + la.map(maskText).join(", "));
-      let anh;
-      try { anh = docFileTrongPhim(tam, dich); }
-      catch { throw err("MAY_ANH_LOI", "Máy ảnh GPT chưa lưu ảnh đúng thư mục."); }
-      const { buf, ext } = docAnhGpt(anh);
+      const tepDich = path.join(tam, dich);
+      // Công cụ tạo ảnh có thể chỉ lưu trong thư mục ảnh của lượt Codex, kể cả khi shell không thể sao lưu vào workspace.
+      const anh = fs.lstatSync(tepDich, { throwIfNoEntry: false }) ? docAnhGpt(tepDich) : anhCodexDaTao(cli.env, threadId);
+      if (!anh) throw err("MAY_ANH_LOI", "Máy ảnh GPT chưa trả đúng một ảnh đầu ra.");
+      const { buf, ext } = anh;
       const file = ten + ext;
       fs.writeFileSync(path.join(root, file), buf, { flag: "wx" });
       fs.writeFileSync(dem, buf, { flag: "wx" });
@@ -491,7 +513,7 @@ function createMayQuay({ dir, audit = { log() {} }, khoa = () => khoaGemini(dir)
   }
 
   function chayQuay(root, opts, actor) {
-    const viec = thucHien(root, opts, actor, kiemLanQuay(root, opts, actor));
+    const viec = thucHien(root, opts, actor, kiemLanQuay(root, opts));
     dangChay.add(viec);
     const xong = () => dangChay.delete(viec);
     viec.then(xong, xong);

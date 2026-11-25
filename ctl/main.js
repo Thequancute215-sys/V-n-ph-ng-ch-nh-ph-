@@ -97,14 +97,13 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
   const connectors = createConnectors({ runner, audit, dir });   // trang Kết nối (MCP) của đội
   // Xưởng phim P2: máy quay API (Gemini) và trạm Google Flow. Chỉ CEO bấm trên trang Xưởng phim; AI không gọi được.
   const tamPhim = () => path.join(xuongPhim.duongDan.goc, "tmp");
-  const mayQuay = createMayQuay({ dir, audit, thuMucTam: tamPhim, duyetTuDong: (root, phim) => banDung.coDuyetQuay(root, phim), codexAnh: {
+  const banDung = createBanDung({ dir, audit, ffmpeg: () => xuongPhim.envAi().XUONG_PHIM_FFMPEG || null, tam: tamPhim });
+  const mayQuay = createMayQuay({ dir, audit, thuMucTam: tamPhim, coDuyetQuay: banDung.coDuyetQuay, codexAnh: {
     argv: () => runner.cliOf("codex"),
     env: () => codexTk.env(),
     quota: () => codexTk.trangThai().ds.find((a) => a.dangDung)?.conLai ?? null,
   } });
-  const tramFlow = createTramFlow({ dir, goc: () => xuongPhim.duongDan.goc, audit, jobs, cliClaude: () => runner.cliOf("claude") });
-  // Xưởng phim P3: bàn dựng (FFmpeg trên máy, miễn phí) và 4 cổng CEO duyệt. Thư mục tạm ở thư mục gốc của xưởng (ổ có chỗ).
-  const banDung = createBanDung({ dir, audit, ffmpeg: () => xuongPhim.envAi().XUONG_PHIM_FFMPEG || null, tam: () => path.join(xuongPhim.duongDan.goc, "tmp") });
+  const tramFlow = createTramFlow({ dir, goc: () => xuongPhim.duongDan.goc, audit, jobs, cliClaude: () => runner.cliOf("claude"), coDuyetQuay: banDung.coDuyetQuay });
   const blenderPhim = createPhimBlender({ ffmpeg: () => xuongPhim.envAi().XUONG_PHIM_FFMPEG,
     ffprobe: () => xuongPhim.envAi().XUONG_PHIM_FFPROBE, tmp: tamPhim, audit });
   const helperDangTao = new Set();

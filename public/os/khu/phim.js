@@ -315,9 +315,10 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
         const anhGpt = (p.may_anh || "gpt") === "gpt";
         const nutKhung = may !== "dung-code" ? `<button type="button" class="nut" data-quay="${esc(c.ma)}" data-loai="khung" ${p.cong?.[2]?.luc ? "disabled" : ""}>Tạo ${c.so_phuong_an_khung || 3} khung${anhGpt ? " (GPT)" : ""}</button>` : "";
         let nutQuay = "";
-        if (may === "omni-flash") nutQuay += `<button type="button" class="nut-chinh" data-quay="${esc(c.ma)}" data-loai="video">Quay video Gemini</button>`;
+        const khoaQuay = bd?.cong?.[1]?.duyet ? "" : " disabled";
+        if (may === "omni-flash") nutQuay += `<button type="button" class="nut-chinh" data-quay="${esc(c.ma)}" data-loai="video"${khoaQuay}>Quay video Gemini</button>`;
         else if (may === "flow" && flow) nutQuay += `<label class="visually-hidden" for="tk-${esc(c.ma)}">Tài khoản Flow</label><select class="o" id="tk-${esc(c.ma)}" data-tk="${esc(c.ma)}">${flow.taiKhoan.map((t) => `<option value="${esc(t.id)}">${esc(t.nhan)}</option>`).join("")}</select>` +
-          Object.entries(NHIP).map(([b, t], i) => `<button type="button" class="nut" data-nhip="${esc(c.ma)}" data-buoc="${b}">${i + 1}. ${t}</button>`).join("");
+          Object.entries(NHIP).map(([b, t], i) => `<button type="button" class="nut" data-nhip="${esc(c.ma)}" data-buoc="${b}"${b === "tao" ? khoaQuay : ""}>${i + 1}. ${t}</button>`).join("");
         else if (may !== "omni-flash") nutQuay += `<span class="mo">Máy quay ${esc(may)}: ${may === "dung-code" ? "dựng bằng code, không quay" : "chưa nối"}.</span>`;
         if ((c.take || []).length && may !== "dung-code") nutQuay += `<button type="button" class="nut" data-quay-lai="${esc(c.ma)}">Quay lại cảnh này</button>`;
 
@@ -390,6 +391,11 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
       return;
     }
     const p = data.phim, k = data.kiem, mq = data.mayQuay, bd = data.banDung;
+    if (!Array.isArray(p.canh) || p.canh.some((c) => !c || typeof c !== "object") ||
+        (p.nhan_vat != null && (!Array.isArray(p.nhan_vat) || p.nhan_vat.some((v) => !v || typeof v !== "object")))) {
+      goc.innerHTML = veDauTrang(null, null, null) + loi(k.loi.map((l) => l.chiTiet).join(" · "));
+      return;
+    }
     const than = phan === "canh" ? vePhanCanhVaQuay(p, k, mq, bd)
       : phan === "ban-dung" ? veBanDungVaXuat(p, bd)
       : veKichBanVaGiong(p, k, mq, bd);

@@ -420,6 +420,13 @@ function createLuongPhim({ dir, audit = { log() {} }, now = Date.now, setTimer =
       if (isKetThuc) return false;
       throw err("PHIM_LOI", "Hồ sơ phim thiếu danh sách cảnh.");
     }
+    if (buoc >= 3 && !isKetThuc && s.trangThai !== "xong" && congDaDuyet(phim, 1) && phim.helper_giong_theo_canh === true) {
+      const giong = docGiong(root);
+      if (!giong || !giongKhopCanh(phim, giong) || !fileTrong(root, "media/giong/voice.mp3") || !fileTrong(root, "media/giong/voice.srt")) {
+        sang(s, 2);
+        return true;
+      }
+    }
     let soLui = 0;
     if (!congDaDuyet(phim, 1)) soLui = 1;
     else if (buoc >= 5 && (!congDaDuyet(phim, 2) || !banDung.coDuyetQuay(root, phim) || phim.canh.some((c) => !c?.khung_chon))) soLui = 2;
