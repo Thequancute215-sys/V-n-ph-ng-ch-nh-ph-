@@ -4,6 +4,8 @@ const path = require("node:path");
 const { createHash } = require("node:crypto");
 const { execFile } = require("node:child_process");
 const { promisify } = require("node:util");
+const { cleanEnv } = require("../lib/mask");
+const { killTree } = require("../lib/proc");
 const tep = require("./phim-tai-lieu");
 
 const exec = promisify(execFile);
@@ -29,7 +31,7 @@ function timBlender(env = process.env) {
   }) || null;
 }
 
-function createPhimBlender({ blender = timBlender, ffmpeg, ffprobe, tmp, audit = { log() {} }, run = exec }) {
+function createPhimBlender({ blender = timBlender, ffmpeg, ffprobe, tmp, audit = { log() {} }, run = exec, stop = killTree }) {
   const jobs = new Map();
   const errors = new Map();
 
@@ -71,11 +73,18 @@ function createPhimBlender({ blender = timBlender, ffmpeg, ffprobe, tmp, audit =
       try {
         const input = path.join(scratch, "nhan-vat.glb");
         await fs.promises.writeFile(input, bytes, { flag: "wx" });
-        const local = { ...process.env, TEMP: scratch, TMP: scratch, TMPDIR: scratch, BLENDER_USER_RESOURCES: path.join(scratch, "settings") };
-        const opts = { cwd: scratch, windowsHide: true, signal: controller.signal, maxBuffer: 4 * 1024 * 1024, timeout: 10 * 60 * 1000 };
+        const local = cleanEnv({ ...process.env, TEMP: scratch, TMP: scratch, TMPDIR: scratch,
+          BLENDER_USER_RESOURCES: path.join(scratch, "settings") });
+        const opts = { cwd: scratch, env: local, windowsHide: true, detached: process.platform !== "win32", maxBuffer: 4 * 1024 * 1024, timeout: 10 * 60 * 1000 };
+        async function chay(program, args, options = opts) {
+          controller.signal.throwIfAborted();
+          const process = run(program, args, options);
+          job.child = process.child;
+          try { return await process; } finally { job.child = null; }
+        }
         try {
-          await run(program, ["--background", "--factory-startup", "--disable-autoexec", "--threads", "4",
-            "--python-exit-code", "1", "--python", script, "--", input, scratch, tiLe, String(giay)], { ...opts, env: local });
+          await chay(program, ["--background", "--factory-startup", "--disable-autoexec", "--threads", "4",
+            "--python-exit-code", "1", "--python", script, "--", input, scratch, tiLe, String(giay)]);
         } catch { throw err("DUNG_LOI", "Blender không render được mô hình này hoặc đã quá thời gian chờ."); }
         const expected = giay * FPS;
         const names = (await fs.promises.readdir(scratch)).filter((name) => /^turn-\d{4}\.png$/.test(name)).sort();
@@ -89,10 +98,10 @@ function createPhimBlender({ blender = timBlender, ffmpeg, ffprobe, tmp, audit =
         job.stage = "FFmpeg đang đóng video…";
         const media = path.join(scratch, "turn.mp4");
         try {
-          await run(ff, ["-hide_banner", "-nostdin", "-v", "error", "-n", "-framerate", String(FPS), "-start_number", "1", "-i",
+          await chay(ff, ["-hide_banner", "-nostdin", "-v", "error", "-n", "-framerate", String(FPS), "-start_number", "1", "-i",
             path.join(scratch, "turn-%04d.png"), "-frames:v", String(expected), "-an", "-c:v", "libx264", "-preset", "fast",
             "-crf", "19", "-pix_fmt", "yuv420p", "-movflags", "+faststart", media], { ...opts, timeout: 60000 });
-          const { stdout } = await run(probe, ["-v", "error", "-select_streams", "v:0", "-show_entries",
+          const { stdout } = await chay(probe, ["-v", "error", "-select_streams", "v:0", "-show_entries",
             "stream=nb_frames,codec_name,r_frame_rate,duration", "-of", "json", media], { ...opts, timeout: 10000 });
           const info = JSON.parse(stdout).streams[0];
           if (info.codec_name !== "h264" || Number(info.nb_frames) !== expected || info.r_frame_rate !== FPS + "/1" || Number(info.duration) !== giay) throw Error();
@@ -116,12 +125,21 @@ function createPhimBlender({ blender = timBlender, ffmpeg, ffprobe, tmp, audit =
     }
   }
 
-  async function close() {
-    for (const job of jobs.values()) job.controller.abort();
-    await Promise.allSettled([...jobs.values()].map((job) => job.promise));
+  async function dungJob(job) {
+    if (!job) return false;
+    job.controller.abort();
+    if (job.child?.pid) {
+      const result = await stop(job.child.pid);
+      if (!result.ok) throw err("KILL_FAILED", "Chưa dừng được tiến trình Blender.");
+    }
+    await job.promise;
+    return true;
   }
 
-  return { trangThai, batDau, close, cho: (root) => jobs.get(root)?.promise };
+  const dung = (target) => dungJob(jobs.get(fs.realpathSync(target)));
+  async function close() { await Promise.all([...jobs.values()].map(dungJob)); }
+
+  return { trangThai, batDau, dung, close, cho: (root) => jobs.get(root)?.promise };
 }
 
 module.exports = { createPhimBlender, timBlender };

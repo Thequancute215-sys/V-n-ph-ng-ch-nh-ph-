@@ -44,6 +44,7 @@ test("chỉnh phân cảnh, thêm khung và thời lượng animatic không đ�
   const a = helper.suaCanh(root, { tacVu: "them" }), b = helper.suaCanh(root, { tacVu: "them" });
   helper.suaCanh(root, { ma: b.ma, tacVu: "len" });
   assert.deepEqual(tep.hoSo(root).phim.canh.map(c => c.ma), [b.ma, a.ma]);
+  assert.deepEqual(tep.hoSo(root).phim.canh.map(c => c.cau), [[1], [2]]);
   helper.suaCanh(root, { ma: a.ma, tacVu: "luu", loiDan: "Robot Mầm.", khungHinh: "Robot xoay", gocMay: "Chính diện", giay: 4, nhanVat: [] });
   await helper.giongThu(root, { canh: a.ma, giay: 6 });
   const img = png(root, "boi-canh.png");
@@ -54,4 +55,22 @@ test("chỉnh phân cảnh, thêm khung và thời lượng animatic không đ�
   tep.suaHoSo(root, (p) => { p.cong = { 1: { luc: "2026-11-25" }, 2: { luc: "2026-11-25" } }; });
   assert.throws(() => helper.suaCanh(root, { ma: a.ma, tacVu: "luu" }), { code: "CHUA_DU_DIEU_KIEN" });
   assert.throws(() => helper.tongMau(root, { moTa: "Xanh" }), { code: "CHUA_DU_DIEU_KIEN" });
+});
+
+test("giọng sau đổi thứ tự phải tương ứng với lời dẫn mới", (t) => {
+  const { giongKhopCanh, dongBoGiong } = require("../lib/phim");
+  const root = phim(t);
+  for (const words of ["Cảnh đầu. Có hai câu.", "Cảnh hai."]) {
+    const { ma } = helper.suaCanh(root, { tacVu: "them" });
+    helper.suaCanh(root, { ma, tacVu: "luu", loiDan: words, khungHinh: "", gocMay: "", giay: 4, nhanVat: [] });
+  }
+  const before = tep.hoSo(root).phim;
+  const voices = before.canh.map((c, i) => ({ index: i + 1, text: c.loi_dan, startMs: i * 1600, endMs: (i + 1) * 1600 }));
+  assert.equal(giongKhopCanh(before, voices), true);
+  helper.suaCanh(root, { ma: before.canh[1].ma, tacVu: "len" });
+  const after = tep.hoSo(root).phim;
+  assert.equal(giongKhopCanh(after, voices), false);
+  assert.throws(() => dongBoGiong(after, voices), /Tạo lại giọng/);
+  const synced = dongBoGiong(after, voices.map((v, i) => ({ ...v, text: after.canh[i].loi_dan }))).phim;
+  assert.deepEqual(synced.canh.map((c) => [c.ma, c.cau, c.giay]), [["C02", [1], 1.6], ["C01", [2], 1.6]]);
 });

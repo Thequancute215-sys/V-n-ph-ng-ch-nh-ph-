@@ -200,31 +200,36 @@ async function tachKhung(root, { ma, id }, { ffmpeg, ffprobe, tmp }) {
 function suaCanh(root, { ma, tacVu, loiDan, khungHinh, gocMay, giay, nhanVat: dsNhanVat }) {
   return tep.suaHoSo(root, (p) => {
     if (congDaDuyet(p, 1)) throw err("CHUA_DU_DIEU_KIEN", "Bỏ duyệt Cổng 1 trước khi sửa phân cảnh.");
+    const ghiLaiThuTu = (canh) => {
+      p.helper_giong_theo_canh = true;
+      for (const [i, c] of p.canh.entries()) c.cau = [i + 1];
+      return canh;
+    };
     const scene = p.canh.findIndex((c) => c.ma === ma);
     if (tacVu === "them") {
       const next = Math.max(0, ...p.canh.map((c) => Number(c.ma.slice(1)) || 0)) + 1;
       if (p.canh.length >= 60 || next > 999) throw err("BAD_REQUEST", "Phim đã đủ số cảnh.");
       const c = { ma: "C" + String(next).padStart(2, "0"), loi_dan: "", khung_hinh: "", giay: 5, nhan_vat: [], trang_thai: "viet" };
       p.canh.push(c);
-      return c;
+      return ghiLaiThuTu(c);
     }
     if (scene < 0) throw err("NOT_FOUND", "Không tìm thấy cảnh.");
     const c = p.canh[scene];
     if (tacVu === "xoa") {
       if (c.khung?.length || c.take?.length || c.khung_chon || c.helper_audio) throw err("CONFLICT", "Cảnh đã có tài sản; giữ lại hồ sơ cảnh này.");
-      return p.canh.splice(scene, 1)[0];
+      return ghiLaiThuTu(p.canh.splice(scene, 1)[0]);
     }
     if (tacVu === "len" || tacVu === "xuong") {
       const neighbor = scene + (tacVu === "len" ? -1 : 1);
       if (neighbor >= 0 && neighbor < p.canh.length) [p.canh[scene], p.canh[neighbor]] = [p.canh[neighbor], p.canh[scene]];
-      return c;
+      return ghiLaiThuTu(c);
     }
     if (tacVu !== "luu" || typeof loiDan !== "string" || loiDan.length > 1400 || typeof khungHinh !== "string" || khungHinh.length > 2000 ||
         typeof gocMay !== "string" || gocMay.length > 200 || !Number.isFinite(giay) || giay < 1 || giay > 60 ||
         !Array.isArray(dsNhanVat) || dsNhanVat.length > 12) throw err("BAD_REQUEST", "Kiểm tra mô tả, nhân vật và số giây của cảnh.");
     dsNhanVat.forEach((id) => nhanVat(p, id));
     Object.assign(c, { loi_dan: loiDan.trim(), khung_hinh: khungHinh.trim(), goc_may: gocMay.trim(), giay, nhan_vat: [...new Set(dsNhanVat)] });
-    return c;
+    return ghiLaiThuTu(c);
   });
 }
 
@@ -266,7 +271,7 @@ async function dongGoi(root, python, tmp) {
   });
   const canh = (phim.canh || []).map((c) => {
     if (!/^C\d{2,3}$/.test(c.ma)) throw err("BAD_REQUEST", "Mã cảnh sai định dạng.");
-    const row = { ma: c.ma, loi_dan: c.loi_dan, khung_hinh: c.khung_hinh, goc_may: c.goc_may, nhan_vat: c.nhan_vat,
+    const row = { ma: c.ma, loi_dan: c.loi_dan, khung_hinh: c.khung_hinh, goc_may: c.goc_may, nhan_vat: c.nhan_vat, cau: c.cau,
       giay: c.giay, may_quay: c.may_quay, trang_thai: "viet", take: [] };
     if (c.khung_chon) { row.khung_chon = them(c.khung_chon, "media/khung/" + c.ma); row.khung = [row.khung_chon]; }
     if (c.helper_audio) row.helper_audio = them(c.helper_audio, "media/helper/" + c.ma + "-giong");
@@ -280,6 +285,7 @@ async function dongGoi(root, python, tmp) {
   const folder = await fs.promises.mkdtemp(path.join(tmp, "helper-pack-"));
   try {
     const hoSo = { ten: phim.ten, ngon_ngu: phim.ngon_ngu, ti_le: phim.ti_le, ngan_sach_usd: phim.ngan_sach_usd,
+      helper_giong_theo_canh: phim.helper_giong_theo_canh,
       may_quay_mac_dinh: phim.may_quay_mac_dinh, nhan_vat: dsNhanVat, canh, nguoi_that: phim.nguoi_that?.map(({ ma, dong_y }) => ({ ma, dong_y })) };
     const spec = path.join(folder, "pack.json"), zip = path.join(folder, "phim.zip");
     await fs.promises.writeFile(spec, JSON.stringify({ entries, hoSo }), { flag: "wx" });

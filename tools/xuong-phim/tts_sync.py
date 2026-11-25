@@ -243,10 +243,60 @@ def doc_kokoro(text, voice, output_base, speed, models):
     print(f"[OK Kokoro] {voice}: {am_thanh} ({len(cac_dong)} câu, {cac_dong[-1]['endMs']} ms)")
 
 
+def doc_theo_canh(loi_dan, args):
+    """Đọc riêng từng cảnh để mốc chuyển cảnh không phụ thuộc cách TTS chia câu."""
+    import tempfile
+    import wave
+
+    ff = tim_ffmpeg()
+    if not ff:
+        thoat(3, "Cần FFmpeg để ghép giọng theo cảnh.")
+    if not isinstance(loi_dan, list) or not 1 <= len(loi_dan) <= 60 or any(
+        not isinstance(s, str) or not s.strip() or len(s) > 1400 for s in loi_dan
+    ):
+        thoat(1, "Cần 1–60 cảnh đều có lời dẫn.")
+
+    def ffmpeg(*tham_so):
+        ket_qua = subprocess.run([ff, "-nostdin", "-v", "error", "-n", *tham_so], capture_output=True)
+        if ket_qua.returncode:
+            thoat(2, "FFmpeg không ghép được giọng theo cảnh.")
+
+    goc = os.path.dirname(os.path.abspath(args.output))
+    os.makedirs(goc, exist_ok=True)
+    hz, moc, cac_dong = 24000, 0, []
+    with tempfile.TemporaryDirectory(prefix="tts-canh-", dir=goc) as tmp:
+        hop = os.path.join(tmp, "hop.wav")
+        with wave.open(hop, "wb") as am:
+            am.setparams((1, 2, hz, 0, "NONE", "not compressed"))
+            for i, text in enumerate(loi_dan, 1):
+                part = os.path.join(tmp, "canh-" + str(i))
+                if la_kokoro(args.voice):
+                    doc_kokoro(text, args.voice, part, args.speed, thu_muc_model(args.models))
+                else:
+                    doc_edge(text, args.voice, part, args.rate, args.volume)
+                nguon = part + ".mp3" if os.path.isfile(part + ".mp3") else part + ".wav"
+                pcm = part + "-pcm.wav"
+                ffmpeg("-i", nguon, "-vn", "-ar", str(hz), "-ac", "1", "-c:a", "pcm_s16le", pcm)
+                with wave.open(pcm, "rb") as src:
+                    count = src.getnframes()
+                    if count <= 0:
+                        thoat(2, f"Cảnh {i} không có âm thanh.")
+                    bat_dau = round(moc * 1000 / hz)
+                    moc += count
+                    cac_dong.append(dong(i, bat_dau, round(moc * 1000 / hz), text))
+                    while block := src.readframes(hz):
+                        am.writeframesraw(block)
+        combined = os.path.join(tmp, "voice.mp3")
+        ffmpeg("-i", hop, "-c:a", "libmp3lame", "-q:a", "2", combined)
+        os.replace(combined, args.output + ".mp3")
+    ghi_phu_de(args.output, cac_dong)
+
+
 def main():
     ap = argparse.ArgumentParser(description="Đọc lời dẫn (Việt/Anh) và xuất phụ đề có mốc thời gian.")
     ap.add_argument("--text", help="Kịch bản dạng chuỗi")
     ap.add_argument("--file", help="File .txt chứa kịch bản (UTF-8, có hoặc không BOM)")
+    ap.add_argument("--scenes-file", help="JSON là danh sách lời dẫn theo cảnh, mỗi cảnh một mốc")
     ap.add_argument("--output", default="voice", help="Đường dẫn xuất, không kèm đuôi")
     ap.add_argument("--voice", default="vi-nam", help="Preset: " + ", ".join(VOICE_PRESETS))
     ap.add_argument("--rate", default="+0%", help="Tốc độ Edge-TTS, vd +10%%")
@@ -254,6 +304,17 @@ def main():
     ap.add_argument("--speed", type=float, default=1.0, help="Tốc độ Kokoro, vd 1.05")
     ap.add_argument("--models", help="Thư mục model Kokoro (mặc định <thư mục gốc xưởng phim>/models)")
     a = ap.parse_args()
+
+    if not re.fullmatch(r"[+-]\d{1,3}%", a.rate) or not re.fullmatch(r"[+-]\d{1,3}%", a.volume):
+        thoat(1, "--rate và --volume phải có dạng +10% hoặc -5%.")
+    if a.scenes_file:
+        try:
+            with open(a.scenes_file, encoding="utf-8-sig") as f:
+                loi_dan = json.load(f)
+        except (OSError, ValueError):
+            thoat(1, "Không đọc được JSON lời dẫn theo cảnh.")
+        doc_theo_canh(loi_dan, a)
+        return
 
     if a.text:
         text = a.text
@@ -265,9 +326,6 @@ def main():
     text = text.replace("﻿", "").strip()
     if not text:
         thoat(1, "Kịch bản rỗng.")
-    if not re.fullmatch(r"[+-]\d{1,3}%", a.rate) or not re.fullmatch(r"[+-]\d{1,3}%", a.volume):
-        thoat(1, "--rate và --volume phải có dạng +10% hoặc -5%.")
-
     os.makedirs(os.path.dirname(os.path.abspath(a.output)), exist_ok=True)
     if la_kokoro(a.voice):
         doc_kokoro(text, a.voice, a.output, a.speed, thu_muc_model(a.models))

@@ -168,7 +168,7 @@ export function veBlender(phim, state, taiLieu, bangDung, media) {
   return `<section class="khoi" aria-labelledby="hPhimBlender">
     <h2 id="hPhimBlender" class="dau">Blender · Xem thử xoay 360°</h2>
     ${state.loi ? `<p class="hong" role="alert">${esc(state.loi)}</p>` : ""}
-    ${state.dang ? `<p role="status">${esc(state.dang)}</p>` : ""}
+    ${state.dang ? `<div class="hang"><p role="status">${esc(state.dang)}</p><button type="button" class="nut" data-blender-dung>Dừng dựng</button></div>` : ""}
     ${state.coBlender && models.length ? `<div class="hang">
       <label>Mô hình <select class="o" id="blenderModel">${models.map(t => option(t.id, t.ten, t.id === selected)).join("")}</select></label>
       <label>Tỉ lệ <select class="o" id="blenderTiLe">${["1:1", "9:16", "16:9"].map(t => option(t, t, t === "1:1")).join("")}</select></label>

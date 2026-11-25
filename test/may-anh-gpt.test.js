@@ -146,6 +146,17 @@ test("GPT so nội dung ảnh tham chiếu, chấp nhận đổi mốc thời gi
   assert.deepEqual(fs.readFileSync(path.join(byte.root, thamChieu)), Buffer.from(PNG, "base64"));
 });
 
+test("máy ảnh từ chối tạo khung sau Cổng 2, đi tiếp khi bỏ duyệt", async (t) => {
+  const { root, may, doc, ghiPhim, cacLan } = lap(t, { sua: (p) => { p.cong[2] = { luc: "2026-11-22T00:00:00Z" }; } });
+  assert.equal(may.uocTinh(root, opts).usd, 0);
+  assert.throws(() => may.batDauQuay(root, opts), { code: "CHUA_DU_DIEU_KIEN" });
+  assert.equal(cacLan().length, 0);
+  const profile = doc("phim.json");
+  delete profile.cong[2];
+  ghiPhim(profile);
+  assert.equal((await may.quay(root, opts)).files.length, 1);
+});
+
 test("GPT chọn tên đích mới khi số khung trong hồ sơ trùng với file đã có", async (t) => {
   const { root, may } = lap(t);
   const khung = path.join(root, "media", "khung");

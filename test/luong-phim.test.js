@@ -155,11 +155,9 @@ test("đổi ngân sách sau cổng 2 thì luồng chờ duyệt lại trước 
   f.chonKhung();
   f.duyet(2);
   f.sua((p) => { p.ngan_sach_usd += 5; });
-  assert.equal((await f.tiep()).trangThai, "can_anh");
-  assert.match(f.tt().loi, /duyệt lại cổng 2/);
+  assert.equal((await f.tiep()).trangThai, "cho_cong_2");
   assert.equal(f.calls.quay.filter((q) => q.loai === "video").length, 0);
   f.duyet(2);
-  f.batDau();
   assert.equal((await f.tiep()).trangThai, "cho_cong_3");
   assert.equal(f.calls.quay.filter((q) => q.loai === "video").length, 1);
 });
@@ -199,6 +197,9 @@ test("đi hết bốn cổng, đứng chờ Flow và chỉ ghi báo cáo Claude 
   f.duyet(2);
   assert.equal((await f.tiep()).trangThai, "cho_cong_2");
   f.chonKhung();
+  assert.equal((await f.tiep()).trangThai, "cho_cong_2");
+  assert.equal(f.calls.quay.filter((q) => q.loai === "video").length, 0);
+  f.duyet(2);
   assert.equal((await f.tiep()).trangThai, "cho_flow");
   assert.deepEqual(f.tt().canhCho, ["C02"]);
   assert.deepEqual(f.calls.quay.filter((q) => q.loai === "video").map((q) => q.canh), ["C01"]);

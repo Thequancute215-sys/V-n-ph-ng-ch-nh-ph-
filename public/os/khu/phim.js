@@ -145,7 +145,9 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
     return `<section class="khoi" aria-labelledby="hCong-${cacSo.join("-")}"><div class="dau-hang"><h2 class="dau" id="hCong-${cacSo.join("-")}">${esc(tieuDe)}</h2>${ghiChu ? `<span class="mo">${esc(ghiChu)}</span>` : ""}</div><div${luoiLop}>` +
       items.map((g) => `<div class="cong-o${g.duyet ? " da" : ""}"><span class="so-cong">Cổng ${g.so}</span><b>${esc(g.ten)}</b>` +
         (g.duyet ? `<span class="dat">Đã duyệt${g.luc ? ", " + esc(luc(g.luc)) : ""}</span><div class="hang"><button type="button" class="nut nho" data-cong="${g.so}" data-duyet="0">Bỏ duyệt</button></div>`
-          : g.duoc ? `<div class="hang"><button type="button" class="nut-chinh" data-cong="${g.so}" data-duyet="1">Duyệt cổng ${g.so}</button></div>` : `<span class="ly">${esc(g.lyDo)}</span>`) + `</div>`).join("") + `</div></section>`;
+          : `${g.canDuyetLai ? '<span class="canh-bao">Phương án đã đổi, cần duyệt lại.</span>' : ""}<div class="hang">${g.duoc
+            ? `<button type="button" class="nut-chinh" data-cong="${g.so}" data-duyet="1">${g.canDuyetLai ? "Duyệt lại Cổng 2" : "Duyệt cổng " + g.so}</button>`
+            : `<span class="ly">${esc(g.lyDo)}</span>`}${g.canDuyetLai ? '<button class="nut nho" type="button" data-cong="2" data-duyet="0">Bỏ duyệt</button>' : ""}</div>`) + `</div>`).join("") + `</div></section>`;
   }
 
   function veLuong(L, p, gon = false) {
@@ -311,7 +313,7 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
         const take = (c.take || []).map((f) => `<figure class="${c.take_chon === f ? "chon" : ""}"><video src="${esc(media(f))}" controls preload="metadata" playsinline></video>` +
           `<button type="button" class="nut nho" data-chon-take="${esc(c.ma)}" data-file="${esc(f)}">${c.take_chon === f ? "Take đã chọn" : "Chọn take"}</button></figure>`).join("");
         const anhGpt = (p.may_anh || "gpt") === "gpt";
-        const nutKhung = may !== "dung-code" ? `<button type="button" class="nut" data-quay="${esc(c.ma)}" data-loai="khung">Tạo ${c.so_phuong_an_khung || 3} khung${anhGpt ? " (GPT)" : ""}</button>` : "";
+        const nutKhung = may !== "dung-code" ? `<button type="button" class="nut" data-quay="${esc(c.ma)}" data-loai="khung" ${p.cong?.[2]?.luc ? "disabled" : ""}>Tạo ${c.so_phuong_an_khung || 3} khung${anhGpt ? " (GPT)" : ""}</button>` : "";
         let nutQuay = "";
         if (may === "omni-flash") nutQuay += `<button type="button" class="nut-chinh" data-quay="${esc(c.ma)}" data-loai="video">Quay video Gemini</button>`;
         else if (may === "flow" && flow) nutQuay += `<label class="visually-hidden" for="tk-${esc(c.ma)}">Tài khoản Flow</label><select class="o" id="tk-${esc(c.ma)}" data-tk="${esc(c.ma)}">${flow.taiKhoan.map((t) => `<option value="${esc(t.id)}">${esc(t.nhan)}</option>`).join("")}</select>` +
@@ -650,6 +652,7 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
       const args = { workspace: ws, id: giaTri("blenderModel"), tiLe: giaTri("blenderTiLe"), giay: Number(giaTri("blenderGiay")) };
       return lam(() => ctl("/phim/blender", args), "Blender bắt đầu dựng bản xoay.");
     }
+    if (d.blenderDung !== undefined) return lam(() => ctl("/phim/blender/dung", { workspace: ws }), "Đã dừng Blender.");
     if (d.blenderGan) {
       const args = { workspace: ws, sha256: d.blenderGan, canh: giaTri("blenderCanh") };
       return lam(() => ctl("/phim/blender/gan-canh", args), "Đã gắn take. Xem ở Phân cảnh và quay.");

@@ -312,6 +312,7 @@ function createMayQuay({ dir, audit = { log() {} }, khoa = () => khoaGemini(dir)
   function kiemLanQuay(root, opts, actor) {
     if (dang.has(root)) throw err("MAY_QUAY_BAN", "Phim này đang quay cảnh " + dang.get(root).canh + ". Chờ xong rồi bấm tiếp.");
     const { phim, c, yc, chi, ngan, boDem, lanGoi, usd: uocChi } = chuanBi(root, opts);
+    if (opts.loai === "khung" && congDaDuyet(phim, 2)) throw err("CHUA_DU_DIEU_KIEN", "Bỏ duyệt Cổng 2 trước khi tạo thêm khung.");
     if (uocChi > 0 && chi + uocChi > ngan + 1e-9) throw err("VUOT_NGAN_SACH", `Lần quay này ~$${uocChi}, đã tính $${chi} vào ngân sách $${ngan}. Nâng ngân sách hoặc giảm số phương án.`);
     if (actor === "luong-phim" && opts.loai === "video" && uocChi > 0 && !duyetTuDong(root, phim)) {
       throw err("CHUA_DU_DIEU_KIEN", "Phương án hoặc ngân sách đã đổi: duyệt lại cổng 2 trước khi quay tự động.");

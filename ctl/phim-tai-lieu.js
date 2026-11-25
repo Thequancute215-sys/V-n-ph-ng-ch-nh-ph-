@@ -111,18 +111,20 @@ function approve(root, id) {
 }
 
 function importTake(root, phim, canh, id) {
-  const { real, item } = file(root, id);
+  const { item, bytes } = fileXacThuc(root, id);
   if (path.extname(item.ten).toLowerCase() !== ".mp4") throw err("BAD_REQUEST", "Nhập cảnh dưới dạng MP4.");
+  return ghiTake(root, phim, canh, item.sha256, bytes);
+}
+
+function ghiTake(root, phim, canh, sha256, bytes) {
   const c = phim.canh.find((candidate) => candidate.ma === canh);
   if (!c || !/^C\d{2,3}$/.test(c.ma)) throw err("NOT_FOUND", "Không tìm thấy cảnh để nhập clip.");
   const takes = c.take || [];
-  const name = c.ma + "-nhap-" + item.sha256 + ".mp4";
+  const name = c.ma + "-nhap-" + sha256 + ".mp4";
   const rel = "media/quay/" + name;
   if (takes.includes(rel)) return rel;
   if (takes.length >= (c.so_take_toi_da ?? 2)) throw err("TOI_DA_TAKE", "Cảnh đã đủ số take được phép.");
   const target = path.join(directory(root, true, "quay"), name);
-  const bytes = fs.readFileSync(real);
-  if (createHash("sha256").update(bytes).digest("hex") !== item.sha256) throw err("CHANGED", "Clip đã thay đổi. Đính kèm lại.");
   const stat = fs.lstatSync(target, { throwIfNoEntry: false });
   if (stat && (!stat.isFile() || stat.size !== bytes.length || !fs.readFileSync(target).equals(bytes))) throw err("CHANGED", "Đã có clip khác ở vị trí này.");
   if (!stat) writeFile(target, bytes, 0o600);
@@ -154,4 +156,4 @@ function fileXacThuc(root, id) {
   return { item, real, bytes };
 }
 
-module.exports = { list, save, file, fileXacThuc, approve, importTake, hoSo, suaHoSo, directory, writeFile, UPLOAD_LIMIT };
+module.exports = { list, save, file, fileXacThuc, approve, importTake, ghiTake, hoSo, suaHoSo, directory, writeFile, UPLOAD_LIMIT };

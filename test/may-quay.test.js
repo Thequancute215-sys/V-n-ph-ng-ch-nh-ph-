@@ -55,7 +55,7 @@ test("dựng yêu cầu: khung dùng Nano Banana 2.1 kèm ảnh nhân vật; vid
 });
 
 test("chọn máy ảnh Gemini: vẫn gọi API và ghi khung JPEG theo giá cũ", async (t) => {
-  const d = duAn(tmp(t), (p) => ({ ...p, may_anh: "gemini" }));
+  const d = duAn(tmp(t), (p) => ({ ...p, may_anh: "gemini", cong: { 1: p.cong[1] } }));
   const { f, goi } = giaFetch(() => ok({ output_image: { data: Buffer.from("JPG2").toString("base64") } }));
   const mq = createMayQuay({ dir: d, khoa: () => KHOA, fetchImpl: f });
   const r = await mq.quay(d, { canh: "C01", loai: "khung", doPhanGiai: "2K" });
@@ -105,7 +105,7 @@ test("bộ đệm: cùng lần quay bị lặp (hồ sơ chưa ghi) thì không 
 });
 
 test("từng kết quả thành công được tính tiền dù đợt quay lỗi và phải thử lại", async (t) => {
-  const d = duAn(tmp(t), (p) => ({ ...p, may_anh: "gemini", ngan_sach_usd: 1 }));
+  const d = duAn(tmp(t), (p) => ({ ...p, may_anh: "gemini", ngan_sach_usd: 1, cong: { 1: p.cong[1] } }));
   const anh = ok({ output_image: { data: Buffer.from("ANH").toString("base64") } });
   const { f, goi } = giaFetch((n) => n === 2 ? ok({ status: "completed" }) : anh);
   const mq = createMayQuay({ dir: d, khoa: () => KHOA, fetchImpl: f });

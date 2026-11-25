@@ -307,7 +307,7 @@ h2.dau[data-xuong] { color: var(--mau-xuong); }
   .thanh-loc .nguy { margin-left: 0; }
 }
 .phim-helper-luoi { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
-.phim-helper-goc, .phim-helper-nguon { min-width: 0; padding: 12px; border: 1px solid var(--vien); border-radius: 10px; }
+.phim-helper-goc, .phim-helper-nguon { min-width: 0; padding: var(--space-sm); border: var(--rule-hair) solid var(--color-rule); border-radius: var(--radius-card); }
 .phim-helper-goc { display: grid; align-content: start; gap: 8px; }
 .phim-helper-goc img { display: block; width: 100%; max-height: 260px; object-fit: contain; }
 .phim-helper-goc select, .phim-helper-nguon select { max-width: 100%; }
@@ -316,7 +316,7 @@ h2.dau[data-xuong] { color: var(--mau-xuong); }
 .phim-helper-anh-nguon img { display: block; width: 66px; height: 66px; object-fit: cover; border-radius: 6px; }
 #helperPromptWrap[hidden] { display: none; }
 .phim-blender-video { display: block; width: min(100%, 460px); max-height: 520px; object-fit: contain; }
-.phim-helper-animatic { display: grid; width: min(100%, 540px); margin: 10px auto; background: var(--nen); }
+.phim-helper-animatic { display: grid; width: min(100%, 540px); margin: 10px auto; background: var(--color-slot); }
 .phim-helper-animatic img { display: block; width: 100%; aspect-ratio: 16/9; object-fit: contain; }
 .phim-helper-animatic[data-ratio="9:16"] { width: min(100%, 300px); }
 .phim-helper-animatic[data-ratio="9:16"] img { aspect-ratio: 9/16; }
