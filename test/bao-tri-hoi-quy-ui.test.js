@@ -987,3 +987,131 @@ test("Xưởng phim tách 3 phần độc lập (#/phim, #/phim/canh, #/phim/ban
     assert.equal(env.timers.size, 0);
   }
 });
+
+test("code-pr.js: báo lỗi từng phần khi check-runs 403 / reviews 500 / files 500, phân trang 1 -> 2 -> 1 và tìm PR ngoài trang đầu", async (t) => {
+  const env = createMiniDom({ hash: "#/code/pr" });
+  const restore = installGlobals(env, async () => ({ ok: true, status: 200, json: async () => ({}) }));
+  t.after(restore);
+
+  const { mo } = await import(pathToFileURL(path.join(PUB, "os", "khu", "code-pr.js")).href);
+  const vung = env.document.createElement("div");
+  env.document.body.append(vung);
+  const ws = "D:\\Projects\\repo-pr";
+  const kho = makeKho(ws, [{ path: ws, name: "repo-pr" }]);
+  const calls = [];
+
+  const pr80Sum = { number: 80, title: "PR lỗi phần con trang 1", state: "open", draft: false, updatedAt: new Date().toISOString(), author: "dev1", head: { ref: "feat/p1" }, base: { ref: "main" } };
+  const pr40Sum = { number: 40, title: "Sửa thanh toán trang 2", state: "open", draft: false, updatedAt: new Date().toISOString(), author: "dev2", head: { ref: "fix/p2" }, base: { ref: "main" } };
+
+  const ctl = async (p) => {
+    calls.push(p);
+    if (p === `/github/pulls?workspace=${encodeURIComponent(ws)}&state=open`) {
+      return { kind: "ok", repo: { fullName: "owner/repo-pr", url: "https://github.com/owner/repo-pr" }, branch: "main", page: 1, hasMore: true, searchedPages: 1, pulls: [pr80Sum] };
+    }
+    if (p === `/github/pulls?workspace=${encodeURIComponent(ws)}&state=open&page=2`) {
+      return { kind: "ok", repo: { fullName: "owner/repo-pr", url: "https://github.com/owner/repo-pr" }, branch: "main", page: 2, hasMore: false, searchedPages: 1, pulls: [pr40Sum] };
+    }
+    if (p === `/github/pulls?workspace=${encodeURIComponent(ws)}&state=open&q=${encodeURIComponent("thanh toán")}`) {
+      return { kind: "ok", repo: { fullName: "owner/repo-pr", url: "https://github.com/owner/repo-pr" }, branch: "main", page: 1, hasMore: false, query: "thanh toán", searchedPages: 2, pulls: [pr40Sum] };
+    }
+    if (p === `/github/pulls/80?workspace=${encodeURIComponent(ws)}`) {
+      return {
+        pull: {
+          ...pr80Sum, body: "Mô tả PR #80", mergeable: true, mergeableState: "clean", commits: 1, additions: 10, deletions: 2, changedFiles: 1, comments: 0,
+          url: "https://github.com/owner/repo-pr/pull/80",
+          checksError: "Không đủ quyền đọc trạng thái CI (check-runs) trên GitHub (HTTP 403) hoặc đang bị giới hạn yêu cầu.",
+          reviewsError: "GitHub trả về lỗi HTTP 500. Thử lại sau.",
+          filesError: "GitHub trả về lỗi HTTP 500. Thử lại sau.",
+          checks: [], reviews: [], files: [],
+        },
+      };
+    }
+    if (p === `/github/pulls/40?workspace=${encodeURIComponent(ws)}`) {
+      return {
+        pull: {
+          ...pr40Sum, body: "", mergeable: true, mergeableState: "clean", commits: 1, additions: 0, deletions: 0, changedFiles: 0, comments: 0,
+          url: "https://github.com/owner/repo-pr/pull/40",
+          checksError: null, reviewsError: null, filesError: null,
+          checks: [], reviews: [], files: [],
+        },
+      };
+    }
+    if (p === `/github/pulls/12?workspace=${encodeURIComponent(ws)}`) {
+      return {
+        pull: {
+          number: 12, title: "PR #12 mở thẳng", state: "closed", merged: true, mergedAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+          author: "dev3", head: { ref: "fix/old" }, base: { ref: "main" }, body: "Đã gộp",
+          commits: 1, additions: 1, deletions: 0, changedFiles: 1, comments: 0, url: "https://github.com/owner/repo-pr/pull/12",
+          checksError: null, reviewsError: null, filesError: null,
+          checks: [], reviews: [], files: [{ filename: "README.md", status: "modified", additions: 1, deletions: 0, patch: "@@ -1 +1 @@\n+hi" }],
+        },
+      };
+    }
+    throw new Error("Route ngoài dự kiến: " + p);
+  };
+
+  const ac = new AbortController();
+  const dong = await mo(vung, { kho, ctl, signal: ac.signal });
+  await flush(); await flush();
+
+  // 1. Trang 1: ghi rõ phạm vi lọc 30 PR/trang, nút Trang sau bật, Trang trước khóa
+  assert.match(vung.querySelector("#prPhamViTim").textContent, /trang 1.*Tìm mọi trang/i);
+  assert.equal(vung.querySelector("#prTrangTruoc").disabled, true);
+  assert.equal(vung.querySelector("#prTrangSau").disabled, false);
+
+  // 2. PR #80 có lỗi 403/500 ở 3 phần con -> hiện 3 hộp cảnh báo lỗi riêng, tuyệt đối KHÔNG báo như rỗng thật
+  assert.ok(vung.querySelector('[data-pr-loi="checks"]'), "phải hiện lỗi đọc CI");
+  assert.ok(vung.querySelector('[data-pr-loi="reviews"]'), "phải hiện lỗi đọc Reviews");
+  assert.ok(vung.querySelector('[data-pr-loi="files"]'), "phải hiện lỗi đọc Files");
+  assert.match(vung.querySelector('[data-pr-loi="files"]').textContent, /PR ghi nhận 1 file.*HTTP 500/);
+  const ct80 = vung.querySelector("#ctPr").textContent;
+  assert.doesNotMatch(ct80, /Chưa ghi nhận lượt kiểm CI/);
+  assert.doesNotMatch(ct80, /Chưa có lượt đánh giá/);
+  assert.doesNotMatch(ct80, /Pull Request này không có file thay đổi/);
+
+  // 3. Bấm sang Trang 2 -> gọi page=2, hiện PR #40 (rỗng thật -> hiện thông báo rỗng thật, 0 hộp lỗi)
+  vung.querySelector("#prTrangSau").click();
+  await flush(); await flush();
+  assert.match(vung.querySelector("#prNhanTrang").textContent, /Trang 2/);
+  assert.equal(vung.querySelector("#prTrangTruoc").disabled, false);
+  assert.equal(vung.querySelector("#prTrangSau").disabled, true);
+  assert.equal(vung.querySelectorAll("[data-pr-loi]").length, 0, "PR rỗng thật không được báo lỗi");
+  const ct40 = vung.querySelector("#ctPr").textContent;
+  assert.match(ct40, /Chưa ghi nhận lượt kiểm CI/);
+  assert.match(ct40, /Chưa có lượt đánh giá/);
+  assert.match(ct40, /Pull Request này không có file thay đổi/);
+
+  // 4. Quay lại Trang 1 -> gọi lại trang 1, hiện lại PR #80
+  vung.querySelector("#prTrangTruoc").click();
+  await flush(); await flush();
+  assert.match(vung.querySelector("#prNhanTrang").textContent, /Trang 1/);
+  assert.equal(vung.querySelector("#prTrangTruoc").disabled, true);
+  assert.equal(vung.querySelector("#prTrangSau").disabled, false);
+  assert.match(vung.querySelector("#hCtPr").textContent, /#80/);
+
+  // 5. Gõ từ khoá của PR ở trang 2 -> báo rõ không thấy trên trang 1, bấm Tìm mọi trang dò ra PR #40
+  const oTim = vung.querySelector("#timPr");
+  oTim.value = "thanh toán";
+  oTim.dispatchEvent({ type: "input", target: oTim, bubbles: true });
+  assert.match(vung.querySelector("#dsPr").textContent, /Không thấy trên trang 1/);
+  vung.querySelector("#prTimMoiTrang").click();
+  await flush(); await flush();
+  assert.match(vung.querySelector("#prPhamViTim").textContent, /Đã dò 2 trang/);
+  assert.match(vung.querySelector("#hCtPr").textContent, /#40 · Sửa thanh toán trang 2/);
+
+  // Xoá tìm -> quay về danh sách trang 1, rồi thử mở thẳng PR #12 bằng nút Mở thẳng PR #12
+  vung.querySelector("#prXoaTim").click();
+  await flush(); await flush();
+  assert.match(vung.querySelector("#hCtPr").textContent, /#80/);
+
+  oTim.value = "#12";
+  oTim.dispatchEvent({ type: "input", target: oTim, bubbles: true });
+  const nutMo12 = vung.querySelector('[data-mo-pr-so="12"]');
+  assert.ok(nutMo12, "gõ #số không có trên trang 1 phải có nút Mở thẳng PR #12");
+  nutMo12.click();
+  await flush(); await flush();
+  assert.match(vung.querySelector("#hCtPr").textContent, /#12 · PR #12 mở thẳng/);
+
+  ac.abort();
+  dong();
+});

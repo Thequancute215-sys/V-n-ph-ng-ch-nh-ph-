@@ -41,12 +41,13 @@ function createGitHub({ ws, jobs, audit, select, projectsDir = path.join(os.home
     try { response = await fetcher("https://api.github.com" + route, { headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json", "User-Agent": "VanPhongAI" }, signal: AbortSignal.timeout(15000), redirect: "error" }); }
     catch { throw err("GITHUB_OFFLINE", "Không kết nối được GitHub. Kiểm tra mạng rồi thử lại."); }
     if (!response.ok) {
-      if (response.status === 401) throw err("GITHUB_AUTH", "Đăng nhập GitHub đã hết hạn. Đăng nhập lại bằng Git Credential Manager.");
-      if (response.status === 403 || response.status === 429) throw err("GITHUB_LIMIT", "GitHub đang giới hạn yêu cầu hoặc tài khoản chưa được cấp quyền truy cập repo này.");
-      if (response.status === 404) throw err("NOT_FOUND", "Không tìm thấy repo hoặc tài khoản chưa có quyền đọc.");
-      throw err("GITHUB_OFFLINE", "GitHub trả về lỗi HTTP " + response.status + ". Thử lại sau.");
+      const withStatus = (code, msg) => Object.assign(err(code, msg), { status: response.status });
+      if (response.status === 401) throw withStatus("GITHUB_AUTH", "Đăng nhập GitHub đã hết hạn. Đăng nhập lại bằng Git Credential Manager.");
+      if (response.status === 403 || response.status === 429) throw withStatus("GITHUB_LIMIT", "GitHub đang giới hạn yêu cầu hoặc tài khoản chưa được cấp quyền truy cập repo này (HTTP " + response.status + ").");
+      if (response.status === 404) throw withStatus("NOT_FOUND", "Không tìm thấy repo hoặc tài khoản chưa có quyền đọc.");
+      throw withStatus("GITHUB_OFFLINE", "GitHub trả về lỗi HTTP " + response.status + ". Thử lại sau.");
     }
-    return { data: await response.json(), more: /rel="next"/.test(response.headers.get("link") || "") };
+    return { data: await response.json(), more: /rel="next"/.test(response.headers?.get?.("link") || "") };
   }
   async function list(page = 1) {
     page = Number(page);
@@ -201,32 +202,116 @@ function createGitHub({ ws, jobs, audit, select, projectsDir = path.join(os.home
     };
   }
 
-  async function pulls(root, { state = "open", page = 1 } = {}) {
+  function matchPullQuery(p, qLower) {
+    return ("#" + p.number) === qLower
+      || ("#" + p.number).includes(qLower)
+      || p.title.toLowerCase().includes(qLower)
+      || p.author.toLowerCase().includes(qLower)
+      || p.head.ref.toLowerCase().includes(qLower)
+      || p.base.ref.toLowerCase().includes(qLower);
+  }
+
+  async function subPart(promise, pick, label) {
+    try {
+      const res = await promise;
+      const items = pick(res.data);
+      if (!Array.isArray(items)) return { items: [], more: false, error: "GitHub trả dữ liệu " + label + " không hợp lệ." };
+      return { items, more: !!res.more, error: null };
+    } catch (e) {
+      const msg = e?.status === 403
+        ? "Không đủ quyền đọc " + label + " trên GitHub (HTTP 403) hoặc đang bị giới hạn yêu cầu."
+        : String(e?.message || ("Không đọc được " + label + " từ GitHub."));
+      return { items: [], more: false, error: maskSecrets(msg).slice(0, 300) };
+    }
+  }
+
+  async function pulls(root, { state = "open", page = 1, q = "" } = {}) {
     state = String(state || "open");
     page = Number(page);
+    const qTrim = String(q || "").trim().slice(0, 120);
     if (!["open", "closed", "all"].includes(state)) throw err("BAD_REQUEST", "Trạng thái PR phải là open, closed hoặc all.");
-    if (!Number.isInteger(page) || page < 1 || page > 50) throw err("BAD_REQUEST", "Trang PR không hợp lệ.");
+    if (!Number.isInteger(page) || page < 1 || page > 100) throw err("BAD_REQUEST", "Trang PR không hợp lệ.");
     const info = await gitInfo(root);
-    if (info.kind !== "ok") return { kind: info.kind, repo: null, branch: info.branch, state, page, hasMore: false, compareUrl: null, pulls: [] };
-    const [repoRes, pullsRes] = await Promise.all([
-      api("/repos/" + info.fullName),
-      api(`/repos/${info.fullName}/pulls?state=${state}&per_page=30&sort=updated&direction=desc&page=${page}`),
-    ]);
+    if (info.kind !== "ok") return { kind: info.kind, repo: null, branch: info.branch, state, page, hasMore: false, query: maskSecrets(qTrim), searchedPages: 0, compareUrl: null, pulls: [] };
+
+    if (!qTrim) {
+      const [repoRes, pullsRes] = await Promise.all([
+        api("/repos/" + info.fullName),
+        api(`/repos/${info.fullName}/pulls?state=${state}&per_page=30&sort=updated&direction=desc&page=${page}`),
+      ]);
+      if (!Array.isArray(pullsRes.data)) throw err("GITHUB_OFFLINE", "GitHub trả danh sách Pull Request không hợp lệ.");
+      const repoData = repoRes.data || {};
+      const fullName = validName(repoData.full_name) ? repoData.full_name : info.fullName;
+      const defaultBranch = String(repoData.default_branch || "main");
+      const items = pullsRes.data.filter((p) => Number.isInteger(p?.number) && p.number > 0).map((p) => mapPullSummary(p, fullName));
+      const canCompare = info.branch && info.branch !== "HEAD" && info.branch !== defaultBranch && !items.some((p) => p.state === "open" && p.head.ref === info.branch);
+      const compareUrl = canCompare ? `https://github.com/${fullName}/compare/${encodeURIComponent(defaultBranch)}...${encodeURIComponent(info.branch)}?expand=1` : null;
+      return {
+        kind: "ok",
+        repo: { fullName, private: !!repoData.private, defaultBranch, url: "https://github.com/" + fullName },
+        branch: info.branch,
+        state,
+        page,
+        hasMore: pullsRes.more,
+        query: "",
+        searchedPages: 1,
+        compareUrl,
+        pulls: items,
+      };
+    }
+
+    // Dò nhiều trang (tối đa 10 trang = 300 PR) và hỗ trợ tìm đúng #số PR nằm ngoài trang đầu.
+    const repoRes = await api("/repos/" + info.fullName);
     const repoData = repoRes.data || {};
     const fullName = validName(repoData.full_name) ? repoData.full_name : info.fullName;
     const defaultBranch = String(repoData.default_branch || "main");
-    const items = Array.isArray(pullsRes.data) ? pullsRes.data.filter((p) => Number.isInteger(p?.number) && p.number > 0).map((p) => mapPullSummary(p, fullName)) : [];
-    const canCompare = info.branch && info.branch !== "HEAD" && info.branch !== defaultBranch && !items.some((p) => p.state === "open" && p.head.ref === info.branch);
+    const qLower = qTrim.toLowerCase();
+    const matched = [], seen = new Set();
+    let hasMore = false, searchedPages = 0, branchHasOpenPr = false;
+    for (let p = 1; p <= 10; p++) {
+      const pullsRes = await api(`/repos/${info.fullName}/pulls?state=${state}&per_page=30&sort=updated&direction=desc&page=${p}`);
+      if (!Array.isArray(pullsRes.data)) throw err("GITHUB_OFFLINE", "GitHub trả danh sách Pull Request không hợp lệ.");
+      searchedPages = p;
+      const pageItems = pullsRes.data.filter((x) => Number.isInteger(x?.number) && x.number > 0).map((x) => mapPullSummary(x, fullName));
+      if (info.branch && pageItems.some((x) => x.state === "open" && x.head.ref === info.branch)) branchHasOpenPr = true;
+      for (const item of pageItems) {
+        if (!seen.has(item.number) && matchPullQuery(item, qLower)) {
+          seen.add(item.number);
+          matched.push(item);
+        }
+      }
+      hasMore = pullsRes.more;
+      if (!hasMore || pageItems.length === 0) break;
+    }
+    const numMatch = /^#?(\d{1,6})$/.exec(qTrim);
+    if (numMatch) {
+      const targetNo = Number(numMatch[1]);
+      if (targetNo > 0 && !seen.has(targetNo)) {
+        try {
+          const { data: exactPr } = await api(`/repos/${info.fullName}/pulls/${targetNo}`);
+          if (exactPr && Number.isInteger(exactPr.number) && exactPr.number > 0) {
+            const mapped = mapPullSummary(exactPr, fullName);
+            const stateOk = state === "all" || (state === "open" ? mapped.state === "open" : mapped.state !== "open");
+            if (stateOk) { seen.add(mapped.number); matched.unshift(mapped); }
+          }
+        } catch (e) {
+          if (e.code !== "NOT_FOUND") throw e;
+        }
+      }
+    }
+    const canCompare = info.branch && info.branch !== "HEAD" && info.branch !== defaultBranch && !branchHasOpenPr;
     const compareUrl = canCompare ? `https://github.com/${fullName}/compare/${encodeURIComponent(defaultBranch)}...${encodeURIComponent(info.branch)}?expand=1` : null;
     return {
       kind: "ok",
       repo: { fullName, private: !!repoData.private, defaultBranch, url: "https://github.com/" + fullName },
       branch: info.branch,
       state,
-      page,
-      hasMore: pullsRes.more,
+      page: 1,
+      hasMore,
+      query: maskSecrets(qTrim),
+      searchedPages,
       compareUrl,
-      pulls: items,
+      pulls: matched,
     };
   }
 
@@ -238,13 +323,15 @@ function createGitHub({ ws, jobs, audit, select, projectsDir = path.join(os.home
     const { data: pr } = await api(`/repos/${info.fullName}/pulls/${n}`);
     const fullName = validName(pr?.base?.repo?.full_name) ? pr.base.repo.full_name : info.fullName;
     const headSha = String(pr?.head?.sha || "");
-    const [filesRes, checksRes, reviewsRes] = await Promise.all([
-      api(`/repos/${info.fullName}/pulls/${n}/files?per_page=100`).catch(() => ({ data: [], more: false })),
-      /^[0-9a-f]{40}$/i.test(headSha) ? api(`/repos/${info.fullName}/commits/${headSha}/check-runs?per_page=50`).catch(() => ({ data: { check_runs: [] } })) : Promise.resolve({ data: { check_runs: [] } }),
-      api(`/repos/${info.fullName}/pulls/${n}/reviews?per_page=50`).catch(() => ({ data: [] })),
+    const [filesPart, checksPart, reviewsPart] = await Promise.all([
+      subPart(api(`/repos/${info.fullName}/pulls/${n}/files?per_page=100`), (d) => d, "danh sách file thay đổi"),
+      /^[0-9a-f]{40}$/i.test(headSha)
+        ? subPart(api(`/repos/${info.fullName}/commits/${headSha}/check-runs?per_page=50`), (d) => d?.check_runs, "trạng thái CI (check-runs)")
+        : Promise.resolve({ items: [], more: false, error: "Thiếu mã SHA commit đầu nhánh nên không đọc được trạng thái CI." }),
+      subPart(api(`/repos/${info.fullName}/pulls/${n}/reviews?per_page=50`), (d) => d, "nhận xét đánh giá (reviews)"),
     ]);
     let patchBudget = 64000;
-    const files = (Array.isArray(filesRes.data) ? filesRes.data : []).map((f) => {
+    const files = filesPart.items.map((f) => {
       const rawPatch = typeof f?.patch === "string" ? f.patch : "";
       const allow = Math.max(0, Math.min(4000, patchBudget));
       const sliced = rawPatch.slice(0, allow);
@@ -258,18 +345,19 @@ function createGitHub({ ws, jobs, audit, select, projectsDir = path.join(os.home
         truncated: rawPatch.length > sliced.length,
       };
     });
-    const checks = (Array.isArray(checksRes.data?.check_runs) ? checksRes.data.check_runs : []).slice(0, 50).map((c) => ({
+    const checks = checksPart.items.slice(0, 50).map((c) => ({
       name: maskSecrets(String(c?.name || "")).slice(0, 120),
       status: String(c?.status || ""),
       conclusion: c?.conclusion ? String(c.conclusion) : null,
       url: /^https:\/\/github\.com\//.test(String(c?.html_url || "")) ? c.html_url : null,
     }));
-    const reviews = (Array.isArray(reviewsRes.data) ? reviewsRes.data : []).filter((r) => r && r.state && r.state !== "PENDING").slice(-20).map((r) => ({
+    const reviews = reviewsPart.items.filter((r) => r && r.state && r.state !== "PENDING").slice(-20).map((r) => ({
       author: maskSecrets(String(r.user?.login || "")).slice(0, 80),
       state: String(r.state || ""),
       submittedAt: r.submitted_at || null,
       body: maskSecrets(String(r.body || "")).slice(0, 2000),
     }));
+    const rawChanged = Number(pr?.changed_files);
     return {
       pull: {
         ...mapPullSummary(pr, fullName),
@@ -279,9 +367,12 @@ function createGitHub({ ws, jobs, audit, select, projectsDir = path.join(os.home
         commits: Number(pr?.commits) || 0,
         additions: Number(pr?.additions) || 0,
         deletions: Number(pr?.deletions) || 0,
-        changedFiles: Number(pr?.changed_files) || files.length,
+        changedFiles: Number.isInteger(rawChanged) && rawChanged >= 0 ? rawChanged : files.length,
         comments: (Number(pr?.comments) || 0) + (Number(pr?.review_comments) || 0),
-        filesTruncated: !!filesRes.more,
+        filesTruncated: filesPart.more,
+        checksError: checksPart.error,
+        reviewsError: reviewsPart.error,
+        filesError: filesPart.error,
         checks,
         reviews,
         files,

@@ -248,3 +248,115 @@ test("GitHub: Xem PR đọc danh sách, chi tiết, CI checks, reviews, chặn t
     assert.deepEqual(noRem.data.pulls, []);
   } finally { await f.cleanup(); }
 });
+
+test("GitHub: pullDetail báo lỗi từng phần khi check-runs 403 / reviews 500 / files 500, tách biệt với PR rỗng thật; pulls phân trang 1->2->1 và dò PR ngoài trang đầu", async () => {
+  const headPartial = "c".repeat(40);
+  const headEmpty = "d".repeat(40);
+  const pr80 = {
+    number: 80, title: "PR lỗi phần con", body: "Có 1 file đổi", state: "open", draft: false, merged_at: null,
+    mergeable: true, mergeable_state: "clean", commits: 1, additions: 12, deletions: 3, changed_files: 1, comments: 0, review_comments: 0,
+    created_at: "2026-11-25T01:00:00Z", updated_at: "2026-11-25T01:05:00Z",
+    user: { login: "dev1" }, head: { ref: "feat/partial", sha: headPartial }, base: { ref: "main", repo },
+  };
+  const pr40 = {
+    number: 40, title: "Sửa thanh toán ở trang 2", body: "", state: "open", draft: false, merged_at: null,
+    mergeable: true, mergeable_state: "clean", commits: 1, additions: 0, deletions: 0, changed_files: 0, comments: 0, review_comments: 0,
+    created_at: "2026-11-24T01:00:00Z", updated_at: "2026-11-24T01:05:00Z",
+    user: { login: "dev2" }, head: { ref: "fix/pay-p2", sha: headEmpty }, base: { ref: "main", repo },
+  };
+  const pr12 = {
+    number: 12, title: "PR rất cũ ngoài trang đầu", body: "Trang xa", state: "open", draft: false, merged_at: null,
+    mergeable: true, mergeable_state: "clean", commits: 1, additions: 2, deletions: 1, changed_files: 1, comments: 0, review_comments: 0,
+    created_at: "2026-11-01T01:00:00Z", updated_at: "2026-11-01T01:05:00Z",
+    user: { login: "dev3" }, head: { ref: "fix/deep", sha: headEmpty }, base: { ref: "main", repo },
+  };
+
+  const f = await fixture({
+    fetcher: async (url) => {
+      const u = new URL(url), p = u.pathname, pg = u.searchParams.get("page") || "1";
+      if (p === "/repos/owner/project") return { ok: true, status: 200, headers: new Headers(), json: async () => repo };
+      if (p === "/repos/owner/project/pulls") {
+        if (pg === "1") {
+          return {
+            ok: true, status: 200,
+            headers: new Headers({ link: '<https://api.github.com/repos/owner/project/pulls?page=2>; rel="next"' }),
+            json: async () => [pr80],
+          };
+        }
+        if (pg === "2") {
+          return { ok: true, status: 200, headers: new Headers(), json: async () => [pr40] };
+        }
+        return { ok: true, status: 200, headers: new Headers(), json: async () => [] };
+      }
+      // PR #80: check-runs 403, reviews 500, files 500 dù changed_files = 1
+      if (p === "/repos/owner/project/pulls/80") return { ok: true, status: 200, headers: new Headers(), json: async () => pr80 };
+      if (p === `/repos/owner/project/commits/${headPartial}/check-runs`) return { ok: false, status: 403, headers: new Headers(), json: async () => ({ message: "Resource not accessible by integration" }) };
+      if (p === "/repos/owner/project/pulls/80/reviews") return { ok: false, status: 500, headers: new Headers(), json: async () => ({ message: "Server Error" }) };
+      if (p === "/repos/owner/project/pulls/80/files") return { ok: false, status: 500, headers: new Headers(), json: async () => ({ message: "Server Error" }) };
+
+      // PR #40: rỗng thật (HTTP 200 với mảng rỗng, changed_files = 0)
+      if (p === "/repos/owner/project/pulls/40") return { ok: true, status: 200, headers: new Headers(), json: async () => pr40 };
+      if (p === `/repos/owner/project/commits/${headEmpty}/check-runs`) return { ok: true, status: 200, headers: new Headers(), json: async () => ({ check_runs: [] }) };
+      if (p === "/repos/owner/project/pulls/40/reviews") return { ok: true, status: 200, headers: new Headers(), json: async () => [] };
+      if (p === "/repos/owner/project/pulls/40/files") return { ok: true, status: 200, headers: new Headers(), json: async () => [] };
+
+      // PR #12: chỉ tìm thấy khi tra trực tiếp /pulls/12
+      if (p === "/repos/owner/project/pulls/12") return { ok: true, status: 200, headers: new Headers(), json: async () => pr12 };
+      return { ok: false, status: 404, headers: new Headers(), json: async () => ({}) };
+    },
+  });
+
+  try {
+    const root = path.join(f.projectsDir, "pr-paging-repo");
+    makeRepo(root);
+    git(root, ["add", "keep.txt"]);
+    git(root, ["-c", "user.name=Test", "-c", "user.email=test@localhost", "commit", "-m", "init"]);
+    f.ctl.ws.add(root);
+    const q = "?workspace=" + encodeURIComponent(root);
+
+    // 1. Phân trang: trang 1 -> trang 2 -> quay lại trang 1
+    const p1 = await f.call("/github/pulls" + q + "&state=open&page=1");
+    assert.equal(p1.status, 200);
+    assert.equal(p1.data.page, 1);
+    assert.equal(p1.data.hasMore, true);
+    assert.deepEqual(p1.data.pulls.map((x) => x.number), [80]);
+
+    const p2 = await f.call("/github/pulls" + q + "&state=open&page=2");
+    assert.equal(p2.status, 200);
+    assert.equal(p2.data.page, 2);
+    assert.equal(p2.data.hasMore, false);
+    assert.deepEqual(p2.data.pulls.map((x) => x.number), [40]);
+
+    const p1Back = await f.call("/github/pulls" + q + "&state=open&page=1");
+    assert.equal(p1Back.status, 200);
+    assert.equal(p1Back.data.page, 1);
+    assert.equal(p1Back.data.hasMore, true);
+    assert.deepEqual(p1Back.data.pulls.map((x) => x.number), [80]);
+
+    // 2. Tìm kiếm qua nhiều trang (q) tìm đúng PR ở trang 2 và PR #12 ngoài các trang đầu
+    const searchP2 = await f.call("/github/pulls" + q + "&state=open&q=" + encodeURIComponent("thanh toán"));
+    assert.equal(searchP2.status, 200);
+    assert.equal(searchP2.data.searchedPages, 2);
+    assert.deepEqual(searchP2.data.pulls.map((x) => x.number), [40]);
+
+    const searchDeep = await f.call("/github/pulls" + q + "&state=open&q=" + encodeURIComponent("#12"));
+    assert.equal(searchDeep.status, 200);
+    assert.deepEqual(searchDeep.data.pulls.map((x) => x.number), [12]);
+
+    // 3. Lỗi phần con (403/500) phải trả rõ checksError / reviewsError / filesError, giữ nguyên changedFiles = 1
+    const detErr = await f.call("/github/pulls/80" + q);
+    assert.equal(detErr.status, 200);
+    assert.equal(detErr.data.pull.changedFiles, 1);
+    assert.match(detErr.data.pull.checksError, /HTTP 403/);
+    assert.match(detErr.data.pull.reviewsError, /HTTP 500/);
+    assert.match(detErr.data.pull.filesError, /HTTP 500/);
+
+    // 4. Dữ liệu rỗng thật phải có *Error === null
+    const detEmpty = await f.call("/github/pulls/40" + q);
+    assert.equal(detEmpty.status, 200);
+    assert.equal(detEmpty.data.pull.changedFiles, 0);
+    assert.equal(detEmpty.data.pull.checksError, null);
+    assert.equal(detEmpty.data.pull.reviewsError, null);
+    assert.equal(detEmpty.data.pull.filesError, null);
+  } finally { await f.cleanup(); }
+});
