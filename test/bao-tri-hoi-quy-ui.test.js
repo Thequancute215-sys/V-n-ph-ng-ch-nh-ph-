@@ -799,3 +799,191 @@ test("progress-view.js scanHtml: awaiting_scan + approved hiện Chạy tiếp c
   assert.match(desk, /canApprove: !isRemote, hasAwaitingScan/);
   assert.match(desk, /if \(sb && !sb\.disabled && !isRemote\)/);
 });
+
+// ---------- 5. Kiểm hành vi Xem PR (code-pr.js) và tách 3 phần Xưởng phim (phim.js / phim-canh.js / phim-ban-dung.js) ----------
+test("code-pr.js: đọc danh sách PR, tự mở PR đầu kèm CI/review/diff, lọc tìm kiếm, đổi trạng thái và chặn race khi đổi dự án", async (t) => {
+  const env = createMiniDom({ hash: "#/code/pr" });
+  const restore = installGlobals(env, async () => ({ ok: true, status: 200, json: async () => ({}) }));
+  t.after(restore);
+
+  const { mo } = await import(pathToFileURL(path.join(PUB, "os", "khu", "code-pr.js")).href);
+  const vung = env.document.createElement("div");
+  env.document.body.append(vung);
+  const wsA = "D:\\Projects\\repo-a", wsB = "D:\\Projects\\repo-b";
+  const kho = makeKho(wsA, [{ path: wsA, name: "repo-a" }, { path: wsB, name: "repo-b" }]);
+  const calls = [];
+  let pendingOldA = null;
+
+  const ctl = (p) => {
+    calls.push(p);
+    if (p === `/github/pulls?workspace=${encodeURIComponent(wsA)}&state=open`) {
+      if (pendingOldA) return pendingOldA.promise;
+      return Promise.resolve({
+        kind: "ok",
+        repo: { fullName: "owner/repo-a", url: "https://github.com/owner/repo-a" },
+        branch: "feat/nhanh-moi",
+        compareUrl: "https://github.com/owner/repo-a/compare/main...feat%2Fnhanh-moi?expand=1",
+        pulls: [
+          { number: 75, title: "Hoàn thiện Xưởng phim P4", state: "open", draft: false, updatedAt: new Date().toISOString(), author: "codex", head: { ref: "feat/p4" }, base: { ref: "main" } },
+          { number: 74, title: "Bảo trì UI OS", state: "open", draft: true, updatedAt: new Date().toISOString(), author: "anty", head: { ref: "fix/ui" }, base: { ref: "main" } },
+        ],
+      });
+    }
+    if (p === `/github/pulls/75?workspace=${encodeURIComponent(wsA)}`) {
+      return Promise.resolve({
+        pull: {
+          number: 75, title: "Hoàn thiện Xưởng phim P4", body: "Chi tiết thay đổi P4", state: "open", draft: false,
+          mergeable: true, mergeableState: "clean", commits: 2, additions: 30, deletions: 4, changedFiles: 1, comments: 0,
+          url: "https://github.com/owner/repo-a/pull/75", author: "codex", updatedAt: new Date().toISOString(),
+          head: { ref: "feat/p4" }, base: { ref: "main" },
+          checks: [{ name: "test", status: "completed", conclusion: "success", url: "https://github.com/owner/repo-a/runs/1" }],
+          reviews: [{ author: "claude", state: "APPROVED", submittedAt: new Date().toISOString(), body: "Đạt chuẩn" }],
+          files: [{ filename: "ctl/luong-phim.js", status: "modified", additions: 30, deletions: 4, patch: "@@ -1 +1 @@\n+ok" }],
+        },
+      });
+    }
+    if (p === `/github/pulls?workspace=${encodeURIComponent(wsA)}&state=closed`) {
+      return Promise.resolve({ kind: "ok", repo: { fullName: "owner/repo-a", url: "https://github.com/owner/repo-a" }, branch: "main", compareUrl: null, pulls: [] });
+    }
+    if (p === `/github/pulls?workspace=${encodeURIComponent(wsB)}&state=closed`) {
+      return Promise.resolve({ kind: "no-remote", repo: null, branch: "main", compareUrl: null, pulls: [] });
+    }
+    throw new Error("Route ngoài dự kiến: " + p);
+  };
+
+  const ac = new AbortController();
+  const dong = await mo(vung, { kho, ctl, signal: ac.signal });
+  await flush();
+  await flush();
+
+  assert.equal(vung.querySelectorAll("[data-chon-pr]").length, 2);
+  assert.match(vung.querySelector("#prNhanhMoi").textContent, /Tạo PR nhánh feat\/nhanh-moi/);
+  assert.match(vung.querySelector("#hCtPr").textContent, /#75 · Hoàn thiện Xưởng phim P4/);
+  assert.match(vung.querySelector("#ctPr").textContent, /1\/1 đạt/);
+  assert.match(vung.querySelector("#ctPr").textContent, /Đã duyệt/);
+  assert.match(vung.querySelector("#ctPr").textContent, /ctl\/luong-phim\.js/);
+
+  // Lọc tìm kiếm tại chỗ không gọi thêm API
+  const nTruoc = calls.length;
+  const oTim = vung.querySelector("#timPr");
+  oTim.value = "#74";
+  oTim.dispatchEvent({ type: "input", target: oTim, bubbles: true });
+  assert.equal(vung.querySelectorAll("[data-chon-pr]").length, 1);
+  assert.match(vung.querySelector("#dsPr").textContent, /bản nháp/);
+  assert.equal(calls.length, nTruoc);
+
+  // Đổi bộ lọc sang closed -> danh sách trống
+  oTim.value = "";
+  oTim.dispatchEvent({ type: "input", target: oTim, bubbles: true });
+  vung.querySelector('[data-pr-tt="closed"]').click();
+  await flush();
+  assert.match(vung.querySelector("#dsPr").textContent, /Danh sách trống/);
+
+  // Race A -> B: A đang treo khi đổi sang B (no-remote) -> kết quả trễ của A bị bỏ qua
+  vung.querySelector('[data-pr-tt="open"]');
+  pendingOldA = deferred();
+  vung.querySelector("#prLamMoi").click(); // gọi lại wsA (state=closed? không, đổi về open để treo wsA)
+  await flush();
+  pendingOldA = deferred();
+  vung.querySelector('[data-pr-tt="open"]').click(); // treo ở wsA&state=open
+  kho.duAn = wsB;
+  vung.querySelector('[data-pr-tt="closed"]').click();
+  await flush();
+  assert.match(vung.querySelector("#dsPr").textContent, /Dự án chưa nối GitHub/);
+
+  pendingOldA.resolve({ kind: "ok", repo: { fullName: "owner/repo-a" }, pulls: [{ number: 99, title: "PR cũ bị lạc", state: "open", author: "x", head: { ref: "a" }, base: { ref: "main" } }] });
+  await flush();
+  assert.doesNotMatch(vung.querySelector("#dsPr").textContent, /PR cũ bị lạc/);
+
+  ac.abort();
+  dong();
+});
+
+test("Xưởng phim tách 3 phần độc lập (#/phim, #/phim/canh, #/phim/ban-dung), giữ khóa FFmpeg và đọc biên bản nghiệm thu", async (t) => {
+  const env = createMiniDom({ hash: "#/phim" });
+  const restore = installGlobals(env, async () => ({ ok: true, status: 200, json: async () => ({}) }));
+  t.after(restore);
+
+  const ws = "D:\\Projects\\phim-20-11";
+  const mauPhim = {
+    phim: {
+      ten: "Tri ân 20/11", ti_le: ["9:16"], ngon_ngu: "vi", may_anh: "gpt", may_quay_mac_dinh: "flow", ngan_sach_usd: 5,
+      canh: [{ ma: "C01", giay: 6, cau: [1], loi_dan: "Chúc mừng ngày Nhà giáo.", khung_hinh: "Bó hoa vàng trên bục giảng", trang_thai: "da_quay", khung: ["media/khung/C01-1.png"], khung_chon: "media/khung/C01-1.png", take: ["media/quay/C01-t1.mp4"], take_chon: "media/quay/C01-t1.mp4" }],
+    },
+    kiem: { loi: [], canhBao: [], chiPhi: { usdToiDa: 0, luotFlow: 1, soAnhGpt: 3 } },
+    mayQuay: { daChi: 0, coKhoa: true, dang: null, loiCuoi: null },
+    banDung: {
+      coFfmpeg: false, dang: null, loiCuoi: null, cu: false,
+      cong: [
+        { so: 1, ten: "Kịch bản", duyet: true, duoc: true, luc: new Date().toISOString() },
+        { so: 2, ten: "Khung & quay", duyet: true, duoc: true, luc: new Date().toISOString() },
+        { so: 3, ten: "Bản dựng", duyet: true, duoc: true, luc: new Date().toISOString() },
+        { so: 4, ten: "Xuất xưởng", duyet: false, duoc: true, lyDo: "" },
+      ],
+      banDung: { luc: new Date().toISOString(), co_giong: true, nhac: null, canh_bao: [], ban: [{ ti_le: "9:16", file: "media/xuat/xem-thu-9x16.mp4", giay: 6, rong: 1080, cao: 1920, lufs: -14.1, khungDen: [], dat: true, loi: [] }] },
+    },
+    luong: { trangThai: "cho_cong_4", buoc: "cong_4", batDau: new Date().toISOString(), lichSu: [] },
+  };
+
+  const ctl = async (p) => {
+    if (p === "/phim/du-an") return { duAn: [{ path: ws, ten: "phim-20-11" }] };
+    if (p.startsWith("/phim?")) return mauPhim;
+    if (p === "/flow") return { flow: { mcp: true, taiKhoan: [{ id: "chinh", nhan: "Tài khoản chính", dangMo: true, credit: { conLai: 800, lucDoc: new Date().toISOString(), luotTaoThang: 3 } }], nhipDang: null, ketQuaCuoi: null } };
+    if (p.startsWith("/fs/read?")) return { content: "<!-- meta -->\nBản dựng đạt chuẩn âm lượng và phụ đề khớp." };
+    throw new Error("Route ngoài dự kiến: " + p);
+  };
+
+  const m1 = await import(pathToFileURL(path.join(PUB, "os", "khu", "phim.js")).href);
+  const m2 = await import(pathToFileURL(path.join(PUB, "os", "khu", "phim-canh.js")).href);
+  const m3 = await import(pathToFileURL(path.join(PUB, "os", "khu", "phim-ban-dung.js")).href);
+
+  // Phần 1: Kịch bản và giọng đọc (#/phim)
+  {
+    const vung = env.document.createElement("div");
+    env.document.body.append(vung);
+    const ac = new AbortController();
+    await m1.mo(vung, { ctl, bao() {}, signal: ac.signal });
+    await flush(); await flush();
+    assert.equal(vung.querySelector('.phim-buoc a[aria-current="page"]')?.getAttribute("href"), "#/phim");
+    assert.ok(vung.querySelector("#hGiong"), "phần 1 có Giọng đọc và lời dẫn");
+    assert.ok(vung.querySelector("audio.giong-nghe"), "phần 1 có trình nghe giọng đọc khi đã đồng bộ");
+    assert.equal(vung.querySelector("#hCanh"), null, "phần 1 không dồn chung Phân cảnh và quay");
+    assert.equal(vung.querySelector("#hDung"), null, "phần 1 không dồn chung Bàn dựng FFmpeg");
+    assert.match(vung.textContent, /Mở Bàn dựng và xuất xưởng/, "luồng đang chờ Cổng 4 có nút dẫn thẳng sang phần 3");
+    ac.abort();
+    assert.equal(env.timers.size, 0, "abort hủy hẹn giờ poll");
+  }
+
+  // Phần 2: Phân cảnh và quay (#/phim/canh)
+  {
+    const vung = env.document.createElement("div");
+    env.document.body.append(vung);
+    const ac = new AbortController();
+    await m2.mo(vung, { ctl, bao() {}, signal: ac.signal });
+    await flush(); await flush();
+    assert.equal(vung.querySelector('.phim-buoc a[aria-current="page"]')?.getAttribute("href"), "#/phim/canh");
+    assert.ok(vung.querySelector("#hFlow"), "phần 2 có Trạm Google Flow");
+    assert.ok(vung.querySelector("#hCanh"), "phần 2 có Phân cảnh, khung hình và take");
+    assert.equal(vung.querySelectorAll(".canh-nhom").length, 2, "tách riêng khối Khung mở đầu và khối Video đã quay");
+    assert.equal(vung.querySelector("#hGiong"), null, "phần 2 không lặp lại bảng Giọng đọc");
+    assert.equal(vung.querySelector("#hDung"), null, "phần 2 không dồn chung Bàn dựng");
+    ac.abort();
+  }
+
+  // Phần 3: Bàn dựng và xuất xưởng (#/phim/ban-dung)
+  {
+    const vung = env.document.createElement("div");
+    env.document.body.append(vung);
+    const ac = new AbortController();
+    await m3.mo(vung, { ctl, bao() {}, signal: ac.signal });
+    await flush(); await flush();
+    assert.equal(vung.querySelector('.phim-buoc a[aria-current="page"]')?.getAttribute("href"), "#/phim/ban-dung");
+    const nutDung = vung.querySelector("[data-dung]");
+    assert.ok(nutDung && nutDung.disabled, "thiếu FFmpeg vẫn khóa nút Dựng ở phần 3");
+    assert.ok(vung.querySelector("#hNghiemThu"), "phần 3 có Biên bản nghiệm thu & Xuất xưởng");
+    assert.match(vung.textContent, /Bản dựng đạt chuẩn âm lượng/, "đọc và bỏ chú thích đầu file nghiem-thu.md");
+    assert.equal(vung.querySelector("#hCanh"), null, "phần 3 không dồn chung Phân cảnh");
+    ac.abort();
+    assert.equal(env.timers.size, 0);
+  }
+});

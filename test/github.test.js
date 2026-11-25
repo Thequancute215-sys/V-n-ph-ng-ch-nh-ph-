@@ -169,3 +169,82 @@ test("GitHub: clone thất bại giữ thư mục, không chọn hay đăng ký 
     assert.equal(f.ctl.ws.list().length, 0); assert.equal(fs.existsSync(path.join(f.projectsDir, "owner", "project")), true);
   } finally { if (previous === undefined) delete process.env.GIT_CONFIG_GLOBAL; else process.env.GIT_CONFIG_GLOBAL = previous; await f.cleanup(); }
 });
+
+test("GitHub: Xem PR đọc danh sách, chi tiết, CI checks, reviews, chặn tham số sai và che khóa trong diff/mô tả", async () => {
+  const headSha = "a".repeat(40);
+  const fakeSecret = "sk-" + "A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6";
+  const f = await fixture({
+    fetcher: async (url) => {
+      const u = new URL(url), p = u.pathname;
+      if (p === "/repos/owner/project") return { ok: true, status: 200, headers: new Headers(), json: async () => repo };
+      if (p === "/repos/owner/project/pulls") return {
+        ok: true, status: 200, headers: new Headers(),
+        json: async () => [{
+          number: 75, title: "Hoàn thiện Xưởng phim P4", state: "open", draft: false, merged_at: null,
+          created_at: "2026-11-25T00:00:00Z", updated_at: "2026-11-25T00:05:00Z",
+          user: { login: "codex-bot" }, head: { ref: "feat/other", sha: headSha }, base: { ref: "main" },
+        }],
+      };
+      if (p === "/repos/owner/project/pulls/75") return {
+        ok: true, status: 200, headers: new Headers(),
+        json: async () => ({
+          number: 75, title: "Hoàn thiện Xưởng phim P4", body: "Mô tả PR kèm " + fakeSecret,
+          state: "open", draft: false, merged_at: null, mergeable: true, mergeable_state: "clean",
+          commits: 2, additions: 42, deletions: 5, changed_files: 1, comments: 1, review_comments: 2,
+          created_at: "2026-11-25T00:00:00Z", updated_at: "2026-11-25T00:05:00Z",
+          user: { login: "codex-bot" }, head: { ref: "feat/other", sha: headSha }, base: { ref: "main", repo },
+        }),
+      };
+      if (p === "/repos/owner/project/pulls/75/files") return {
+        ok: true, status: 200, headers: new Headers(),
+        json: async () => [{ filename: "ctl/luong-phim.js", status: "modified", additions: 42, deletions: 5, patch: "@@ -1 +1 @@\n+token=" + fakeSecret }],
+      };
+      if (p === `/repos/owner/project/commits/${headSha}/check-runs`) return {
+        ok: true, status: 200, headers: new Headers(),
+        json: async () => ({ check_runs: [{ name: "test", status: "completed", conclusion: "success", html_url: "https://github.com/owner/project/runs/1" }] }),
+      };
+      if (p === "/repos/owner/project/pulls/75/reviews") return {
+        ok: true, status: 200, headers: new Headers(),
+        json: async () => [{ state: "APPROVED", submitted_at: "2026-11-25T00:06:00Z", body: "Đạt " + fakeSecret, user: { login: "reviewer" } }],
+      };
+      return { ok: false, status: 404, headers: new Headers(), json: async () => ({}) };
+    },
+  });
+  try {
+    const root = path.join(f.projectsDir, "pr-repo");
+    makeRepo(root);
+    git(root, ["add", "keep.txt"]);
+    git(root, ["-c", "user.name=Test", "-c", "user.email=test@localhost", "commit", "-m", "init"]);
+    git(root, ["checkout", "-b", "feat/nhanh-moi"]);
+    f.ctl.ws.add(root);
+    const q = "?workspace=" + encodeURIComponent(root);
+
+    assert.equal((await f.call("/github/pulls" + q + "&state=invalid")).status, 400);
+    assert.equal((await f.call("/github/pulls/0" + q)).status, 400);
+
+    const listRes = await f.call("/github/pulls" + q + "&state=open");
+    assert.equal(listRes.status, 200);
+    assert.equal(listRes.data.kind, "ok");
+    assert.equal(listRes.data.pulls.length, 1);
+    assert.equal(listRes.data.pulls[0].number, 75);
+    assert.match(listRes.data.compareUrl, /^https:\/\/github\.com\/owner\/project\/compare\/main\.\.\.feat%2Fnhanh-moi\?expand=1$/);
+
+    const detailRes = await f.call("/github/pulls/75" + q);
+    assert.equal(detailRes.status, 200);
+    assert.equal(detailRes.data.pull.checks[0].conclusion, "success");
+    assert.equal(detailRes.data.pull.reviews[0].state, "APPROVED");
+    assert.equal(detailRes.data.pull.files[0].filename, "ctl/luong-phim.js");
+    const rawDetail = JSON.stringify(detailRes.data);
+    assert.equal(rawDetail.includes(fakeSecret), false, "không lộ khóa trong mô tả, review hoặc diff PR");
+    assert.equal(rawDetail.includes("credential-only-in-memory"), false);
+
+    // Repo chưa có remote origin trả kind=no-remote sạch, không vỡ 500
+    const localOnly = path.join(f.projectsDir, "no-remote");
+    fs.mkdirSync(localOnly, { recursive: true }); git(localOnly, ["init", "-b", "main"]);
+    f.ctl.ws.add(localOnly);
+    const noRem = await f.call("/github/pulls?workspace=" + encodeURIComponent(localOnly));
+    assert.equal(noRem.status, 200);
+    assert.equal(noRem.data.kind, "no-remote");
+    assert.deepEqual(noRem.data.pulls, []);
+  } finally { await f.cleanup(); }
+});

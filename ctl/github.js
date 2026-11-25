@@ -4,7 +4,7 @@ const os = require("os");
 const path = require("path");
 const crypto = require("crypto");
 const { execFile } = require("child_process");
-const { cleanEnv } = require("../lib/mask");
+const { cleanEnv, maskSecrets } = require("../lib/mask");
 
 const err = (code, message) => Object.assign(new Error(message), { code });
 const validName = (name) => typeof name === "string" && /^[A-Za-z0-9][A-Za-z0-9-]*\/[A-Za-z0-9_.-]+$/.test(name) && !name.split("/").some((s) => s === "." || s === "..");
@@ -172,6 +172,123 @@ function createGitHub({ ws, jobs, audit, select, projectsDir = path.join(os.home
     if (response.status === 422) throw err("CHANGED", "GitHub không tạo được repo \"" + name + "\": tên đã có hoặc không hợp lệ. Chọn tên khác.");
     throw err("GITHUB_OFFLINE", "GitHub từ chối tạo repo (HTTP " + response.status + "): " + String(data.message || "").slice(0, 200));
   }
-  return { list, open, get, visibility, dispatch, login, exists, createRepo, close: () => { closed = true; } };
+
+  // Xem Pull Request của dự án ngay trong Xưởng code (chỉ đọc; văn phòng không tự merge PR).
+  async function gitInfo(root) {
+    let branch = null, url = "";
+    try { branch = (await runGit(["symbolic-ref", "--quiet", "--short", "HEAD"], null, root)).trim() || null; } catch {}
+    try { url = (await runGit(["remote", "get-url", "origin"], null, root)).trim(); } catch { return { kind: "no-remote", fullName: null, branch }; }
+    const fullName = remoteName(url);
+    if (!fullName) return { kind: "not-github", fullName: null, branch };
+    return { kind: "ok", fullName, branch };
+  }
+
+  function mapPullSummary(pr, fullName) {
+    const number = Number(pr && pr.number);
+    return {
+      number,
+      title: maskSecrets(String(pr?.title || "")).slice(0, 300),
+      state: pr?.merged_at ? "merged" : String(pr?.state || "open"),
+      draft: !!pr?.draft,
+      merged: !!pr?.merged_at,
+      mergedAt: pr?.merged_at || null,
+      createdAt: pr?.created_at || null,
+      updatedAt: pr?.updated_at || null,
+      url: "https://github.com/" + fullName + "/pull/" + number,
+      author: maskSecrets(String(pr?.user?.login || "")).slice(0, 80),
+      head: { ref: maskSecrets(String(pr?.head?.ref || "")).slice(0, 120), sha: String(pr?.head?.sha || "").slice(0, 40) },
+      base: { ref: maskSecrets(String(pr?.base?.ref || "")).slice(0, 120) },
+    };
+  }
+
+  async function pulls(root, { state = "open", page = 1 } = {}) {
+    state = String(state || "open");
+    page = Number(page);
+    if (!["open", "closed", "all"].includes(state)) throw err("BAD_REQUEST", "Trạng thái PR phải là open, closed hoặc all.");
+    if (!Number.isInteger(page) || page < 1 || page > 50) throw err("BAD_REQUEST", "Trang PR không hợp lệ.");
+    const info = await gitInfo(root);
+    if (info.kind !== "ok") return { kind: info.kind, repo: null, branch: info.branch, state, page, hasMore: false, compareUrl: null, pulls: [] };
+    const [repoRes, pullsRes] = await Promise.all([
+      api("/repos/" + info.fullName),
+      api(`/repos/${info.fullName}/pulls?state=${state}&per_page=30&sort=updated&direction=desc&page=${page}`),
+    ]);
+    const repoData = repoRes.data || {};
+    const fullName = validName(repoData.full_name) ? repoData.full_name : info.fullName;
+    const defaultBranch = String(repoData.default_branch || "main");
+    const items = Array.isArray(pullsRes.data) ? pullsRes.data.filter((p) => Number.isInteger(p?.number) && p.number > 0).map((p) => mapPullSummary(p, fullName)) : [];
+    const canCompare = info.branch && info.branch !== "HEAD" && info.branch !== defaultBranch && !items.some((p) => p.state === "open" && p.head.ref === info.branch);
+    const compareUrl = canCompare ? `https://github.com/${fullName}/compare/${encodeURIComponent(defaultBranch)}...${encodeURIComponent(info.branch)}?expand=1` : null;
+    return {
+      kind: "ok",
+      repo: { fullName, private: !!repoData.private, defaultBranch, url: "https://github.com/" + fullName },
+      branch: info.branch,
+      state,
+      page,
+      hasMore: pullsRes.more,
+      compareUrl,
+      pulls: items,
+    };
+  }
+
+  async function pullDetail(root, number) {
+    const n = Number(number);
+    if (!Number.isInteger(n) || n < 1 || n > 999999) throw err("BAD_REQUEST", "Số PR không hợp lệ.");
+    const info = await gitInfo(root);
+    if (info.kind !== "ok") throw err("NO_REMOTE", "Dự án này chưa nối với repo GitHub (origin).");
+    const { data: pr } = await api(`/repos/${info.fullName}/pulls/${n}`);
+    const fullName = validName(pr?.base?.repo?.full_name) ? pr.base.repo.full_name : info.fullName;
+    const headSha = String(pr?.head?.sha || "");
+    const [filesRes, checksRes, reviewsRes] = await Promise.all([
+      api(`/repos/${info.fullName}/pulls/${n}/files?per_page=100`).catch(() => ({ data: [], more: false })),
+      /^[0-9a-f]{40}$/i.test(headSha) ? api(`/repos/${info.fullName}/commits/${headSha}/check-runs?per_page=50`).catch(() => ({ data: { check_runs: [] } })) : Promise.resolve({ data: { check_runs: [] } }),
+      api(`/repos/${info.fullName}/pulls/${n}/reviews?per_page=50`).catch(() => ({ data: [] })),
+    ]);
+    let patchBudget = 64000;
+    const files = (Array.isArray(filesRes.data) ? filesRes.data : []).map((f) => {
+      const rawPatch = typeof f?.patch === "string" ? f.patch : "";
+      const allow = Math.max(0, Math.min(4000, patchBudget));
+      const sliced = rawPatch.slice(0, allow);
+      patchBudget -= sliced.length;
+      return {
+        filename: maskSecrets(String(f?.filename || "")).slice(0, 300),
+        status: String(f?.status || "modified"),
+        additions: Number(f?.additions) || 0,
+        deletions: Number(f?.deletions) || 0,
+        patch: sliced ? maskSecrets(sliced) : "",
+        truncated: rawPatch.length > sliced.length,
+      };
+    });
+    const checks = (Array.isArray(checksRes.data?.check_runs) ? checksRes.data.check_runs : []).slice(0, 50).map((c) => ({
+      name: maskSecrets(String(c?.name || "")).slice(0, 120),
+      status: String(c?.status || ""),
+      conclusion: c?.conclusion ? String(c.conclusion) : null,
+      url: /^https:\/\/github\.com\//.test(String(c?.html_url || "")) ? c.html_url : null,
+    }));
+    const reviews = (Array.isArray(reviewsRes.data) ? reviewsRes.data : []).filter((r) => r && r.state && r.state !== "PENDING").slice(-20).map((r) => ({
+      author: maskSecrets(String(r.user?.login || "")).slice(0, 80),
+      state: String(r.state || ""),
+      submittedAt: r.submitted_at || null,
+      body: maskSecrets(String(r.body || "")).slice(0, 2000),
+    }));
+    return {
+      pull: {
+        ...mapPullSummary(pr, fullName),
+        body: maskSecrets(String(pr?.body || "").slice(0, 20000)),
+        mergeable: typeof pr?.mergeable === "boolean" ? pr.mergeable : null,
+        mergeableState: String(pr?.mergeable_state || ""),
+        commits: Number(pr?.commits) || 0,
+        additions: Number(pr?.additions) || 0,
+        deletions: Number(pr?.deletions) || 0,
+        changedFiles: Number(pr?.changed_files) || files.length,
+        comments: (Number(pr?.comments) || 0) + (Number(pr?.review_comments) || 0),
+        filesTruncated: !!filesRes.more,
+        checks,
+        reviews,
+        files,
+      },
+    };
+  }
+
+  return { list, open, get, visibility, dispatch, login, exists, createRepo, pulls, pullDetail, close: () => { closed = true; } };
 }
 module.exports = { createGitHub, remoteName };
