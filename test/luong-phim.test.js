@@ -8,6 +8,7 @@ const path = require("node:path");
 const { createHash } = require("node:crypto");
 const { createLuongPhim } = require("../ctl/luong-phim");
 const { save: dinhKem } = require("../ctl/phim-tai-lieu");
+const { suaCanh } = require("../ctl/phim-helper");
 const { dauKhoanQuay } = require("../lib/phim");
 
 function tao(t, { may = ["omni-flash", "flow"], coPhim = false } = {}) {
@@ -32,9 +33,16 @@ function tao(t, { may = ["omni-flash", "flow"], coPhim = false } = {}) {
   fs.writeFileSync(tts, `
     const fs = require("node:fs");
     const arg = (key) => process.argv[process.argv.indexOf(key) + 1];
-    const text = fs.readFileSync(arg("--file"), "utf8").trim().split("\\n");
+    const theoCanh = process.argv.includes("--scenes-file");
+    const input = fs.readFileSync(arg(theoCanh ? "--scenes-file" : "--file"), "utf8").trim();
+    const text = theoCanh ? JSON.parse(input) : input.split("\\n");
     const out = arg("--output");
-    fs.writeFileSync(out + ".json", JSON.stringify(text.map((text, i) => ({ index: i + 1, startMs: i * 5000, endMs: (i + 1) * 5000, text }))));
+    let at = 0;
+    fs.writeFileSync(out + ".json", JSON.stringify(text.map((text, i) => {
+      const startMs = at;
+      at += theoCanh ? (text.includes("thay") ? 7000 : text.includes("2") ? 6000 : 4000) : 5000;
+      return { index: i + 1, startMs, endMs: at, text };
+    })));
     fs.writeFileSync(out + ".mp3", "voice");
     fs.writeFileSync(out + ".srt", "subtitles");
     fs.appendFileSync("tts-calls", "tts\\n");
@@ -155,11 +163,9 @@ test("đổi ngân sách sau cổng 2 thì luồng chờ duyệt lại trước 
   f.chonKhung();
   f.duyet(2);
   f.sua((p) => { p.ngan_sach_usd += 5; });
-  assert.equal((await f.tiep()).trangThai, "can_anh");
-  assert.match(f.tt().loi, /duyệt lại cổng 2/);
+  assert.equal((await f.tiep()).trangThai, "cho_cong_2");
   assert.equal(f.calls.quay.filter((q) => q.loai === "video").length, 0);
   f.duyet(2);
-  f.batDau();
   assert.equal((await f.tiep()).trangThai, "cho_cong_3");
   assert.equal(f.calls.quay.filter((q) => q.loai === "video").length, 1);
 });
@@ -174,6 +180,33 @@ test("cảnh dựng bằng code chờ quy trình Explainer riêng, không tự t
   assert.match(r.loi, /Explainer/);
   assert.equal(f.calls.ai.length, 0);
   assert.equal(f.calls.quay.length, 0);
+});
+
+test("tiếp tục luồng sau khi đảo cảnh tạo lại giọng và chốt thời lượng mới trước khi quay", async (t) => {
+  const f = tao(t, { may: ["omni-flash", "omni-flash"], coPhim: true });
+  const luong = f.mo();
+  suaCanh(f.root, { ma: "C01", tacVu: "len" });
+  await f.denCong2();
+  f.chonKhung();
+  assert.deepEqual(f.doc().canh.map((c) => [c.ma, c.giay]), [["C01", 4], ["C02", 6]]);
+
+  await luong.dung(f.root);
+  f.duyet(1, false);
+  suaCanh(f.root, { ma: "C02", tacVu: "len" });
+  suaCanh(f.root, { ma: "C02", tacVu: "luu", loiDan: "Lời thay cho cảnh thứ 2.", khungHinh: "Khung 2", gocMay: "", giay: 6, nhanVat: [] });
+  f.duyet(1);
+  f.duyet(2);
+  f.batDau();
+  assert.equal((await f.tiep()).trangThai, "cho_cong_2");
+  const voice = JSON.parse(fs.readFileSync(path.join(f.root, "media/giong/voice.json"), "utf8"));
+  assert.deepEqual(voice.map(({ text, startMs, endMs }) => [text, startMs, endMs]), [
+    ["Lời thay cho cảnh thứ 2.", 0, 7000], ["Đây là cảnh thứ 1.", 7000, 11000],
+  ]);
+  assert.deepEqual(f.doc().canh.map((c) => [c.ma, c.giay]), [["C02", 7], ["C01", 4]]);
+  assert.equal(f.calls.quay.filter((q) => q.loai === "video").length, 0);
+  f.duyet(2);
+  assert.equal((await f.tiep()).trangThai, "cho_cong_3");
+  assert.deepEqual(f.calls.quay.filter((q) => q.loai === "video").map((q) => q.canh), ["C02", "C01"]);
 });
 
 test("đi hết bốn cổng, đứng chờ Flow và chỉ ghi báo cáo Claude từ kết quả trả về", async (t) => {
@@ -199,6 +232,9 @@ test("đi hết bốn cổng, đứng chờ Flow và chỉ ghi báo cáo Claude 
   f.duyet(2);
   assert.equal((await f.tiep()).trangThai, "cho_cong_2");
   f.chonKhung();
+  assert.equal((await f.tiep()).trangThai, "cho_cong_2");
+  assert.equal(f.calls.quay.filter((q) => q.loai === "video").length, 0);
+  f.duyet(2);
   assert.equal((await f.tiep()).trangThai, "cho_flow");
   assert.deepEqual(f.tt().canhCho, ["C02"]);
   assert.deepEqual(f.calls.quay.filter((q) => q.loai === "video").map((q) => q.canh), ["C01"]);

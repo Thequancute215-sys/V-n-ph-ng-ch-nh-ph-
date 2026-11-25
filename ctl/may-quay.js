@@ -15,6 +15,7 @@ const path = require("path");
 const os = require("os");
 const crypto = require("crypto");
 const { spawn } = require("child_process");
+const { createInterface } = require("node:readline");
 const { kiem, MAY_ANH_MAC_DINH, MAY_QUAY_MAC_DINH, congDaDuyet, duongDanHopLe, docFileTrongPhim } = require("../lib/phim");
 const { writeAtomic } = require("../lib/ghi-file");
 const { cleanEnv, maskText } = require("../lib/mask");
@@ -99,15 +100,18 @@ function anhThamChieuGpt(root, rel) {
   return { duongDan: trongRepo.split(path.sep).join("/"), hash: crypto.createHash("sha256").update(fs.readFileSync(real)).digest("hex") };
 }
 
-function anhChupFile(root) {
+function anhChupFile(root, anhDich) {
   const ds = new Map();
   function duyet(rel) {
     for (const ten of fs.readdirSync(path.join(root, rel))) {
       const f = rel ? rel + "/" + ten : ten;
-
-      const st = fs.lstatSync(path.join(root, f), { bigint: true });
+      if (f === anhDich) continue;
+      const file = path.join(root, f);
+      const st = fs.lstatSync(file);
       if (st.isDirectory()) duyet(f);
-      else ds.set(f, [st.size, st.mtimeNs, st.ctimeNs, st.ino].join(":"));
+      else if (!st.isFile() || st.nlink !== 1 || st.size > GIOI_HAN_ANH) ds.set(f, "tep-khong-hop-le");
+      // Công cụ xem ảnh có thể đổi mốc thời gian của bản sao trên Windows. So byte để bắt sửa nội dung.
+      else ds.set(f, crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex"));
     }
   }
   duyet("");
@@ -125,13 +129,33 @@ function docAnhGpt(f) {
   throw err("MAY_ANH_LOI", "Ảnh GPT sai chữ ký PNG/JPEG: " + ten);
 }
 
+function anhCodexDaTao(env, threadId) {
+  if (!threadId) return null;
+  const home = env.CODEX_HOME || path.join(os.homedir(), ".codex");
+  const dir = path.join(home, "generated_images", threadId);
+  const stat = fs.lstatSync(dir, { throwIfNoEntry: false });
+  if (!stat?.isDirectory() || stat.isSymbolicLink()) return null;
+  const anh = fs.readdirSync(dir, { withFileTypes: true }).filter((f) => /^exec-[\da-f-]+\.png$/i.test(f.name));
+  if (anh.length !== 1 || !anh[0].isFile()) return null;
+  return docAnhGpt(path.join(dir, anh[0].name));
+}
+
 function chayCodexAnh(argv, env, root, prompt, signal, timeoutMs) {
   const args = [...argv.slice(1), "exec", "--json", "-m", "gpt-6.2-sol", "-c", "model_reasoning_effort=low",
     "-s", "workspace-write", "--skip-git-repo-check", "-C", root, prompt];
   return new Promise((resolve, reject) => {
     if (signal.aborted) return reject(err("MAY_ANH_LOI", "Máy ảnh GPT đã dừng."));
-    const child = spawn(argv[0], args, { cwd: root, env, shell: false, windowsHide: true, detached: process.platform !== "win32", stdio: "ignore" });
-    let loi, dangDung;
+    const child = spawn(argv[0], args, { cwd: root, env, shell: false, windowsHide: true,
+      detached: process.platform !== "win32", stdio: ["ignore", "pipe", "ignore"] });
+    let loi, dangDung, threadId;
+    createInterface({ input: child.stdout, crlfDelay: Infinity }).on("line", (line) => {
+      if (threadId || !line.includes('"thread.started"')) return;
+      try {
+        const event = JSON.parse(line);
+        if (event.type === "thread.started" && typeof event.thread_id === "string" &&
+            /^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(event.thread_id)) threadId = event.thread_id;
+      } catch {}
+    });
     function dung(message) {
       if (dangDung) return;
       loi = err("MAY_ANH_LOI", message);
@@ -149,7 +173,7 @@ function chayCodexAnh(argv, env, root, prompt, signal, timeoutMs) {
       await dangDung;
       if (loi) reject(loi);
       else if (code !== 0) reject(err("MAY_ANH_LOI", "Codex tạo ảnh thất bại (" + (sig || "mã thoát " + code) + ")."));
-      else resolve();
+      else resolve(threadId);
     });
   });
 }
@@ -175,7 +199,7 @@ function layKetQua(j, loai) {
 }
 
 function createMayQuay({ dir, audit = { log() {} }, khoa = () => khoaGemini(dir), fetchImpl = (...a) => fetch(...a), now = () => new Date(),
-  timeoutMs = 10 * 60 * 1000, codexAnh, duyetTuDong = () => false } = {}) {
+  timeoutMs = 10 * 60 * 1000, codexAnh, coDuyetQuay = () => false, thuMucTam = () => os.tmpdir() } = {}) {
   const dang = new Map();   // root → { canh, loai, batDau }
   const loiCuoi = new Map();
   const dangChay = new Set();
@@ -227,6 +251,8 @@ function createMayQuay({ dir, audit = { log() {} }, khoa = () => khoaGemini(dir)
     for (const ma of Array.isArray(c.nhan_vat) ? c.nhan_vat : []) for (const a of ((nv.get(ma) || {}).tham_chieu || []).slice(0, loai === "video" ? 3 : 6)) thamChieu.push(a);
     if (loai === "khung") {
       if (!c.khung_hinh) throw err("BAD_REQUEST", c.ma + ": chưa có mô tả khung hình (khung_hinh).");
+      const moTa = [c.khung_hinh, c.goc_may && "Góc máy: " + c.goc_may, phim.helper_tong_mau && "Tông màu: " + phim.helper_tong_mau]
+        .filter(Boolean).join(". ");
       const kc = doPhanGiai || "1K";
       if (!Object.hasOwn(GIA.anh, kc)) throw err("BAD_REQUEST", "Cỡ ảnh phải là " + Object.keys(GIA.anh).join(" hoặc ") + ".");
       if (!Number.isInteger(soPhuongAn) || soPhuongAn < 1 || soPhuongAn > 6) throw err("BAD_REQUEST", "Số phương án khung từ 1 tới 6.");
@@ -236,10 +262,15 @@ function createMayQuay({ dir, audit = { log() {} }, khoa = () => khoaGemini(dir)
           const anh = (v.tham_chieu || []).map((a) => anhThamChieuGpt(root, a));
           return { ma, ten: v.ten, mo_ta: v.mo_ta, tham_chieu: anh.map((a) => a.duongDan), hashAnh: anh.map((a) => a.hash) };
         });
-        return { gpt: true, body: { model: MO_HINH_GPT, ti_le: tiLe, co_anh: kc, khung_hinh: c.khung_hinh, nhan_vat: nhanVat },
+        if (c.helper_boi_canh) {
+          const a = anhThamChieuGpt(root, c.helper_boi_canh);
+          nhanVat.push({ ma: "boi-canh", mo_ta: "Không gian tham chiếu, không phải nhân vật.", tham_chieu: [a.duongDan], hashAnh: [a.hash] });
+        }
+        return { gpt: true, body: { model: MO_HINH_GPT, ti_le: tiLe, co_anh: kc, khung_hinh: moTa, nhan_vat: nhanVat },
           usd: 0, soLuong: soPhuongAn, doDai: null };
       }
-      const input = [...thamChieu.slice(0, 14).map((a) => phanAnh(root, a)), { type: "text", text: "Khung hình mở đầu một cảnh phim, tỉ lệ " + tiLe + ". " + c.khung_hinh + ". Không chữ, không logo trên hình." }];
+      if (c.helper_boi_canh) thamChieu.unshift(c.helper_boi_canh);
+      const input = [...thamChieu.slice(0, 14).map((a) => phanAnh(root, a)), { type: "text", text: "Khung hình mở đầu một cảnh phim, tỉ lệ " + tiLe + ". " + moTa + ". Không chữ, không logo trên hình." }];
       return { body: { model: MO_HINH.anh, input, response_format: { type: "image", mime_type: "image/jpeg", aspect_ratio: tiLe, image_size: kc } },
         usd: tron(GIA.anh[kc] * soPhuongAn), soLuong: soPhuongAn, doDai: null };
     }
@@ -299,31 +330,51 @@ function createMayQuay({ dir, audit = { log() {} }, khoa = () => khoaGemini(dir)
     return { usd, daChi: daVaoSo, chiCho, nganSach: ngan, conLai, du: usd === 0 || chi + usd <= ngan + 1e-9, moHinh: yc.body.model };
   }
 
-  function kiemLanQuay(root, opts, actor) {
+  function kiemLanQuay(root, opts) {
     if (dang.has(root)) throw err("MAY_QUAY_BAN", "Phim này đang quay cảnh " + dang.get(root).canh + ". Chờ xong rồi bấm tiếp.");
     const { phim, c, yc, chi, ngan, boDem, lanGoi, usd: uocChi } = chuanBi(root, opts);
+    if (opts.loai === "khung" && congDaDuyet(phim, 2)) throw err("CHUA_DU_DIEU_KIEN", "Bỏ duyệt Cổng 2 trước khi tạo thêm khung.");
+    if (opts.loai === "video" && !coDuyetQuay(root, phim)) {
+      throw err("CHUA_DU_DIEU_KIEN", "Duyệt lại Cổng 2 cho phương án và ngân sách đang dùng trước khi quay.");
+    }
     if (uocChi > 0 && chi + uocChi > ngan + 1e-9) throw err("VUOT_NGAN_SACH", `Lần quay này ~$${uocChi}, đã tính $${chi} vào ngân sách $${ngan}. Nâng ngân sách hoặc giảm số phương án.`);
-    if (actor === "luong-phim" && opts.loai === "video" && uocChi > 0 && !duyetTuDong(root, phim)) {
-      throw err("CHUA_DU_DIEU_KIEN", "Phương án hoặc ngân sách đã đổi: duyệt lại cổng 2 trước khi quay tự động.");
-    }
-    let cli;
-    if (yc.gpt) {
-      const argv = codexAnh?.argv?.();
-      if (!Array.isArray(argv) || !argv[0] || !argv.every((a) => typeof a === "string")) {
-        throw err("NO_CLI", "Máy ảnh GPT chưa nối Codex");
-      }
-      kiemQuota();
-      const env = cleanEnv({ ...process.env, ...codexAnh.env?.() });
-      // cleanEnv đã bỏ GIT_CONFIG_KEY_n. Bỏ cả phần còn lại để Git trong Codex không nhận cấu hình thiếu khóa.
-      for (const k of Object.keys(env)) if (/^GIT_CONFIG_(COUNT|VALUE_\d+)$/i.test(k)) delete env[k];
-      cli = { argv, env, huy: new AbortController() };
-    }
+    const cli = yc.gpt ? chuanBiCodex() : null;
     return { phim, c, yc, boDem, lanGoi, cli };
   }
 
-  async function taoKhungGpt(root, boDem, c, body, i, soTu, cli) {
+  function chuanBiCodex() {
+    const argv = codexAnh?.argv?.();
+    if (!Array.isArray(argv) || !argv[0] || !argv.every((a) => typeof a === "string")) throw err("NO_CLI", "Máy ảnh GPT chưa nối Codex");
+    kiemQuota();
+    const env = cleanEnv({ ...process.env, ...codexAnh.env?.() });
+    // cleanEnv bỏ khóa cấu hình Git. Loại số lượng và giá trị tương ứng để Git không gặp cấu hình khuyết.
+    for (const k of Object.keys(env)) if (/^GIT_CONFIG_(COUNT|VALUE_\d+)$/i.test(k)) delete env[k];
+    return { argv, env, huy: new AbortController() };
+  }
+
+  async function veHelper(root, { ma, slot, prompt, source }) {
+    if (dang.has(root)) throw err("MAY_QUAY_BAN", "Xưởng đang tạo ảnh hoặc quay cảnh.");
+    const cli = chuanBiCodex();
+    const refs = source.map((a) => anhThamChieuGpt(root, a.path));
+    const { directory } = require("./phim-tai-lieu");
+    const boDem = directory(root, true, "bo-dem");
+    directory(root, true, "helper");
+    const yc = { model: MO_HINH_GPT, ti_le: "1:1", co_anh: "1K", khung_hinh: prompt,
+      nhan_vat: [{ ma, tham_chieu: refs.map((a) => a.duongDan), hashAnh: refs.map((a) => a.hash) }] };
+    dang.set(root, { canh: ma, loai: "AI Helper", batDau: now().toISOString() });
+    huyGpt.set(root, cli.huy);
+    try {
+      const result = await taoKhungGpt(root, boDem, { ma: ma + "-" + slot }, yc, 0, 1, cli, "media/helper");
+      return docAnhGpt(docFileTrongPhim(root, result.file));
+    } finally {
+      dang.delete(root);
+      huyGpt.delete(root);
+    }
+  }
+
+  async function taoKhungGpt(root, boDem, c, body, i, soTu, cli, folder = "media/khung") {
     let ten;
-    do { ten = "media/khung/" + c.ma + "-" + soTu++; }
+    do { ten = folder + "/" + c.ma + "-" + soTu++; }
     while ([".png", ".jpg"].some((ext) => fs.lstatSync(path.join(root, ten + ext), { throwIfNoEntry: false })));
     const { model, nhan_vat, ...moTaCanh } = body;
     const moTa = JSON.stringify({ ...moTaCanh, nhan_vat: nhan_vat.map(({ hashAnh, ...v }) => v) }, null, 2)
@@ -344,7 +395,9 @@ function createMayQuay({ dir, audit = { log() {} }, khoa = () => khoaGemini(dir)
     }
     if (i > 0) kiemQuota();
     const dich = ten + ".png";
-    const tam = fs.mkdtempSync(path.join(os.tmpdir(), "vp-may-anh-"));
+    const dir = thuMucTam();
+    fs.mkdirSync(dir, { recursive: true });
+    const tam = fs.mkdtempSync(path.join(dir, "vp-may-anh-"));
     try {
       // Máy ảnh chỉ cần các ảnh tham chiếu và một chỗ xuất ảnh, không cần quyền ghi vào hồ sơ hay sổ chi.
       for (const rel of new Set(nhan_vat.flatMap((v) => v.tham_chieu))) {
@@ -353,15 +406,16 @@ function createMayQuay({ dir, audit = { log() {} }, khoa = () => khoaGemini(dir)
         fs.copyFileSync(docFileTrongPhim(root, rel), file, fs.constants.COPYFILE_EXCL);
       }
       fs.mkdirSync(path.dirname(path.join(tam, dich)), { recursive: true });
-      const truoc = anhChupFile(tam);
-      await chayCodexAnh(cli.argv, cli.env, tam, loiNhac + "Lưu ảnh dạng PNG đúng tên file tương đối: " + dich, cli.huy.signal, timeoutMs);
-      const sau = anhChupFile(tam);
-      const la = [...new Set([...truoc.keys(), ...sau.keys()])].filter((f) => f !== dich && truoc.get(f) !== sau.get(f)).sort();
+      const truoc = anhChupFile(tam, dich);
+      const threadId = await chayCodexAnh(cli.argv, cli.env, tam, loiNhac + "Lưu ảnh dạng PNG đúng tên file tương đối: " + dich, cli.huy.signal, timeoutMs);
+      const sau = anhChupFile(tam, dich);
+      const la = [...new Set([...truoc.keys(), ...sau.keys()])].filter((f) => truoc.get(f) !== sau.get(f)).sort();
       if (la.length) throw err("MAY_ANH_LOI", "Có file ngoài ảnh đích thay đổi: " + la.map(maskText).join(", "));
-      let anh;
-      try { anh = docFileTrongPhim(tam, dich); }
-      catch { throw err("MAY_ANH_LOI", "Máy ảnh GPT chưa lưu ảnh đúng thư mục."); }
-      const { buf, ext } = docAnhGpt(anh);
+      const tepDich = path.join(tam, dich);
+      // Công cụ tạo ảnh có thể chỉ lưu trong thư mục ảnh của lượt Codex, kể cả khi shell không thể sao lưu vào workspace.
+      const anh = fs.lstatSync(tepDich, { throwIfNoEntry: false }) ? docAnhGpt(tepDich) : anhCodexDaTao(cli.env, threadId);
+      if (!anh) throw err("MAY_ANH_LOI", "Máy ảnh GPT chưa trả đúng một ảnh đầu ra.");
+      const { buf, ext } = anh;
       const file = ten + ext;
       fs.writeFileSync(path.join(root, file), buf, { flag: "wx" });
       fs.writeFileSync(dem, buf, { flag: "wx" });
@@ -459,7 +513,7 @@ function createMayQuay({ dir, audit = { log() {} }, khoa = () => khoaGemini(dir)
   }
 
   function chayQuay(root, opts, actor) {
-    const viec = thucHien(root, opts, actor, kiemLanQuay(root, opts, actor));
+    const viec = thucHien(root, opts, actor, kiemLanQuay(root, opts));
     dangChay.add(viec);
     const xong = () => dangChay.delete(viec);
     viec.then(xong, xong);
@@ -525,7 +579,7 @@ function createMayQuay({ dir, audit = { log() {} }, khoa = () => khoaGemini(dir)
     return phim;
   }
 
-  return { uocTinh, quay, batDauQuay, dung, dungHet, trangThai, dungYeuCau, suaCeo };
+  return { uocTinh, quay, batDauQuay, veHelper, dung, dungHet, trangThai, dungYeuCau, suaCeo };
 }
 
 module.exports = { createMayQuay, layKetQua, MO_HINH, GIA, ENDPOINT };

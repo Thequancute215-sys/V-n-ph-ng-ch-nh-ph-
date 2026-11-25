@@ -5,7 +5,7 @@ const path = require("node:path");
 const { createHash } = require("node:crypto");
 const { execFile } = require("node:child_process");
 const { promisify } = require("node:util");
-const { kiem, dongBoGiong, congDaDuyet, duongDanHopLe, MAY_QUAY, MAY_QUAY_MAC_DINH, TI_LE, TRANG_THAI } = require("../lib/phim");
+const { kiem, dongBoGiong, giongKhopCanh, congDaDuyet, duongDanHopLe, MAY_QUAY, MAY_QUAY_MAC_DINH, TI_LE, TRANG_THAI } = require("../lib/phim");
 const { CONG, NHAN_AI, dsCong } = require("./ban-dung");
 const { list: taiLieuPhim } = require("./phim-tai-lieu");
 const { remaining } = require("./dieu-phoi");
@@ -126,7 +126,7 @@ function promptKichBan(s, congCu, loi, taiLieu, chiMuc) {
 
 const loiDan = (phim) => phim.canh.map((c) => typeof c.loi_dan === "string" ? c.loi_dan.trim().replace(/\s+/g, " ") : "");
 const vanBan = (s) => String(s ?? "").normalize("NFC").toLowerCase().replace(/[^\p{L}\p{M}\p{N}]+/gu, "");
-const dinhDanhGiong = (p) => JSON.stringify([p.ngon_ngu, loiDan(p), p.canh.map((c) => [c.ma, c.cau])]);
+const dinhDanhGiong = (p) => JSON.stringify([p.ngon_ngu, p.helper_giong_theo_canh === true, loiDan(p), p.canh.map((c) => [c.ma, c.cau])]);
 
 function dongBo(phim, giong) {
   if (!Array.isArray(giong) || !giong.length || !giong.every((c, i) => c?.index === i + 1 && Number.isFinite(c.startMs) && Number.isFinite(c.endMs) && c.endMs > c.startMs)) {
@@ -149,7 +149,8 @@ async function lamGiong(root, phim, xuongPhim, docPhim, ghiPhim) {
   if (loi.some((c) => !c)) throw err("GIONG_LOI", "Mỗi cảnh cần có lời dẫn để tạo giọng đọc.");
   const text = loi.join("\n");
   const daCo = docJson(tepThat(voice + ".json"));
-  if (coFile(tepThat(voice + ".mp3")) && coFile(tepThat(voice + ".srt")) && Array.isArray(daCo) && vanBan(daCo.map((c) => c?.text).join(" ")) === vanBan(text)) {
+  if (coFile(tepThat(voice + ".mp3")) && coFile(tepThat(voice + ".srt")) && Array.isArray(daCo) &&
+      giongKhopCanh(phim, daCo) && vanBan(daCo.map((c) => c?.text).join(" ")) === vanBan(text)) {
     ghiPhim(dongBo(phim, daCo));
     return;
   }
@@ -161,10 +162,11 @@ async function lamGiong(root, phim, xuongPhim, docPhim, ghiPhim) {
   try {
     const kichBan = path.join(tam, "loi-dan.txt");
     const ra = path.join(tam, "voice");
-    fs.writeFileSync(kichBan, text + "\n", "utf8");
-    const args = [tts, "--file", kichBan, "--output", ra, "--voice", phim.ngon_ngu === "en" ? "en-us-authority" : "vi-nam"];
+    const theoCanh = phim.helper_giong_theo_canh === true;
+    fs.writeFileSync(kichBan, (theoCanh ? JSON.stringify(loi) : text) + "\n", "utf8");
+    const args = [tts, theoCanh ? "--scenes-file" : "--file", kichBan, "--output", ra, "--voice", phim.ngon_ngu === "en" ? "en-us-authority" : "vi-nam"];
     if (models) args.push("--models", models);
-    try { await chayLenh(python, args, { cwd: root, env: cleanEnv(), timeout: 10 * 60 * 1000, windowsHide: true }); }
+    try { await chayLenh(python, args, { cwd: root, env: cleanEnv({ ...process.env, ...xuongPhim.envAi() }), timeout: 10 * 60 * 1000, windowsHide: true }); }
     catch (e) { throw err("GIONG_LOI", "Đọc giọng thất bại: " + (e.stderr?.trim() || e.message)); }
 
     const hienTai = docPhim();
@@ -418,9 +420,16 @@ function createLuongPhim({ dir, audit = { log() {} }, now = Date.now, setTimer =
       if (isKetThuc) return false;
       throw err("PHIM_LOI", "Hồ sơ phim thiếu danh sách cảnh.");
     }
+    if (buoc >= 3 && !isKetThuc && s.trangThai !== "xong" && congDaDuyet(phim, 1) && phim.helper_giong_theo_canh === true) {
+      const giong = docGiong(root);
+      if (!giong || !giongKhopCanh(phim, giong) || !fileTrong(root, "media/giong/voice.mp3") || !fileTrong(root, "media/giong/voice.srt")) {
+        sang(s, 2);
+        return true;
+      }
+    }
     let soLui = 0;
     if (!congDaDuyet(phim, 1)) soLui = 1;
-    else if (buoc >= 5 && (!congDaDuyet(phim, 2) || phim.canh.some((c) => !c?.khung_chon))) soLui = 2;
+    else if (buoc >= 5 && (!congDaDuyet(phim, 2) || !banDung.coDuyetQuay(root, phim) || phim.canh.some((c) => !c?.khung_chon))) soLui = 2;
     else if (buoc === 7 && !congDaDuyet(phim, 3)) soLui = 3;
     if (soLui) {
       s.buoc = BUOC[BUOC_CONG[soLui]];
@@ -442,7 +451,7 @@ function createLuongPhim({ dir, audit = { log() {} }, now = Date.now, setTimer =
       const thieu = phim.canh.find((c) => !coKhung(c));
       if (thieu) return quay(s, thieu, "anh");
       if (buoc === 3) sang(s, 4);
-      if (!congDaDuyet(phim, 2) || phim.canh.some((c) => !c.khung_chon)) { choCong(s, 2); return false; }
+      if (!congDaDuyet(phim, 2) || !banDung.coDuyetQuay(root, phim) || phim.canh.some((c) => !c.khung_chon)) { choCong(s, 2); return false; }
       sang(s, 5);
     } else if (buoc === 5) return video(s, phim);
     else if (buoc === 6) {
@@ -451,7 +460,7 @@ function createLuongPhim({ dir, audit = { log() {} }, now = Date.now, setTimer =
         thuMucThat(root, "media", "xuat");
         await banDung.dungVaCho(root, ACTOR);
         const daDung = docPhim(root);
-        if (congDaDuyet(daDung, 2) && !dsCong(daDung, { giong: docGiong(root), coFile: (rel) => fileTrong(root, rel) })[2].duoc) {
+        if (congDaDuyet(daDung, 2) && banDung.coDuyetQuay(root, daDung) && !dsCong(daDung, { giong: docGiong(root), coFile: (rel) => fileTrong(root, rel) })[2].duoc) {
           throw err("DUNG_LOI", "Bàn dựng chưa ghi đủ hồ sơ và tệp bản dựng mới.");
         }
         ghi(s, "xong", "Đã dựng và đo bản xuất.");

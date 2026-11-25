@@ -11,7 +11,7 @@
 const fs = require("fs");
 const path = require("path");
 const { execFile } = require("child_process");
-const { kiem, MAY_QUAY, MAY_QUAY_MAC_DINH, duongDanHopLe, docFileTrongPhim, dauKhoanQuay } = require("../lib/phim");
+const { kiem, giongKhopCanh, MAY_QUAY, MAY_QUAY_MAC_DINH, duongDanHopLe, docFileTrongPhim, dauKhoanQuay } = require("../lib/phim");
 const { writeAtomic } = require("../lib/ghi-file");
 
 const err = (code, message) => Object.assign(new Error(message), { code });
@@ -41,6 +41,7 @@ const fileMedia = (rel) => typeof rel === "string" && /^media\//.test(rel) && du
 
 // Kế hoạch dựng (không chạy gì): danh sách cảnh với take, mốc bắt đầu, thời lượng; phụ đề; nhạc.
 function keHoach(phim, { giong = null, coFile = () => true } = {}) {
+  if (!giongKhopCanh(phim, giong)) throw err("CHUA_DUNG_DUOC", "Lời dẫn hoặc thứ tự cảnh đã đổi. Tạo lại giọng trước khi dựng.");
   const canh = Array.isArray(phim.canh) ? phim.canh : [];
   if (!canh.length) throw err("CHUA_DUNG_DUOC", "Phim chưa có cảnh nào.");
   const loi = [], ds = [];
@@ -207,7 +208,7 @@ function banDungCu(phim) {
 }
 
 // Trạng thái 4 cổng: đã duyệt chưa, duyệt được chưa, vì sao chưa.
-function dsCong(phim, { giong = null, coFile = () => true } = {}) {
+function dsCong(phim, { giong = null, coFile = () => true, conDauQuay = true } = {}) {
   const cong = phim.cong && typeof phim.cong === "object" ? phim.cong : {};
   const k = kiem(phim, { giong });
   const b = phim.ban_dung, cu = banDungCu(phim);
@@ -218,13 +219,15 @@ function dsCong(phim, { giong = null, coFile = () => true } = {}) {
     if (truoc && !truoc.duyet) lyDo = `Duyệt cổng ${so - 1} trước.`;
     else if (so <= 2 && !k.ok) lyDo = k.loi.length ? k.loi[0].chiTiet : "Hồ sơ phim chưa hợp lệ.";
     else if (so === 1 && !(phim.canh || []).length) lyDo = "Chưa có cảnh nào.";
+    else if (so === 1 && phim.helper_giong_theo_canh === true && phim.canh.some((c) => typeof c.loi_dan !== "string" || !c.loi_dan.trim())) lyDo = "Điền lời dẫn cho từng cảnh trước khi duyệt.";
     else if (so >= 3 && !b) lyDo = "Chưa có bản dựng.";
     else if (so >= 3 && cu) lyDo = "Bản dựng cũ: take hoặc thời lượng đã đổi, dựng lại.";
     else if (so >= 3 && !(b.ban || []).every((x) => coFile(x.file))) lyDo = "Thiếu file bản dựng, dựng lại.";
     else if (so === 4 && !(b.ban || []).every((x) => x.dat)) lyDo = "Máy đo chưa đạt: " + (b.ban || []).flatMap((x) => x.loi || []).join("; ");
     const da = cong[so] && cong[so].luc;
-    const conHieuLuc = !!da && !(so >= 3 && (cu || !b)) && (!truoc || truoc.duyet);
-    ra.push({ so, ten: CONG[so], duyet: conHieuLuc, luc: da || null, duoc: !lyDo, lyDo });
+    const canDuyetLai = so === 2 && !!da && !conDauQuay;
+    const conHieuLuc = !!da && !canDuyetLai && !(so >= 3 && (cu || !b)) && (!truoc || truoc.duyet);
+    ra.push({ so, ten: CONG[so], duyet: conHieuLuc, luc: da || null, duoc: !lyDo, lyDo, ...(canDuyetLai ? { canDuyetLai } : {}) });
   }
   return ra;
 }
@@ -243,7 +246,10 @@ function createBanDung({ dir, audit = { log() {} }, ffmpeg = () => null, tam = (
     if (fileDuyet) writeAtomic(fileDuyet, JSON.stringify([...moi]));
     daDuyet = moi;
   }
-  const coDuyetQuay = (root, phim) => daDuyet.get(fs.realpathSync(root)) === dauKhoanQuay(phim);
+  function coDuyetQuay(root, phim) {
+    const dau = dauKhoanQuay(phim);
+    return !!dau && daDuyet.get(fs.realpathSync(root)) === dau;
+  }
   const doc = (root) => {
     const phim = docJson(path.join(root, "phim.json"));
     const giong = docJson(path.join(root, "media", "giong", "voice.json"), null);
@@ -354,7 +360,7 @@ function createBanDung({ dir, audit = { log() {} }, ffmpeg = () => null, tam = (
   function trangThai(root) {
     const { phim, giong } = doc(root);
     return { dang: dang.get(root) || null, loiCuoi: loiCuoi.get(root) || "", banDung: phim.ban_dung || null, cu: banDungCu(phim),
-      cong: dsCong(phim, { giong, coFile: coFileTrong(root) }), coFfmpeg: !!ffmpeg() };
+      cong: dsCong(phim, { giong, coFile: coFileTrong(root), conDauQuay: coDuyetQuay(root, phim) }), coFfmpeg: !!ffmpeg() };
   }
 
   // CEO duyệt hoặc bỏ duyệt một cổng. Duyệt: phải đủ điều kiện và đúng thứ tự. Bỏ duyệt: bỏ luôn các cổng sau.
@@ -364,9 +370,9 @@ function createBanDung({ dir, audit = { log() {} }, ffmpeg = () => null, tam = (
     const { phim, giong } = doc(root);
     const moi = { ...(phim.cong && typeof phim.cong === "object" ? phim.cong : {}) };
     if (duyet === true) {
-      const tt = dsCong(phim, { giong, coFile: coFileTrong(root) })[so - 1];
+      const tt = dsCong(phim, { giong, coFile: coFileTrong(root), conDauQuay: coDuyetQuay(root, phim) })[so - 1];
       if (!tt.duoc) throw err("CHUA_DU_DIEU_KIEN", `Chưa duyệt được cổng ${so} (${CONG[so]}): ${tt.lyDo}`);
-      if (!moi[so]?.luc) for (let i = so + 1; i <= 4; i++) delete moi[i];
+      if (!tt.duyet) for (let i = so + 1; i <= 4; i++) delete moi[i];
       if (so === 2) ghiDauQuay(root, dauKhoanQuay(phim));
       else if (so === 1 && !moi[1]?.luc) ghiDauQuay(root, null);
       moi[so] = { luc: now().toISOString() };
@@ -377,7 +383,7 @@ function createBanDung({ dir, audit = { log() {} }, ffmpeg = () => null, tam = (
     phim.cong = moi;
     ghi(root, phim);
     audit.log(actor, "phim.cong", path.basename(root), { cong: so, duyet });
-    return dsCong(phim, { giong, coFile: coFileTrong(root) });
+    return dsCong(phim, { giong, coFile: coFileTrong(root), conDauQuay: coDuyetQuay(root, phim) });
   }
 
   // "Quay lại cảnh này": CEO cho phép thêm một take (so_take_toi_da + 1, tối đa 5) nếu chi phí tối đa vẫn trong ngân sách.

@@ -45,7 +45,16 @@ function lap(t, { hanMuc = null, tinhHuong = "", timeoutMs, sua = () => {} } = {
       setInterval(() => {}, 1000);
     } else {
       const png = Buffer.from(${JSON.stringify(PNG)}, "base64");
-      if (process.env.TINH_HUONG === "qua-lon") fs.writeFileSync(dich, Buffer.concat([png, Buffer.alloc(20 * 1024 * 1024)]));
+      if (process.env.TINH_HUONG.startsWith("anh-codex")) {
+        const path = require("node:path");
+        const id = "12345678-1234-1234-1234-1234567890ab";
+        const builtIn = path.join(process.env.CODEX_HOME, "generated_images", id);
+        fs.mkdirSync(builtIn, { recursive: true });
+        fs.writeFileSync(path.join(builtIn, "exec-1234.png"), png);
+        if (process.env.TINH_HUONG === "anh-codex-hai") fs.writeFileSync(path.join(builtIn, "exec-5678.png"), png);
+        const thread_id = process.env.TINH_HUONG === "anh-codex-sai-id" ? "../" + id : id;
+        console.log(JSON.stringify({type: "thread.started", thread_id}));
+      } else if (process.env.TINH_HUONG === "qua-lon") fs.writeFileSync(dich, Buffer.concat([png, Buffer.alloc(20 * 1024 * 1024)]));
       else if (process.env.TINH_HUONG === "jpeg") fs.writeFileSync(dich, Buffer.from("ffd8ffe000104a4649460000010100000100010000ffd9", "hex"));
       else fs.writeFileSync(dich, process.env.TINH_HUONG === "sai" ? "không phải ảnh" : png);
       if (process.env.TINH_HUONG === "file-la") {
@@ -53,6 +62,9 @@ function lap(t, { hanMuc = null, tinhHuong = "", timeoutMs, sua = () => {} } = {
         fs.appendFileSync("giu.txt", " đã sửa");
 
       }
+      const ref = "media/tham-chieu/co.png";
+      if (process.env.TINH_HUONG === "moc-sua") fs.utimesSync(ref, new Date(0), new Date(0));
+      if (process.env.TINH_HUONG === "sua-byte") fs.appendFileSync(ref, "sửa ảnh tham chiếu");
     }
   `);
   const codexAnh = {
@@ -132,6 +144,38 @@ test("GPT bỏ kết quả có file lạ, giữ nguyên dữ liệu dự án và
   assert.equal(fs.readFileSync(path.join(root, "giu.txt"), "utf8"), "dữ liệu của CEO");
   assert.deepEqual(doc("media/so-chi.json"), soChi);
   assert.equal(doc("phim.json").canh[0].khung, undefined);
+});
+
+test("GPT so nội dung ảnh tham chiếu, chấp nhận đổi mốc thời gian và chặn đổi byte", async (t) => {
+  const moc = lap(t, { tinhHuong: "moc-sua" });
+  const kq = await moc.may.quay(moc.root, opts);
+  assert.equal(kq.files.length, 1);
+  const byte = lap(t, { tinhHuong: "sua-byte" });
+  await assert.rejects(byte.may.quay(byte.root, opts), (e) => e.code === "MAY_ANH_LOI" && /co\.png/.test(e.message));
+  assert.deepEqual(fs.readFileSync(path.join(byte.root, thamChieu)), Buffer.from(PNG, "base64"));
+});
+
+test("GPT nhận đúng một ảnh từ thư mục của lượt Codex khi CLI chưa ghi vào workspace", async (t) => {
+  const { may, root } = lap(t, { tinhHuong: "anh-codex" });
+  const r = await may.quay(root, opts);
+  assert.deepEqual(r.files, ["media/khung/C01-1.png"]);
+  assert.deepEqual(fs.readFileSync(path.join(root, r.files[0])), Buffer.from(PNG, "base64"));
+  for (const tinhHuong of ["anh-codex-hai", "anh-codex-sai-id"]) {
+    const sai = lap(t, { tinhHuong });
+    await assert.rejects(sai.may.quay(sai.root, opts), { code: "MAY_ANH_LOI", message: /đúng một ảnh/ });
+    assert.equal(sai.doc("phim.json").canh[0].khung, undefined);
+  }
+});
+
+test("máy ảnh từ chối tạo khung sau Cổng 2, đi tiếp khi bỏ duyệt", async (t) => {
+  const { root, may, doc, ghiPhim, cacLan } = lap(t, { sua: (p) => { p.cong[2] = { luc: "2026-11-22T00:00:00Z" }; } });
+  assert.equal(may.uocTinh(root, opts).usd, 0);
+  assert.throws(() => may.batDauQuay(root, opts), { code: "CHUA_DU_DIEU_KIEN" });
+  assert.equal(cacLan().length, 0);
+  const profile = doc("phim.json");
+  delete profile.cong[2];
+  ghiPhim(profile);
+  assert.equal((await may.quay(root, opts)).files.length, 1);
 });
 
 test("GPT chọn tên đích mới khi số khung trong hồ sơ trùng với file đã có", async (t) => {

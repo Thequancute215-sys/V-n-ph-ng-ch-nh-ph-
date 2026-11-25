@@ -31,6 +31,8 @@ const { createTramFlow } = require("./tram-flow");
 const { createBanDung } = require("./ban-dung");
 const { createLuongPhim } = require("./luong-phim");
 const phimTaiLieu = require("./phim-tai-lieu");
+const phimHelper = require("./phim-helper");
+const { createPhimBlender } = require("./phim-blender");
 const { goiCapCut } = require("./phim-capcut");
 const libPhim = require("../lib/phim");
 const { createJournal } = require("./nhat-ky");
@@ -94,14 +96,17 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
   const skillDuyet = createSkillDuyet({ dir, jobs, runner, audit });   // CEO dán link repo skill → Claude đội trưởng xem → CEO duyệt cài
   const connectors = createConnectors({ runner, audit, dir });   // trang Kết nối (MCP) của đội
   // Xưởng phim P2: máy quay API (Gemini) và trạm Google Flow. Chỉ CEO bấm trên trang Xưởng phim; AI không gọi được.
-  const mayQuay = createMayQuay({ dir, audit, duyetTuDong: (root, phim) => banDung.coDuyetQuay(root, phim), codexAnh: {
+  const tamPhim = () => path.join(xuongPhim.duongDan.goc, "tmp");
+  const banDung = createBanDung({ dir, audit, ffmpeg: () => xuongPhim.envAi().XUONG_PHIM_FFMPEG || null, tam: tamPhim });
+  const mayQuay = createMayQuay({ dir, audit, thuMucTam: tamPhim, coDuyetQuay: banDung.coDuyetQuay, codexAnh: {
     argv: () => runner.cliOf("codex"),
     env: () => codexTk.env(),
     quota: () => codexTk.trangThai().ds.find((a) => a.dangDung)?.conLai ?? null,
   } });
-  const tramFlow = createTramFlow({ dir, goc: () => xuongPhim.duongDan.goc, audit, jobs, cliClaude: () => runner.cliOf("claude") });
-  // Xưởng phim P3: bàn dựng (FFmpeg trên máy, miễn phí) và 4 cổng CEO duyệt. Thư mục tạm ở thư mục gốc của xưởng (ổ có chỗ).
-  const banDung = createBanDung({ dir, audit, ffmpeg: () => xuongPhim.envAi().XUONG_PHIM_FFMPEG || null, tam: () => path.join(xuongPhim.duongDan.goc, "tmp") });
+  const tramFlow = createTramFlow({ dir, goc: () => xuongPhim.duongDan.goc, audit, jobs, cliClaude: () => runner.cliOf("claude"), coDuyetQuay: banDung.coDuyetQuay });
+  const blenderPhim = createPhimBlender({ ffmpeg: () => xuongPhim.envAi().XUONG_PHIM_FFMPEG,
+    ffprobe: () => xuongPhim.envAi().XUONG_PHIM_FFPROBE, tmp: tamPhim, audit });
+  const helperDangTao = new Set();
   const capcutDangXuat = new Map();
   const luongPhim = createLuongPhim({ dir, audit, mayQuay, banDung, xuongPhim,
     chayAi: ({ root, vai, prompt, chiDoc }) => runner.chayPhim({ workspace: root, role: vai, prompt, chiDoc }),
@@ -112,6 +117,16 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     const phim = doc("phim.json", null); if (!phim) throw Object.assign(new Error("Dự án không có phim.json"), { code: "NOT_FOUND" });
     return { phim, kiem: libPhim.kiem(phim, { giong: doc("media/giong/voice.json", null) }) }; };
   const phimLuongRoot = (v) => { const root = phimRoot(v); docHoSo(root); return root; };
+  async function taoGocHelper(root, b) {
+    const req = phimHelper.yeuCau(root, b, { tao: true });
+    const { buf, ext } = await mayQuay.veHelper(root, { ma: req.v.ma, slot: b.slot, prompt: req.prompt, source: req.source });
+    const next = phimHelper.yeuCau(root, b, { tao: true });
+    if (req.prompt !== next.prompt || JSON.stringify(req.source) !== JSON.stringify(next.source)) {
+      throw Object.assign(Error("Nguồn ảnh hoặc mô tả đã đổi trong lúc tạo, bấm thử lại."), { code: "CHANGED" });
+    }
+    const item = phimTaiLieu.save(root, { name: req.v.ma + "-" + b.slot + ext, base64: buf.toString("base64") });
+    return { item, helper: phimHelper.goc(root, { ...b, id: item.id }) };
+  }
   const journal = createJournal({ jobs, autopilot });           // Nhật ký: ai làm gì, lúc nào
   const boKiem = createBoKiem({ dir, audit });   // cài bộ kiểm chu trình (CI) vào repo dự án
   const updater = createUpdater({ root: path.join(__dirname, ".."), audit, jobs, autopilot, ...updaterOptions });   // nút Cập nhật app
@@ -238,7 +253,7 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
       autopilot.cancelAll();
       void Promise.allSettled(ws.list().map(async (w) => luongPhim.dung(w.path)));
       void mayQuay.dungHet();
-      const results = await jobs.killAll("ceo");
+      const [results] = await Promise.all([jobs.killAll("ceo"), blenderPhim.close()]);
       const failed = results.filter((r) => !r.killed);
       return failed.length ? [500, { ok: false, code: "KILL_FAILED", error: failed.map((r) => r.error).join("; "), results }] : { results };
     }],
@@ -265,6 +280,63 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     ["GET", "/phim/tai-lieu", (p, qs) => ({ taiLieu: phimTaiLieu.list(phimLuongRoot(qs.get("workspace"))) })],
     ["POST", "/phim/tai-lieu", (p, qs, b) => [201, { taiLieu: phimTaiLieu.save(phimLuongRoot(b.workspace), b) }]],
     ["POST", "/phim/mo-hinh/duyet", (p, qs, b) => ({ moHinh: phimTaiLieu.approve(phimLuongRoot(b.workspace), b.id) })],
+    ["POST", "/phim/blender", (p, qs, b) => [202, { blender: blenderPhim.batDau(phimLuongRoot(b.workspace), b) }]],
+    ["POST", "/phim/blender/dung", async (p, qs, b) => {
+      const root = phimLuongRoot(b.workspace);
+      await blenderPhim.dung(root);
+      return { blender: blenderPhim.trangThai(root) };
+    }],
+    ["POST", "/phim/blender/gan-canh", (p, qs, b) => {
+      const root = phimLuongRoot(b.workspace);
+      const { phim } = docHoSo(root);
+      const preview = phim.blender_preview;
+      if (!preview || preview.sha256 !== b.sha256 || preview.path !== "media/blender/xoay-" + b.sha256 + ".mp4") {
+        throw Object.assign(Error("Chọn đúng bản xoay đang xem."), { code: "CHANGED" });
+      }
+      if (!libPhim.congDaDuyet(phim, 2) || !banDung.coDuyetQuay(root, phim)) {
+        throw Object.assign(Error("Duyệt Cổng 2 trước khi gắn cảnh dựng."), { code: "CHUA_DU_DIEU_KIEN" });
+      }
+      const clip = fs.readFileSync(libPhim.docFileTrongPhim(root, preview.path));
+      if (crypto.createHash("sha256").update(clip).digest("hex") !== preview.sha256) {
+        throw Object.assign(Error("Bản xoay đã thay đổi, tạo lại trước khi gắn."), { code: "CHANGED" });
+      }
+      return { take: phimTaiLieu.ghiTake(root, phim, b.canh, preview.sha256, clip) };
+    }],
+    ["POST", "/phim/helper/nhan-vat", (p, qs, b) => ({ nhanVat: phimHelper.taoNhanVat(phimLuongRoot(b.workspace), b) })],
+    ["POST", "/phim/helper/nguon", (p, qs, b) => ({ helper: phimHelper.chonNguon(phimLuongRoot(b.workspace), b) })],
+    ["POST", "/phim/helper/goc", (p, qs, b) => ({ helper: phimHelper.goc(phimLuongRoot(b.workspace), b) })],
+    ["POST", "/phim/helper/khoa", (p, qs, b) => ({ helper: phimHelper.khoa(phimLuongRoot(b.workspace), b) })],
+    ["POST", "/phim/helper/ap-dung", (p, qs, b) => ({ nhanVat: phimHelper.apDung(phimLuongRoot(b.workspace), b) })],
+    ["POST", "/phim/helper/khung", (p, qs, b) => ({ canh: phimHelper.khung(phimLuongRoot(b.workspace), b) })],
+    ["POST", "/phim/helper/tong-mau", (p, qs, b) => ({ tongMau: phimHelper.tongMau(phimLuongRoot(b.workspace), b) })],
+    ["POST", "/phim/helper/canh", (p, qs, b) => ({ canh: phimHelper.suaCanh(phimLuongRoot(b.workspace), b) })],
+    ["POST", "/phim/helper/giong-thu", async (p, qs, b) => ({ canh: await phimHelper.giongThu(phimLuongRoot(b.workspace), b, xuongPhim.envAi().XUONG_PHIM_FFPROBE) })],
+    ["POST", "/phim/helper/goi", async (p, qs, b) => ({ goi: await phimHelper.dongGoi(phimLuongRoot(b.workspace), xuongPhim.duongDan.python, tamPhim()) })],
+    ["POST", "/phim/helper/tach-khung", async (p, qs, b) => {
+      const env = xuongPhim.envAi();
+      const frames = await phimHelper.tachKhung(phimLuongRoot(b.workspace), b, { ffmpeg: env.XUONG_PHIM_FFMPEG, ffprobe: env.XUONG_PHIM_FFPROBE, tmp: tamPhim() });
+      return { frames };
+    }],
+    ["GET", "/phim/helper/goc", () => ({ goc: phimHelper.GOC.map(([id, ten]) => ({ id, ten })), phongCach: phimHelper.PHONG_CACH })],
+    ["POST", "/phim/helper/prompt", (p, qs, b) => {
+      const { prompt, source } = phimHelper.yeuCau(phimLuongRoot(b.workspace), b);
+      return { prompt, source };
+    }],
+    ["POST", "/phim/helper/goi-anh", async (p, qs, b) => {
+      if (b.xacNhan !== true) throw Object.assign(Error("Cần xác nhận sử dụng hạn mức GPT."), { code: "BAD_REQUEST" });
+      const root = phimLuongRoot(b.workspace);
+      if (helperDangTao.has(root)) throw Object.assign(Error("AI Helper đang tạo ảnh cho phim này."), { code: "MAY_QUAY_BAN" });
+      helperDangTao.add(root);
+      try {
+        if (b.slot !== "con-trong") return await taoGocHelper(root, b);
+        const ketQua = [];
+        for (const [slot] of phimHelper.GOC) {
+          const present = docHoSo(root).phim.ai_helper?.find((entry) => entry.ma === b.ma)?.goc || {};
+          if (!present[slot]) ketQua.push(await taoGocHelper(root, { ...b, slot }));
+        }
+        return { ketQua };
+      } finally { helperDangTao.delete(root); }
+    }],
     ["POST", "/phim/take-nhap", async (p, qs, b) => {
       const root = phimLuongRoot(b.workspace);
       const { item, real } = phimTaiLieu.file(root, b.id);
@@ -293,7 +365,7 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
       }
       return { goi: await viec };
     }],
-    ["GET", "/phim", (p, qs) => { const root = phimRoot(qs.get("workspace")); return { ...docHoSo(root), mayQuay: mayQuay.trangThai(root), banDung: banDung.trangThai(root), luong: luongPhim.trangThai(root) }; }],
+    ["GET", "/phim", (p, qs) => { const root = phimRoot(qs.get("workspace")); return { ...docHoSo(root), mayQuay: mayQuay.trangThai(root), banDung: banDung.trangThai(root), luong: luongPhim.trangThai(root), blender: blenderPhim.trangThai(root) }; }],
     ["GET", "/phim/luong", (p, qs) => ({ luong: luongPhim.trangThai(phimLuongRoot(qs.get("workspace"))) })],
     ["POST", "/phim/luong", (p, qs, b) => [202, { luong: luongPhim.batDau(phimLuongRoot(b.workspace), { deBai: b.deBai, tuyChon: b.tuyChon }) }]],
     ["POST", "/phim/luong/dung", (p, qs, b) => {
@@ -305,7 +377,13 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     ["POST", "/phim/quay", (p, qs, b) => [202, { mayQuay: mayQuay.batDauQuay(phimRoot(b.workspace), { canh: b.canh, loai: b.loai, soPhuongAn: b.soPhuongAn, doPhanGiai: b.doPhanGiai }) }]],
     ["POST", "/phim/ceo", (p, qs, b) => ({ phim: mayQuay.suaCeo(phimRoot(b.workspace), { canh: b.canh, khungChon: b.khungChon, takeChon: b.takeChon, nguoiThat: b.nguoiThat, nganSach: b.nganSach }) })],
     ["POST", "/phim/dung", (p, qs, b) => [202, { banDung: banDung.batDauDung(phimRoot(b.workspace)) }]],
-    ["POST", "/phim/cong", (p, qs, b) => ({ cong: banDung.duyetCong(phimRoot(b.workspace), { cong: b.cong, duyet: b.duyet }) })],
+    ["POST", "/phim/cong", (p, qs, b) => {
+      const root = phimRoot(b.workspace);
+      if (Number(b.cong) === 2 && b.duyet && (helperDangTao.has(root) || mayQuay.trangThai(root).dang?.loai === "khung")) {
+        throw Object.assign(Error("Chờ tạo xong ảnh trước khi duyệt Cổng 2."), { code: "MAY_QUAY_BAN" });
+      }
+      return { cong: banDung.duyetCong(root, { cong: b.cong, duyet: b.duyet }) };
+    }],
     ["POST", "/phim/quay-lai", (p, qs, b) => banDung.quayLai(phimRoot(b.workspace), { canh: b.canh })],
     ["GET", "/flow", async () => ({ flow: await tramFlow.trangThai() })],
     ["POST", "/flow/:id/mo", async (p) => ({ flow: await tramFlow.mo(p.id) })],
@@ -444,12 +522,16 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     return params;
   };
 
-  const MIME_MEDIA = { ".mp4": "video/mp4", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".mp3": "audio/mpeg", ".wav": "audio/wav" };
+  const MIME_MEDIA = { ".mp4": "video/mp4", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".mp3": "audio/mpeg", ".wav": "audio/wav", ".webm": "audio/webm", ".zip": "application/zip" };
   function guiMedia(req, res, url) {
     const rel = String(url.searchParams.get("path") || "");
     if (!/^media\//.test(rel) || !libPhim.duongDanHopLe(rel)) return fail(res, 403, "PATH_DENIED", "Chỉ xem được file trong media/ của phim");
-    const loai = MIME_MEDIA[path.extname(rel).toLowerCase()];
+    const ext = path.extname(rel).toLowerCase();
+    const loai = MIME_MEDIA[ext];
     if (!loai) return fail(res, 403, "PATH_DENIED", "Loại file không xem được");
+    if (ext === ".zip" && !/^media\/helper\/goi-[A-Za-z0-9]+\/phim\.zip$/.test(rel)) {
+      return fail(res, 403, "PATH_DENIED", "Chỉ tải gói do AI Helper xuất.");
+    }
     const { real } = ws.resolve(phimRoot(url.searchParams.get("workspace")), rel);
     const size = fs.statSync(real).size;
     const m = /^bytes=(\d*)-(\d*)$/.exec(String(req.headers.range || ""));
@@ -460,7 +542,8 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
       res.writeHead(206, { "Content-Type": loai, "Content-Length": end - start + 1, "Content-Range": `bytes ${start}-${end}/${size}`, "Accept-Ranges": "bytes", "Cache-Control": "no-store" });
       return fs.createReadStream(real, { start, end }).pipe(res);
     }
-    res.writeHead(200, { "Content-Type": loai, "Content-Length": size, "Accept-Ranges": "bytes", "Cache-Control": "no-store" });
+    res.writeHead(200, { "Content-Type": loai, "Content-Length": size, "Accept-Ranges": "bytes", "Cache-Control": "no-store",
+      ...(ext === ".zip" ? { "Content-Disposition": "attachment; filename=phim.zip", "X-Content-Type-Options": "nosniff" } : {}) });
     fs.createReadStream(real).pipe(res);
   }
 
@@ -525,6 +608,9 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
   });
 
   async function close() {
+    const dungBlender = blenderPhim.close().catch((e) => {
+      audit.log("ctl", "phim.blender_dung_loi", "", String(e.code || "KILL_FAILED"));
+    });
     lichChay.dung();
     const dungLuongPhim = luongPhim.dungHet();
     const dungMayQuay = mayQuay.dungHet();
@@ -536,7 +622,7 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     for (const r of streams) r.end();
     await jobs.killAll("ctl-shutdown");
     await jobs.drain();
-    await Promise.all([dungLuongPhim, dungMayQuay]);
+    await Promise.all([dungLuongPhim, dungMayQuay, dungBlender]);
     await new Promise((ok) => server.close(ok));
     db.close();
   }

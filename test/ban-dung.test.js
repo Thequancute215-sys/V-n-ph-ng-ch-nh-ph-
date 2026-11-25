@@ -12,6 +12,24 @@ const { createBanDung, keHoach, lenhDung, ngatDong, docDo, danhGia, banDungCu, d
 const tmp = (t) => { const d = fs.mkdtempSync(path.join(os.tmpdir(), "vp-bd-")); t.after(() => fs.rmSync(d, { recursive: true, force: true })); return d; };
 const ghi = (p, s) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, s); return p; };
 const docPhim = (d) => JSON.parse(fs.readFileSync(path.join(d, "phim.json"), "utf8"));
+
+test("Cổng 2 hiển thị cần duyệt lại sau khi tăng take hoặc đổi ngân sách", (t) => {
+  const d = duAn(tmp(t));
+  const bd = createBanDung({ dir: d });
+  bd.duyetCong(d, { cong: 1, duyet: true });
+  bd.duyetCong(d, { cong: 2, duyet: true });
+  assert.equal(bd.trangThai(d).cong[1].duyet, true);
+  bd.quayLai(d, { canh: "C01" });
+  assert.equal(bd.trangThai(d).cong[1].canDuyetLai, true);
+  assert.equal(bd.trangThai(d).cong[1].duyet, false);
+  bd.duyetCong(d, { cong: 2, duyet: true });
+  assert.equal(bd.trangThai(d).cong[1].duyet, true);
+  const p = docPhim(d);
+  p.ngan_sach_usd += 1;
+  ghi(path.join(d, "phim.json"), JSON.stringify(p));
+  assert.equal(bd.trangThai(d).cong[1].canDuyetLai, true);
+  assert.equal(bd.trangThai(d).cong[1].duyet, false);
+});
 const PHIM = () => ({
   ten: "Thử", ti_le: ["9:16"], ngon_ngu: "vi", ngan_sach_usd: 10, may_quay_mac_dinh: "flow", nguoi_that: [], nhan_vat: [],
   canh: [
@@ -48,6 +66,17 @@ test("ngắt dòng phụ đề theo từ, giữ lề cả với đoạn dài", (
   assert.deepEqual(ngatDong("Chúc mừng ngày Nhà giáo Việt Nam", 12), ["Chúc mừng", "ngày Nhà", "giáo Việt", "Nam"]);
   assert.deepEqual(ngatDong("  ngắn  ", 20), ["ngắn"]);
   assert.deepEqual(ngatDong("abcdef gh", 3), ["abc", "def", "gh"]);
+});
+
+test("bàn dựng từ chối dùng giọng theo thứ tự cũ của AI Helper", () => {
+  const p = PHIM();
+  p.helper_giong_theo_canh = true;
+  p.canh.forEach((c, i) => { c.cau = [i + 1]; });
+  const giong = [
+    { index: 1, startMs: 0, endMs: 2000, text: p.canh[1].loi_dan },
+    { index: 2, startMs: 2000, endMs: 5000, text: p.canh[0].loi_dan },
+  ];
+  assert.throws(() => keHoach(p, { giong }), { code: "CHUA_DUNG_DUOC", message: /Tạo lại giọng/ });
 });
 
 test("câu dài được chia trang phụ đề liền mốc, tối đa ba dòng một trang", () => {
@@ -177,6 +206,9 @@ test("máy dựng (FFmpeg giả lập): chạy trong thư mục tạm của xư�
     return cb(null, "", "");
   };
   const bd = createBanDung({ ffmpeg: () => "/x/ffmpeg", tam: () => tam, run, phong: [phong] });
+  // Hồ sơ có cổng 2 cũ nhưng thiếu dấu phê duyệt hiện tại: chốt lại trước khi nghiệm thu.
+  assert.equal(bd.trangThai(d).cong[1].canDuyetLai, true);
+  bd.duyetCong(d, { cong: 2, duyet: true });
   const b = await bd.dungVaCho(d);
   assert.equal(bd.trangThai(d).dang, null);
   await bd.dungVaCho(d);

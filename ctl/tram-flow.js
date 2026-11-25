@@ -83,7 +83,7 @@ function docKetQua(text) {
   return null;
 }
 
-function createTramFlow({ dir, goc, audit = { log() {} }, jobs, cliClaude, spawnImpl = spawn, env = process.env, now = () => new Date(),
+function createTramFlow({ dir, goc, audit = { log() {} }, jobs, cliClaude, spawnImpl = spawn, env = process.env, now = () => new Date(), coDuyetQuay = () => false,
   thu = (cong) => new Promise((ok) => { const r = http.get({ host: "127.0.0.1", port: cong, path: "/json/version", timeout: 1500 }, (res) => { res.resume(); ok(res.statusCode === 200); }); r.on("error", () => ok(false)); r.on("timeout", () => { r.destroy(); ok(false); }); }) } = {}) {
   const fileCauHinh = path.join(dir, "flow-tram.json");
   const thuMucGoc = () => (typeof goc === "function" ? goc() : goc);
@@ -181,6 +181,7 @@ function createTramFlow({ dir, goc, audit = { log() {} }, jobs, cliClaude, spawn
     if (!kq.ok) throw err("PHIM_LOI", "Hồ sơ phim còn lỗi: " + kq.loi.map((l) => l.chiTiet).join(" · ").slice(0, 300));
     // Cổng CEO (P3): chuẩn bị cần cổng 1 (kịch bản); tạo (tốn credit) cần cả cổng 2. Tải về không cần (clip đã tạo rồi).
     if (buoc === "tao" && !congDaDuyet(phim, 2)) throw err("CHUA_DU_DIEU_KIEN", "Chưa tạo được: anh duyệt cổng 1 (kịch bản) và cổng 2 (khoản quay) trên trang Xưởng phim trước.");
+    if (buoc === "tao" && !coDuyetQuay(root, phim)) throw err("CHUA_DU_DIEU_KIEN", "Duyệt lại Cổng 2 cho phương án và ngân sách đang dùng trước khi tạo trên Flow.");
     if (buoc === "chuan-bi" && !congDaDuyet(phim, 1)) throw err("CHUA_DU_DIEU_KIEN", "Chưa chuẩn bị được: anh duyệt cổng 1 (kịch bản) trên trang Xưởng phim trước.");
     const c = (phim.canh || []).find((x) => x.ma === canh);
     if (!c) throw err("NOT_FOUND", "Không có cảnh " + canh);

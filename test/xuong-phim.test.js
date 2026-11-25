@@ -143,6 +143,53 @@ test("model Kokoro ghim mã băm SHA-256 và tải từ release cố định c�
 
 // Script giọng đọc: kiểm đầu vào trước khi gọi bộ giọng (không cần mạng hay thư viện).
 const PY = ["python3", "python"].find((p) => spawnSync(p, ["--version"]).status === 0);
+const ffmpeg = xp.timFfmpeg();
+test("TTS theo cảnh đo âm thanh thật và ghép hai mốc liền nhau dù lời dẫn có nhiều câu", { skip: (!PY || !ffmpeg) && "cần Python và FFmpeg" }, (t) => {
+  const d = tmp(t);
+  const script = path.join(__dirname, "..", "tools", "xuong-phim", "tts_sync.py");
+  const loi = ["Cảnh hai lên trước. Câu này vẫn ở cảnh hai.", "Cảnh một đứng sau."];
+  const canh = ghi(path.join(d, "canh.json"), JSON.stringify(loi));
+  const soMau = [];
+  function docPcm(file) {
+    const ketQua = spawnSync(ffmpeg, ["-v", "error", "-i", file, "-f", "s16le", "-"]);
+    assert.equal(ketQua.status, 0, ketQua.stderr?.toString());
+    return ketQua.stdout.length / 2;
+  }
+  for (const [i, giay] of [0.4, 0.6].entries()) {
+    const mau = path.join(d, `mau-${i}.mp3`);
+    const tao = spawnSync(ffmpeg, ["-v", "error", "-f", "lavfi", "-i", `sine=duration=${giay}:sample_rate=24000`,
+      "-c:a", "libmp3lame", mau], { encoding: "utf8" });
+    assert.equal(tao.status, 0, tao.stderr);
+    soMau.push(docPcm(mau));
+  }
+  ghi(path.join(d, "pylib", "edge_tts.py"), [
+    "from pathlib import Path",
+    "class SubMaker:",
+    "    def get_srt(self): return ''",
+    "class Communicate:",
+    "    def __init__(self, text, voice, **kwargs):",
+    "        self.which = 0 if text.startswith('Cảnh hai') else 1",
+    "    async def stream(self):",
+    "        audio = Path.cwd() / f'mau-{self.which}.mp3'",
+    "        yield {'type': 'audio', 'data': audio.read_bytes()}",
+  ].join("\n"));
+  const out = path.join(d, "out", "voice");
+  const env = { ...process.env, PYTHONPATH: path.join(d, "pylib"), XUONG_PHIM_FFMPEG: ffmpeg };
+  const r = spawnSync(PY, [script, "--scenes-file", canh, "--output", out], { cwd: d, env, encoding: "utf8" });
+  assert.equal(r.status, 0, r.stderr || r.stdout);
+  const moc = JSON.parse(fs.readFileSync(out + ".json", "utf8"));
+  const mocGiua = Math.round(soMau[0] / 24), mocCuoi = Math.round((soMau[0] + soMau[1]) / 24);
+  assert.deepEqual(moc.map(({ index, startMs, endMs, text }) => [index, startMs, endMs, text]), [
+    [1, 0, mocGiua, loi[0]], [2, mocGiua, mocCuoi, loi[1]],
+  ]);
+  const srt = fs.readFileSync(out + ".srt", "utf8");
+  const timecodes = srt.trim().split(/\r?\n/).filter((s) => s.includes(" --> "));
+  assert.equal(timecodes.length, 2);
+  assert.equal(timecodes[0].split(" --> ")[1], timecodes[1].split(" --> ")[0]);
+  // Một số phiên bản FFmpeg giữ một phần độ trễ bộ mã hóa MP3 khi giải mã.
+  assert.ok(Math.abs(docPcm(out + ".mp3") - (soMau[0] + soMau[1])) <= 576);
+});
+
 test("tts_sync.py: kịch bản rỗng (kể cả chỉ có BOM) và tham số sai thoát mã 1, không tạo file", { skip: !PY && "không có Python" }, (t) => {
   const d = tmp(t), script = path.join(__dirname, "..", "tools", "xuong-phim", "tts_sync.py");
   const bom = ghi(path.join(d, "bom.txt"), "﻿  \n");
