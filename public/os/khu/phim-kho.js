@@ -19,8 +19,8 @@ export async function mo(vung, { ctl = ctlMacDinh, bao = baoMacDinh, signal } = 
     if (!document.hidden) {
       try { const r = await ctl("/phim/du-an"); if (!conSong) return; ds = r.duAn || []; loaiDs = r.loai || []; kho = r.kho || ""; loiTai = ""; }
       catch (e) { if (!conSong) return; loiTai = e.message; }
-      // Biểu mẫu Phim mới đang mở hay đang gửi thì không vẽ lại (giữ chữ anh đang gõ); vẽ khi đóng biểu mẫu.
-      if (!ban && !moTao) ve();
+      // Đang thao tác (ban) thì lam() tự vẽ lại khi xong. ve() không đụng biểu mẫu Phim mới khi nó đang mở.
+      if (!ban) ve();
     }
     if (conSong) hen = setTimeout(tai, 30000);
   }
@@ -51,11 +51,22 @@ export async function mo(vung, { ctl = ctlMacDinh, bao = baoMacDinh, signal } = 
     </form>`;
   }
 
-  function ve() {
-    if (!ds) { goc.innerHTML = loiTai ? loi(loiTai) : dangTai(4); return; }
-    const dau = `<div class="dau-hang"><h2 class="dau">Kho phim</h2><span class="mo">${esc(kho)}</span>
+  // Hai vùng riêng: đầu trang + biểu mẫu Phim mới (#dauKho) và danh sách phim (#dsKho). Làm mới định kỳ, Thử lại,
+  // Dọn nháp, gắn loại chỉ vẽ lại và khoá danh sách, không bao giờ đụng biểu mẫu anh đang gõ.
+  goc.innerHTML = `<div id="dauKho"></div><div id="dsKho" class="vung">${dangTai(4)}</div>`;
+  const dauKho = goc.querySelector("#dauKho"), dsKho = goc.querySelector("#dsKho");
+  function veDau() {
+    dauKho.innerHTML = `<div class="dau-hang"><h2 class="dau">Kho phim</h2><span class="mo">${esc(kho)}</span>
       <button type="button" class="nut-chinh" data-phim-moi aria-expanded="${moTao}">+ Phim mới</button></div>` + (moTao ? veTao() : "");
-    if (!ds.length) { goc.innerHTML = (loiTai ? loi(loiTai) : "") + dau + (moTao ? "" : rong("Kho phim còn trống", "Bấm + Phim mới, đặt tên và chọn loại. Mỗi loại là một thư mục trong kho.")); return; }
+  }
+  function ve() {
+    if (!moTao) veDau();
+    dsKho.innerHTML = veDs();
+    if (ban) dsKho.querySelectorAll("button, select, input, textarea").forEach((el) => { el.disabled = true; });
+  }
+  function veDs() {
+    if (!ds) return loiTai ? loi(loiTai) : dangTai(4);
+    if (!ds.length) return (loiTai ? loi(loiTai) : "") + rong("Kho phim còn trống", "Bấm + Phim mới, đặt tên và chọn loại. Mỗi loại là một thư mục trong kho.");
     const dangLam = ds.filter((p) => !p.daXuat), daXuat = ds.filter((p) => p.daXuat);
     const nhom = [...loaiDs, { id: "chua-phan-loai", ten: "Chưa phân loại" }].map((l) => {
       const ps = dangLam.filter((p) => p.loai === l.id);
@@ -67,8 +78,7 @@ export async function mo(vung, { ctl = ctlMacDinh, bao = baoMacDinh, signal } = 
     }).join("");
     const xuat = daXuat.length ? `<details class="khoi nhom-phim"><summary><b>Đã xuất</b> <span class="mo">${daXuat.length} phim</span></summary>
       <div class="luoi-phim">${daXuat.map(veThe).join("")}</div></details>` : "";
-    goc.innerHTML = (loiTai ? loi(loiTai) : "") + dau + nhom + xuat;
-    if (ban) goc.querySelectorAll("button, select, input, textarea").forEach((el) => { el.disabled = true; });
+    return (loiTai ? loi(loiTai) : "") + nhom + xuat;
   }
 
   async function lam(fn) {
@@ -83,7 +93,7 @@ export async function mo(vung, { ctl = ctlMacDinh, bao = baoMacDinh, signal } = 
     if (t.hasAttribute("data-thu-lai")) { ds = null; ve(); return tai(); }
     if (t.hasAttribute("data-mo-phim")) { try { localStorage.setItem("tqos-phim", t.dataset.moPhim); } catch {} return; }   // để liên kết tự chuyển trang
     if (t.hasAttribute("data-phim-moi") || t.hasAttribute("data-huy-tao")) {
-      moTao = t.hasAttribute("data-phim-moi") ? !moTao : false; ve();
+      moTao = t.hasAttribute("data-phim-moi") ? !moTao : false; veDau();
       if (moTao) goc.querySelector("#fTaoPhim [name=ten]")?.focus(); else goc.querySelector("[data-phim-moi]")?.focus();
       return;
     }

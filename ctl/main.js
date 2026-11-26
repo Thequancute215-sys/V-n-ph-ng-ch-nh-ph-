@@ -161,8 +161,8 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
     (duLieuThat ? process.env.VP_KHO_PHIM || path.join(path.dirname(path.resolve(projectsDir)), "XuongPhim") : path.join(dir, "kho-phim")) });
   // Phim đang quay / dựng / chạy luồng / Blender / nhịp Flow / AI Helper tạo ảnh / xuất gói CapCut thì không dọn nháp.
   const phimDangBan = (root) => !!(mayQuay.trangThai(root).dang || (banDung.trangThai(root) || {}).dang || (luongPhim.trangThai(root) || {}).trangThai === "dang_chay" ||
-    (blenderPhim.trangThai(root) || {}).dang || helperDangTao.has(root) || capcutDangXuat.has(root) ||
-    path.resolve(String((tramFlow.nhipDang() || {}).root || "x")).toLowerCase() === path.resolve(root).toLowerCase());
+    (blenderPhim.trangThai(root) || {}).dang || helperDangTao.has(root) || capcutDangXuat.has(root) || nhipFlowCua(root));
+  const nhipFlowCua = (root) => { const n = tramFlow.nhipDang(); return !!(n && n.root && path.resolve(n.root).toLowerCase() === path.resolve(root).toLowerCase()); };
   const duAnMoi = createDuAnMoi({ github, ideas, boKiem, audit, dir, ...duAnOptions });
   const quotas = createQuotas({ ...quotaOptions, dir, agyTk, codexTk });
   quotasRef = quotas;
