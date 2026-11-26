@@ -107,3 +107,14 @@ test("vai lạ bị từ chối; dự án đang bận lượt AI thì AI_BUSY", 
   assert.throws(() => ctl.runner.chayPhim({ workspace: repo, role: "CLAUDE_REPORTER", prompt: "b", chiDoc: true }), (e) => e.code === "AI_BUSY");
   await p;
 });
+
+test("vai Cố vấn phim (PHIM_CO_VAN) dùng agy của Hinata, model gemini-4-carbon-high, chạy chỉ đọc (plan)", async () => {
+  const r = await ctl.runner.chayPhim({ workspace: repo, role: "PHIM_CO_VAN", prompt: "Góp ý kịch bản", chiDoc: true });
+  assert.equal(r.ok, true, r.loi);
+  const dong = r.text.split(/\r?\n/).find((l) => l.startsWith("DAU-agy"));
+  assert.ok(dong, r.text.slice(-500));
+  assert.match(dong, /"--model","gemini-4-carbon-high"/);
+  assert.match(dong, /"--mode","plan"/);
+  assert.match(dong, /"--output-format","stream-json"/);
+  assert.doesNotMatch(dong, /dangerously|accept-edits/);
+});

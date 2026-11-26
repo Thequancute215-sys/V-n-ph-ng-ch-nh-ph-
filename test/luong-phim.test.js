@@ -245,7 +245,7 @@ test("đi hết bốn cổng, đứng chờ Flow và chỉ ghi báo cáo Claude 
 
   f.duyet(3);
   assert.equal((await f.tiep()).trangThai, "cho_cong_4");
-  assert.deepEqual(f.calls.ai.map(({ vai, chiDoc }) => [vai, chiDoc]), [["SPEC_ARCHITECT", false], ["CLAUDE_REPORTER", true]]);
+  assert.deepEqual(f.calls.ai.map(({ vai, chiDoc }) => [vai, chiDoc]), [["SPEC_ARCHITECT", false], ["PHIM_CO_VAN", true], ["CLAUDE_REPORTER", true]]);   // Cố vấn góp ý trước Cổng 1 (chỉ đọc)
   const baoCao = fs.readFileSync(path.join(f.root, "media", "xuat", "nghiem-thu.md"), "utf8");
   assert.match(baoCao, /Các bản xuất đều đạt/);
   assert.match(baoCao, /Video tạo bằng AI/);
@@ -264,7 +264,7 @@ test("đi hết bốn cổng, đứng chờ Flow và chỉ ghi báo cáo Claude 
   f.duyet(3);
   assert.equal((await f.tiep()).trangThai, "cho_cong_4");
   assert.equal(f.calls.dung.length, 1);
-  assert.equal(f.calls.ai.length, 2);
+  assert.equal(f.calls.ai.length, 3);   // Hinata, Cố vấn trước Cổng 1, Claude nghiệm thu (quay lui Cổng 2 không góp ý lại)
   assert.equal(f.calls.quay.length, 3);
 });
 
@@ -314,7 +314,7 @@ test("hồ sơ có cảnh hợp lệ bỏ qua Hinata, gặp Kling thì chờ ng�
   const f = tao(t, { coPhim: true, may: ["kling-3"] });
   f.mo();
   await f.denCong2();
-  assert.equal(f.calls.ai.length, 0);
+  assert.equal(f.calls.ai.filter((x) => x.vai === "SPEC_ARCHITECT").length, 0, "hồ sơ hợp lệ thì không gọi Hinata");
   f.chonKhung();
   f.duyet(2);
   assert.equal((await f.tiep()).trangThai, "can_anh");
@@ -501,4 +501,70 @@ test("bàn dựng trả về mà thiếu tệp kết quả thì chỉ báo một
   assert.equal((await f.tiep()).trangThai, "loi");
   await f.calls.tick();
   assert.equal(lan, 1);
+});
+
+test("Cố vấn Antigravity góp ý chỉ đọc trước Cổng 1 và Cổng 2, không gọi lại khi nội dung không đổi, lỗi không chặn cổng", async (t) => {
+  const f = tao(t);
+  const goc = f.deps.chayAi;
+  let traLoi = "## Đánh giá chung\n8/10 — mạch rõ.\n## Kết luận\nNên duyệt";
+  f.deps.chayAi = async (input) => {
+    if (input.vai !== "PHIM_CO_VAN") return goc(input);
+    f.calls.ai.push(input);
+    return { ok: true, text: [JSON.stringify({ event: "init" }), JSON.stringify({ event: "result", result: { status: "SUCCESS", response: traLoi } })].join("\n") };
+  };
+  const soCoVan = () => f.calls.ai.filter((x) => x.vai === "PHIM_CO_VAN").length;
+  f.mo();
+  f.batDau();
+  assert.equal((await f.tiep()).trangThai, "cho_cong_1");
+  const cv1 = f.calls.ai.filter((x) => x.vai === "PHIM_CO_VAN");
+  assert.equal(cv1.length, 1);
+  assert.equal(cv1[0].chiDoc, true, "cố vấn luôn chỉ đọc");
+  assert.match(cv1[0].prompt, /trước Cổng 1/);
+  assert.match(cv1[0].prompt, /KHÔNG ghi, sửa, tạo tệp/);
+  const tep1 = fs.readFileSync(path.join(f.root, "media", "co-van", "cong-1.md"), "utf8");
+  assert.match(tep1, /^<!-- co-van: [a-f0-9]{64} -->/);
+  assert.match(tep1, /8\/10 — mạch rõ/);
+  assert.deepEqual([f.tt().coVan[1].file, f.tt().coVan[1].loi, f.tt().coVanDang], ["media/co-van/cong-1.md", "", undefined]);
+
+  // Lịch quét chạy lại khi đang chờ cổng: nội dung không đổi thì không gọi cố vấn lần nữa.
+  await f.calls.tick(); await f.tiep();
+  assert.equal(soCoVan(), 1);
+  // Sửa lời dẫn: góp ý lại; lần này Antigravity trả rỗng thì ghi lỗi, vẫn chờ Cổng 1, không gọi lại mỗi lần quét.
+  traLoi = "";
+  f.sua((p) => { p.canh[0].loi_dan = "Lời dẫn mới của cảnh một."; });
+  assert.equal((await f.tiep()).trangThai, "cho_cong_1");
+  assert.equal(soCoVan(), 2);
+  assert.match(f.tt().coVan[1].loi, /chưa trả lời/);
+  await f.tiep();
+  assert.equal(soCoVan(), 2, "lỗi với cùng nội dung thì không gọi lại");
+
+  // Cổng 2: chỉ góp ý khi mọi cảnh đã chọn khung và CEO chưa duyệt; cố vấn không tự duyệt.
+  traLoi = "## Kết luận\nNên sửa trước khi duyệt";
+  f.duyet(1);
+  assert.equal((await f.tiep()).trangThai, "cho_cong_2");
+  assert.equal(soCoVan(), 2, "chưa chọn khung thì chưa góp ý Cổng 2");
+  f.chonKhung();
+  assert.equal((await f.tiep()).trangThai, "cho_cong_2");
+  const cv2 = f.calls.ai.filter((x) => x.vai === "PHIM_CO_VAN").at(-1);
+  assert.equal(soCoVan(), 3);
+  assert.match(cv2.prompt, /trước Cổng 2/);
+  assert.match(cv2.prompt, /media\/khung\/C01-1\.png/, "đưa ảnh khung đã chọn cho cố vấn xem");
+  assert.match(fs.readFileSync(path.join(f.root, "media", "co-van", "cong-2.md"), "utf8"), /Nên sửa trước khi duyệt/);
+  assert.equal(f.doc().cong[2], undefined, "cố vấn không tự duyệt cổng");
+});
+
+test("Cố vấn: CEO bấm dừng trong lúc góp ý thì luồng dừng, không chuyển sang chờ cổng", async (t) => {
+  const f = tao(t);
+  const goc = f.deps.chayAi;
+  let luongRef = null;
+  f.deps.chayAi = async (input) => {
+    if (input.vai !== "PHIM_CO_VAN") return goc(input);
+    f.calls.ai.push(input);
+    void luongRef.dung(f.root, "ceo-thu");
+    return { ok: true, text: JSON.stringify({ event: "result", result: { status: "SUCCESS", response: "Góp ý" } }) };
+  };
+  luongRef = f.mo();
+  f.batDau();
+  assert.equal((await f.tiep()).trangThai, "dung");
+  assert.equal(fs.existsSync(path.join(f.root, "media", "co-van", "cong-1.md")), false, "dừng giữa chừng thì không ghi góp ý");
 });

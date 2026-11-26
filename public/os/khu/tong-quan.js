@@ -99,11 +99,23 @@ export async function mo(vung, { kho, ngan, signal }) {
     const ds = (q && q.providers) || [];
     if (!ds.length) { $("hanMuc").innerHTML = rong("Chưa đọc được hạn mức", "Văn phòng đọc hạn mức từ CLI đã đăng nhập; mở trang Kết nối nếu thiếu."); return; }
     const TEN = { codex: "Codex (GPT)", claude: "Claude", antigravity: "Antigravity" };
-    $("hanMuc").innerHTML = `<table class="bang"><tbody>` + ds.flatMap((p) => (p.buckets || []).map((b, i) => {
-      const con = Number.isFinite(b.remainingPercent) ? Math.max(0, Math.min(100, Math.round(b.remainingPercent))) : null;
-      return `<tr><td>${i ? "" : `<b>${esc(TEN[p.id] || p.id)}</b>`}${p.error ? `<div class="hong">${esc(cat(p.error, 80))}</div>` : ""}</td><td class="mo" style="white-space:nowrap">${esc(b.label || "")}</td>` +
-        `<td style="width:40%"><div class="thanh-do" role="img" aria-label="Còn ${con ?? "?"}%"><i class="${con !== null && con < 15 ? "it" : ""}" style="transform:scaleX(${con === null ? 0 : con / 100})"></i></div></td>` +
-        `<td class="so">${con === null ? "?" : con + "%"}</td></tr>`; })).join("") + `</tbody></table>`;
+    const phanTram = (v) => Number.isFinite(v) ? Math.max(0, Math.min(100, Math.round(v))) : null;
+    const dong = (nhan, con, ghiChu = "") => `<tr><td class="mo" style="white-space:normal">${nhan}</td>` +
+      `<td style="width:34%"><div class="thanh-do" style="min-width:32px" role="img" aria-label="${esc(ghiChu || "Còn")} ${con ?? "?"}%"><i class="${con !== null && con < 15 ? "it" : ""}" style="transform:scaleX(${con === null ? 0 : con / 100})"></i></div></td>` +
+      `<td class="so">${con === null ? "?" : con + "%"}</td></tr>`;
+    // Mỗi nhà cung cấp: một dòng tên, các ô hạn mức của TÀI KHOẢN ĐANG DÙNG (ghi rõ nhóm: Gemini hay Claude/GPT trong
+    // Antigravity), rồi một dòng cho từng tài khoản đã cất (văn phòng tự chuyển khi tài khoản đang dùng gần hết).
+    $("hanMuc").innerHTML = `<table class="bang"><tbody>` + ds.map((p) => {
+      const tk = (p.taiKhoan && p.taiKhoan.ds) || [];
+      const nhieuNhom = new Set((p.buckets || []).map((b) => b.group)).size > 1;
+      const nhomNgan = (g) => /claude|gpt/i.test(String(g)) ? "Claude/GPT" : g;   // "Claude / GPT trong Antigravity" quá dài cho cột hẹp
+      const dau = `<tr><th colspan="3" scope="rowgroup" style="text-align:left"><b>${esc(TEN[p.id] || p.id)}</b>${tk.length > 1 ? ` <span class="mo">· ${tk.length} tài khoản</span>` : ""}` +
+        `${p.error ? `<div class="hong">${esc(cat(p.error, 80))}</div>` : ""}</th></tr>`;
+      const oDang = (p.buckets || []).map((b) => dong(esc((nhieuNhom && b.group ? nhomNgan(b.group) + " · " : "") + (b.label || "")), phanTram(b.remainingPercent)));
+      const oTk = tk.length > 1 ? tk.map((a) => dong(`<span class="${a.dangDung ? "song" : ""}">TK ${esc(a.nhan)}${a.dangDung ? " · đang dùng" : ""}</span>`,
+        phanTram(a.conLai), "Tài khoản " + a.nhan + " còn")) : [];
+      return dau + [...oDang, ...oTk].join("");
+    }).join("") + `</tbody></table>`;
     $("lucHanMuc").textContent = "còn lại";
   }
 

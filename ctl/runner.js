@@ -120,6 +120,8 @@ const AGENTS = {
   // CEO chat trực tiếp với từng AI (ctl/chat.js): luôn chỉ đọc, không theo toàn quyền.
   CLAUDE_CHAT: { base: "CLAUDE_AUDITOR", argv: ["claude", "-p", "{prompt}", "--output-format", "json", "--max-turns", "12", "--permission-mode", "plan", "--tools", "Read,Grep,Glob"], timeoutMs: 6 * MIN, prompt: "" },
   CODEX_CHAT: { base: "CODEX_ASTRA_DEV", argv: ["codex", "exec", "--json", "--sandbox", "read-only", "{prompt}"], timeoutMs: 6 * MIN, prompt: "" },
+  // Cố vấn kịch bản và cảnh quay của luồng phim (CEO 26/11/2026): Antigravity Gemini 4 Carbon (High), luồng luôn gọi ở chế độ chỉ đọc.
+  PHIM_CO_VAN: { base: "SPEC_ARCHITECT", argv: ["agy", "-p", "{prompt}", "--output-format", "stream-json", "--model", "gemini-4-carbon-high", "--print-timeout", "15m"], timeoutMs: 16 * MIN, prompt: "" },
   AGY_CHAT: { base: "SPEC_ARCHITECT", argv: ["agy", "-p", "{prompt}", "--output-format", "json", "--mode", "plan", "--print-timeout", "5m", "--settings", AGY_READ], timeoutMs: 6 * MIN, prompt: "" },
 };
 // TOÀN QUYỀN (CEO chọn 03/11/2026, cách B): các vai làm việc chạy không giới hạn quyền trên máy để tiện kiểm thử
