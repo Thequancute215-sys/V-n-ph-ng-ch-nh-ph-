@@ -156,6 +156,8 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
   // Kho phim (CEO yêu cầu 26/11/2026): mọi phim chung một thư mục cạnh thư mục dự án code (D:\XuongPhim trên máy CEO).
   const khoPhim = createKhoPhim({ ws, audit, goc: khoPhimDir || process.env.VP_KHO_PHIM ||
     (path.resolve(dir) === path.join(os.homedir(), ".van-phong-ao") ? path.join(path.dirname(path.resolve(projectsDir)), "XuongPhim") : path.join(dir, "kho-phim")) });   // thư mục dữ liệu riêng (test, VP_HOME) thì kho nằm trong đó
+  // Phim đang quay / dựng / chạy luồng / Blender thì không dọn nháp.
+  const phimDangBan = (root) => !!(mayQuay.trangThai(root).dang || (banDung.trangThai(root) || {}).dang || (luongPhim.trangThai(root) || {}).trangThai === "dang_chay" || (blenderPhim.trangThai(root) || {}).dang);
   const duAnMoi = createDuAnMoi({ github, ideas, boKiem, audit, dir, ...duAnOptions });
   const quotas = createQuotas({ ...quotaOptions, dir, agyTk, codexTk });
   quotasRef = quotas;
@@ -280,8 +282,11 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
     ["POST", "/ket-noi/cai-may", async (p, qs, b) => ({ ketNoi: await connectors.caiMay(String(b.id || "")) })],
     // Xưởng phim P0: kiểm FFmpeg, Python chung, giọng đọc; cài chạy nền khi CEO bấm (trang Kết nối hỏi lại tới khi xong).
     // Xưởng phim P2: hồ sơ, ước tính, quay (chạy nền), phần của CEO, trạm Flow.
-    ["GET", "/phim/du-an", () => ({ duAn: khoPhim.list(), kho: khoPhim.goc })],
-    ["POST", "/phim/kho", (p, qs, b) => [201, { phim: khoPhim.tao({ ten: b.ten, yTuong: b.yTuong }) }]],
+    ["GET", "/phim/du-an", () => ({ duAn: khoPhim.list(), kho: khoPhim.goc, loai: khoPhim.LOAI })],
+    ["POST", "/phim/kho", (p, qs, b) => [201, { phim: khoPhim.tao({ ten: b.ten, loai: b.loai, yTuong: b.yTuong }) }]],
+    ["POST", "/phim/kho/loai", (p, qs, b) => ({ phim: khoPhim.datLoai(b.workspace, b.loai) })],
+    ["GET", "/phim/don-nhap", (p, qs) => { const n = khoPhim.nhap(qs.get("workspace")); return { tep: n.tep, tong: n.tong, ma: n.ma }; }],
+    ["POST", "/phim/don-nhap", (p, qs, b) => ({ donNhap: khoPhim.donNhap(b.workspace, b.ma, { ban: phimDangBan }) })],
     ["GET", "/phim/tai-lieu", (p, qs) => ({ taiLieu: phimTaiLieu.list(phimLuongRoot(qs.get("workspace"))) })],
     ["POST", "/phim/tai-lieu", (p, qs, b) => [201, { taiLieu: phimTaiLieu.save(phimLuongRoot(b.workspace), b) }]],
     ["POST", "/phim/mo-hinh/duyet", (p, qs, b) => ({ moHinh: phimTaiLieu.approve(phimLuongRoot(b.workspace), b.id) })],

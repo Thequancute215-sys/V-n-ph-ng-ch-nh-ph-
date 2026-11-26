@@ -85,7 +85,7 @@ test("AGY-H04/H05: điểm vào desktop, tính năng OS (tạo dự án, CI, xu�
   assert.match(duAn, /qs\.get\("loai"\) === "phim"/);
 
   const phim = doc("os/khu/phim.js");
-  assert.match(phim, /id="fTaoPhim"/);   // Xưởng phim tự tạo phim vào kho phim, không qua trang Dự án của Xưởng code
+  assert.match(phim, /href="#\/phim\/kho"/);   // phim mới tạo ở Kho phim, không qua trang Dự án của Xưởng code
   assert.match(phim, /href="#\/he\/ket-noi"/);
 
   const app = doc("app.js");
