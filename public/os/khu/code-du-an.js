@@ -34,8 +34,12 @@ export async function mo(vung, { kho, ctl, bao, signal }) {
   let pubWs = null, pubData = null, pubLoi = "", pubBan = false, pubHen = null;
 
   async function tai() {
-    try { const d = await ctl("/workspaces"); ds = d.workspaces || []; loiDs = ""; }
-    catch (e) { ds = null; loiDs = e.message; }
+    // Phim (trong Kho phim hay phim cũ có phim.json) thuộc Xưởng phim: không hiện lẫn trong dự án code.
+    const [w, p] = await Promise.allSettled([ctl("/workspaces"), ctl("/phim/du-an")]);
+    if (w.status === "fulfilled") {
+      const phim = new Set(p.status === "fulfilled" ? (p.value.duAn || []).map((x) => String(x.path).toLowerCase()) : []);
+      ds = (w.value.workspaces || []).filter((x) => !phim.has(String(x.path).toLowerCase())); loiDs = "";
+    } else { ds = null; loiDs = w.reason.message; }
     if (!conSong) return;
     ve();
     for (const w of ds || []) {

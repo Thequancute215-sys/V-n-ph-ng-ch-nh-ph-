@@ -30,6 +30,7 @@ const { createMayQuay } = require("./may-quay");
 const { createTramFlow } = require("./tram-flow");
 const { createBanDung } = require("./ban-dung");
 const { createLuongPhim } = require("./luong-phim");
+const { createKhoPhim } = require("./kho-phim");
 const phimTaiLieu = require("./phim-tai-lieu");
 const phimHelper = require("./phim-helper");
 const { createPhimBlender } = require("./phim-blender");
@@ -68,7 +69,7 @@ const HTTP_CODE = {
   CHUA_DUNG_DUOC: 422, DANG_DUNG: 409, THIEU_FFMPEG: 409, THIEU_THU_MUC: 409, DUNG_LOI: 500, CHUA_DU_DIEU_KIEN: 409,
 };
 
-function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {}, quotaOptions = {}, updaterOptions = {}, agyOptions = {}, autopilotOptions = {}, notify = false } = {}) {
+function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {}, quotaOptions = {}, updaterOptions = {}, agyOptions = {}, autopilotOptions = {}, notify = false } = {}) {
   const db = open(dir);
   const audit = createAudit(db);
   // Nhiều tài khoản GPT cho Codex (ctl/codex-tai-khoan.js): mỗi tiến trình Codex mở ra nhận CODEX_HOME của tài khoản đang chọn.
@@ -152,6 +153,16 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
   const defaultProjects = path.join(os.homedir(), "Projects"), projectsDir = githubOptions.projectsDir || process.env.VP_PROJECTS_DIR || defaultProjects;
   const github = createGitHub({ alsoLook: githubOptions.projectsDir || projectsDir === defaultProjects ? [] : [defaultProjects], ...githubOptions, projectsDir, ws, jobs, audit, select: selectWorkspace });
   // Tạo dự án mới: gợi ý tên repo, CEO duyệt rồi mới tạo repo + tải về + agent.md + bộ kiểm + giao Hinata (ctl/du-an-moi.js).
+  // Kho phim (CEO yêu cầu 26/11/2026): mọi phim chung một thư mục cạnh thư mục dự án code (D:\XuongPhim trên máy CEO).
+  // Chỉ văn phòng chạy bằng dữ liệu thật (~/.van-phong-ao) mới dùng kho thật (VP_KHO_PHIM hoặc <cha của thư mục dự án>\XuongPhim);
+  // thư mục dữ liệu riêng (test, VP_HOME) thì kho nằm trong đó, không bao giờ ghi vào kho của CEO.
+  const duLieuThat = path.resolve(dir).toLowerCase() === path.join(os.homedir(), ".van-phong-ao").toLowerCase();
+  const khoPhim = createKhoPhim({ ws, audit, goc: khoPhimDir ||
+    (duLieuThat ? process.env.VP_KHO_PHIM || path.join(path.dirname(path.resolve(projectsDir)), "XuongPhim") : path.join(dir, "kho-phim")) });
+  // Phim đang quay / dựng / chạy luồng / Blender / nhịp Flow / AI Helper tạo ảnh / xuất gói CapCut thì không dọn nháp.
+  const phimDangBan = (root) => !!(mayQuay.trangThai(root).dang || (banDung.trangThai(root) || {}).dang || (luongPhim.trangThai(root) || {}).trangThai === "dang_chay" ||
+    (blenderPhim.trangThai(root) || {}).dang || helperDangTao.has(root) || capcutDangXuat.has(root) || nhipFlowCua(root));
+  const nhipFlowCua = (root) => { const n = tramFlow.nhipDang(); return !!(n && n.root && path.resolve(n.root).toLowerCase() === path.resolve(root).toLowerCase()); };
   const duAnMoi = createDuAnMoi({ github, ideas, boKiem, audit, dir, ...duAnOptions });
   const quotas = createQuotas({ ...quotaOptions, dir, agyTk, codexTk });
   quotasRef = quotas;
@@ -276,7 +287,11 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     ["POST", "/ket-noi/cai-may", async (p, qs, b) => ({ ketNoi: await connectors.caiMay(String(b.id || "")) })],
     // Xưởng phim P0: kiểm FFmpeg, Python chung, giọng đọc; cài chạy nền khi CEO bấm (trang Kết nối hỏi lại tới khi xong).
     // Xưởng phim P2: hồ sơ, ước tính, quay (chạy nền), phần của CEO, trạm Flow.
-    ["GET", "/phim/du-an", () => ({ duAn: ws.list().filter((w) => fs.existsSync(path.join(w.path, "phim.json"))).map((w) => ({ path: w.path, ten: path.basename(w.path) })) })],
+    ["GET", "/phim/du-an", () => ({ duAn: khoPhim.list(), kho: khoPhim.goc, loai: khoPhim.LOAI })],
+    ["POST", "/phim/kho", (p, qs, b) => [201, { phim: khoPhim.tao({ ten: b.ten, loai: b.loai, yTuong: b.yTuong }) }]],
+    ["POST", "/phim/kho/loai", (p, qs, b) => ({ phim: khoPhim.datLoai(b.workspace, b.loai) })],
+    ["GET", "/phim/don-nhap", (p, qs) => { const n = khoPhim.nhap(qs.get("workspace")); return { tep: n.tep, tong: n.tong, ma: n.ma }; }],
+    ["POST", "/phim/don-nhap", (p, qs, b) => ({ donNhap: khoPhim.donNhap(b.workspace, b.ma, { ban: phimDangBan }) })],
     ["GET", "/phim/tai-lieu", (p, qs) => ({ taiLieu: phimTaiLieu.list(phimLuongRoot(qs.get("workspace"))) })],
     ["POST", "/phim/tai-lieu", (p, qs, b) => [201, { taiLieu: phimTaiLieu.save(phimLuongRoot(b.workspace), b) }]],
     ["POST", "/phim/mo-hinh/duyet", (p, qs, b) => ({ moHinh: phimTaiLieu.approve(phimLuongRoot(b.workspace), b.id) })],
@@ -627,7 +642,7 @@ function createCtl({ duAnOptions = {}, dir = home(), token = crypto.randomBytes(
     db.close();
   }
 
-  return { server, jobs, ws, files, xuongPhim, mayQuay, tramFlow, runner, autopilot, scanner, publisher, chat, connectors, journal, github, quotas, agyTk, codexTk, updater, boKiem, audit, token, close };
+  return { server, jobs, ws, files, khoPhim, xuongPhim, mayQuay, tramFlow, runner, autopilot, scanner, publisher, chat, connectors, journal, github, quotas, agyTk, codexTk, updater, boKiem, audit, token, close };
 }
 
 if (require.main === module) {

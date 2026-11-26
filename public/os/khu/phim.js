@@ -64,7 +64,7 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
     catch (e) { if (conSong) goc.innerHTML = loi(e.message); return; }
     if (!conSong) return;
     dsPhim = ds;
-    if (!dsPhim.length) { goc.innerHTML = rong("Chưa có dự án phim nào", "Tạo một dự án loại Phim AI ở Dự án; văn phòng dựng sẵn phim.json.", `<a class="nut" href="#/code/du-an?loai=phim">Tạo dự án phim</a>`); return; }
+    if (!dsPhim.length) { goc.innerHTML = rong("Chưa có phim nào", "Tạo phim ở Kho phim: đặt tên, chọn loại, văn phòng dựng sẵn phim.json.", `<a class="nut" href="#/phim/kho">Mở Kho phim</a>`); return; }
     if (phan === "kich-ban") {
       try { const schema = await ctl("/phim/helper/goc"); gocHelper = schema.goc || []; helperUI.styles = schema.phongCach || []; } catch {}
       if (!conSong) return;
@@ -110,8 +110,8 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
   }
 
   function veDauTrang(p, k, bd) {
-    const chon = `<div class="hang"><label for="chonPhim" class="mo">Dự án phim</label><select class="o" id="chonPhim">${dsPhim.map((d) => `<option value="${esc(d.path)}"${d.path === ws ? " selected" : ""}>${esc(d.ten)}</option>`).join("")}</select>` +
-      `<button type="button" class="nut nho" data-tai-lai>Tải lại</button><span class="mo">Mọi khoản tốn tiền đều hỏi lại trước khi gọi.</span></div>`;
+    const chon = `<div class="hang"><label for="chonPhim" class="mo">Phim</label><select class="o" id="chonPhim">${dsPhim.map((d) => `<option value="${esc(d.path)}"${d.path === ws ? " selected" : ""}>${esc(d.ten)}</option>`).join("")}</select>` +
+      `<a class="nut nho" href="#/phim/kho">Kho phim</a><button type="button" class="nut nho" data-tai-lai>Tải lại</button><span class="mo">Mọi khoản tốn tiền đều hỏi lại trước khi gọi.</span></div>`;
     if (!p) return chon;
     const dsCanh = p.canh || [];
     const daKhung = dsCanh.filter((c) => !!c.khung_chon).length;

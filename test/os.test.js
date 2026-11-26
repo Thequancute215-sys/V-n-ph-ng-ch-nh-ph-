@@ -92,13 +92,14 @@ test("OS-3: thanh bên chỉ còn khu gốc (không nhúng trang cũ, không cò
   const app = doc("os/app.js");
   const khu = app.slice(app.indexOf("const KHU = ["), app.indexOf("];", app.indexOf("const KHU = [")));
   const muc = khu.split("\n").filter((l) => /^\s*\{ id: /.test(l));
-  assert.ok(muc.length <= 14, "thanh bên tối đa 14 mục chính (theo thiết kế os.css), đang có " + muc.length);
+  assert.ok(muc.length <= 15, "thanh bên tối đa 15 mục chính (theo thiết kế os.css; Kho phim thêm 26/11/2026), đang có " + muc.length);
   assert.doesNotMatch(khu, /sapCo:/, "không còn mục Sắp có trên thanh bên");
   for (const l of muc) assert.doesNotMatch(l, /nhung: /, "mục trên thanh bên phải là khu gốc: " + l.trim());
   assert.match(khu, /id: "cu", ten: "Công cụ cũ", icon: "\w+", mod: "\.\/khu\/cong-cu-cu\.js"/);
   assert.match(khu, /id: "code\/giao-viec", [^\n]*mod: "\.\/khu\/giao-viec\.js", xuong: "code"/);
   assert.match(khu, /id: "code\/dieu-khien", [^\n]*mod: "\.\/khu\/luong\.js", xuong: "code"/);
   assert.match(khu, /id: "code\/pr", [^\n]*mod: "\.\/khu\/code-pr\.js", xuong: "code"/);
+  assert.match(khu, /id: "phim\/kho", [^\n]*mod: "\.\/khu\/phim-kho\.js", xuong: "phim"/);
   assert.match(khu, /id: "phim", [^\n]*mod: "\.\/khu\/phim\.js", xuong: "phim"/);
   assert.match(khu, /id: "phim\/canh", [^\n]*mod: "\.\/khu\/phim-canh\.js", xuong: "phim"/);
   assert.match(khu, /id: "phim\/ban-dung", [^\n]*mod: "\.\/khu\/phim-ban-dung\.js", xuong: "phim"/);
@@ -150,4 +151,12 @@ test("OS-3: nhãn chung đọc đúng câu hỏi của luồng và tên lượt"
   assert.ok(v.LUONG_SONG.has("waiting_quota") && v.LUONG_SONG.has("awaiting_scan") && !v.LUONG_SONG.has("approved"));
   assert.equal(v.tenDuAn(String.raw`D:\Projects\abc`), "abc");
   assert.equal(v.tenDuAn("/home/a/xyz"), "xyz");
+});
+
+test("Kho phim: trả hàm dọn cho OS (dừng hẹn giờ, gỡ visibilitychange) và không mở biểu mẫu khi chưa có danh sách loại", () => {
+  const src = doc("os/khu/phim-kho.js");
+  assert.match(src, /return dong;\s*\}\s*$/, "mo() phải trả hàm dọn để app.js gọi khi rời khu");
+  assert.match(src, /const dong = \(\) => \{[^}]*clearTimeout\(hen\)[^}]*removeEventListener\("visibilitychange", khiHien\)/);
+  assert.match(src, /data-phim-moi[^`]*\$\{loaiDs\.length \? "" : " disabled"\}/, "nút + Phim mới khoá khi chưa tải được loại");
+  assert.match(src, /function boSungTao\(\)/, "biểu mẫu đang mở được bổ sung loại khi tải xong, không vẽ lại");
 });

@@ -19,6 +19,7 @@ const KHU = [
   { id: "code/dieu-khien", ten: "Luồng và bàn giao", icon: "luong", mod: "./khu/luong.js", xuong: "code" },
   { id: "code/pr", ten: "Xem PR", icon: "pr", mod: "./khu/code-pr.js", xuong: "code" },
   { nhom: "Xưởng phim", xuong: "phim" },
+  { id: "phim/kho", ten: "Kho phim", icon: "du_an", mod: "./khu/phim-kho.js", xuong: "phim" },
   { id: "phim", ten: "Kịch bản và giọng đọc", icon: "luat", mod: "./khu/phim.js", xuong: "phim" },
   { id: "phim/canh", ten: "Phân cảnh và quay", icon: "canh", mod: "./khu/phim-canh.js", xuong: "phim" },
   { id: "phim/ban-dung", ten: "Bàn dựng và xuất xưởng", icon: "xuat", mod: "./khu/phim-ban-dung.js", xuong: "phim" },

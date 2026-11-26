@@ -17,6 +17,7 @@ export async function mo(vung, { kho, ngan, signal }) {
         <div id="canAnh">${dangTai(4)}</div></div></section>
       <section class="khoi" aria-labelledby="hHanMuc"><div class="dau-hang"><h2 class="dau" id="hHanMuc">Hạn mức AI</h2><span class="mo" id="lucHanMuc"></span></div><div id="hanMuc">${dangTai(3)}</div></section>
     </div>
+    <section class="khoi" aria-labelledby="hPhim"><div class="dau-hang"><h2 class="dau" id="hPhim">Phim đang làm</h2><a class="nut nho" href="#/phim/kho">Kho phim</a></div><div id="phimDangLam">${dangTai(2)}</div></section>
     <section class="khoi" aria-labelledby="hDoi"><h2 class="dau" id="hDoi">Đội AI</h2><div id="doi" class="bang-cuon">${dangTai(4)}</div></section>
     <div class="luoi-2">
       <section class="khoi" aria-labelledby="hLuong"><h2 class="dau" id="hLuong">Luồng tự chạy gần đây</h2><div id="luong">${dangTai(3)}</div></section>
@@ -31,13 +32,13 @@ export async function mo(vung, { kho, ngan, signal }) {
     if (!conSong) return;
     const mine = ++phien;
     if (!document.hidden) {
-      const [h, a, q] = await Promise.allSettled([ctl("/handoffs?scope=manual"), ctl("/autopilot"), ctl("/quotas")]);
+      const [h, a, q, ph] = await Promise.allSettled([ctl("/handoffs?scope=manual"), ctl("/autopilot"), ctl("/quotas"), ctl("/phim/du-an")]);
       if (!conSong || mine !== phien) return;
       handoffs = h.status === "fulfilled" ? h.value.handoffs || [] : null;
       runs = a.status === "fulfilled" ? a.value.runs || [] : null;
       loiCtl = [h, a].find((x) => x.status === "rejected")?.reason?.message || "";
       veHanMuc(q.status === "fulfilled" ? q.value : null, q.status === "rejected" ? q.reason.message : "");
-      veCanAnh(); veLuong();
+      veCanAnh(); veLuong(); vePhim(ph.status === "fulfilled" ? ph.value : null, ph.status === "rejected" ? ph.reason.message : "");
     }
     if (!conSong || mine !== phien) return;
     hen = setTimeout(taiCtl, 15000);
@@ -60,6 +61,19 @@ export async function mo(vung, { kho, ngan, signal }) {
       ? muc.map((m) => `<div class="dong"><div><div class="tieu">${esc(m.tieu)}</div><div class="chi-tiet">${esc(m.nguon)}${m.t ? ", " + esc(luc(m.t)) : ""}</div></div>${m.nut}</div>`).join("")
       : rong("Không có việc nào chờ anh", "Câu hỏi của AI, bàn giao chờ duyệt và luồng cần anh trả lời sẽ hiện ở đây.", `<a class="nut" href="#/code/giao-viec">Giao việc mới</a>`));
   }
+
+  // Phim đang làm (chưa qua Cổng 4), mới nhất trước; bấm để mở đúng bước. Đủ danh sách và nhóm theo loại ở Kho phim.
+  const BUOC_PHIM = { 1: ["#/phim", "chờ Cổng 1 · kịch bản"], 2: ["#/phim/canh", "chờ Cổng 2 · phân cảnh"], 3: ["#/phim/ban-dung", "chờ Cổng 3 · bản dựng"], 4: ["#/phim/ban-dung", "chờ Cổng 4 · xuất xưởng"] };
+  function vePhim(r, loiPhim) {
+    if (!r) { $("phimDangLam").innerHTML = loiPhim ? loi("Chưa đọc được kho phim: " + loiPhim) : dangTai(2); return; }
+    const tenLoai = Object.fromEntries((r.loai || []).map((l) => [l.id, l.ten]));
+    const ds = (r.duAn || []).filter((p) => !p.daXuat).sort((x, y) => String(y.capNhat || "").localeCompare(String(x.capNhat || ""))).slice(0, 6);
+    $("phimDangLam").innerHTML = ds.length ? ds.map((p) => { const [href, viec] = BUOC_PHIM[p.choCong] || BUOC_PHIM[1];
+      return `<div class="dong"><div><div class="tieu">${esc(p.ten)}</div><div class="chi-tiet">${esc(tenLoai[p.loai] || "Chưa phân loại")} · ${esc(viec)} · ${p.soCanh} cảnh${p.capNhat ? ", " + esc(luc(p.capNhat)) : ""}</div></div>` +
+        `<a class="nut nho" href="${href}" data-mo-phim="${esc(p.path)}" aria-label="Mở phim ${esc(p.ten)}">Mở</a></div>`; }).join("")
+      : rong("Không có phim nào đang làm", "Tạo phim mới ở Kho phim: đặt tên, chọn loại.", `<a class="nut" href="#/phim/kho">Mở Kho phim</a>`);
+  }
+  vung.addEventListener("click", (e) => { const a = e.target.closest("[data-mo-phim]"); if (a) { try { localStorage.setItem("tqos-phim", a.dataset.moPhim); } catch {} } });
 
   function veDoi() {
     const s = kho.state;
