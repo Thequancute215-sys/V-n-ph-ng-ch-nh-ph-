@@ -438,7 +438,9 @@ test("luồng chặn dấu duyệt xuất hiện trong lượt Hinata và chờ 
   const chayAi = f.deps.chayAi;
   f.deps.chayAi = async (input) => {
     const kq = await chayAi(input);
-    f.duyet(1);
+    // Dấu duyệt "tự xuất hiện" trong lượt AI CÓ QUYỀN GHI (Hinata). Lượt Cố vấn chạy chỉ đọc (plan, cấm ghi file) nên dấu
+    // duyệt xuất hiện lúc đó chỉ có thể do CEO bấm: test riêng "CEO duyệt trong lúc góp ý" kiểm trường hợp ấy.
+    if (input.vai === "SPEC_ARCHITECT") f.duyet(1);
     return kq;
   };
   f.mo();
@@ -551,6 +553,46 @@ test("Cố vấn Antigravity góp ý chỉ đọc trước Cổng 1 và Cổng 2
   assert.match(cv2.prompt, /media\/khung\/C01-1\.png/, "đưa ảnh khung đã chọn cho cố vấn xem");
   assert.match(fs.readFileSync(path.join(f.root, "media", "co-van", "cong-2.md"), "utf8"), /Nên sửa trước khi duyệt/);
   assert.equal(f.doc().cong[2], undefined, "cố vấn không tự duyệt cổng");
+});
+
+test("Cố vấn: CEO duyệt trong lúc góp ý thì đi tiếp; tệp góp ý bị xoá thì góp ý lại; cờ đang chấm sót được gỡ; đổi ảnh tham chiếu không góp ý lại", async (t) => {
+  const f = tao(t);
+  const goc = f.deps.chayAi;
+  let duyetKhiChay = false;
+  f.deps.chayAi = async (input) => {
+    if (input.vai !== "PHIM_CO_VAN") return goc(input);
+    f.calls.ai.push(input);
+    if (duyetKhiChay) f.duyet(1);
+    return { ok: true, text: JSON.stringify({ event: "result", result: { status: "SUCCESS", response: "## Kết luận — Nên duyệt" } }) };
+  };
+  const soCoVan = () => f.calls.ai.filter((x) => x.vai === "PHIM_CO_VAN").length;
+  f.mo();
+  f.batDau();
+  assert.equal((await f.tiep()).trangThai, "cho_cong_1");
+  assert.equal(soCoVan(), 1);
+  // Đổi ảnh tham chiếu nhân vật (không phải nội dung chữ): không góp ý lại.
+  f.sua((p) => { p.nhan_vat = [{ ma: "rb", ten: "Robot", tham_chieu: ["media/tham-chieu/rb.png"] }]; });
+  await f.tiep();
+  assert.equal(soCoVan(), 2, "thêm nhân vật mới (tên) là đổi nội dung chữ: góp ý lại");
+  f.sua((p) => { p.nhan_vat[0].tham_chieu = ["media/tham-chieu/rb-2.png"]; });
+  await f.tiep();
+  assert.equal(soCoVan(), 2, "chỉ đổi ảnh tham chiếu: không góp ý lại");
+  // Tệp góp ý bị xoá: góp ý lại.
+  fs.rmSync(path.join(f.root, "media", "co-van", "cong-1.md"));
+  await f.tiep();
+  assert.equal(soCoVan(), 3);
+  assert.ok(fs.existsSync(path.join(f.root, "media", "co-van", "cong-1.md")));
+  // Cờ "đang chấm" còn sót (ctl tắt đột ngột) được gỡ ở lần chạy sau.
+  const st = JSON.parse(fs.readFileSync(f.stateFile, "utf8")); st.coVanDang = 1; fs.writeFileSync(f.stateFile, JSON.stringify(st));
+  await f.tiep();
+  assert.equal(f.tt().coVanDang, undefined);
+  // CEO duyệt Cổng 1 trong lúc cố vấn đang chạy: luồng đi tiếp, không đứng ở cho_cong_1.
+  duyetKhiChay = true;
+  f.sua((p) => { p.canh[0].loi_dan = "Lời dẫn khác hẳn của cảnh một."; });
+  const sau = await f.tiep();
+  assert.equal(soCoVan(), 4);
+  assert.notEqual(sau.trangThai, "cho_cong_1");
+  assert.ok(["giong", "khung", "cong_2"].includes(sau.buoc), "đã sang bước sau Cổng 1: " + sau.buoc);
 });
 
 test("Cố vấn: CEO bấm dừng trong lúc góp ý thì luồng dừng, không chuyển sang chờ cổng", async (t) => {

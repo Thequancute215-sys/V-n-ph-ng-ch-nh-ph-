@@ -49,6 +49,7 @@ function docTep(file) {
 
 export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, signal, phan = "kich-ban" } = {}) {
   let coVanNd = null;   // nội dung góp ý của Cố vấn cho cổng của trang này (media/co-van/cong-N.md)
+  const coVanMo = new Set();   // các khối "Xem góp ý chi tiết" anh đang mở
   let ws = "", data = null, flow = null, nghiemThu = null, loiTai = "", ban = false, hen = null, conSong = true, dsPhim = null, kyCu = "", phien = 0;
   let taiLieu = [], loiTaiLieu = "", xem = null, goi = null;
   let gocHelper = [], helperNhanVat = "";
@@ -204,13 +205,17 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
     // Bỏ dấu chữ ký và tiêu đề # của tệp (tiêu đề khối đã nói rõ); tóm tắt điểm + kết luận lên đầu, chi tiết gập lại.
     const sach = coVanNd ? coVanNd.replace(/^<!--[\s\S]*?-->\s*/, "").replace(/^#\s[^\n]*\n+/, "") : "";
     const diem = (sach.match(/(\d+(?:[.,]\d+)?)\s*\/\s*10\b/) || [])[1];
-    const ketLuan = ((sach.match(/##\s*Kết luận[^\n]*\n+\s*([^\n]+)/i) || [])[1] || "").replace(/[*_`"“”]/g, "").trim();
+    // "## Kết luận\nNên duyệt" hoặc "## Kết luận — Nên duyệt" (cùng dòng).
+    const kl = sach.match(/##\s*Kết luận\s*[—:–-]?\s*([^\n]*)\n*\s*([^\n#]*)/i) || [];
+    const ketLuan = ((kl[1] || "").replace(/[*_`"“”—–:-]/g, "").trim() || (kl[2] || "")).replace(/[*_`"“”]/g, "").trim();
     const tot = /^nên duyệt/i.test(ketLuan);
     const chiTiet = sach ? (globalThis.MD ? `<div class="md-xem">${globalThis.MD.render(sach)}</div>` : `<pre class="van-ban">${esc(sach)}</pre>`) : "";
     const than = dang ? `<p class="mo" role="status">Antigravity đang đọc và góp ý trước Cổng ${so}…</p>`
       : sach ? `<div class="hang">${diem ? `<span class="nhan">Điểm ${esc(diem)}/10</span>` : ""}${ketLuan ? `<b class="${tot ? "dat" : "canh-bao"}">${esc(ketLuan)}</b>` : ""}</div>` +
-        `<details><summary>Xem góp ý chi tiết</summary>${chiTiet}</details>`
-      : cv && cv.loi ? `<p class="canh-bao">Chưa có góp ý: ${esc(cv.loi)}. Sửa kịch bản hoặc khung hình thì luồng tự xin góp ý lại; anh vẫn duyệt được như thường.</p>` : "";
+        // Giữ trạng thái mở khi trang tự làm mới (coVanMo), để anh đang đọc không bị đóng sập.
+        `<details data-co-van="${so}"${coVanMo.has(so) ? " open" : ""}><summary>Xem góp ý chi tiết</summary>${chiTiet}</details>`
+      : cv && cv.loi ? `<p class="canh-bao">Chưa có góp ý: ${esc(cv.loi)}. Sửa kịch bản hoặc khung hình thì luồng tự xin góp ý lại; anh vẫn duyệt được như thường.</p>`
+      : cv && cv.file ? `<p class="canh-bao">Chưa đọc được tệp góp ý <code>${esc(cv.file)}</code>. Luồng sẽ tự góp ý lại nếu tệp đã bị xoá; anh vẫn duyệt được như thường.</p>` : "";
     return `<section class="khoi" aria-labelledby="hCoVan${so}"><div class="dau-hang"><h2 class="dau" id="hCoVan${so}">Góp ý của Cố vấn trước Cổng ${so}</h2>` +
       `<span class="mo">Antigravity · chỉ đọc${cv && cv.luc ? " · " + esc(luc(cv.luc)) : ""}</span></div>${than}</section>`;
   }
@@ -443,13 +448,21 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
     finally { ban = false; kyCu = ""; if (conSong) await tai(); }
   }
 
+  // "toggle" không nổi bọt: nghe ở pha bắt để nhớ khối góp ý nào đang mở qua các lần vẽ lại.
+  goc.addEventListener("toggle", (e) => {
+    const d = e.target;
+    if (!(d instanceof HTMLDetailsElement) || !d.dataset.coVan) return;
+    const so = Number(d.dataset.coVan);
+    if (d.open) coVanMo.add(so); else coVanMo.delete(so);
+  }, true);
+
   goc.addEventListener("change", (e) => {
     const t = e.target;
     if (t.id === "chonPhim") {
       dongXem(); dungAnimatic(); huyGhi();
       ws = t.value;
       try { localStorage.setItem("tqos-phim", ws); } catch {}
-      data = null; nghiemThu = null; coVanNd = null; taiLieu = []; loiTaiLieu = ""; goi = null; helperNhanVat = "";
+      data = null; nghiemThu = null; coVanNd = null; coVanMo.clear(); taiLieu = []; loiTaiLieu = ""; goi = null; helperNhanVat = "";
       Object.assign(helperUI, { canh: "", frames: [], compareA: "", compareB: "", goi: null });
       ve(); return tai();
     }

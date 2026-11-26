@@ -98,7 +98,9 @@ test("cờ chỉ đọc giữ model, effort, prompt và loại cấu hình cấp
   const settings = JSON.parse(g[g.indexOf("--settings") + 1]);
   assert.equal(g[g.indexOf("--mode") + 1], "plan");
   assert.ok(settings.permissions.deny.includes("write_file(*)"));
-  assert.doesNotMatch(JSON.stringify(settings), /git pull|npm/);
+  // Bắt cả dạng regex "git (pull --ff-only|…)": trước đây /git pull/ không khớp nên test xanh giả (kiểm định PR #83).
+  assert.doesNotMatch(JSON.stringify(settings), /\bpull\b|npm/);
+  for (const t of ["edit_file(*)", "search_web(*)", "read_url_content(*)", "invoke_subagent(*)", "run_workflow(*)", "mcp(*)"]) assert.ok(settings.permissions.deny.includes(t), "chỉ đọc phải cấm " + t);
   for (const x of ["--model", "gemini", "--effort", "low", "{prompt}"]) assert.ok(g.includes(x), x);
   for (const args of [c, d, g]) assert.ok(!args.some((x) => /allowed[-Tt]ools|dangerously|acceptEdits|accept-edits/.test(x)));
   assert.throws(() => readOnlyArgs(["node.exe", "other.js", "{prompt}"]), { code: "BAD_CONFIG" });

@@ -51,11 +51,21 @@ function noiDungAgy(log) {
 // để CEO xem trước khi duyệt. Chữ ký = nội dung được chấm; đổi nội dung thì góp ý lại, giữ nguyên thì không gọi lại (luồng quét
 // mỗi 10 giây khi chờ cổng). Góp ý lỗi không chặn luồng.
 const VAI_CO_VAN = "PHIM_CO_VAN";
+// Chỉ gồm thứ cố vấn chấm: chữ (Cổng 1) hoặc chữ + ảnh khung đã chọn (Cổng 2, kèm cỡ và giờ sửa tệp ảnh).
+// Không gồm tham chiếu ảnh nhân vật, take, cổng, ngân sách: đổi những thứ đó không làm góp ý lỗi thời.
+function vanTayTep(root, rel) {
+  if (typeof rel !== "string" || !fileTrong(root, rel)) return null;
+  const st = fs.statSync(path.join(root, rel));
+  return [st.size, Math.round(st.mtimeMs)];
+}
 function chuKyCoVan(root, phim, so) {
-  const canh = (Array.isArray(phim.canh) ? phim.canh : []).map((c) => c && [c.ma, c.loi_dan, c.khung_hinh, c.may_quay, c.giay, c.nhan_vat, so === 2 ? c.khung_chon : null]);
+  const may = (c) => c.may_quay || phim.may_quay_mac_dinh || MAY_QUAY_MAC_DINH;
+  const canh = (Array.isArray(phim.canh) ? phim.canh : []).map((c) => c && [c.ma, c.loi_dan, c.khung_hinh, may(c), c.giay, c.nhan_vat,
+    c.goc_may, c.chuyen_dong, c.helper_boi_canh, so === 2 ? [c.khung_chon, vanTayTep(root, c.khung_chon)] : null]);
+  const nhanVat = (Array.isArray(phim.nhan_vat) ? phim.nhan_vat : []).map((n) => n && [n.ma, n.ten, n.mo_ta]);
   let kichBan = "";
   try { kichBan = fs.readFileSync(path.join(root, "kich-ban.md"), "utf8"); } catch { /* chưa có */ }
-  return hash(JSON.stringify([so, phim.ten, phim.ti_le, phim.ngon_ngu, phim.nhan_vat, canh, so === 1 ? kichBan : ""]));
+  return hash(JSON.stringify([so, phim.ten, phim.ti_le, phim.ngon_ngu, phim.helper_tong_mau, nhanVat, canh, so === 1 ? kichBan : ""]));
 }
 function promptCoVan(so, phim) {
   const khung = so === 2 ? (phim.canh || []).filter((c) => c && typeof c.khung_chon === "string").map((c) => `${c.ma}: ${c.khung_chon}`) : [];
@@ -285,8 +295,9 @@ function createLuongPhim({ dir, audit = { log() {} }, now = Date.now, setTimer =
     const chuKy = chuKyCoVan(root, phim, so);
     s.coVan ||= {};
     const cu = s.coVan[so];
-    if (cu && cu.chuKy === chuKy) return true;   // đã góp ý (hoặc đã thử và lỗi) cho đúng nội dung này
-    const file = tepThat(path.join(thuMucThat(root, "media", "co-van"), `cong-${so}.md`));
+    // Đã góp ý (hoặc đã thử và lỗi) cho đúng nội dung này; tệp góp ý bị xoá thì góp ý lại.
+    if (cu && cu.chuKy === chuKy && (!cu.file || fileTrong(root, cu.file))) return true;
+    tepThat(path.join(thuMucThat(root, "media", "co-van"), `cong-${so}.md`));
     s.coVanDang = so;
     ghi(s, "co_van", `Giao Antigravity góp ý trước Cổng ${so}.`);
     let text = "", loi = "";
@@ -303,7 +314,10 @@ function createLuongPhim({ dir, audit = { log() {} }, now = Date.now, setTimer =
     if (!hien || chuKyCoVan(root, hien, so) !== chuKy) return true;
     const luc = new Date(now()).toISOString();
     if (text) {
-      fs.mkdirSync(path.dirname(file), { recursive: true });
+      // Kiểm lại đường dẫn sau khi chờ AI (media/co-van có thể vừa bị thay bằng junction hay tệp cứng), như baoCao().
+      const thuMucCv = thuMucThat(root, "media", "co-van");
+      fs.mkdirSync(thuMucCv, { recursive: true });
+      const file = tepThat(path.join(thuMucThat(root, "media", "co-van"), `cong-${so}.md`));
       ghiAtomic(file, `<!-- co-van: ${chuKy} -->\n# Góp ý của Cố vấn trước Cổng ${so}\n\n_Antigravity, ${luc}. Chỉ là góp ý: anh quyết định duyệt hay sửa._\n\n${text.slice(0, 20000)}\n`, 0o644);
       s.coVan[so] = { chuKy, luc, file: `media/co-van/cong-${so}.md`, loi: "" };
       ghi(s, "co_van", `Đã có góp ý trước Cổng ${so}.`);
@@ -355,7 +369,11 @@ function createLuongPhim({ dir, audit = { log() {} }, now = Date.now, setTimer =
         return false;
       }
       if (congDaDuyet(phim, 1)) sang(s, 2);
-      else { if (await coVan(s, 1)) choCong(s, 1); return false; }
+      else {
+        if (!await coVan(s, 1)) return false;
+        if (congDaDuyet(docPhim(root), 1)) { sang(s, 2); return true; }   // CEO duyệt trong lúc chờ góp ý
+        choCong(s, 1); return false;
+      }
       return true;
     }
     if (s.trangThai === "cho_cong_1") return false;
@@ -529,7 +547,11 @@ function createLuongPhim({ dir, audit = { log() {} }, now = Date.now, setTimer =
       if (buoc === 3) sang(s, 4);
       if (!congDaDuyet(phim, 2) || !banDung.coDuyetQuay(root, phim) || phim.canh.some((c) => !c.khung_chon)) {
         // Góp ý phân cảnh khi mọi cảnh đã chọn khung (cố vấn xem đúng ảnh sẽ quay).
-        if (!congDaDuyet(phim, 2) && phim.canh.every((c) => c.khung_chon) && !await coVan(s, 2)) return false;
+        if (!congDaDuyet(phim, 2) && phim.canh.every((c) => c.khung_chon)) {
+          if (!await coVan(s, 2)) return false;
+          const sau = docPhim(root);   // CEO duyệt trong lúc chờ góp ý: chạy tiếp ngay, không đứng chờ cổng
+          if (sau && congDaDuyet(sau, 2) && banDung.coDuyetQuay(root, sau) && sau.canh.every((c) => c.khung_chon)) return true;
+        }
         choCong(s, 2); return false;
       }
       sang(s, 5);
@@ -560,6 +582,8 @@ function createLuongPhim({ dir, audit = { log() {} }, now = Date.now, setTimer =
 
   async function chay(root) {
     const s = hienTai(root);
+    // Cờ "đang góp ý" còn sót do ctl tắt đột ngột giữa lượt cố vấn: lượt đó đã mất, gỡ để giao diện không kẹt "đang chấm".
+    if (s && s.coVanDang !== undefined) { delete s.coVanDang; save(s); }
     if (!s || s.trangThai === "dung") return s;
     try {
       while (!daTat && !yeuCauDung.has(root) && await buocKe(s)) { /* Nạp lại hồ sơ giữa các thao tác. */ }
