@@ -154,10 +154,15 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
   const github = createGitHub({ alsoLook: githubOptions.projectsDir || projectsDir === defaultProjects ? [] : [defaultProjects], ...githubOptions, projectsDir, ws, jobs, audit, select: selectWorkspace });
   // Tạo dự án mới: gợi ý tên repo, CEO duyệt rồi mới tạo repo + tải về + agent.md + bộ kiểm + giao Hinata (ctl/du-an-moi.js).
   // Kho phim (CEO yêu cầu 26/11/2026): mọi phim chung một thư mục cạnh thư mục dự án code (D:\XuongPhim trên máy CEO).
-  const khoPhim = createKhoPhim({ ws, audit, goc: khoPhimDir || process.env.VP_KHO_PHIM ||
-    (path.resolve(dir) === path.join(os.homedir(), ".van-phong-ao") ? path.join(path.dirname(path.resolve(projectsDir)), "XuongPhim") : path.join(dir, "kho-phim")) });   // thư mục dữ liệu riêng (test, VP_HOME) thì kho nằm trong đó
-  // Phim đang quay / dựng / chạy luồng / Blender thì không dọn nháp.
-  const phimDangBan = (root) => !!(mayQuay.trangThai(root).dang || (banDung.trangThai(root) || {}).dang || (luongPhim.trangThai(root) || {}).trangThai === "dang_chay" || (blenderPhim.trangThai(root) || {}).dang);
+  // Chỉ văn phòng chạy bằng dữ liệu thật (~/.van-phong-ao) mới dùng kho thật (VP_KHO_PHIM hoặc <cha của thư mục dự án>\XuongPhim);
+  // thư mục dữ liệu riêng (test, VP_HOME) thì kho nằm trong đó, không bao giờ ghi vào kho của CEO.
+  const duLieuThat = path.resolve(dir).toLowerCase() === path.join(os.homedir(), ".van-phong-ao").toLowerCase();
+  const khoPhim = createKhoPhim({ ws, audit, goc: khoPhimDir ||
+    (duLieuThat ? process.env.VP_KHO_PHIM || path.join(path.dirname(path.resolve(projectsDir)), "XuongPhim") : path.join(dir, "kho-phim")) });
+  // Phim đang quay / dựng / chạy luồng / Blender / nhịp Flow / AI Helper tạo ảnh / xuất gói CapCut thì không dọn nháp.
+  const phimDangBan = (root) => !!(mayQuay.trangThai(root).dang || (banDung.trangThai(root) || {}).dang || (luongPhim.trangThai(root) || {}).trangThai === "dang_chay" ||
+    (blenderPhim.trangThai(root) || {}).dang || helperDangTao.has(root) || capcutDangXuat.has(root) ||
+    path.resolve(String((tramFlow.nhipDang() || {}).root || "x")).toLowerCase() === path.resolve(root).toLowerCase());
   const duAnMoi = createDuAnMoi({ github, ideas, boKiem, audit, dir, ...duAnOptions });
   const quotas = createQuotas({ ...quotaOptions, dir, agyTk, codexTk });
   quotasRef = quotas;

@@ -19,14 +19,15 @@ export async function mo(vung, { ctl = ctlMacDinh, bao = baoMacDinh, signal } = 
     if (!document.hidden) {
       try { const r = await ctl("/phim/du-an"); if (!conSong) return; ds = r.duAn || []; loaiDs = r.loai || []; kho = r.kho || ""; loiTai = ""; }
       catch (e) { if (!conSong) return; loiTai = e.message; }
-      if (!ban) ve();
+      // Biểu mẫu Phim mới đang mở hay đang gửi thì không vẽ lại (giữ chữ anh đang gõ); vẽ khi đóng biểu mẫu.
+      if (!ban && !moTao) ve();
     }
     if (conSong) hen = setTimeout(tai, 30000);
   }
 
   function veThe(p) {
     const [href, viec] = p.daXuat ? ["#/phim/ban-dung", "Đã xuất xưởng"] : (BUOC[p.choCong] || BUOC[1]);
-    const bia = p.anhBia ? `<img src="${esc(anh(p))}" alt="" loading="lazy">` : `<span class="bia-trong" aria-hidden="true">${esc(p.ten.slice(0, 1).toUpperCase())}</span>`;
+    const bia = p.anhBia ? `<img src="${esc(anh(p))}" alt="" loading="lazy">` : `<span class="bia-trong" aria-hidden="true">${esc((Array.from(p.ten)[0] || "?").toUpperCase())}</span>`;
     const ganLoai = !p.trongKho ? `<label class="mo">Loại<select class="o" data-gan-loai="${esc(p.path)}"><option value="">Chưa phân loại</option>${loaiDs.map((l) => `<option value="${esc(l.id)}"${l.id === p.loai ? " selected" : ""}>${esc(l.ten)}</option>`).join("")}</select></label>` : "";
     const don = p.daXuat ? `<button type="button" class="nut nho" data-don-nhap="${esc(p.path)}" aria-label="Dọn file nháp của ${esc(p.ten)}">Dọn nháp</button>` : "";
     return `<article class="the-phim">

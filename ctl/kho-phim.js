@@ -10,6 +10,8 @@ const crypto = require("node:crypto");
 const nhanh = require("./nhanh");
 const { datKhungPhim } = require("./du-an-moi");
 const libPhim = require("../lib/phim");
+const { writeAtomic } = require("../lib/ghi-file");
+const { takeDung, banDungCu } = require("./ban-dung");
 
 const err = (code, message) => Object.assign(new Error(message), { code });
 const TEN_MAX = 80, Y_TUONG_MAX = 4000;
@@ -33,24 +35,45 @@ function thuMucTu(ten) {
 const chuanTen = (t) => String(t || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
 const cung = (a, b) => path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase();
 const docJson = (f) => { try { return JSON.parse(fs.readFileSync(f, "utf8")); } catch { return null; } };
-function ghiJson(f, obj) {
-  const tmp = f + ".tmp-" + crypto.randomBytes(4).toString("hex");
-  fs.writeFileSync(tmp, JSON.stringify(obj, null, 2) + "\n");
-  fs.renameSync(tmp, f);
+const ghiJson = (f, obj) => writeAtomic(f, JSON.stringify(obj, null, 2) + "\n", 0o644);
+// Đường dẫn trong phim.json để so: "\" -> "/", bỏ "./", gộp "a/../b". relGoc giữ hoa thường để mở file; chuanRel để so (Windows không phân biệt).
+const relGoc = (p) => path.posix.normalize(String(p).replace(/\\/g, "/")).replace(/^(\.\/)+/, "");
+const chuanRel = (p) => { const s = relGoc(p); return process.platform === "win32" ? s.toLowerCase() : s; };
+// Mọi đường dẫn media/ phim.json đang nhắc tới (take dùng, khung chọn, bản dựng, tham chiếu nhân vật, nhạc…), trừ danh sách phương án take[]/khung[].
+function duongDanDangDung(phim) {
+  const giu = new Set();
+  const di = (v, sau = 0) => {
+    if (sau > 12 || v === null || v === undefined) return;
+    if (typeof v === "string") { const r = chuanRel(v); if (/^media\//.test(r)) giu.add(r); return; }
+    if (Array.isArray(v)) { for (const x of v) di(x, sau + 1); return; }
+    if (typeof v === "object") for (const x of Object.values(v)) di(x, sau + 1);
+  };
+  const canh = Array.isArray(phim.canh) ? phim.canh : [];
+  di({ ...phim, canh: canh.map((c) => { if (!c || typeof c !== "object") return c; const { take, khung, ...con } = c; return con; }) });
+  // Cảnh chỉ có một take thì bàn dựng dùng luôn take đó dù không ghi take_chon (ctl/ban-dung.js takeDung).
+  for (const c of canh) {
+    if (!c || typeof c !== "object") continue;
+    const t = takeDung(c); if (typeof t === "string") giu.add(chuanRel(t));
+  }
+  return giu;
 }
 
 // Tiến độ cho thẻ phim: số cảnh, cổng đã duyệt liên tiếp, cổng đang chờ, ảnh bìa (khung chọn đầu tiên).
 function tomTat(root, phim) {
   const canh = Array.isArray(phim && phim.canh) ? phim.canh.filter((c) => c && typeof c === "object") : [];
   let cong = 0; while (cong < 4 && libPhim.congDaDuyet(phim, cong + 1)) cong++;
-  const bia = canh.map((c) => c.khung_chon).find((p) => typeof p === "string" && libPhim.duongDanHopLe(p) && /^media\//.test(p) && fs.existsSync(path.join(root, p))) || null;
+  const bia = canh.map((c) => c.khung_chon).filter((p) => typeof p === "string").map(relGoc)
+    .find((p) => libPhim.duongDanHopLe(p) && /^media\//.test(p) && fs.existsSync(path.join(root, p))) || null;
   let capNhat = null; try { capNhat = fs.statSync(path.join(root, "phim.json")).mtime.toISOString(); } catch { /* phim.json mất giữa chừng */ }
   return { soCanh: canh.length, cong, choCong: cong < 4 ? cong + 1 : null, daXuat: cong === 4, anhBia: bia, capNhat };
 }
 
 function createKhoPhim({ ws, audit = { log() {} }, goc }) {
   if (!goc) throw new Error("kho phim cần thư mục gốc");
-  const trongKho = (p) => { const rel = path.relative(path.resolve(goc), path.resolve(p)); return !!rel && !rel.startsWith("..") && !path.isAbsolute(rel); };
+  // So cả đường dẫn đã gõ lẫn đường dẫn thật (kho đi qua junction chuyển ổ hay tên 8.3 của Windows).
+  const ben = (cha, con) => { const rel = path.relative(cha, con); return !!rel && !rel.startsWith("..") && !path.isAbsolute(rel); };
+  const that = (p) => { try { return fs.realpathSync(p); } catch { return path.resolve(p); } };
+  const trongKho = (p) => [path.resolve(goc), that(goc)].some((g) => ben(g, path.resolve(p)) || ben(g, that(p)));
 
   function thongTin(w, loaiThuMuc, thuMuc, laTrongKho) {
     const phim = docJson(path.join(w.path, "phim.json")) || {};
@@ -141,44 +164,55 @@ function createKhoPhim({ ws, audit = { log() {} }, goc }) {
     const phim = docJson(path.join(w.path, "phim.json"));
     if (!phim) throw err("NOT_FOUND", "Dự án không có phim.json.");
     if (!libPhim.congDaDuyet(phim, 4)) throw err("CHUA_DU_DIEU_KIEN", "Chỉ dọn nháp khi phim đã qua Cổng 4.");
-    const giu = new Set();
-    for (const c of Array.isArray(phim.canh) ? phim.canh : []) for (const k of ["take_chon", "khung_chon"]) if (c && typeof c[k] === "string") giu.add(c[k].replace(/\\/g, "/"));
+    if (banDungCu(phim)) throw err("CHUA_DU_DIEU_KIEN", "Bản dựng cũ hơn hồ sơ phim: dựng lại và duyệt trước khi dọn nháp.");
+    const giu = duongDanDangDung(phim);
+    const rong = { root: w.path, tep: [], tong: 0, ma: maCua([]) };
+    // media/ phải là thư mục thật của chính phim (không phải junction/đường tắt); mỗi file con cũng kiểm đích thật nằm trong đó.
     const media = path.join(w.path, "media");
+    let mediaThat;
+    try { if (fs.lstatSync(media).isSymbolicLink()) return rong; mediaThat = fs.realpathSync(media); } catch { return rong; }
+    if (!cung(mediaThat, path.join(fs.realpathSync(w.path), "media"))) return rong;
+    const trongMedia = (abs) => { try { return ben(mediaThat, fs.realpathSync(abs)); } catch { return false; } };
     const tep = [];
-    const quet = (rel) => {
-      const abs = path.join(w.path, rel);
-      let ds = []; try { ds = fs.readdirSync(abs, { withFileTypes: true }); } catch { return; }
+    const quet = (rel, sau = 0) => {
+      if (sau > 8) return;
+      let ds = []; try { ds = fs.readdirSync(path.join(w.path, rel), { withFileTypes: true }); } catch { return; }
       for (const d of ds) {
-        const r = rel + "/" + d.name;
-        if (d.isSymbolicLink()) continue;
-        if (d.isDirectory()) quet(r);
-        else if (d.isFile() && !giu.has(r)) tep.push({ path: r, byte: fs.statSync(path.join(w.path, r)).size });
+        const r = rel + "/" + d.name, abs = path.join(w.path, r);
+        if (d.isSymbolicLink() || !trongMedia(abs)) continue;
+        if (d.isDirectory()) quet(r, sau + 1);
+        else if (d.isFile() && !giu.has(chuanRel(r))) tep.push({ path: r, byte: fs.statSync(abs).size });
       }
     };
-    let tenCon = []; try { tenCon = fs.readdirSync(media, { withFileTypes: true }); } catch { /* chưa có media */ }
+    let tenCon = []; try { tenCon = fs.readdirSync(media, { withFileTypes: true }); } catch { /* không đọc được media */ }
     for (const d of tenCon) if (d.isDirectory() && !d.isSymbolicLink() && (d.name === "quay" || d.name === "khung" || /^capcut-/.test(d.name))) quet("media/" + d.name);
     tep.sort((a, b) => a.path.localeCompare(b.path));
-    const tong = tep.reduce((s, x) => s + x.byte, 0);
-    const ma = crypto.createHash("sha256").update(JSON.stringify(tep)).digest("hex").slice(0, 16);
-    return { root: w.path, tep, tong, ma };
+    return { root: w.path, tep, tong: tep.reduce((s, x) => s + x.byte, 0), ma: maCua(tep) };
   }
+  const maCua = (tep) => crypto.createHash("sha256").update(JSON.stringify(tep)).digest("hex").slice(0, 16);
 
   // Xoá đúng danh sách CEO đã xem (mã khớp), rồi bỏ các đường dẫn đã xoá khỏi take[]/khung[] trong phim.json.
   function donNhap(root, ma, { ban = () => false } = {}, actor = "ceo") {
     const n = nhap(root);
     if (ban(n.root)) throw err("DANG_DUNG", "Phim đang quay, dựng hoặc chạy luồng: chờ xong rồi dọn.");
     if (!ma || ma !== n.ma) throw err("CHANGED", "Danh sách file nháp đã đổi. Xem lại rồi xác nhận.");
+    if (!n.tep.length) return { soTep: 0, byte: 0, conLai: 0 };
     const daXoa = new Set();
     for (const t of n.tep) { try { fs.rmSync(path.join(n.root, t.path), { force: true }); daXoa.add(t.path); } catch { /* file bị khoá: để lại */ } }
-    for (const d of fs.readdirSync(path.join(n.root, "media"), { withFileTypes: true })) {
-      if (d.isDirectory() && /^capcut-/.test(d.name)) { try { fs.rmdirSync(path.join(n.root, "media", d.name)); } catch { /* còn file */ } }
+    let con = []; try { con = fs.readdirSync(path.join(n.root, "media"), { withFileTypes: true }); } catch { /* không còn media */ }
+    for (const d of con) {
+      if (d.isDirectory() && !d.isSymbolicLink() && /^capcut-/.test(d.name)) { try { fs.rmdirSync(path.join(n.root, "media", d.name)); } catch { /* còn file */ } }
     }
+    const xoa = new Set([...daXoa].map(chuanRel));
+    // Đọc lại phim.json ngay trước khi ghi (phần khác có thể vừa ghi) và chỉ bỏ đúng các đường dẫn đã xoá.
     const f = path.join(n.root, "phim.json"), phim = docJson(f);
-    for (const c of Array.isArray(phim.canh) ? phim.canh : []) {
-      if (!c || typeof c !== "object") continue;
-      for (const k of ["take", "khung"]) if (Array.isArray(c[k])) c[k] = c[k].filter((p) => !daXoa.has(String(p).replace(/\\/g, "/")));
+    if (phim) {
+      for (const c of Array.isArray(phim.canh) ? phim.canh : []) {
+        if (!c || typeof c !== "object") continue;
+        for (const k of ["take", "khung"]) if (Array.isArray(c[k])) c[k] = c[k].filter((p) => !xoa.has(chuanRel(p)));
+      }
+      ghiJson(f, phim);
     }
-    ghiJson(f, phim);
     const byte = n.tep.filter((t) => daXoa.has(t.path)).reduce((s, x) => s + x.byte, 0);
     audit.log(actor, "phim.kho.don_nhap", n.root, { soTep: daXoa.size, byte });
     return { soTep: daXoa.size, byte, conLai: n.tep.length - daXoa.size };

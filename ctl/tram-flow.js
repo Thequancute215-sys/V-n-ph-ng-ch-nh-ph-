@@ -250,7 +250,7 @@ function createTramFlow({ dir, goc, audit = { log() {} }, jobs, cliClaude, spawn
     return rel;
   }
 
-  return { trangThai, mo, nhip, taiKhoan, hoSo, nhanClip };
+  return { trangThai, mo, nhip, taiKhoan, hoSo, nhanClip, nhipDang: () => nhipDang };
 }
 
 module.exports = { createTramFlow, timChrome, docKetQua, LUAT, moTaNhip, BUOC, MAC_DINH };

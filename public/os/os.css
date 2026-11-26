@@ -347,3 +347,5 @@ h2.dau[data-xuong] { color: var(--mau-xuong); }
   .the-phim { flex-direction: row; }
   .the-phim .bia, .the-phim .bia:has(.bia-trong) { width: 104px; flex: none; aspect-ratio: 1; }
 }
+@media (max-width: 40rem) { .luoi-phim { grid-template-columns: minmax(0, 1fr); } }
+.the-phim select { max-width: 100%; }

@@ -109,6 +109,63 @@ test("dọn nháp: chỉ xoá take/khung không chọn và gói CapCut; cập nh
   assert.deepEqual([sau.take, sau.take_chon, sau.khung, sau.khung_chon], [["media/quay/C01-b.mp4"], "media/quay/C01-b.mp4", ["media/khung/C01.png"], "media/khung/C01.png"]);
 });
 
+test("dọn nháp giữ mọi file đang dùng: take duy nhất không ghi take_chon, ban_dung.take, đường dẫn './' và '\\\\', tham chiếu nhân vật", () => {
+  const root = path.join(kho, "giai-tri-ai", "tin-hieu-tro-ve");
+  const h = docPhim(root);
+  h.canh = [
+    { ma: "C01", take: ["media/quay/mot.mp4"] },                                                              // một take: bàn dựng dùng luôn
+    { ma: "C02", take: ["media/quay/C02-a.mp4", "media/quay/C02-b.mp4"], take_chon: "./media/quay/C02-b.mp4", khung: ["media/khung/C02.png", "media/khung/C02-x.png"], khung_chon: "media\\khung\\C02.png" },
+  ];
+  h.nhan_vat = [{ ma: "rb", tham_chieu: "media/khung/robot-ref.png" }];
+  fs.rmSync(path.join(root, "media"), { recursive: true, force: true });   // bỏ file của ca trước
+  h.ban_dung = { take: { C01: "media/quay/mot.mp4", C02: "./media/quay/C02-b.mp4" } };
+  delete h.ban_dung;   // không có bản dựng: không bị coi là cũ
+  fs.writeFileSync(path.join(root, "phim.json"), JSON.stringify(h));
+  const giu = ["media/quay/mot.mp4", "media/quay/C02-b.mp4", "media/khung/C02.png", "media/khung/robot-ref.png"];
+  const bo = ["media/quay/C02-a.mp4", "media/khung/C02-x.png"];
+  for (const f of [...giu, ...bo]) ghi(path.join(root, f), "x");
+  assert.deepEqual(ctl.khoPhim.nhap(root).tep.map((t) => t.path), [...bo].sort());
+  // ban_dung.take nhắc tới một file không còn trong take[] thì vẫn giữ.
+  ghi(path.join(root, "media/quay/C02-cu.mp4"), "x");
+  h.canh[1].take.push("media/quay/C02-cu.mp4");
+  h.ban_dung = { take: { C01: "media/quay/mot.mp4", C02: "./media/quay/C02-b.mp4" } };
+  fs.writeFileSync(path.join(root, "phim.json"), JSON.stringify(h));
+  h.ban_dung.bia = "media/quay/C02-cu.mp4"; fs.writeFileSync(path.join(root, "phim.json"), JSON.stringify(h));
+  assert.ok(!ctl.khoPhim.nhap(root).tep.some((t) => t.path === "media/quay/C02-cu.mp4"), "đường dẫn trong ban_dung được giữ");
+  const r = ctl.khoPhim.donNhap(root, ctl.khoPhim.nhap(root).ma);
+  assert.equal(r.soTep, 2);
+  for (const f of giu) assert.ok(fs.existsSync(path.join(root, f)), "giữ " + f);
+  assert.deepEqual(docPhim(root).canh[1].take, ["media/quay/C02-b.mp4", "media/quay/C02-cu.mp4"]);
+});
+
+test("dọn nháp: bản dựng cũ thì từ chối; media là junction ra ngoài thì không liệt kê, không xoá; phim chưa có media không lỗi", () => {
+  const root = path.join(kho, "giai-tri-ai", "tin-hieu-tro-ve");
+  const h = docPhim(root);
+  h.ban_dung = { take: { C01: "media/quay/khac.mp4", C02: "media/quay/C02-b.mp4" } };
+  fs.writeFileSync(path.join(root, "phim.json"), JSON.stringify(h));
+  assert.throws(() => ctl.khoPhim.nhap(root), (e) => e.code === "CHUA_DU_DIEU_KIEN" && /dựng lại/.test(e.message));
+  delete h.ban_dung; fs.writeFileSync(path.join(root, "phim.json"), JSON.stringify(h));
+
+  const ngoai = path.join(d, "ngoai-kho"); ghi(path.join(ngoai, "quay", "quan-trong.mp4"), "khong duoc xoa");
+  const p = ctl.khoPhim.tao({ ten: "Phim junction", loai: "quang-cao" });
+  const hp = docPhim(p.path); hp.cong = { 1: { luc: "x" }, 2: { luc: "x" }, 3: { luc: "x" }, 4: { luc: "x" } };
+  fs.writeFileSync(path.join(p.path, "phim.json"), JSON.stringify(hp));
+  fs.rmSync(path.join(p.path, "media"), { recursive: true, force: true });
+  assert.deepEqual(ctl.khoPhim.nhap(p.path).tep, [], "chưa có media");
+  assert.equal(ctl.khoPhim.donNhap(p.path, ctl.khoPhim.nhap(p.path).ma).soTep, 0);
+  fs.symlinkSync(ngoai, path.join(p.path, "media"), "junction");
+  assert.deepEqual(ctl.khoPhim.nhap(p.path).tep, []);
+  ctl.khoPhim.donNhap(p.path, ctl.khoPhim.nhap(p.path).ma);
+  assert.ok(fs.existsSync(path.join(ngoai, "quay", "quan-trong.mp4")), "file ngoài phim còn nguyên");
+  fs.rmSync(path.join(p.path, "media"));   // gỡ junction (không xoá đích)
+
+  // quay/ bên trong là junction ra ngoài: bỏ qua.
+  fs.mkdirSync(path.join(p.path, "media"));
+  fs.symlinkSync(path.join(ngoai, "quay"), path.join(p.path, "media", "quay"), "junction");
+  assert.deepEqual(ctl.khoPhim.nhap(p.path).tep, []);
+  fs.rmSync(path.join(p.path, "media", "quay"));
+});
+
 test("route: POST /phim/kho 201/409/400, GET /phim/du-an có kho và loại, /phim/kho/loai, /phim/don-nhap", async () => {
   await new Promise((r) => ctl.server.listen(0, "127.0.0.1", r));
   const port = ctl.server.address().port;
@@ -131,7 +188,8 @@ test("route: POST /phim/kho 201/409/400, GET /phim/du-an có kho và loại, /ph
   assert.equal((await goi("POST", "/phim/kho/loai", { workspace: ngoai, loai: "giai-tri-ai" })).body.phim.loai, "giai-tri-ai");
   const root = path.join(kho, "giai-tri-ai", "tin-hieu-tro-ve");
   const n = await goi("GET", "/phim/don-nhap?workspace=" + encodeURIComponent(root));
-  assert.equal(n.status, 200); assert.deepEqual(n.body.tep, []);
-  assert.equal((await goi("POST", "/phim/don-nhap", { workspace: root, ma: n.body.ma })).body.donNhap.soTep, 0);
+  assert.equal(n.status, 200);
+  assert.equal((await goi("POST", "/phim/don-nhap", { workspace: root, ma: "sai" })).status, 409, "mã danh sách sai");
+  assert.equal((await goi("POST", "/phim/don-nhap", { workspace: root, ma: n.body.ma })).body.donNhap.soTep, n.body.tep.length);
   assert.equal((await goi("GET", "/phim/don-nhap?workspace=" + encodeURIComponent(path.join(kho, "mxh-ngan", "dem-ha-noi")))).status, 409, "chưa qua Cổng 4");
 });
