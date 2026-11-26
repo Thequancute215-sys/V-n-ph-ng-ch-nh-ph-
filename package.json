@@ -1,6 +1,6 @@
 {
   "name": "van-phong-ao-3d",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Văn phòng ảo 3D theo dõi đội AI (Claude Code + Codex) trên máy của bạn — chỉ đọc, chạy tại chỗ, không cần cài thêm thư viện.",
   "main": "server.js",
   "scripts": {
