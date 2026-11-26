@@ -46,21 +46,29 @@ export async function mo(vung, { ctl = ctlMacDinh, bao = baoMacDinh, signal } = 
       <label>Tên phim<input class="o" name="ten" maxlength="80" required autocomplete="off" placeholder="Ví dụ: Tín hiệu trở về"></label>
       <label>Loại phim<select class="o" name="loai" required><option value="">Chọn loại…</option>${loaiDs.map((l) => `<option value="${esc(l.id)}">${esc(l.ten)}</option>`).join("")}</select></label>
       <label class="rong-het">Ý tưởng (tuỳ chọn)<textarea class="o" name="yTuong" maxlength="4000" placeholder="Vài câu về nội dung phim. Có thể để trống và viết đề bài sau."></textarea></label>
-      <p class="mo rong-het">Lưu vào: ${esc(kho || "kho phim")}\\&lt;loại&gt;\\&lt;tên phim&gt;</p>
+      <p class="mo rong-het" id="khoTaoPhim">Lưu vào: ${esc(kho || "kho phim")}\\&lt;loại&gt;\\&lt;tên phim&gt;</p>
       <div class="hang rong-het"><button type="submit" class="nut-chinh">Tạo phim</button><button type="button" class="nut nho" data-huy-tao>Huỷ</button><span class="hong" id="loiTaoPhim" role="alert"></span></div>
     </form>`;
   }
 
   // Hai vùng riêng: đầu trang + biểu mẫu Phim mới (#dauKho) và danh sách phim (#dsKho). Làm mới định kỳ, Thử lại,
   // Dọn nháp, gắn loại chỉ vẽ lại và khoá danh sách, không bao giờ đụng biểu mẫu anh đang gõ.
-  goc.innerHTML = `<div id="dauKho"></div><div id="dsKho" class="vung">${dangTai(4)}</div>`;
+  goc.innerHTML = `<div id="dauKho" class="cot-doc"></div><div id="dsKho" class="cot-doc">${dangTai(4)}</div>`;
   const dauKho = goc.querySelector("#dauKho"), dsKho = goc.querySelector("#dsKho");
   function veDau() {
+    // Chưa tải được danh sách loại thì chưa cho mở biểu mẫu (tránh ô Loại phim trống).
     dauKho.innerHTML = `<div class="dau-hang"><h2 class="dau">Kho phim</h2><span class="mo">${esc(kho)}</span>
-      <button type="button" class="nut-chinh" data-phim-moi aria-expanded="${moTao}">+ Phim mới</button></div>` + (moTao ? veTao() : "");
+      <button type="button" class="nut-chinh" data-phim-moi aria-expanded="${moTao}"${loaiDs.length ? "" : " disabled"}>+ Phim mới</button></div>` + (moTao ? veTao() : "");
+  }
+  // Biểu mẫu đang mở: chỉ bổ sung phần còn thiếu (loại, đường dẫn kho), không vẽ lại để giữ chữ đang gõ.
+  function boSungTao() {
+    const chon = dauKho.querySelector("#fTaoPhim [name=loai]");
+    if (chon && chon.options.length <= 1 && loaiDs.length) chon.insertAdjacentHTML("beforeend", loaiDs.map((l) => `<option value="${esc(l.id)}">${esc(l.ten)}</option>`).join(""));
+    const noi = dauKho.querySelector("#khoTaoPhim");
+    if (noi && kho) noi.textContent = "Lưu vào: " + kho + "\\<loại>\\<tên phim>";
   }
   function ve() {
-    if (!moTao) veDau();
+    if (!moTao) veDau(); else boSungTao();
     dsKho.innerHTML = veDs();
     if (ban) dsKho.querySelectorAll("button, select, input, textarea").forEach((el) => { el.disabled = true; });
   }
@@ -139,6 +147,9 @@ export async function mo(vung, { ctl = ctlMacDinh, bao = baoMacDinh, signal } = 
 
   const khiHien = () => { if (!document.hidden) tai(); };
   document.addEventListener("visibilitychange", khiHien);
-  signal?.addEventListener("abort", () => { conSong = false; clearTimeout(hen); document.removeEventListener("visibilitychange", khiHien); }, { once: true });
+  // OS gọi hàm trả về khi rời khu (app.js: dong = dongKhu); signal lo trường hợp rời trang trước khi mo() xong.
+  const dong = () => { conSong = false; clearTimeout(hen); document.removeEventListener("visibilitychange", khiHien); };
+  signal?.addEventListener("abort", dong, { once: true });
   ve(); tai();
+  return dong;
 }

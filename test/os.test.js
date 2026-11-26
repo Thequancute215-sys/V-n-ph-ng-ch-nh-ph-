@@ -152,3 +152,11 @@ test("OS-3: nhãn chung đọc đúng câu hỏi của luồng và tên lượt"
   assert.equal(v.tenDuAn(String.raw`D:\Projects\abc`), "abc");
   assert.equal(v.tenDuAn("/home/a/xyz"), "xyz");
 });
+
+test("Kho phim: trả hàm dọn cho OS (dừng hẹn giờ, gỡ visibilitychange) và không mở biểu mẫu khi chưa có danh sách loại", () => {
+  const src = doc("os/khu/phim-kho.js");
+  assert.match(src, /return dong;\s*\}\s*$/, "mo() phải trả hàm dọn để app.js gọi khi rời khu");
+  assert.match(src, /const dong = \(\) => \{[^}]*clearTimeout\(hen\)[^}]*removeEventListener\("visibilitychange", khiHien\)/);
+  assert.match(src, /data-phim-moi[^`]*\$\{loaiDs\.length \? "" : " disabled"\}/, "nút + Phim mới khoá khi chưa tải được loại");
+  assert.match(src, /function boSungTao\(\)/, "biểu mẫu đang mở được bổ sung loại khi tải xong, không vẽ lại");
+});
