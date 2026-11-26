@@ -38,7 +38,10 @@ export async function mo(vung, { kho, ctl, bao, signal }) {
     const [w, p] = await Promise.allSettled([ctl("/workspaces"), ctl("/phim/du-an")]);
     if (w.status === "fulfilled") {
       const phim = new Set(p.status === "fulfilled" ? (p.value.duAn || []).map((x) => String(x.path).toLowerCase()) : []);
-      ds = (w.value.workspaces || []).filter((x) => !phim.has(String(x.path).toLowerCase())); loiDs = "";
+      // Thư viện phim mẫu (<kho>\_phim-mau) cũng thuộc Xưởng phim.
+      const mau = p.status === "fulfilled" && p.value.kho ? (String(p.value.kho).replace(/[\\/]+$/, "") + "\\_phim-mau").toLowerCase() : null;
+      const laMau = (x) => mau && String(x.path).replace(/\//g, "\\").toLowerCase() === mau.replace(/\//g, "\\");
+      ds = (w.value.workspaces || []).filter((x) => !phim.has(String(x.path).toLowerCase()) && !laMau(x)); loiDs = "";
     } else { ds = null; loiDs = w.reason.message; }
     if (!conSong) return;
     ve();

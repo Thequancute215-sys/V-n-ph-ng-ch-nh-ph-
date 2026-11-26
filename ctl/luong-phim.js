@@ -297,6 +297,12 @@ function createLuongPhim({ dir, audit = { log() {} }, now = Date.now, setTimer =
     const cu = s.coVan[so];
     // Đã góp ý (hoặc đã thử và lỗi) cho đúng nội dung này; tệp góp ý bị xoá thì góp ý lại.
     if (cu && cu.chuKy === chuKy && (!cu.file || fileTrong(root, cu.file))) return true;
+    // CEO vừa bấm "Xin góp ý" cho đúng nội dung này: dùng luôn, không gọi Antigravity lần nữa.
+    if (chuKyTepCoVan(root, so) === chuKy) {
+      s.coVan[so] = { chuKy, luc: new Date(now()).toISOString(), file: `media/co-van/cong-${so}.md`, loi: "" };
+      save(s);
+      return true;
+    }
     tepThat(path.join(thuMucThat(root, "media", "co-van"), `cong-${so}.md`));
     s.coVanDang = so;
     ghi(s, "co_van", `Giao Antigravity góp ý trước Cổng ${so}.`);
@@ -660,4 +666,12 @@ function createLuongPhim({ dir, audit = { log() {} }, now = Date.now, setTimer =
   return { batDau, trangThai, dung, tiep, dungHet };
 }
 
-module.exports = { createLuongPhim };
+// Dấu đầu tệp góp ý "<!-- co-van: <chữ ký> -->": luồng và nút "Xin góp ý" dùng chung, khỏi chấm lại đúng nội dung đã chấm.
+function chuKyTepCoVan(root, so) {
+  const rel = `media/co-van/cong-${so}.md`;
+  if (!fileTrong(root, rel)) return null;
+  const m = /^<!-- co-van: ([a-f0-9]{64}) -->/.exec(fs.readFileSync(path.join(root, rel), "utf8").slice(0, 120));
+  return m ? m[1] : null;
+}
+
+module.exports = { createLuongPhim, noiDungAgy, chuKyCoVan, promptCoVan, chuKyTepCoVan, thuMucThat, tepThat, ghiAtomic, VAI_CO_VAN };
