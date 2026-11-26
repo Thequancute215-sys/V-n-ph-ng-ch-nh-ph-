@@ -386,6 +386,12 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
     ["POST", "/phim/luong/dung", (p, qs, b) => {
       const root = phimLuongRoot(b.workspace);
       luongPhim.dung(root).catch((e) => audit.log("ctl", "phim.luong.dung_loi", path.basename(root), maskSecrets(e.message)));
+      // Lượt Cố vấn (chỉ đọc, tới 15 phút) dừng ngay theo CEO; lượt viết của Hinata để chạy hết, tránh để lại hồ sơ ghi dở.
+      for (const j of jobs.list("running")) {
+        if (j.agent === "PHIM_CO_VAN" && path.resolve(String(j.workspace)).toLowerCase() === path.resolve(root).toLowerCase()) {
+          jobs.kill(j.id, "ceo").catch(() => {});
+        }
+      }
       return [202, { luong: luongPhim.trangThai(root) }];
     }],
     ["POST", "/phim/uoc-tinh", (p, qs, b) => ({ uocTinh: mayQuay.uocTinh(phimRoot(b.workspace), { canh: b.canh, loai: b.loai, soPhuongAn: b.soPhuongAn, doPhanGiai: b.doPhanGiai }) })],

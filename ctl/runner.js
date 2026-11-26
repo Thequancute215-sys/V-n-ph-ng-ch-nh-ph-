@@ -84,9 +84,14 @@ const AGY_DRAFT = JSON.stringify({ permissions: { allow: ["command(regex:^git (p
 // Đề xuất: agy chạy nền tự TỪ CHỐI mọi công cụ chưa có luật cho phép, kể cả đọc file (Claude thấy 21/11/2026: "read_file
 // permission that headless mode cannot prompt for, so it was auto-denied" → trả lời rỗng). Nên phải CHO PHÉP rõ công cụ đọc
 // và lệnh git/liệt kê chỉ đọc như trước, đồng thời CẤM terminal khác, ghi file, mở URL và MCP kể cả khi máy đã cấp quyền.
+// Chỉ đọc thật sự (kiểm định độc lập PR #83, 26/11/2026): KHÔNG cho git pull (ghi .git và mở mạng), chỉ git status/diff/log/show;
+// cấm cả tìm kiếm web, sửa file, gọi trợ lý con và workflow dù headless vốn tự chặn công cụ chưa có luật.
 const AGY_READ = JSON.stringify({ permissions: {
-  allow: ["read_file(*)", "view_file(*)", "list_dir(*)", "grep_search(*)", "find_by_name(*)", ...JSON.parse(AGY_DRAFT).permissions.allow],
-  deny: ["write_file(*)", "execute_url(*)", "mcp(*)"] } });
+  allow: ["read_file(*)", "view_file(*)", "list_dir(*)", "grep_search(*)", "find_by_name(*)",
+    "command(regex:^git (status(?: --short)?|diff(?: --stat)?|log(?: -[0-9]+)? --oneline|show --stat)$)",
+    "command(regex:(?i)^Get-ChildItem( -Path \\.)?( -(Force|Name|File|Directory|Recurse))*$)"],
+  deny: ["write_file(*)", "edit_file(*)", "replace_file_content(*)", "multi_replace_file_content(*)", "write_to_file(*)",
+    "execute_url(*)", "read_url_content(*)", "search_web(*)", "mcp(*)", "invoke_subagent(*)", "run_workflow(*)"] } });
 const AGY = ["agy", "-p", "{prompt}", "--output-format", "stream-json", "--mode", "accept-edits", "--print-timeout", "20m", "--settings", AGY_DRAFT];
 // Kakashi (FRONTEND_UIUX_DEV) dựng giao diện nên cần thêm lệnh cài gói, build, lint, test của npm; vẫn chặn mọi lệnh khác khi không bật toàn quyền.
 const AGY_FE_READ = JSON.stringify({ permissions: { allow: [...JSON.parse(AGY_DRAFT).permissions.allow, "command(regex:^npm (ci|install|test|run (build|lint|test|typecheck))$)"] } });
@@ -120,6 +125,8 @@ const AGENTS = {
   // CEO chat trực tiếp với từng AI (ctl/chat.js): luôn chỉ đọc, không theo toàn quyền.
   CLAUDE_CHAT: { base: "CLAUDE_AUDITOR", argv: ["claude", "-p", "{prompt}", "--output-format", "json", "--max-turns", "12", "--permission-mode", "plan", "--tools", "Read,Grep,Glob"], timeoutMs: 6 * MIN, prompt: "" },
   CODEX_CHAT: { base: "CODEX_ASTRA_DEV", argv: ["codex", "exec", "--json", "--sandbox", "read-only", "{prompt}"], timeoutMs: 6 * MIN, prompt: "" },
+  // Cố vấn kịch bản và cảnh quay của luồng phim (CEO 26/11/2026): Antigravity Gemini 4 Carbon (High), luồng luôn gọi ở chế độ chỉ đọc.
+  PHIM_CO_VAN: { base: "SPEC_ARCHITECT", argv: ["agy", "-p", "{prompt}", "--output-format", "stream-json", "--model", "gemini-4-carbon-high", "--print-timeout", "15m"], timeoutMs: 16 * MIN, prompt: "" },
   AGY_CHAT: { base: "SPEC_ARCHITECT", argv: ["agy", "-p", "{prompt}", "--output-format", "json", "--mode", "plan", "--print-timeout", "5m", "--settings", AGY_READ], timeoutMs: 6 * MIN, prompt: "" },
 };
 // TOÀN QUYỀN (CEO chọn 03/11/2026, cách B): các vai làm việc chạy không giới hạn quyền trên máy để tiện kiểm thử
@@ -588,7 +595,8 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     if (d.kind === "agy" && agyTk) { try { agyTk.truocLuot({ model: modelTrong(dieuPhoi.apply(base, d)) || d.model }); } catch {} }
     if (d.kind === "codex" && codexTk) { try { codexTk.truocLuot(); } catch {} }
     const shaped = dieuPhoi.apply(codexArgs(base, role, null, d.kind === "codex" && d.fixed && d.model ? d.model : null), d);
-    const loiGiao = String(prompt) + (muc === "toan" ? FULL_NOTE : "") + (muc === "doc" ? DOC_NOTE : "");
+    // Luồng phim tự xin chỉ đọc (nghiệm thu, cố vấn) đã có lời giao riêng: không nối DOC_NOTE (dòng JSON bàn giao của agent.md).
+    const loiGiao = String(prompt) + (muc === "toan" ? FULL_NOTE : "") + (muc === "doc" && !chiDoc ? DOC_NOTE : "");
     const argv = apQuyen(shaped, muc, role).map((x) => (x === "{prompt}" ? loiGiao : x));
     audit.log(actor, "phim.ai", root, { role, muc, dieuPhoi: { tier: d.tier, model: d.model, effort: d.effort } });
     return new Promise((ok) => {
