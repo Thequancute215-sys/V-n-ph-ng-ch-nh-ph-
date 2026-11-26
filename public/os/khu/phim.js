@@ -50,7 +50,7 @@ function docTep(file) {
 export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, signal, phan = "kich-ban" } = {}) {
   let ws = "", data = null, flow = null, nghiemThu = null, loiTai = "", ban = false, hen = null, conSong = true, dsPhim = null, kyCu = "", phien = 0;
   let taiLieu = [], loiTaiLieu = "", xem = null, goi = null;
-  let gocHelper = [], helperNhanVat = "";
+  let gocHelper = [], helperNhanVat = "", khoGoc = "", moTao = false;
   const helperUI = { tab: "nhan-vat", styles: [], canh: "", frames: [], compareA: "", compareB: "", goi: null };
   let dangGhi = null, dangPhat = null;
   vung.innerHTML = `<div class="vung" id="phim">${dangTai(4)}</div>`;
@@ -60,11 +60,11 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
 
   async function batDau() {
     let ds = null;
-    try { ds = (await ctl("/phim/du-an")).duAn || []; }
+    try { const r = await ctl("/phim/du-an"); ds = r.duAn || []; khoGoc = r.kho || ""; }
     catch (e) { if (conSong) goc.innerHTML = loi(e.message); return; }
     if (!conSong) return;
     dsPhim = ds;
-    if (!dsPhim.length) { goc.innerHTML = rong("Chưa có dự án phim nào", "Tạo một dự án loại Phim AI ở Dự án; văn phòng dựng sẵn phim.json.", `<a class="nut" href="#/code/du-an?loai=phim">Tạo dự án phim</a>`); return; }
+    if (!dsPhim.length) { goc.innerHTML = rong("Chưa có phim nào", "Đặt tên phim để tạo. Phim được lưu vào kho phim, tách khỏi dự án code.", veTaoPhim()); return; }
     if (phan === "kich-ban") {
       try { const schema = await ctl("/phim/helper/goc"); gocHelper = schema.goc || []; helperUI.styles = schema.phongCach || []; } catch {}
       if (!conSong) return;
@@ -109,9 +109,21 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
     hen = setTimeout(tai, ban2 ? 4000 : 20000);
   }
 
+  // Tạo phim mới vào kho phim: chỉ cần tên (bắt buộc) và ý tưởng (tuỳ chọn). Thư mục = tên không dấu.
+  function veTaoPhim() {
+    const huy = dsPhim && dsPhim.length ? `<button type="button" class="nut nho" data-huy-tao>Huỷ</button>` : "";
+    return `<form id="fTaoPhim" class="bieu-mau" novalidate aria-label="Tạo phim mới">
+      <label class="rong-het">Tên phim<input class="o" name="ten" maxlength="80" required autocomplete="off" placeholder="Ví dụ: Tín hiệu trở về"></label>
+      <label class="rong-het">Ý tưởng (tuỳ chọn)<textarea class="o" name="yTuong" maxlength="4000" placeholder="Vài câu về nội dung phim. Có thể để trống và viết đề bài sau."></textarea></label>
+      <p class="mo rong-het" id="khoTaoPhim">Lưu vào kho: ${esc(khoGoc || "kho phim")}</p>
+      <div class="hang rong-het"><button type="submit" class="nut-chinh">Tạo phim</button>${huy}<span class="hong" id="loiTaoPhim" role="alert"></span></div>
+    </form>`;
+  }
+
   function veDauTrang(p, k, bd) {
-    const chon = `<div class="hang"><label for="chonPhim" class="mo">Dự án phim</label><select class="o" id="chonPhim">${dsPhim.map((d) => `<option value="${esc(d.path)}"${d.path === ws ? " selected" : ""}>${esc(d.ten)}</option>`).join("")}</select>` +
-      `<button type="button" class="nut nho" data-tai-lai>Tải lại</button><span class="mo">Mọi khoản tốn tiền đều hỏi lại trước khi gọi.</span></div>`;
+    const chon = `<div class="hang"><label for="chonPhim" class="mo">Phim</label><select class="o" id="chonPhim">${dsPhim.map((d) => `<option value="${esc(d.path)}"${d.path === ws ? " selected" : ""}>${esc(d.ten)}${d.trongKho === false ? " · ngoài kho" : ""}</option>`).join("")}</select>` +
+      `<button type="button" class="nut nho" data-phim-moi aria-expanded="${moTao}">+ Phim mới</button><button type="button" class="nut nho" data-tai-lai>Tải lại</button><span class="mo">Mọi khoản tốn tiền đều hỏi lại trước khi gọi.</span></div>` +
+      (moTao ? veTaoPhim() : "");
     if (!p) return chon;
     const dsCanh = p.canh || [];
     const daKhung = dsCanh.filter((c) => !!c.khung_chon).length;
@@ -402,7 +414,7 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
 
     goc.innerHTML = veDauTrang(p, k, bd) + (loiTai ? loi(loiTai) : "") + than;
     goc.querySelectorAll("button, input, select").forEach((el) => {
-      if (el.id === "chonPhim" || el.hasAttribute("data-tai-lai")) return;
+      if (el.id === "chonPhim" || el.hasAttribute("data-tai-lai") || el.hasAttribute("data-phim-moi") || el.closest("#fTaoPhim")) return;
       if (el.closest("dialog")) return;
       el.disabled = el.disabled || ban || (el.hasAttribute("data-dung") && !(bd && bd.coFfmpeg));
     });
@@ -725,6 +737,36 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
       const tk = goc.querySelector(`select[data-tk="${CSS.escape(d.nhip)}"]`).value;
       if (!confirm(`Nhịp ${NHIP[d.buoc]} cảnh ${d.nhip} (${tk}):\n${HOI_NHIP[d.buoc]}\nAnh nên nhìn cửa sổ Chrome trong lúc Opus làm.`)) return;
       return lam(() => ctl("/flow/nhip", { workspace: ws, canh: d.nhip, taiKhoan: tk, buoc: d.buoc }), "Opus bắt đầu nhịp " + NHIP[d.buoc] + ".");
+    }
+  });
+  goc.addEventListener("click", (e) => {
+    const t = e.target.closest("[data-phim-moi], [data-huy-tao]");
+    if (!t) return;
+    moTao = t.hasAttribute("data-phim-moi") ? !moTao : false;
+    kyCu = ""; ve();
+    if (moTao) goc.querySelector("#fTaoPhim [name=ten]")?.focus();
+  });
+  goc.addEventListener("submit", async (e) => {
+    if (e.target.id !== "fTaoPhim") return;
+    e.preventDefault();
+    const f = e.target, o = f.querySelector("[name=ten]"), ten = o.value.trim(), yTuong = f.querySelector("[name=yTuong]").value.trim();
+    const baoLoi = (m) => { o.setAttribute("aria-invalid", "true"); f.querySelector("#loiTaoPhim").textContent = m; o.focus(); };
+    if (!ten) return baoLoi("Đặt tên phim trước khi tạo.");
+    const nut = f.querySelector("[type=submit]"); nut.disabled = true; nut.textContent = "Đang tạo…";
+    try {
+      const { phim } = await ctl("/phim/kho", { ten, yTuong });
+      if (!conSong) return;
+      const r = await ctl("/phim/du-an");
+      if (!conSong) return;
+      dsPhim = r.duAn || [phim]; khoGoc = r.kho || khoGoc; moTao = false;
+      dongXem(); dungAnimatic(); huyGhi();
+      ws = phim.path; try { localStorage.setItem("tqos-phim", ws); } catch {}
+      data = null; nghiemThu = null; taiLieu = []; loiTaiLieu = ""; goi = null; helperNhanVat = ""; kyCu = "";
+      bao("Đã tạo phim \"" + phim.ten + "\" trong kho.");
+      ve(); tai();
+    } catch (err) {
+      if (!conSong) return;
+      nut.disabled = false; nut.textContent = "Tạo phim"; baoLoi(err.message);
     }
   });
   goc.addEventListener("submit", (e) => {

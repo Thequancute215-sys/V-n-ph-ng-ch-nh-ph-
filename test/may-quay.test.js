@@ -370,7 +370,7 @@ test("xem media qua ctl: chỉ file trong media/ của workspace đã đăng ký
   assert.equal((await goi(q("media/../bi-mat.txt"))).status, 403);
   assert.equal((await goi("/phim/media?workspace=" + encodeURIComponent(d) + "&path=media/quay/C01-t1.mp4")).status, 403, "workspace chưa đăng ký");
   const ds = JSON.parse((await goi("/phim/du-an")).body).duAn;
-  assert.deepEqual(ds.map((x) => x.ten), ["phim"]);
+  assert.deepEqual(ds.map((x) => [x.ten, x.thuMuc, x.trongKho]), [["Thử", "phim", false]]);   // tên lấy từ phim.json, phim cũ ngoài kho
   const goc = docPhim(root);
   for (const sai of [{ ten: "Thiếu cảnh" }, { ...goc, canh: null }, { ...goc, canh: [null] },
     { ...goc, nhan_vat: {} }, { ...goc, nhan_vat: [null] }]) {
