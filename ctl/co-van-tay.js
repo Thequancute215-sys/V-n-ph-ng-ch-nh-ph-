@@ -4,7 +4,7 @@
 "use strict";
 const fs = require("node:fs");
 const path = require("node:path");
-const { noiDungAgy, chuKyCoVan, promptCoVan, thuMucThat, tepThat, ghiAtomic, VAI_CO_VAN } = require("./luong-phim");
+const { noiDungAgy, boLienKetTep, chuKyCoVan, promptCoVan, thuMucThat, tepThat, ghiAtomic, VAI_CO_VAN } = require("./luong-phim");
 const { maskSecrets } = require("../lib/mask");
 
 const err = (code, message) => Object.assign(new Error(message), { code });
@@ -38,7 +38,7 @@ function createCoVanTay({ chayAi, audit = { log() {} }, now = Date.now }) {
     catch (e) { o[so] = null; throw e; }
     p.then((kq) => {
       if (!kq || !kq.ok) return xong(maskSecrets(String(kq?.loi || "Antigravity chưa hoàn thành lượt góp ý.")).slice(0, 400));
-      const text = maskSecrets(noiDungAgy(kq.text));
+      const text = boLienKetTep(maskSecrets(noiDungAgy(kq.text)));
       if (!text) return xong("Antigravity chưa trả lời góp ý.");
       const hien = docPhim(root);
       if (!hien || chuKyCoVan(root, hien, so) !== chuKy) return xong("Kịch bản hoặc khung hình đã đổi trong lúc góp ý. Bấm Xin góp ý lại.");
@@ -46,7 +46,7 @@ function createCoVanTay({ chayAi, audit = { log() {} }, now = Date.now }) {
       fs.mkdirSync(thuMuc, { recursive: true });
       const file = tepThat(path.join(thuMucThat(root, "media", "co-van"), `cong-${so}.md`));
       const luc = new Date(now()).toISOString();
-      ghiAtomic(file, `<!-- co-van: ${chuKy} -->\n# Góp ý của Cố vấn trước Cổng ${so}\n\n_Antigravity, ${luc}. Chỉ là góp ý: anh quyết định duyệt hay sửa._\n\n${text.slice(0, 20000)}\n`, 0o644);
+      ghiAtomic(file, `<!-- co-van: ${chuKy} -->\n# Góp ý của Cố vấn trước Cổng ${so}\n\n*Antigravity, ${luc}. Chỉ là góp ý: anh quyết định duyệt hay sửa.*\n\n${text.slice(0, 20000)}\n`, 0o644);
       xong("");
     }).catch((e) => xong(maskSecrets(String(e && e.message || e)).slice(0, 400)));
     return trangThai(root);

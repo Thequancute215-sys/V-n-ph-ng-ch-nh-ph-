@@ -206,7 +206,9 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
     const coTep = !!(data.coVan && data.coVan.co && data.coVan.co[so]);
     const dang = (L && L.coVanDang === so) || !!(tay && tay.dang);
     const coCanh = (data.phim.canh || []).length > 0;
-    if (!coCanh && !coTep && !dang) return "";
+    // Phim mới (mới có ý tưởng, chưa có cảnh): vẫn cho anh biết có Cố vấn kịch bản, và cần gì để xin góp ý.
+    if (!coCanh && !coTep && !dang) return so === 1 ? `<section class="khoi" aria-labelledby="hCoVan1"><div class="dau-hang"><h2 class="dau" id="hCoVan1">Góp ý của Cố vấn trước Cổng 1</h2><span class="mo">Antigravity · chỉ đọc</span></div>` +
+      `<p class="mo">Khi kịch bản có ít nhất một cảnh, nút Xin góp ý hiện ở đây: Antigravity đọc kịch bản, chấm điểm và gợi ý cách kể, nhịp, cảnh quay.</p></section>` : "";
     // Lỗi gần nhất: của lần anh bấm (nếu có) hoặc của bước Cố vấn trong luồng.
     const loiGan = (tay && !tay.dang && tay.loi) || (!tay && cvLuong && cvLuong.loi) || "";
     const cv = { luc: (tay && tay.luc) || (cvLuong && cvLuong.luc) || "", loi: loiGan, file: coTep ? `media/co-van/cong-${so}.md` : null };

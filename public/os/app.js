@@ -98,7 +98,9 @@ async function taiDuAn() {
     const d = await ctl("/workspaces");
     kho.dsDuAn = d.workspaces || [];
     kho.duAn = (d.active && d.active.path) || (kho.dsDuAn.find((w) => w.active) || {}).path || (kho.dsDuAn[0] || {}).path || null;
-    sel.innerHTML = kho.dsDuAn.length ? kho.dsDuAn.map((w) => `<option value="${esc(w.path)}"${w.path === kho.duAn ? " selected" : ""}>${esc(w.name || w.path.split(/[\\/]/).pop())}</option>`).join("")
+    // Thư viện phim mẫu (<kho>\_phim-mau) là workspace chỉ để AI đọc khung hình, không phải dự án: không đưa vào ô chọn (trừ khi đang chọn nó).
+    const hien = kho.dsDuAn.filter((w) => w.path === kho.duAn || !/[\\/]_phim-mau$/i.test(String(w.path || "")));
+    sel.innerHTML = hien.length ? hien.map((w) => `<option value="${esc(w.path)}"${w.path === kho.duAn ? " selected" : ""}>${esc(w.name || w.path.split(/[\\/]/).pop())}</option>`).join("")
       : `<option value="">Chưa có dự án</option>`;
   } catch (e) {
     sel.innerHTML = `<option value="">Chưa nối ctl</option>`; kho.duAn = null;

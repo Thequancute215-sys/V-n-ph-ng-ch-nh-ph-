@@ -8,7 +8,7 @@ const path = require("node:path");
 const http = require("node:http");
 const { Readable } = require("node:stream");
 const { createCtl } = require("../ctl/main");
-const { createPhimMau, goiYTu } = require("../ctl/phim-mau");
+const { createPhimMau, goiYTu, boLienKetTep } = require("../ctl/phim-mau");
 const { createCoVanTay } = require("../ctl/co-van-tay");
 
 const d = fs.mkdtempSync(path.join(os.tmpdir(), "vp-phim-mau-"));
@@ -81,6 +81,8 @@ test("phim mẫu: sai đuôi, không phải video, tải thiếu thì báo lỗi
 });
 
 test("phim mẫu: gợi ý lấy từ khối json cuối, bỏ trường sai", () => {
+  assert.equal(boLienKetTep("Mở đầu ([k01.jpg](file:///D:/….jpg)), xem [Flow](https://labs.google/flow), [a](media/x.jpg)"),
+    "Mở đầu (k01.jpg), xem [Flow](https://labs.google/flow), a");
   assert.equal(goiYTu("không có json"), null);
   assert.deepEqual(goiYTu("```json\n{\"lam_duoc\":\"sai\",\"loai\":\"..\",\"so_canh\":-1,\"ten_goi_y\":\"  Tên  \"}\n```"), { ten_goi_y: "Tên" });
   assert.deepEqual(goiYTu("```json\n{\"lam_duoc\":\"kho\"}\n```\n```json\n{\"lam_duoc\":\"mot_phan\"}\n```"), { lam_duoc: "mot_phan" });
