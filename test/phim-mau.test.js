@@ -78,6 +78,41 @@ test("phim mẫu: sai đuôi, không phải video, tải thiếu thì báo lỗi
   for (const ma of ["..", "../x", "A B", ""]) assert.throws(() => pm.phanTich(ma), (e) => ["BAD_REQUEST", "NOT_FOUND"].includes(e.code), ma);
   const pm2 = createPhimMau({ khoPhim: ctl.khoPhim, ws: ctl.ws, ffmpeg: () => null, ffprobe: () => null, chayAi: async () => traLoi("") });
   await assert.rejects(pm2.taiLen(reqGia(Buffer.from("x")), "a.mp4"), (e) => e.code === "THIEU_FFMPEG");
+  // Video hỏng: FFprobe thoát mã 1 → 400, không lộ "Command failed: <đường dẫn ffprobe>".
+  const pm3 = createPhimMau({ khoPhim: ctl.khoPhim, ws: ctl.ws, ffmpeg: () => "ffmpeg", ffprobe: () => "ffprobe", chayAi: async () => traLoi(""),
+    runImpl: async () => { throw Object.assign(new Error("Command failed: C:\\ffmpeg\\ffprobe.exe -v error"), { code: 1 }); } });
+  await assert.rejects(pm3.taiLen(reqGia(Buffer.from("abc")), "hong.mp4"), (e) => e.code === "BAD_REQUEST" && !/Command failed|ffprobe\.exe/.test(e.message));
+  // Trình duyệt ngắt giữa chừng (ECONNRESET): 400 và thư mục vừa tạo được dọn sau khi tệp đóng hẳn.
+  const ngat = new Readable({ read() {} });
+  ngat.headers = { "content-length": "1000" };
+  const hua = pm.taiLen(ngat, "ngat.mp4");
+  ngat.push(Buffer.from("mot-phan"));
+  setTimeout(() => ngat.destroy(Object.assign(new Error("socket hang up"), { code: "ECONNRESET" })), 30);
+  await assert.rejects(hua, (e) => e.code === "BAD_REQUEST" && /ngắt/.test(e.message));
+  // Tên quá dài bị cắt (giữ đuôi), không có ký tự đảo chiều chữ.
+  const pm4 = createPhimMau({ khoPhim: ctl.khoPhim, ws: ctl.ws, ffmpeg: () => "ffmpeg", ffprobe: () => "ffprobe", runImpl: runGia(FFPROBE_OK), chayAi: async () => traLoi("") });
+  const dai = await pm4.taiLen(reqGia(Buffer.from("v")), "a\u202e".repeat(300) + ".mp4");
+  assert.ok(dai.ten.length <= 120 && dai.ten.endsWith(".mp4") && !dai.ten.includes("\u202e"), dai.ten.length);
+  pm4.xoa(dai.ma);
+  const con2 = fs.readdirSync(path.join(kho, "_phim-mau", "media")).filter((x) => /^(hong|ngat)-/.test(x));
+  assert.deepEqual(con2, [], "lỗi FFprobe hay ngắt giữa chừng không để lại thư mục");
+});
+
+test("phim mẫu: _phim-mau hoặc media là junction ra ngoài kho thì từ chối, không xoá hay ghi ra ngoài", (t) => {
+  const g = fs.mkdtempSync(path.join(os.tmpdir(), "vp-mau-junction-"));
+  const ngoai = path.join(g, "ngoai"); fs.mkdirSync(path.join(ngoai, "test-123456"), { recursive: true });
+  fs.writeFileSync(path.join(ngoai, "test-123456", "meta.json"), "{}");
+  const khoGia = path.join(g, "kho"); fs.mkdirSync(path.join(khoGia, "_phim-mau"), { recursive: true });
+  try { fs.symlinkSync(ngoai, path.join(khoGia, "_phim-mau", "media"), "junction"); }
+  catch (e) { fs.rmSync(g, { recursive: true, force: true }); return t.skip("máy không cho tạo junction: " + e.code); }
+  const pm = createPhimMau({ khoPhim: { goc: khoGia, tao() { throw new Error("không dùng"); } }, ws: ctl.ws, chayAi: async () => traLoi("") });
+  assert.throws(() => pm.xoa("test-123456"), (e) => e.code === "PATH_ESCAPE");
+  assert.throws(() => pm.phanTich("test-123456"), (e) => e.code === "PATH_ESCAPE");
+  assert.deepEqual(pm.list().ds, []);
+  assert.ok(fs.existsSync(path.join(ngoai, "test-123456", "meta.json")), "thư mục ngoài kho còn nguyên");
+  assert.ok(!ctl.ws.list().some((w) => w.path.toLowerCase().startsWith(g.toLowerCase())), "không đăng ký thư mục ngoài kho làm workspace");
+  fs.rmSync(path.join(khoGia, "_phim-mau", "media"));
+  fs.rmSync(g, { recursive: true, force: true });
 });
 
 test("phim mẫu: gợi ý lấy từ khối json cuối, bỏ trường sai", () => {
@@ -86,6 +121,7 @@ test("phim mẫu: gợi ý lấy từ khối json cuối, bỏ trường sai", (
   assert.equal(goiYTu("không có json"), null);
   assert.deepEqual(goiYTu("```json\n{\"lam_duoc\":\"sai\",\"loai\":\"..\",\"so_canh\":-1,\"ten_goi_y\":\"  Tên  \"}\n```"), { ten_goi_y: "Tên" });
   assert.deepEqual(goiYTu("```json\n{\"lam_duoc\":\"kho\"}\n```\n```json\n{\"lam_duoc\":\"mot_phan\"}\n```"), { lam_duoc: "mot_phan" });
+  assert.equal(goiYTu("```json\n{\"ten_goi_y\":{\"a\":1},\"y_tuong\":true}\n```"), null, "sai kiểu thì bỏ, không thành \"[object Object]\"");
 });
 
 test("Xin góp ý chạy tay: chỉ đọc, ghi media/co-van/cong-N.md có chữ ký; đang chạy thì DANG_CHAY; chưa có cảnh thì từ chối; lỗi giữ lại để báo", async () => {
@@ -142,4 +178,10 @@ test("route tải phim mẫu: bắt buộc octet-stream, chặn cross-site; GET 
   assert.equal(r.status, 200);
   assert.deepEqual(r.body.coVan.co, { 1: true, 2: false });
   assert.equal((await goi("POST", "/phim/co-van", JSON.stringify({ workspace: p.path, cong: 9 }), { "content-type": "application/json" })).status, 400);
+  // Thư viện phim mẫu không chọn làm dự án, không giao việc hay đặt lịch tự chạy trên nó.
+  const mau = fs.realpathSync(path.join(kho, "_phim-mau"));
+  const json = { "content-type": "application/json" };
+  assert.equal((await goi("POST", "/workspaces/switch", JSON.stringify({ path: mau }), json)).status, 403);
+  assert.equal((await goi("POST", "/autopilot", JSON.stringify({ workspace: mau, task: "x" }), json)).status, 403);
+  assert.equal((await goi("POST", "/lich-chay", JSON.stringify({ workspace: mau, ten: "x", moTa: "x", loai: "giao" }), json)).status, 403);
 });

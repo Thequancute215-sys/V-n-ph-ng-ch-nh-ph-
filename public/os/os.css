@@ -53,6 +53,9 @@ pre.van-ban { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: i
 .nut-chinh:hover { background: var(--color-accent-hi); border-color: var(--color-accent-hi); }
 .nut:active, .nut-chinh:active { transform: translateY(1px); }
 .nut[disabled], .nut-chinh[disabled] { background: var(--color-paper-3); border-color: var(--color-rule); color: var(--color-muted); cursor: not-allowed; }
+/* Nút là <label> bọc <input type="file" class="visually-hidden">: viền focus và trạng thái khoá phải hiện trên chính nút. */
+.nut:has(:focus-visible), .nut-chinh:has(:focus-visible) { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.nut:has(:disabled), .nut-chinh:has(:disabled) { background: var(--color-paper-3); border-color: var(--color-rule); color: var(--color-muted); cursor: not-allowed; }
 .nut[aria-busy="true"], .nut-chinh[aria-busy="true"] { background: var(--color-paper-3); border-color: var(--color-rule); color: var(--color-muted); cursor: progress; }
 .nut.nguy { color: var(--color-error); border-color: color-mix(in oklab, var(--color-error) 50%, var(--color-rule-2)); }
 .nut.nho { min-height: 28px; padding: 0 var(--space-xs); font-size: var(--text-xs); }

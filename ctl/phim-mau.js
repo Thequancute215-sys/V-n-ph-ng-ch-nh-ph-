@@ -8,9 +8,8 @@ const path = require("node:path");
 const crypto = require("node:crypto");
 const { execFile } = require("node:child_process");
 const { promisify } = require("node:util");
-const { noiDungAgy, boLienKetTep, VAI_CO_VAN } = require("./luong-phim");
+const { noiDungAgy, boLienKetTep, VAI_CO_VAN, thuMucThat: thuMucThatTu, tepThat, ghiAtomic } = require("./luong-phim");
 const { LOAI } = require("./kho-phim");
-const { writeAtomic } = require("../lib/ghi-file");
 const { maskSecrets } = require("../lib/mask");
 
 const run = promisify(execFile);
@@ -19,11 +18,14 @@ const MAX_BYTE = 2 * 1024 * 1024 * 1024;   // 2 GiB
 const DUOI = new Set([".mp4", ".mov", ".m4v", ".webm", ".mkv"]);
 const MA_RE = /^[a-z0-9][a-z0-9-]{1,60}$/;
 const LOAI_ID = new Set(LOAI.map((l) => l.id));
-const chuanTen = (t) => String(t || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim();
+// Bỏ ký tự điều khiển (C0, C1) và ký tự ẩn/đảo chiều chữ (BiDi, zero-width, BOM) khỏi tên hiển thị.
+const chuanTen = (t) => String(t || "").replace(/[\u0000-\u001f\u007f-\u009f​-‏‪-‮⁠-⁩﻿]/g, " ").replace(/\s+/g, " ").trim();
+const TEN_MAX = 120;
 const slug = (t) => String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[đĐ]/g, "d").toLowerCase()
   .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40).replace(/-+$/, "") || "phim-mau";
 const docJson = (f) => { try { return JSON.parse(fs.readFileSync(f, "utf8")); } catch { return null; } };
-const ghiJson = (f, o) => writeAtomic(f, JSON.stringify(o, null, 2) + "\n", 0o644);
+// ghiAtomic kiểm tệp đích và tệp .tmp đều không phải liên kết cứng/tượng trưng trước khi ghi.
+const ghiJson = (f, o) => ghiAtomic(f, JSON.stringify(o, null, 2) + "\n", 0o644);
 
 function promptPhanTich(meta) {
   const khung = meta.khung.map((k) => `${k.path} (giây ${k.giay})`);
@@ -53,21 +55,22 @@ function goiYTu(text) {
   if (!j || typeof j !== "object") return null;
   const g = {};
   if (["duoc", "mot_phan", "kho"].includes(j.lam_duoc)) g.lam_duoc = j.lam_duoc;
-  const ten = chuanTen(j.ten_goi_y).slice(0, 60); if (ten) g.ten_goi_y = ten;
+  const ten = typeof j.ten_goi_y === "string" ? chuanTen(j.ten_goi_y).slice(0, 60) : ""; if (ten) g.ten_goi_y = ten;
   if (LOAI_ID.has(j.loai)) g.loai = j.loai;
   if (Number.isInteger(j.so_canh) && j.so_canh > 0 && j.so_canh <= 60) g.so_canh = j.so_canh;
-  const y = String(j.y_tuong || "").trim().slice(0, 600); if (y) g.y_tuong = y;
+  const y = typeof j.y_tuong === "string" ? j.y_tuong.trim().slice(0, 600) : ""; if (y) g.y_tuong = y;
   return Object.keys(g).length ? g : null;
 }
 
 function createPhimMau({ khoPhim, ws, audit = { log() {} }, ffmpeg = () => null, ffprobe = () => null, chayAi, now = Date.now, runImpl = run }) {
   const goc = () => path.join(khoPhim.goc, "_phim-mau");
-  const media = () => path.join(goc(), "media");
+  // Kiểm TỪNG cấp _phim-mau → media (→ mã) là thư mục thật, không junction/symlink, trước mọi lần đọc, ghi, xoá hay đăng ký.
+  const media = () => thuMucThatTu(khoPhim.goc, "_phim-mau", "media");
   const dangPhanTich = new Set();
   const thuMuc = (ma) => { if (!MA_RE.test(String(ma))) throw err("BAD_REQUEST", "Mã phim mẫu không hợp lệ."); return path.join(media(), ma); };
   // Thư mục phim mẫu phải là thư mục thật (không junction) nằm trong _phim-mau\media.
   function thuMucThat(ma) {
-    const d = thuMuc(ma);
+    const d = thuMucThatTu(thuMuc(ma));
     const st = fs.lstatSync(d, { throwIfNoEntry: false });
     if (!st) throw err("NOT_FOUND", "Không có phim mẫu này.");
     if (!st.isDirectory() || st.isSymbolicLink()) throw err("PATH_ESCAPE", "Phim mẫu phải là thư mục thật trong kho.");
@@ -76,6 +79,7 @@ function createPhimMau({ khoPhim, ws, audit = { log() {} }, ffmpeg = () => null,
   // _phim-mau là một workspace (để xem khung qua /phim/media và để Antigravity đọc); đăng ký một lần.
   function dangKy() {
     fs.mkdirSync(media(), { recursive: true });
+    media();   // kiểm lại sau khi tạo (không để junction chen vào giữa)
     const real = fs.realpathSync(goc());
     const w = ws.list().find((x) => path.resolve(x.path).toLowerCase() === real.toLowerCase());
     return w ? w.path : ws.add(real, "phim-mau").path;
@@ -104,8 +108,15 @@ function createPhimMau({ khoPhim, ws, audit = { log() {} }, ffmpeg = () => null,
   async function ffprobeJson(file) {
     const p = ffprobe();
     if (!p) throw err("THIEU_FFMPEG", "Chưa có FFprobe: bấm Cài xưởng phim ở trang Kết nối.");
-    const { stdout } = await runImpl(p, ["-v", "error", "-print_format", "json", "-show_format", "-show_streams", file], { windowsHide: true, timeout: 60000, maxBuffer: 4 * 1024 * 1024 });
-    const j = JSON.parse(stdout);
+    let j;
+    try {
+      const { stdout } = await runImpl(p, ["-v", "error", "-print_format", "json", "-show_format", "-show_streams", file], { windowsHide: true, timeout: 60000, maxBuffer: 4 * 1024 * 1024 });
+      j = JSON.parse(stdout);
+    } catch (e) {
+      // Không trả nguyên "Command failed: <đường dẫn ffprobe>…" ra trình duyệt.
+      if (e && e.code === "ENOENT") throw err("THIEU_FFMPEG", "Không chạy được FFprobe: bấm Cài xưởng phim ở trang Kết nối.");
+      throw err("BAD_REQUEST", e && e.killed ? "FFprobe đọc video quá lâu, thử tệp khác." : "Không đọc được video (tệp hỏng hoặc định dạng lạ).");
+    }
     const v = (j.streams || []).find((s) => s.codec_type === "video");
     const giay = Number(j.format && j.format.duration);
     if (!v || !Number.isFinite(giay) || giay < 1) throw err("BAD_REQUEST", "Tệp không có luồng hình dài từ 1 giây.");
@@ -122,8 +133,13 @@ function createPhimMau({ khoPhim, ws, audit = { log() {} }, ffmpeg = () => null,
     const khung = [];
     for (let i = 0; i < n; i++) {
       const t = giay * (i + 0.5) / n, ten = `k${String(i + 1).padStart(2, "0")}.jpg`;
-      await runImpl(p, ["-v", "error", "-nostdin", "-ss", t.toFixed(2), "-i", file, "-vf", "scale=640:640:force_original_aspect_ratio=decrease",
-        "-frames:v", "1", "-q:v", "4", "-y", path.join(kd, ten)], { windowsHide: true, timeout: 60000 });
+      try {
+        await runImpl(p, ["-v", "error", "-nostdin", "-ss", t.toFixed(2), "-i", file, "-vf", "scale=640:640:force_original_aspect_ratio=decrease",
+          "-frames:v", "1", "-q:v", "4", "-y", path.join(kd, ten)], { windowsHide: true, timeout: 60000 });
+      } catch (e) {
+        if (e && e.code === "ENOENT") throw err("THIEU_FFMPEG", "Không chạy được FFmpeg: bấm Cài xưởng phim ở trang Kết nối.");
+        continue;   // khung này hỏng: bỏ qua, thử khung sau
+      }
       if (fs.existsSync(path.join(kd, ten))) khung.push({ path: `media/${path.basename(d)}/khung/${ten}`, giay: Math.round(t * 10) / 10 });
     }
     if (!khung.length) throw err("BAD_REQUEST", "Không cắt được khung hình nào từ video.");
@@ -132,9 +148,11 @@ function createPhimMau({ khoPhim, ws, audit = { log() {} }, ffmpeg = () => null,
 
   // Nhận video theo luồng (không đọc cả tệp vào bộ nhớ), giới hạn 2 GiB; xong thì đọc thông số và cắt khung.
   async function taiLen(req, tenTep, actor = "ceo") {
-    const ten = chuanTen(path.basename(String(tenTep || "")));
-    const duoi = path.extname(ten).toLowerCase();
-    if (!ten || !DUOI.has(duoi)) throw err("BAD_REQUEST", "Chọn tệp video " + [...DUOI].join(", ") + ".");
+    const tenGoc = chuanTen(path.basename(String(tenTep || "")));
+    const duoi = path.extname(tenGoc).toLowerCase();
+    if (!tenGoc || !DUOI.has(duoi)) throw err("BAD_REQUEST", "Chọn tệp video " + [...DUOI].join(", ") + ".");
+    // Tên quá dài thì cắt phần trước đuôi (giữ đuôi), để không làm vỡ ý tưởng khi Tạo phim theo mẫu.
+    const ten = tenGoc.length > TEN_MAX ? tenGoc.slice(0, TEN_MAX - duoi.length).trim() + duoi : tenGoc;
     const kichCo = Number(req.headers["content-length"]);
     if (!Number.isFinite(kichCo) || kichCo <= 0) throw err("BAD_REQUEST", "Thiếu kích thước tệp.");
     if (kichCo > MAX_BYTE) throw err("TOO_LARGE", "Video tối đa 2 GB.");
@@ -145,13 +163,20 @@ function createPhimMau({ khoPhim, ws, audit = { log() {} }, ffmpeg = () => null,
     const file = path.join(d, "video" + duoi);
     try {
       await new Promise((ok, bad) => {
-        let byte = 0;
+        let byte = 0, xong = false;
         const out = fs.createWriteStream(file, { flags: "wx" });
-        req.on("data", (c) => { byte += c.length; if (byte > MAX_BYTE || byte > kichCo) { req.destroy(); out.destroy(); bad(err("TOO_LARGE", "Video vượt kích thước khai báo.")); } });
-        req.on("aborted", () => { out.destroy(); bad(err("BAD_REQUEST", "Tải lên bị ngắt.")); });
-        req.on("error", (e) => { out.destroy(); bad(e); });
-        out.on("error", bad);
-        out.on("finish", () => (byte === kichCo ? ok() : bad(err("BAD_REQUEST", "Tải lên chưa đủ dữ liệu."))));
+        // Trên Windows tệp còn mở thì không xoá được: luôn chờ WriteStream đóng hẳn rồi mới báo kết quả (và mới dọn thư mục).
+        const doiDong = (fn) => (out.closed ? fn() : out.once("close", fn));
+        const hong = (e) => { if (xong) return; xong = true; req.unpipe(out); out.destroy(); doiDong(() => bad(e)); };
+        req.on("data", (c) => { byte += c.length; if (byte > MAX_BYTE || byte > kichCo) { hong(err("TOO_LARGE", "Video vượt kích thước khai báo.")); req.destroy(); } });
+        req.on("aborted", () => hong(err("BAD_REQUEST", "Tải lên bị ngắt.")));
+        // ECONNRESET… khi trình duyệt đóng giữa chừng: lỗi của người gửi, không phải lỗi máy chủ.
+        req.on("error", () => hong(err("BAD_REQUEST", "Tải lên bị ngắt.")));
+        out.on("error", (e) => hong(err("WRITE_FAILED", "Không ghi được video: " + String(e && e.code || e))));
+        out.on("finish", () => {
+          if (byte !== kichCo) return hong(err("BAD_REQUEST", "Tải lên chưa đủ dữ liệu."));
+          if (xong) return; xong = true; doiDong(ok);
+        });
         req.pipe(out);
       });
       const tt = await ffprobeJson(file);
@@ -161,7 +186,9 @@ function createPhimMau({ khoPhim, ws, audit = { log() {} }, ffmpeg = () => null,
       audit.log(actor, "phim.mau.them", ma, { ten, byte: meta.byte, giay: tt.giay });
       return docMeta(ma);
     } catch (e) {
-      fs.rmSync(d, { recursive: true, force: true });   // chỉ thư mục vừa tạo cho lần tải này
+      // Chỉ thư mục vừa tạo cho lần tải này; thử lại vài lần nếu Windows còn giữ tệp. Dọn hỏng thì vẫn báo lỗi gốc.
+      try { fs.rmSync(d, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); }
+      catch (e2) { audit.log("ctl", "phim.mau.don_loi", ma, String(e2 && e2.code || e2)); }
       throw e;
     }
   }
@@ -194,7 +221,7 @@ function createPhimMau({ khoPhim, ws, audit = { log() {} }, ffmpeg = () => null,
       if (!text) return ghiKq({ phanTich: { trangThai: "loi", luc: new Date(now()).toISOString(), loi: "Antigravity chưa trả lời." } });
       const goiY = goiYTu(text);
       const banDoc = boLienKetTep(text.replace(/```json[\s\S]*?```\s*$/i, "")).trim();
-      writeAtomic(path.join(thuMucThat(ma), "bao-cao.md"), `# Phân tích phim mẫu: ${meta.ten}\n\n*Antigravity, ${new Date(now()).toISOString()}. Chỉ đọc khung hình, không nghe tiếng.*\n\n${banDoc.slice(0, 30000)}\n`, 0o644);
+      ghiAtomic(path.join(thuMucThat(ma), "bao-cao.md"), `# Phân tích phim mẫu: ${meta.ten}\n\n*Antigravity, ${new Date(now()).toISOString()}. Chỉ đọc khung hình, không nghe tiếng.*\n\n${banDoc.slice(0, 30000)}\n`, 0o644);
       ghiKq({ phanTich: { trangThai: "xong", luc: new Date(now()).toISOString() }, goiY });
     }).catch((e) => ghiKq({ phanTich: { trangThai: "loi", luc: new Date(now()).toISOString(), loi: maskSecrets(String(e && e.message || e)).slice(0, 400) } }))
       .finally(() => dangPhanTich.delete(ma));
@@ -217,7 +244,7 @@ function createPhimMau({ khoPhim, ws, audit = { log() {} }, ffmpeg = () => null,
   function xoa(ma, actor = "ceo") {
     const d = thuMucThat(ma);
     if (dangPhanTich.has(ma)) throw err("DANG_CHAY", "Đang phân tích, chờ xong rồi bỏ.");
-    fs.rmSync(d, { recursive: true, force: true });
+    fs.rmSync(d, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     audit.log(actor, "phim.mau.xoa", ma, {});
     return { ma };
   }

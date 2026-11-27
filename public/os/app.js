@@ -92,16 +92,20 @@ function trangThaiMay() {
 
 // ---------- dự án đang làm ----------
 let henDuAn = null;
+const laPhimMau = (p) => /[\\/]_phim-mau[\\/]*$/i.test(String(p || ""));
 async function taiDuAn() {
   const sel = document.getElementById("chonDuAn");
   try {
     const d = await ctl("/workspaces");
-    kho.dsDuAn = d.workspaces || [];
-    kho.duAn = (d.active && d.active.path) || (kho.dsDuAn.find((w) => w.active) || {}).path || (kho.dsDuAn[0] || {}).path || null;
-    // Thư viện phim mẫu (<kho>\_phim-mau) là workspace chỉ để AI đọc khung hình, không phải dự án: không đưa vào ô chọn (trừ khi đang chọn nó).
-    const hien = kho.dsDuAn.filter((w) => w.path === kho.duAn || !/[\\/]_phim-mau$/i.test(String(w.path || "")));
-    sel.innerHTML = hien.length ? hien.map((w) => `<option value="${esc(w.path)}"${w.path === kho.duAn ? " selected" : ""}>${esc(w.name || w.path.split(/[\\/]/).pop())}</option>`).join("")
-      : `<option value="">Chưa có dự án</option>`;
+    // Thư viện phim mẫu (<kho>\_phim-mau) là workspace chỉ để AI đọc khung hình, không phải dự án: bỏ khỏi MỌI ô chọn dự án
+    // (thanh trên, Giao việc cho đội, Lịch chạy…) để không ai giao việc hay bật luồng tự chạy trên nó.
+    const all = d.workspaces || [];
+    kho.dsDuAn = all.filter((w) => !laPhimMau(w.path));
+    kho.duAn = (d.active && d.active.path) || (all.find((w) => w.active) || {}).path || (kho.dsDuAn[0] || {}).path || null;
+    const chuaChon = !kho.dsDuAn.some((w) => w.path === kho.duAn);
+    sel.innerHTML = (kho.dsDuAn.length && chuaChon ? `<option value="" selected>Chọn dự án…</option>` : "") +
+      (kho.dsDuAn.length ? kho.dsDuAn.map((w) => `<option value="${esc(w.path)}"${w.path === kho.duAn ? " selected" : ""}>${esc(w.name || w.path.split(/[\\/]/).pop())}</option>`).join("")
+        : `<option value="">Chưa có dự án</option>`);
   } catch (e) {
     sel.innerHTML = `<option value="">Chưa nối ctl</option>`; kho.duAn = null;
     // ctl có thể bật sau văn phòng (hoặc vừa khởi động lại): thử lại thay vì giữ "Chưa nối ctl" tới khi tải lại trang.

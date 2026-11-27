@@ -78,10 +78,13 @@ export async function mo(vung, { ctl = ctlMacDinh, bao = baoMacDinh, signal } = 
     const noi = dauKho.querySelector("#khoTaoPhim");
     if (noi && kho) noi.textContent = "Lưu vào: " + kho + "\\<loại>\\<tên phim>";
   }
+  // Chỉ thay DOM khi nội dung đổi: làm mới 5–30 giây/lần không được đóng báo cáo, mất đoạn chữ đang bôi hay mất focus bàn phím.
+  let kyDs = "", kyMau = "";
   function ve() {
     if (!moTao) veDau(); else boSungTao();
-    dsKho.innerHTML = veDs();
-    mauKho.innerHTML = veMau();
+    const khoa = ban ? "1" : "0", hDs = veDs(), hMau = veMau();
+    if (khoa + hDs !== kyDs) { dsKho.innerHTML = hDs; kyDs = khoa + hDs; }
+    if (khoa + hMau !== kyMau) { mauKho.innerHTML = hMau; kyMau = khoa + hMau; }
     if (ban) [dsKho, mauKho].forEach((v) => v.querySelectorAll("button, select, input, textarea").forEach((el) => { el.disabled = true; }));
   }
 
@@ -106,8 +109,8 @@ export async function mo(vung, { ctl = ctlMacDinh, bao = baoMacDinh, signal } = 
         <span class="mo">${esc(giay(m.giay || 0))} · ${esc(m.rong)}×${esc(m.cao)}${m.coTieng ? "" : " · không tiếng"} · ${esc(luc(m.them))}</span>
         ${tt}
         <div class="hang">
-          <button type="button" class="nut nho" data-mau-phan-tich="${esc(m.ma)}"${dang ? " disabled" : ""}>${pt.trangThai === "xong" || pt.trangThai === "loi" ? "Phân tích lại" : "Phân tích"}</button>
-          ${m.goiY ? `<button type="button" class="nut-chinh" data-mau-tao="${esc(m.ma)}">Tạo phim theo mẫu</button>` : ""}
+          <button type="button" class="nut nho" data-mau-phan-tich="${esc(m.ma)}" aria-label="${pt.trangThai === "xong" || pt.trangThai === "loi" ? "Phân tích lại" : "Phân tích"} phim mẫu ${esc(m.ten)}"${dang ? " disabled" : ""}>${pt.trangThai === "xong" || pt.trangThai === "loi" ? "Phân tích lại" : "Phân tích"}</button>
+          ${m.goiY || pt.trangThai === "xong" ? `<button type="button" class="nut-chinh" data-mau-tao="${esc(m.ma)}" aria-label="Tạo phim theo mẫu ${esc(m.ten)}">Tạo phim theo mẫu</button>` : ""}
           <button type="button" class="nut nho nguy" data-mau-xoa="${esc(m.ma)}" aria-label="Bỏ phim mẫu ${esc(m.ten)}"${dang ? " disabled" : ""}>Bỏ</button>
         </div>
         ${xem}
@@ -115,7 +118,7 @@ export async function mo(vung, { ctl = ctlMacDinh, bao = baoMacDinh, signal } = 
     </article>`;
   }
   function veMau() {
-    const nhap = `<label class="nut nho" style="cursor:pointer">${taiLenDang ? "Đang tải lên…" : "+ Thêm phim mẫu"}<input type="file" id="taiMau" accept="video/mp4,video/quicktime,video/webm,video/x-matroska,.mp4,.mov,.m4v,.webm,.mkv" class="visually-hidden"${taiLenDang ? " disabled" : ""}></label>`;
+    const nhap = `<label class="nut nho">${taiLenDang ? "Đang tải lên…" : "+ Thêm phim mẫu"}<input type="file" id="taiMau" accept="video/mp4,video/quicktime,video/webm,video/x-matroska,.mp4,.mov,.m4v,.webm,.mkv" class="visually-hidden"${taiLenDang ? " disabled" : ""}></label>`;
     const than = !mau ? (loiMau ? loi("Chưa đọc được thư viện phim mẫu: " + loiMau) : dangTai(2))
       : (taiLenDang ? `<p class="canh-bao" role="status">Đang tải lên và cắt khung: ${esc(taiLenDang)}. Video lớn có thể mất vài phút.</p>` : "") +
         (mau.ds.length ? `<div class="luoi-phim">${mau.ds.map(veTheMau).join("")}</div>`
@@ -163,9 +166,9 @@ export async function mo(vung, { ctl = ctlMacDinh, bao = baoMacDinh, signal } = 
     if (t.dataset.mauXoa) {
       const ma = t.dataset.mauXoa, m = mau && mau.ds.find((x) => x.ma === ma);
       if (!confirm(`Bỏ phim mẫu "${m ? m.ten : ma}" khỏi thư viện? Video, khung hình và báo cáo trong kho sẽ bị xoá hẳn (tệp gốc anh chọn trên máy vẫn còn).`)) return;
-      return lam(async () => { await ctl("/phim/mau/" + encodeURIComponent(ma) + "/xoa", {}); moBaoCao.delete(ma); if (taoMau === ma) taoMau = null; if (conSong) bao("Đã bỏ phim mẫu."); });
+      return lam(async () => { await ctl("/phim/mau/" + encodeURIComponent(ma) + "/xoa", {}); moBaoCao.delete(ma); if (taoMau === ma) { taoMau = null; moTao = false; } if (conSong) bao("Đã bỏ phim mẫu."); });
     }
-    if (t.hasAttribute("data-thu-lai")) { ds = null; ve(); return tai(); }
+    if (t.hasAttribute("data-thu-lai")) { ds = null; mau = null; loiTai = ""; loiMau = ""; ve(); return tai(); }
     if (t.hasAttribute("data-mo-phim")) { try { localStorage.setItem("tqos-phim", t.dataset.moPhim); } catch {} return; }   // để liên kết tự chuyển trang
     if (t.hasAttribute("data-phim-moi") || t.hasAttribute("data-huy-tao")) {
       moTao = t.hasAttribute("data-phim-moi") ? !moTao : false; taoMau = null; veDau();

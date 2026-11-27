@@ -191,6 +191,8 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
     return b.length === tokenBuf.length && crypto.timingSafeEqual(b, tokenBuf);
   };
   const snap = () => monitor.snapshot(jobs.list("running"));
+  // Thư viện phim mẫu (<kho>_phim-mau) chỉ để Antigravity đọc khung hình: không chọn làm dự án, không giao việc/lịch tự chạy trên nó.
+  const khongPhaiMau = (p) => { if (/[\\/]_phim-mau[\\/]*$/i.test(String(p || ""))) throw Object.assign(new Error("Thư viện phim mẫu không phải dự án."), { code: "WORKSPACE_DENIED" }); return p; };
   const wsOf = (v) => { const w = v || ws.current(); if (!w) throw Object.assign(new Error("Chưa đăng ký workspace nào"), { code: "WORKSPACE_DENIED" }); return w; };
 
   // Truy vấn riêng: không bị giới hạn lịch sử chung của jobs.list().
@@ -471,7 +473,7 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
     ["GET", "/quyen", () => ({ quyen: quyenView() })],
     ["POST", "/quyen", (p, qs, b) => { runner.quyen.dat(b, "ceo"); return { quyen: quyenView() }; }],
     ["GET", "/lich-chay", () => ({ lichChay: lichChay.list() })],
-    ["POST", "/lich-chay", (p, qs, b) => ({ lich: lichChay.luu(b, "ceo") })],
+    ["POST", "/lich-chay", (p, qs, b) => { khongPhaiMau(b && b.workspace); return { lich: lichChay.luu(b, "ceo") }; }],
     ["POST", "/lich-chay/:id/bat", (p, qs, b) => ({ lich: lichChay.batTat(p.id, b.bat, "ceo") })],
     ["POST", "/lich-chay/:id/xoa", (p) => lichChay.xoa(p.id, "ceo")],
     ["POST", "/lich-chay/:id/chay-ngay", async (p) => ({ ketQua: await lichChay.chayNgay(p.id, "ceo") })],
@@ -504,7 +506,7 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
     ["POST", "/bo-kiem", (p, qs, b) => ({ boKiem: boKiem.install(ws.find(wsOf(b.workspace)).path) })],
     ["POST", "/workspaces/remove", (p, qs, b) => { ws.remove(b.path, "ceo"); return { workspaces: ws.list() }; }],
     ["POST", "/workspaces/switch", (p, qs, b) => {
-      const active = selectWorkspace(b.path);
+      const active = selectWorkspace(khongPhaiMau(b.path));
       return { active, agentMd: lastSelect && lastSelect.agentMd };
     }],
 
@@ -520,7 +522,7 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
     }],
     ["GET", "/autopilot", () => ({ runs: autopilot.list().map(autopilot.view) })],
     ["GET", "/autopilot/:id", (p) => ({ run: autopilot.view(autopilot.get(p.id)) })],
-    ["POST", "/autopilot", (p, qs, b) => [201, { run: autopilot.view(autopilot.start({ workspace: wsOf(b.workspace), task: b.task, maxSteps: b.maxSteps, timeoutMs: b.timeoutMs })) }]],
+    ["POST", "/autopilot", (p, qs, b) => [201, { run: autopilot.view(autopilot.start({ workspace: khongPhaiMau(wsOf(b.workspace)), task: b.task, maxSteps: b.maxSteps, timeoutMs: b.timeoutMs })) }]],
     ["POST", "/autopilot/:id/stop", async (p) => ({ run: autopilot.view(await autopilot.stop(p.id)) })],
     ["POST", "/autopilot/:id/answer", (p, qs, b) => ({ run: autopilot.view(autopilot.answer(p.id, b.option)) })],
     ["POST", "/autopilot/:id/resume", (p) => ({ run: autopilot.view(autopilot.resumeNow(p.id)) })],
