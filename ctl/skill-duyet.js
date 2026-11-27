@@ -316,10 +316,8 @@ function createSkillDuyet({ dir, jobs, runner, audit = { log() {} }, git = gitAs
       '"can_khoa":false,"args":[],"trung_voi":"<thứ đang có bị trùng, hoặc rỗng>","de_nghi":"A|B|cai|tham-khao|khong","ly_do":"<vì sao>"}\n\n' +
       "KẾT QUẢ MÁY RÀ:\n" + tomTatQuet(q) + npmInfo + "\n\nBỘ SKILL VĂN PHÒNG ĐANG CÓ:\n" + (mucLuc || "(chưa đọc được)") +
       "\n\nMCP CHẠY TRÊN MÁY ĐANG CÓ:\n" + (mcpCo || "(chưa có)");
-    let argv = runner.chatArgv("claude").map((x) => (x === "{prompt}" ? prompt : x));
-    const mt = argv.indexOf("--max-turns");
-    if (mt > 0) argv[mt + 1] = "30";
-    argv = [...argv, "--strict-mcp-config"];   // không nạp kết nối nào: chỉ đọc file trong thư mục cách ly
+    // Claude không còn giới hạn lượt (CEO 28/11/2026); thời gian chạy 10 phút vẫn chặn trên.
+    const argv = [...runner.chatArgv("claude").map((x) => (x === "{prompt}" ? prompt : x)), "--strict-mcp-config"];   // không nạp kết nối nào: chỉ đọc file trong thư mục cách ly
     const job = jobs.start({ kind: "cmd", agent: "SKILL_REVIEW", workspace: goc, argv, timeoutMs: 10 * 60 * 1000, onExit: (j) => ketThuc(d, j) });
     Object.assign(d, { trangThai: "dang-phan-tich", jobId: job.id, loi: null, phanTich: null });
     luu();

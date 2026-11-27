@@ -53,7 +53,15 @@ test("lệnh chat mặc định luôn chỉ đọc kể cả khi bật toàn quy
   const quyenAgy = JSON.parse(agy[agy.indexOf("--settings") + 1]).permissions;
   assert.ok(quyenAgy.deny.includes("write_file(*)"), "chat với Antigravity không ghi được file");
   // agy chạy nền tự từ chối công cụ chưa được cho phép, kể cả đọc file → trả lời rỗng. Phải cho phép rõ công cụ đọc.
-  assert.ok(quyenAgy.allow.includes("read_file(*)") && quyenAgy.allow.some((r) => /Get-ChildItem/.test(r)), "Antigravity được công cụ đọc để không bị chặn trả lời rỗng");
+  assert.ok(quyenAgy.allow.includes("read_file(*)"), "Antigravity được công cụ đọc để không bị chặn trả lời rỗng");
+  // CEO 28/11/2026: chat với Hinata/Kakashi được chạy shell để xem repo, vẫn chặn lệnh đổi repo/xoá file/mạng.
+  assert.ok(quyenAgy.allow.includes("command(*)"), "chat Antigravity được chạy shell");
+  const chan = quyenAgy.deny.filter((r) => r.startsWith("command(regex:")).map((r) => new RegExp(r.slice(14, -1).replace("(?i)", ""), "i"));
+  for (const lenh of ["git push origin main", "git commit -m x", "rm -rf src", "Remove-Item a.txt", "npm install x", "curl http://x", "git status; del a",
+    " rm a", "git status\nrm a", "git add .", "git restore a", "npm ci"])
+    assert.ok(chan.some((re) => re.test(lenh)), "phải chặn: " + lenh);
+  for (const lenh of ["git status", "git diff HEAD~1", "node --test test/a.test.js", "Get-ChildItem -Recurse", "type README.md"])
+    assert.ok(!chan.some((re) => re.test(lenh)), "không được chặn: " + lenh);
   for (const a of [claude, sol, astra, agy]) assert.ok(!a.some((x) => /dangerously/.test(x)), a.join(" "));
   assert.throws(() => ctl.runner.chatArgv("pain"), /Không có AI để chat/);
 });
@@ -141,13 +149,14 @@ test("chat không phải lượt AI: không chặn lượt làm việc; một ng
   ctl.chat.send({ workspace: repo, who: "sasuke", text: "chạy hỏng" });
   const bad = (await wait("sasuke")).messages.at(-1);
   assert.equal(bad.status, "loi");
-  assert.match(bad.text, /Lỗi khi chạy Sasuke \(failed\)/);
+  assert.match(bad.text, /^Sasuke gặp lỗi nên chưa trả lời được\./);
+  assert.match(bad.text, /Chi tiết: /);
   ctl.chat.send({ workspace: repo, who: "itachi", text: "hết credit" });
   assert.match((await wait("itachi")).messages.at(-1).text, /^Itachi .* đã hết hạn mức gói/);
   ctl.chat.send({ workspace: repo, who: "hinata", text: "im lặng" });
   const quiet = (await wait("hinata")).messages.at(-1);
   assert.equal(quiet.status, "loi");
-  assert.match(quiet.text, /^Hinata không trả lời được\.\njetski: no output produced/);
+  assert.match(quiet.text, /^Hinata không trả lời được\.\nChi tiết: jetski: no output produced/);
   assert.throws(() => ctl.chat.send({ workspace: repo, who: "ceo", text: "x" }), /Không có người để chat/);
   assert.throws(() => ctl.chat.send({ workspace: repo, who: "pain", text: "   " }), /trống/);
   assert.equal(ctl.chat.clear(repo, "sasuke").messages.length, 0);

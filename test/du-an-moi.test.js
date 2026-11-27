@@ -130,12 +130,14 @@ test("điện thoại: tạo dự án luôn riêng tư (ép rieng=true), gợi �
   const goi = [];
   const dkx = { thietBiCua: () => ({ id: "tb1", ten: "iPhone" }), xacThuc: () => ({ id: "tb1", ten: "iPhone" }), ghiNhatKy: () => {} };
   const res = () => { const o = { code: 0, body: "" }; o.writeHead = (c) => { o.code = c; }; o.end = (b) => { o.body = b; }; return o; };
-  for (const [p, body] of [["/dkx/api/du-an-moi", { ten: "abc-xyz", yTuong: Y, rieng: false }], ["/dkx/api/du-an-moi/goi-y", { yTuong: Y }]]) {
+  for (const [p, body] of [["/dkx/api/du-an-moi", { ten: "abc-xyz", yTuong: Y, rieng: false, dinhKem: [{ ten: "a.md", base64: "eA==" }], la: 1 }], ["/dkx/api/du-an-moi/goi-y", { yTuong: Y }]]) {
     const req = { method: "POST", headers: { cookie: "vpd=x", host: "oanh.ts.net" }, socket: { remoteAddress: "127.0.0.1" } };
     await handle(dkx, req, res(), new URL("https://oanh.ts.net" + p), { local: false, hasKey: true, readJson: async () => body,
       call: async (m, target, b, het) => { goi.push({ target, b, het }); return { status: 202, json: { ok: true } }; } });
   }
   assert.equal(goi[0].b.rieng, true, "tham số ẩn rieng:false bị ép thành riêng tư");
+  assert.ok(!("dinhKem" in goi[0].b) && !("la" in goi[0].b), "điện thoại không gửi được tệp đính kèm hay trường lạ");
+  assert.equal(goi[0].b.ten, "abc-xyz");
   assert.equal(goi[1].het, 95000);
 });
 

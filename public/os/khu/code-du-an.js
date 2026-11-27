@@ -9,6 +9,17 @@ const BO_KIEM = { "da-cai": ["CI đã cài", "song"], cu: ["CI bản cũ", "canh
 const PUB_TT = { running: "Đang kiểm tra & build", ready: "Sẵn sàng, chờ anh bấm Xuất bản", releasing: "Đang gửi lên GitHub", released: "Đã gửi xuất bản: GitHub Actions đang build", failed: "Chưa đạt" };
 const STEP_TT = { done: "✓", failed: "✗", running: "…", skipped: "⏭" };
 
+// Tài liệu đính kèm khi tạo dự án mới: khớp giới hạn của ctl/du-an-moi.js (DINH_KEM).
+const TEP_NHAN = [".pdf", ".docx", ".pptx", ".xlsx", ".txt", ".md", ".csv", ".json", ".png", ".jpg", ".jpeg", ".webp"];
+const TEP_TOI_DA = 5, TEP_MB = 4, TEP_TONG_MB = 10;
+const kb = (n) => (n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB");
+const docBase64 = (file) => new Promise((resolve, reject) => {
+  const r = new FileReader();
+  r.onload = () => resolve(String(r.result).split(",")[1] || "");
+  r.onerror = () => reject(new Error("Không đọc được tệp " + file.name));
+  r.readAsDataURL(file);
+});
+
 const safeGithub = (v) => { const u = safeHttps(v); return u && new URL(u).hostname === "github.com" ? u : null; };
 const slugRepo = (v) => String(v || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[đĐ]/g, "d").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
 
@@ -30,6 +41,50 @@ export async function mo(vung, { kho, ctl, bao, signal }) {
   const $ = (id) => vung.querySelector("#" + id);
   let ds = null, tq = {}, loiDs = "", conSong = true;
   let damGoiY = null, damOp = null, damGui = false, damLoi = 0, damHen = null, damYTuong = "";
+  let damTep = [];   // [{ ten, size, base64 }] tài liệu CEO đính kèm vào mô tả
+
+  let damDocTep = false;   // đang đọc tệp vào bộ nhớ: khoá thêm tệp và nút Duyệt cho tới khi xong
+
+  // Vùng tệp đính kèm vẽ riêng: thêm/bỏ tệp không vẽ lại cả khung nên không mất tên repo, mô tả, lựa chọn CEO đang sửa.
+  function htmlTep(dangTao) {
+    const khoa = dangTao || damDocTep || damTep.length >= TEP_TOI_DA;
+    return `<div class="hang">
+        <button type="button" class="nut nho" id="damTepBtn" aria-describedby="damTepGhiChu"${khoa ? " disabled" : ""}${damDocTep ? ' aria-busy="true"' : ""}>${damDocTep ? "Đang đọc tệp…" : "Đính kèm tài liệu"}</button>
+        <span class="mo" id="damTepGhiChu">Đặc tả, ảnh phác thảo, tài liệu tham khảo (PDF, Word, ảnh, .md…): tối đa ${TEP_TOI_DA} tệp, mỗi tệp ${TEP_MB} MB (.md 1 MB), tổng ${TEP_TONG_MB} MB. Kéo thả vào đây cũng được. Chỉ lưu trên máy trong dự án, không đẩy lên GitHub.</span>
+      </div>` +
+      (damTep.length ? `<ul class="hang" aria-label="Tài liệu đính kèm" style="list-style:none;padding:0;margin:0;flex-wrap:wrap;min-width:0">${damTep.map((f, i) =>
+        `<li class="nhan" style="display:inline-flex;align-items:center;gap:4px;max-width:100%;min-width:0"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0" title="${esc(f.ten)}">${esc(f.ten)}</span><span style="flex:none">· ${kb(f.size)}</span>${dangTao ? "" : `<button type="button" class="nut nho" style="flex:none" data-bo-tep="${i}" aria-label="Bỏ tệp ${esc(f.ten)}">×</button>`}</li>`).join("")}</ul>` : "");
+  }
+  function veTep() {
+    const v = $("damTepVung");
+    if (!v) return;
+    const coFocus = v.contains(document.activeElement);
+    v.innerHTML = htmlTep(damGui || !!(damOp && damOp.trangThai === "dang"));
+    if (coFocus) $("damTepBtn")?.focus();
+  }
+
+  async function themTep(files) {
+    if (damDocTep) return;
+    damDocTep = true; veTep();
+    const loiTep = [];
+    try {
+      for (const f of files) {
+        const duoi = (f.name.match(/\.[^.]+$/) || [""])[0].toLowerCase();
+        const tran = duoi === ".md" ? 1 : TEP_MB;
+        if (damTep.length >= TEP_TOI_DA) { loiTep.push("chỉ đính kèm tối đa " + TEP_TOI_DA + " tệp"); break; }
+        if (!TEP_NHAN.includes(duoi)) { loiTep.push(f.name + ": định dạng chưa nhận"); continue; }
+        if (!f.size) { loiTep.push(f.name + ": tệp rỗng"); continue; }
+        if (f.size > tran * 1048576) { loiTep.push(f.name + ": lớn quá " + tran + " MB"); continue; }
+        if (damTep.reduce((s, x) => s + x.size, 0) + f.size > TEP_TONG_MB * 1048576) { loiTep.push(f.name + ": tổng vượt " + TEP_TONG_MB + " MB"); continue; }
+        if (damTep.some((x) => x.ten === f.name && x.size === f.size)) continue;
+        try { damTep.push({ ten: f.name, size: f.size, base64: await docBase64(f) }); }
+        catch (e) { loiTep.push(e.message); }
+      }
+    } finally { damDocTep = false; }
+    if (loiTep.length) bao("Chưa đính kèm được: " + loiTep.join("; ") + ".", true);
+    if (conSong) veTep();
+  }
+  const nhanTep = () => moTao && !damGui && !damDocTep && !(damOp && damOp.trangThai === "dang");
   let boKiemBan = null;
   let pubWs = null, pubData = null, pubLoi = "", pubBan = false, pubHen = null;
 
@@ -88,6 +143,8 @@ export async function mo(vung, { kho, ctl, bao, signal }) {
       <div class="cot-doc">
         <label for="damYTuong" class="mo">Ý tưởng (vài câu: sản phẩm hoặc phim làm gì, cho ai)</label>
         <textarea class="o" id="damYTuong" rows="3" maxlength="2000" placeholder="Ví dụ: phim ngắn 45 giây giới thiệu Văn phòng AI, hoặc app luyện nghe tiếng Anh cho học sinh cấp 2"${dangTao ? " disabled" : ""}>${esc(damYTuong)}</textarea>
+        <input type="file" id="damTepChon" multiple accept="${TEP_NHAN.join(",")}" hidden>
+        <div class="cot-doc" id="damTepVung">${htmlTep(dangTao)}</div>
         <div class="hang"><button type="button" class="nut-chinh" id="damGoiYBtn"${dangTao ? ' disabled aria-busy="true"' : ""}>${damGui && !damOp ? "Đang xử lý…" : "Gợi ý tên repo"}</button>
           <span class="mo">Đội trưởng gợi ý tên repo còn trống và tạo repo riêng tư khi anh duyệt.</span></div>
       </div>${kq}`;
@@ -207,14 +264,30 @@ export async function mo(vung, { kho, ctl, bao, signal }) {
       if (g) { const t = $("damTenRepo"), m = $("damMoTa"); if (t) t.value = g.ten; if (m) m.value = g.moTa; }
     } else if (e.target.name === "damLoai") {
       loaiMacDinh = e.target.value;
+    } else if (e.target.id === "damTepChon") {
+      const files = [...(e.target.files || [])];
+      e.target.value = "";
+      if (files.length) themTep(files);
     }
+  });
+  // Kéo thả tệp vào khung tạo dự án.
+  vung.addEventListener("dragover", (e) => { if (e.target.closest && e.target.closest("#khungTao") && nhanTep()) e.preventDefault(); });
+  vung.addEventListener("drop", (e) => {
+    if (!(e.target.closest && e.target.closest("#khungTao"))) return;
+    e.preventDefault();
+    if (!nhanTep()) return;
+    const files = [...((e.dataTransfer && e.dataTransfer.files) || [])];
+    if (files.length) themTep(files);
   });
   vung.addEventListener("click", async (e) => {
     const t = e.target;
     if (t.closest("#nutTaoDuAn")) { moTao = !moTao; veTao(); if (moTao) $("damYTuong")?.focus(); return; }
     if (t.closest("#damDong")) { moTao = false; veTao(); return; }
     if (t.closest("#damHuy")) { damGoiY = null; veTao(); return; }
-    if (t.closest("#damMoi")) { damOp = null; damGoiY = null; damYTuong = ""; veTao(); $("damYTuong")?.focus(); return; }
+    if (t.closest("#damMoi")) { damOp = null; damGoiY = null; damYTuong = ""; damTep = []; veTao(); $("damYTuong")?.focus(); return; }
+    if (t.closest("#damTepBtn")) { $("damTepChon")?.click(); return; }
+    const boTep = t.closest("[data-bo-tep]");
+    if (boTep) { if (damDocTep) return; damTep.splice(Number(boTep.dataset.boTep), 1); veTep(); $("damTepBtn")?.focus(); return; }
     if (t.closest("#damGoiYBtn")) {
       const yTuong = ($("damYTuong")?.value || "").trim();
       damYTuong = yTuong;
@@ -227,6 +300,7 @@ export async function mo(vung, { kho, ctl, bao, signal }) {
       return;
     }
     if (t.closest("#damDuyet")) {
+      if (damDocTep) { bao("Đang đọc tệp đính kèm, chờ xong rồi bấm Duyệt.", true); return; }
       const ten = slugRepo($("damTenRepo")?.value || "");
       if (!/^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/.test(ten)) { bao("Tên repo 3–40 ký tự: chữ thường không dấu, số, gạch ngang.", true); $("damTenRepo")?.focus(); return; }
       if (!confirm(`Tạo repo riêng tư "${ten}" trên GitHub và khởi động dự án?`)) return;
@@ -234,7 +308,8 @@ export async function mo(vung, { kho, ctl, bao, signal }) {
       const loai = (vung.querySelector('input[name="damLoai"]:checked') || {}).value || loaiMacDinh;
       damGui = true; veTao();
       try {
-        damOp = (await ctl("/du-an-moi", { ten, moTa, yTuong: damYTuong.trim(), caiBoKiem, giaoHinata, loai }, { timeout: 30000 })).duAnMoi;
+        const dinhKem = damTep.map((f) => ({ ten: f.ten, base64: f.base64 }));
+        damOp = (await ctl("/du-an-moi", { ten, moTa, yTuong: damYTuong.trim(), caiBoKiem, giaoHinata, loai, dinhKem }, { timeout: 60000 })).duAnMoi;
         damGoiY = null; damLoi = 0; damGui = false;
         if (conSong) { veTao(); damTheoDoi(); }
       } catch (err) { damGui = false; bao(err.message, true); if (conSong) veTao(); }

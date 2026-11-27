@@ -47,7 +47,7 @@ const { createNotifier } = require("./thongbao");
 const { createScanner } = require("./ra-soat");
 const { createUpdater } = require("./cap-nhat");
 const { createBoKiem } = require("./bo-kiem");
-const { createDuAnMoi } = require("./du-an-moi");
+const { createDuAnMoi, DINH_KEM_BODY } = require("./du-an-moi");
 const { createAgyTaiKhoan } = require("./agy-tai-khoan");
 const { createCodexTaiKhoan } = require("./codex-tai-khoan");
 const { createSkillDuyet } = require("./skill-duyet");
@@ -282,7 +282,7 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
     // Ý tưởng của CEO: bước 1 chu trình, giao Hinata (SPEC_ARCHITECT) đặc tả
     ["GET", "/ideas", (p, qs) => ({ ideas: ideas.list(wsOf(qs.get("workspace"))) })],
     ["POST", "/du-an-moi/goi-y", async (p, qs, b) => ({ duAnMoi: await duAnMoi.goiY(b.yTuong) })],
-    ["POST", "/du-an-moi", (p, qs, b) => [202, { duAnMoi: duAnMoi.tao({ ten: b.ten, moTa: b.moTa, yTuong: b.yTuong, loai: b.loai || "phan-mem", rieng: true /* luôn riêng tư: công khai chỉ khi CEO tự đổi trên GitHub */, caiBoKiem: b.caiBoKiem !== false, giaoHinata: b.giaoHinata !== false }) }]],
+    ["POST", "/du-an-moi", (p, qs, b) => [202, { duAnMoi: duAnMoi.tao({ ten: b.ten, moTa: b.moTa, yTuong: b.yTuong, loai: b.loai || "phan-mem", rieng: true /* luôn riêng tư: công khai chỉ khi CEO tự đổi trên GitHub */, caiBoKiem: b.caiBoKiem !== false, giaoHinata: b.giaoHinata !== false, dinhKem: b.dinhKem }) }]],
     ["GET", "/du-an-moi/:id", (p) => ({ duAnMoi: duAnMoi.get(p.id) })],
     ["POST", "/ideas", (p, qs, b) => [201, { idea: ideas.add({ workspace: wsOf(b.workspace), title: b.title, detail: b.detail }) }]],
     ["POST", "/ideas/:id/start", (p, qs, b) => ({ idea: ideas.start(p.id, { force: b.force === true }) })],
@@ -639,7 +639,7 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
         if (!params) continue;
         let body = {};
         if (method === "POST") {
-          const limit = pattern === "/phim/tai-lieu" ? phimTaiLieu.UPLOAD_LIMIT : 3 * 1024 * 1024;
+          const limit = pattern === "/phim/tai-lieu" ? phimTaiLieu.UPLOAD_LIMIT : pattern === "/du-an-moi" ? DINH_KEM_BODY : 3 * 1024 * 1024;
           body = await guard.readJson(req, limit);
           if (!body) return fail(res, 400, "BAD_REQUEST", "Thân yêu cầu không phải JSON hợp lệ hoặc tệp vượt giới hạn.");
         }
