@@ -41,7 +41,10 @@ test("phim mẫu: tải lên theo luồng, đọc thông số, cắt khung; phâ
   assert.ok(m.khung.every((k) => /^media\/phim-hay-cua-toi-[a-f0-9]{6}\/khung\/k0\d\.jpg$/.test(k.path)));
   const goc = path.join(kho, "_phim-mau");
   assert.ok(fs.existsSync(path.join(goc, "media", m.ma, "video.mp4")));
-  assert.ok(ctl.ws.list().some((w) => w.path === fs.realpathSync(goc)), "_phim-mau đăng ký làm workspace để xem khung");
+  assert.ok(!ctl.ws.list().some((w) => /_phim-mau/i.test(w.path)), "_phim-mau KHÔNG thành workspace (không agent.md, không giao việc)");
+  assert.ok(!fs.existsSync(path.join(goc, "agent.md")));
+  assert.equal(pm.khungFile(m.ma, "k01.jpg"), path.join(goc, "media", m.ma, "khung", "k01.jpg"));
+  for (const ten of ["../meta.json", "video.mp4", "k1.jpg", "k01.png"]) assert.throws(() => pm.khungFile(m.ma, ten), (e) => e.code === "PATH_DENIED", ten);
   assert.ok(!ctl.khoPhim.list().some((p) => p.path.includes("_phim-mau")), "phim mẫu không lẫn vào danh sách phim");
 
   pm.phanTich(m.ma);
@@ -49,6 +52,7 @@ test("phim mẫu: tải lên theo luồng, đọc thông số, cắt khung; phâ
   await cho(() => pm.list().ds[0].phanTich.trangThai === "xong");
   assert.equal(goi.length, 1);
   assert.equal(goi[0].chiDoc, true, "phân tích luôn chỉ đọc");
+  assert.equal(goi[0].thuMucRieng, goc, "chạy trong thư mục thư viện, không qua workspace");
   assert.equal(goi[0].vai, "PHIM_CO_VAN");
   assert.match(goi[0].prompt, /KHÔNG ghi, sửa, tạo tệp/);
   assert.match(goi[0].prompt, /khung\/k01\.jpg/);
@@ -178,10 +182,18 @@ test("route tải phim mẫu: bắt buộc octet-stream, chặn cross-site; GET 
   assert.equal(r.status, 200);
   assert.deepEqual(r.body.coVan.co, { 1: true, 2: false });
   assert.equal((await goi("POST", "/phim/co-van", JSON.stringify({ workspace: p.path, cong: 9 }), { "content-type": "application/json" })).status, 400);
-  // Thư viện phim mẫu không chọn làm dự án, không giao việc hay đặt lịch tự chạy trên nó.
-  const mau = fs.realpathSync(path.join(kho, "_phim-mau"));
-  const json = { "content-type": "application/json" };
-  assert.equal((await goi("POST", "/workspaces/switch", JSON.stringify({ path: mau }), json)).status, 403);
-  assert.equal((await goi("POST", "/autopilot", JSON.stringify({ workspace: mau, task: "x" }), json)).status, 403);
-  assert.equal((await goi("POST", "/lich-chay", JSON.stringify({ workspace: mau, ten: "x", moTa: "x", loai: "giao" }), json)).status, 403);
+  // Ảnh khung phim mẫu qua route riêng (thư viện không phải workspace): đúng tên k01.jpg; tên lạ, mã lạ, liên kết cứng bị chặn.
+  const km = path.join(kho, "_phim-mau", "media", "mau-route-abc123", "khung");
+  fs.mkdirSync(km, { recursive: true });
+  fs.writeFileSync(path.join(km, "k01.jpg"), "jpg-gia");
+  fs.writeFileSync(path.join(km, "..", "meta.json"), "{}");
+  const anh = await new Promise((ok, bad) => http.get({ host: "127.0.0.1", port, path: "/phim/mau/mau-route-abc123/khung/k01.jpg", headers: { host: "127.0.0.1:" + port, authorization: "Bearer " + ctl.token } },
+    (res) => { let b = ""; res.on("data", (c) => (b += c)); res.on("end", () => ok({ status: res.statusCode, type: res.headers["content-type"], b })); }).on("error", bad));
+  assert.deepEqual([anh.status, anh.type, anh.b], [200, "image/jpeg", "jpg-gia"]);
+  assert.equal((await goi("GET", "/phim/mau/mau-route-abc123/khung/..%2Fmeta.json")).status, 403);
+  assert.equal((await goi("GET", "/phim/mau/mau-route-abc123/khung/k02.jpg")).status, 404);
+  assert.equal((await goi("GET", "/phim/mau/..%2F..%2Fx/khung/k01.jpg")).status, 400);
+  try { fs.linkSync(path.join(km, "..", "meta.json"), path.join(km, "k03.jpg")); assert.equal((await goi("GET", "/phim/mau/mau-route-abc123/khung/k03.jpg")).status, 403, "liên kết cứng bị chặn"); } catch (e) { if (e.code !== "EPERM") throw e; }
+  // runner: thư mục riêng (không phải workspace) chỉ cho lượt chỉ đọc.
+  assert.throws(() => ctl.runner.chayPhim({ thuMucRieng: path.join(kho, "_phim-mau"), role: "PHIM_CO_VAN", prompt: "x", chiDoc: false }), (e) => e.code === "BAD_REQUEST");
 });

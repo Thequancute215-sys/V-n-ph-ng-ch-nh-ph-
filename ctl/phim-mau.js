@@ -62,7 +62,7 @@ function goiYTu(text) {
   return Object.keys(g).length ? g : null;
 }
 
-function createPhimMau({ khoPhim, ws, audit = { log() {} }, ffmpeg = () => null, ffprobe = () => null, chayAi, now = Date.now, runImpl = run }) {
+function createPhimMau({ khoPhim, audit = { log() {} }, ffmpeg = () => null, ffprobe = () => null, chayAi, now = Date.now, runImpl = run }) {
   const goc = () => path.join(khoPhim.goc, "_phim-mau");
   // Kiểm TỪNG cấp _phim-mau → media (→ mã) là thư mục thật, không junction/symlink, trước mọi lần đọc, ghi, xoá hay đăng ký.
   const media = () => thuMucThatTu(khoPhim.goc, "_phim-mau", "media");
@@ -76,13 +76,21 @@ function createPhimMau({ khoPhim, ws, audit = { log() {} }, ffmpeg = () => null,
     if (!st.isDirectory() || st.isSymbolicLink()) throw err("PATH_ESCAPE", "Phim mẫu phải là thư mục thật trong kho.");
     return d;
   }
-  // _phim-mau là một workspace (để xem khung qua /phim/media và để Antigravity đọc); đăng ký một lần.
-  function dangKy() {
+  // _phim-mau KHÔNG đăng ký làm workspace (kiểm định 27/11/2026): workspace là dự án — có agent.md, giao việc, lịch chạy,
+  // luồng tự chạy. Ảnh khung phát qua route riêng (khungFile), Antigravity chạy chỉ đọc trong thư mục này (runner thuMucRieng).
+  function chuanBi() {
     fs.mkdirSync(media(), { recursive: true });
     media();   // kiểm lại sau khi tạo (không để junction chen vào giữa)
-    const real = fs.realpathSync(goc());
-    const w = ws.list().find((x) => path.resolve(x.path).toLowerCase() === real.toLowerCase());
-    return w ? w.path : ws.add(real, "phim-mau").path;
+    return goc();
+  }
+  // Ảnh khung của một phim mẫu: chỉ k01.jpg…k99.jpg, tệp thật (không liên kết) trong <ma>\khung.
+  function khungFile(ma, ten) {
+    if (!/^k\d{2}\.jpg$/.test(String(ten))) throw err("PATH_DENIED", "Chỉ xem được ảnh khung của phim mẫu.");
+    const f = path.join(thuMucThatTu(thuMucThat(ma), "khung"), ten);
+    const st = fs.lstatSync(f, { throwIfNoEntry: false });
+    if (!st) throw err("NOT_FOUND", "Không có khung hình này.");
+    tepThat(f);
+    return f;
   }
 
   function docMeta(ma) {
@@ -98,11 +106,11 @@ function createPhimMau({ khoPhim, ws, audit = { log() {} }, ffmpeg = () => null,
 
   function list() {
     let ds = [];
-    try { ds = fs.readdirSync(media(), { withFileTypes: true }).filter((d) => d.isDirectory() && !d.isSymbolicLink() && MA_RE.test(d.name)); } catch { return { workspace: null, ds: [] }; }
+    try { ds = fs.readdirSync(media(), { withFileTypes: true }).filter((d) => d.isDirectory() && !d.isSymbolicLink() && MA_RE.test(d.name)); } catch { return { ds: [] }; }
     const out = [];
     for (const d of ds) { try { out.push(docMeta(d.name)); } catch { /* bỏ qua thư mục hỏng */ } }
     out.sort((a, b) => String(b.them).localeCompare(String(a.them)));
-    return { workspace: out.length ? dangKy() : null, ds: out };
+    return { ds: out };
   }
 
   async function ffprobeJson(file) {
@@ -156,7 +164,7 @@ function createPhimMau({ khoPhim, ws, audit = { log() {} }, ffmpeg = () => null,
     const kichCo = Number(req.headers["content-length"]);
     if (!Number.isFinite(kichCo) || kichCo <= 0) throw err("BAD_REQUEST", "Thiếu kích thước tệp.");
     if (kichCo > MAX_BYTE) throw err("TOO_LARGE", "Video tối đa 2 GB.");
-    dangKy();
+    chuanBi();
     const ma = slug(ten.slice(0, -duoi.length)) + "-" + crypto.randomBytes(3).toString("hex");
     const d = thuMuc(ma);
     fs.mkdirSync(d);
@@ -199,9 +207,9 @@ function createPhimMau({ khoPhim, ws, audit = { log() {} }, ffmpeg = () => null,
     if (dangPhanTich.has(ma)) throw err("DANG_CHAY", "Phim mẫu này đang được phân tích.");
     const meta = docJson(path.join(d, "meta.json"));
     if (!meta || !Array.isArray(meta.khung) || !meta.khung.length) throw err("NOT_FOUND", "Phim mẫu chưa có khung hình.");
-    const root = dangKy();
+    const root = chuanBi();
     let p;
-    try { p = Promise.resolve(chayAi({ root, vai: VAI_CO_VAN, prompt: promptPhanTich(meta), chiDoc: true })); }
+    try { p = Promise.resolve(chayAi({ thuMucRieng: root, vai: VAI_CO_VAN, prompt: promptPhanTich(meta), chiDoc: true })); }
     catch (e) { throw e; }   // AI_BUSY: lượt khác đang chạy trên thư viện phim mẫu
     dangPhanTich.add(ma);
     meta.phanTich = { trangThai: "dang", luc: new Date(now()).toISOString() };
@@ -249,7 +257,7 @@ function createPhimMau({ khoPhim, ws, audit = { log() {} }, ffmpeg = () => null,
     return { ma };
   }
 
-  return { list, taiLen, phanTich, taoPhim, xoa, goc };
+  return { list, taiLen, phanTich, taoPhim, xoa, khungFile, goc };
 }
 
 module.exports = { createPhimMau, goiYTu, boLienKetTep, promptPhanTich, MAX_BYTE };

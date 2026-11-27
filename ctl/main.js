@@ -164,8 +164,9 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
   const khoPhim = createKhoPhim({ ws, audit, goc: khoPhimDir ||
     (duLieuThat ? process.env.VP_KHO_PHIM || path.join(path.dirname(path.resolve(projectsDir)), "XuongPhim") : path.join(dir, "kho-phim")) });
   // Thư viện phim mẫu (CEO 26/11/2026): video trên máy -> FFmpeg cắt khung -> Antigravity chỉ đọc phân tích (ctl/phim-mau.js).
-  const phimMau = createPhimMau({ khoPhim, ws, audit, ffmpeg: () => xuongPhim.envAi().XUONG_PHIM_FFMPEG || null, ffprobe: () => xuongPhim.envAi().XUONG_PHIM_FFPROBE || null,
-    chayAi: ({ root, vai, prompt, chiDoc }) => runner.chayPhim({ workspace: root, role: vai, prompt, chiDoc }) });
+  // Thư viện KHÔNG phải workspace: Antigravity chạy chỉ đọc trong thư mục riêng (runner thuMucRieng), ảnh khung qua route riêng.
+  const phimMau = createPhimMau({ khoPhim, audit, ffmpeg: () => xuongPhim.envAi().XUONG_PHIM_FFMPEG || null, ffprobe: () => xuongPhim.envAi().XUONG_PHIM_FFPROBE || null,
+    chayAi: ({ thuMucRieng, vai, prompt }) => runner.chayPhim({ thuMucRieng, role: vai, prompt, chiDoc: true }) });
   // Phim đang quay / dựng / chạy luồng / Blender / nhịp Flow / AI Helper tạo ảnh / xuất gói CapCut thì không dọn nháp.
   const phimDangBan = (root) => !!(mayQuay.trangThai(root).dang || (banDung.trangThai(root) || {}).dang || (luongPhim.trangThai(root) || {}).trangThai === "dang_chay" ||
     (blenderPhim.trangThai(root) || {}).dang || helperDangTao.has(root) || capcutDangXuat.has(root) || nhipFlowCua(root));
@@ -191,8 +192,6 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
     return b.length === tokenBuf.length && crypto.timingSafeEqual(b, tokenBuf);
   };
   const snap = () => monitor.snapshot(jobs.list("running"));
-  // Thư viện phim mẫu (<kho>_phim-mau) chỉ để Antigravity đọc khung hình: không chọn làm dự án, không giao việc/lịch tự chạy trên nó.
-  const khongPhaiMau = (p) => { if (/[\\/]_phim-mau[\\/]*$/i.test(String(p || ""))) throw Object.assign(new Error("Thư viện phim mẫu không phải dự án."), { code: "WORKSPACE_DENIED" }); return p; };
   const wsOf = (v) => { const w = v || ws.current(); if (!w) throw Object.assign(new Error("Chưa đăng ký workspace nào"), { code: "WORKSPACE_DENIED" }); return w; };
 
   // Truy vấn riêng: không bị giới hạn lịch sử chung của jobs.list().
@@ -473,7 +472,7 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
     ["GET", "/quyen", () => ({ quyen: quyenView() })],
     ["POST", "/quyen", (p, qs, b) => { runner.quyen.dat(b, "ceo"); return { quyen: quyenView() }; }],
     ["GET", "/lich-chay", () => ({ lichChay: lichChay.list() })],
-    ["POST", "/lich-chay", (p, qs, b) => { khongPhaiMau(b && b.workspace); return { lich: lichChay.luu(b, "ceo") }; }],
+    ["POST", "/lich-chay", (p, qs, b) => ({ lich: lichChay.luu(b, "ceo") })],
     ["POST", "/lich-chay/:id/bat", (p, qs, b) => ({ lich: lichChay.batTat(p.id, b.bat, "ceo") })],
     ["POST", "/lich-chay/:id/xoa", (p) => lichChay.xoa(p.id, "ceo")],
     ["POST", "/lich-chay/:id/chay-ngay", async (p) => ({ ketQua: await lichChay.chayNgay(p.id, "ceo") })],
@@ -506,7 +505,7 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
     ["POST", "/bo-kiem", (p, qs, b) => ({ boKiem: boKiem.install(ws.find(wsOf(b.workspace)).path) })],
     ["POST", "/workspaces/remove", (p, qs, b) => { ws.remove(b.path, "ceo"); return { workspaces: ws.list() }; }],
     ["POST", "/workspaces/switch", (p, qs, b) => {
-      const active = selectWorkspace(khongPhaiMau(b.path));
+      const active = selectWorkspace(b.path);
       return { active, agentMd: lastSelect && lastSelect.agentMd };
     }],
 
@@ -522,7 +521,7 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
     }],
     ["GET", "/autopilot", () => ({ runs: autopilot.list().map(autopilot.view) })],
     ["GET", "/autopilot/:id", (p) => ({ run: autopilot.view(autopilot.get(p.id)) })],
-    ["POST", "/autopilot", (p, qs, b) => [201, { run: autopilot.view(autopilot.start({ workspace: khongPhaiMau(wsOf(b.workspace)), task: b.task, maxSteps: b.maxSteps, timeoutMs: b.timeoutMs })) }]],
+    ["POST", "/autopilot", (p, qs, b) => [201, { run: autopilot.view(autopilot.start({ workspace: wsOf(b.workspace), task: b.task, maxSteps: b.maxSteps, timeoutMs: b.timeoutMs })) }]],
     ["POST", "/autopilot/:id/stop", async (p) => ({ run: autopilot.view(await autopilot.stop(p.id)) })],
     ["POST", "/autopilot/:id/answer", (p, qs, b) => ({ run: autopilot.view(autopilot.answer(p.id, b.option)) })],
     ["POST", "/autopilot/:id/resume", (p) => ({ run: autopilot.view(autopilot.resumeNow(p.id)) })],
@@ -606,6 +605,13 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
       }
       // Ảnh/giọng/clip của phim cho trang Xưởng phim xem: chỉ trong media/ của workspace đã đăng ký, có Range để tua video.
       if (req.method === "GET" && url.pathname === "/phim/media") return guiMedia(req, res, url);
+      // Ảnh khung phim mẫu: /phim/mau/<mã>/khung/k01.jpg (phimMau.khungFile kiểm mã, tên tệp, junction, liên kết cứng).
+      const khungMau = req.method === "GET" && /^\/phim\/mau\/([^/]+)\/khung\/([^/]+)$/.exec(url.pathname);
+      if (khungMau) {
+        const f = phimMau.khungFile(khungMau[1], khungMau[2]);
+        res.writeHead(200, { "Content-Type": "image/jpeg", "Content-Length": fs.statSync(f).size, "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" });
+        return fs.createReadStream(f).pipe(res);
+      }
       // Video phim mẫu gửi thẳng thân yêu cầu (application/octet-stream), nhận theo luồng tới 2 GB.
       if (req.method === "POST" && url.pathname === "/phim/mau/tai-len") {
         // guard.checkWrite ở đầu đã kiểm Host, Sec-Fetch-Site, Origin; ở đây chỉ nhận đúng tệp thô.

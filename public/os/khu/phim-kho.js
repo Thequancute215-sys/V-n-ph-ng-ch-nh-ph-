@@ -24,7 +24,7 @@ export async function mo(vung, { ctl = ctlMacDinh, bao = baoMacDinh, signal } = 
       if (!conSong) return;
       if (r1.status === "fulfilled") { const r = r1.value; ds = r.duAn || []; loaiDs = r.loai || []; kho = r.kho || ""; loiTai = ""; }
       else loiTai = r1.reason.message;
-      if (r2.status === "fulfilled") { mau = r2.value.phimMau || { workspace: null, ds: [] }; loiMau = ""; }
+      if (r2.status === "fulfilled") { mau = r2.value.phimMau || { ds: [] }; loiMau = ""; }
       else loiMau = r2.reason.message;
       // Đang thao tác (ban) thì lam() tự vẽ lại khi xong. ve() không đụng biểu mẫu Phim mới khi nó đang mở.
       if (!ban) ve();
@@ -92,8 +92,8 @@ export async function mo(vung, { ctl = ctlMacDinh, bao = baoMacDinh, signal } = 
   const LAM_DUOC = { duoc: ["dat", "Làm được"], mot_phan: ["canh-bao", "Làm được một phần"], kho: ["hong", "Khó làm"] };
   const giay = (x) => (x >= 60 ? Math.floor(x / 60) + " phút " : "") + Math.round(x % 60) + " giây";
   function veTheMau(m) {
-    const bia = m.khung && m.khung[0] && mau.workspace
-      ? `<img src="${esc("/ctl/phim/media?workspace=" + encodeURIComponent(mau.workspace) + "&path=" + encodeURIComponent(m.khung[0].path))}" alt="" loading="lazy">`
+    const bia = m.khung && m.khung[0]
+      ? `<img src="${esc("/ctl/phim/mau/" + encodeURIComponent(m.ma) + "/khung/" + encodeURIComponent(String(m.khung[0].path).split("/").pop()))}" alt="" loading="lazy">`
       : `<span class="bia-trong" aria-hidden="true">▶</span>`;
     const pt = m.phanTich || {}, dang = pt.trangThai === "dang";
     const ld = m.goiY && LAM_DUOC[m.goiY.lam_duoc];
