@@ -582,8 +582,11 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
   // (lượt phim không phải lượt phát triển phần mềm, không giành lượt của đội), nhưng dựng lệnh y như run(): cùng điều phối
   // model/mức suy nghĩ, đổi tài khoản Antigravity/GPT theo hạn mức, mức quyền theo vai (ctl/quyen.js) và cổng rà soát khi toàn quyền.
   // chiDoc: luôn chỉ đọc (Claude nghiệm thu). Trả Promise { ok, text, loi, jobId } khi lượt kết thúc; text = phần cuối log.
-  function chayPhim({ workspace, role, prompt, chiDoc = false }, actor = "luong-phim") {
-    const root = ws.find(workspace).path;
+  // thuMucRieng: thư mục KHÔNG phải workspace (thư viện phim mẫu <kho>\_phim-mau), do mã ctl đã kiểm truyền vào, không bao giờ
+  // từ yêu cầu HTTP. Chỉ cho lượt CHỈ ĐỌC, để thư viện không thành dự án (không agent.md, không giao việc hay lịch chạy).
+  function chayPhim({ workspace, thuMucRieng, role, prompt, chiDoc = false }, actor = "luong-phim") {
+    if (thuMucRieng && !chiDoc) throw err("BAD_REQUEST", "Thư mục ngoài dự án chỉ chạy được lượt chỉ đọc.");
+    const root = thuMucRieng ? fs.realpathSync(thuMucRieng) : ws.find(workspace).path;
     const a = AGENTS[role];
     if (!a || !a.argv) throw err("BAD_REQUEST", "Vai không chạy được lượt phim: " + role);
     if (jobs.aiBusy(root)) throw err("AI_BUSY", "Dự án phim này đang có 1 lượt AI chạy hoặc chờ duyệt");

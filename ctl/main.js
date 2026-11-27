@@ -31,6 +31,8 @@ const { createTramFlow } = require("./tram-flow");
 const { createBanDung } = require("./ban-dung");
 const { createLuongPhim } = require("./luong-phim");
 const { createKhoPhim } = require("./kho-phim");
+const { createCoVanTay } = require("./co-van-tay");
+const { createPhimMau } = require("./phim-mau");
 const phimTaiLieu = require("./phim-tai-lieu");
 const phimHelper = require("./phim-helper");
 const { createPhimBlender } = require("./phim-blender");
@@ -113,6 +115,8 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
     chayAi: ({ root, vai, prompt, chiDoc }) => runner.chayPhim({ workspace: root, role: vai, prompt, chiDoc }),
     docQuota: () => quotas.snapshot(),
   });
+  // Nút "Xin góp ý" của Cố vấn (chạy tay, mọi lúc): cùng lời giao và tệp với bước Cố vấn của luồng.
+  const coVanTay = createCoVanTay({ audit, chayAi: ({ root, vai, prompt, chiDoc }) => runner.chayPhim({ workspace: root, role: vai, prompt, chiDoc }) });
   const phimRoot = (v) => ws.find(v).path;
   const docHoSo = (root) => { const doc = (f, mac) => { try { return JSON.parse(fs.readFileSync(path.join(root, f), "utf8").replace(/^\uFEFF/, "")); } catch { return mac; } };
     const phim = doc("phim.json", null); if (!phim) throw Object.assign(new Error("Dự án không có phim.json"), { code: "NOT_FOUND" });
@@ -159,6 +163,10 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
   const duLieuThat = path.resolve(dir).toLowerCase() === path.join(os.homedir(), ".van-phong-ao").toLowerCase();
   const khoPhim = createKhoPhim({ ws, audit, goc: khoPhimDir ||
     (duLieuThat ? process.env.VP_KHO_PHIM || path.join(path.dirname(path.resolve(projectsDir)), "XuongPhim") : path.join(dir, "kho-phim")) });
+  // Thư viện phim mẫu (CEO 26/11/2026): video trên máy -> FFmpeg cắt khung -> Antigravity chỉ đọc phân tích (ctl/phim-mau.js).
+  // Thư viện KHÔNG phải workspace: Antigravity chạy chỉ đọc trong thư mục riêng (runner thuMucRieng), ảnh khung qua route riêng.
+  const phimMau = createPhimMau({ khoPhim, audit, ffmpeg: () => xuongPhim.envAi().XUONG_PHIM_FFMPEG || null, ffprobe: () => xuongPhim.envAi().XUONG_PHIM_FFPROBE || null,
+    chayAi: ({ thuMucRieng, vai, prompt }) => runner.chayPhim({ thuMucRieng, role: vai, prompt, chiDoc: true }) });
   // Phim đang quay / dựng / chạy luồng / Blender / nhịp Flow / AI Helper tạo ảnh / xuất gói CapCut thì không dọn nháp.
   const phimDangBan = (root) => !!(mayQuay.trangThai(root).dang || (banDung.trangThai(root) || {}).dang || (luongPhim.trangThai(root) || {}).trangThai === "dang_chay" ||
     (blenderPhim.trangThai(root) || {}).dang || helperDangTao.has(root) || capcutDangXuat.has(root) || nhipFlowCua(root));
@@ -380,7 +388,13 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
       }
       return { goi: await viec };
     }],
-    ["GET", "/phim", (p, qs) => { const root = phimRoot(qs.get("workspace")); return { ...docHoSo(root), mayQuay: mayQuay.trangThai(root), banDung: banDung.trangThai(root), luong: luongPhim.trangThai(root), blender: blenderPhim.trangThai(root) }; }],
+    ["GET", "/phim", (p, qs) => { const root = phimRoot(qs.get("workspace")); return { ...docHoSo(root), mayQuay: mayQuay.trangThai(root), banDung: banDung.trangThai(root), luong: luongPhim.trangThai(root), blender: blenderPhim.trangThai(root),
+      coVan: { co: Object.fromEntries([1, 2].map((so) => [so, fs.existsSync(path.join(root, "media", "co-van", "cong-" + so + ".md"))])), tay: coVanTay.trangThai(root) } }; }],
+    ["GET", "/phim/mau", () => ({ phimMau: phimMau.list() })],
+    ["POST", "/phim/mau/:ma/phan-tich", (p) => [202, { phimMau: phimMau.phanTich(p.ma) }]],
+    ["POST", "/phim/mau/:ma/tao-phim", (p, qs, b) => [201, { phim: phimMau.taoPhim(p.ma, { ten: b.ten, loai: b.loai, yTuong: b.yTuong }) }]],
+    ["POST", "/phim/mau/:ma/xoa", (p) => ({ phimMau: phimMau.xoa(p.ma) })],
+    ["POST", "/phim/co-van", (p, qs, b) => [202, { coVan: coVanTay.batDau(phimLuongRoot(b.workspace), b.cong) }]],
     ["GET", "/phim/luong", (p, qs) => ({ luong: luongPhim.trangThai(phimLuongRoot(qs.get("workspace"))) })],
     ["POST", "/phim/luong", (p, qs, b) => [202, { luong: luongPhim.batDau(phimLuongRoot(b.workspace), { deBai: b.deBai, tuyChon: b.tuyChon }) }]],
     ["POST", "/phim/luong/dung", (p, qs, b) => {
@@ -591,6 +605,19 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
       }
       // Ảnh/giọng/clip của phim cho trang Xưởng phim xem: chỉ trong media/ của workspace đã đăng ký, có Range để tua video.
       if (req.method === "GET" && url.pathname === "/phim/media") return guiMedia(req, res, url);
+      // Ảnh khung phim mẫu: /phim/mau/<mã>/khung/k01.jpg (phimMau.khungFile kiểm mã, tên tệp, junction, liên kết cứng).
+      const khungMau = req.method === "GET" && /^\/phim\/mau\/([^/]+)\/khung\/([^/]+)$/.exec(url.pathname);
+      if (khungMau) {
+        const f = phimMau.khungFile(khungMau[1], khungMau[2]);
+        res.writeHead(200, { "Content-Type": "image/jpeg", "Content-Length": fs.statSync(f).size, "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" });
+        return fs.createReadStream(f).pipe(res);
+      }
+      // Video phim mẫu gửi thẳng thân yêu cầu (application/octet-stream), nhận theo luồng tới 2 GB.
+      if (req.method === "POST" && url.pathname === "/phim/mau/tai-len") {
+        // guard.checkWrite ở đầu đã kiểm Host, Sec-Fetch-Site, Origin; ở đây chỉ nhận đúng tệp thô.
+        if (String(req.headers["content-type"] || "").split(";")[0].trim().toLowerCase() !== "application/octet-stream") return fail(res, 415, "BAD_REQUEST", "Gửi video dạng application/octet-stream.");
+        return send(res, 201, { ok: true, phimMau: await phimMau.taiLen(req, url.searchParams.get("ten")) });
+      }
       if (req.method === "GET" && url.pathname === "/phim/tai-lieu/tep") {
         const root = phimLuongRoot(url.searchParams.get("workspace"));
         const { real, item } = phimTaiLieu.file(root, url.searchParams.get("id"));

@@ -102,10 +102,11 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
       } else if (phan === "ban-dung") nextNt = null;
       // Góp ý của Cố vấn (Antigravity) cho Cổng 1 (trang Kịch bản) hoặc Cổng 2 (trang Phân cảnh).
       const soCv = phan === "kich-ban" ? 1 : phan === "canh" ? 2 : 0;
-      const cv = soCv && nextData && nextData.luong && nextData.luong.coVan && nextData.luong.coVan[soCv];
+      // Tệp góp ý có thể do luồng hoặc do anh bấm "Xin góp ý" tạo ra: đọc khi máy chủ báo tệp có.
+      const coTep = soCv && nextData && nextData.coVan && nextData.coVan.co && nextData.coVan.co[soCv];
       let nextCv = null;
-      if (cv && cv.file) {
-        try { nextCv = (await ctl("/fs/read?workspace=" + encodeURIComponent(reqWs) + "&path=" + encodeURIComponent(cv.file))).content || null; } catch { nextCv = null; }
+      if (coTep) {
+        try { nextCv = (await ctl("/fs/read?workspace=" + encodeURIComponent(reqWs) + "&path=" + encodeURIComponent(`media/co-van/cong-${soCv}.md`))).content || null; } catch { nextCv = null; }
         if (!conSong || mine !== phien || ws !== reqWs) return;
       }
       coVanNd = nextCv;
@@ -116,7 +117,8 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
       if (ky !== kyCu && !dangXem && !xem && !ban && !dangGhi && !dangPhat) { kyCu = ky; ve(); }
     }
     if (!conSong || mine !== phien || ws !== reqWs) return;
-    const ban2 = data && (data.blender?.dang || data.mayQuay.dang || (data.banDung && data.banDung.dang) || (data.luong && data.luong.trangThai === "dang_chay")) || (flow && flow.nhipDang);
+    const coVanDang = data && data.coVan && data.coVan.tay && [1, 2].some((so) => data.coVan.tay[so] && data.coVan.tay[so].dang);
+    const ban2 = data && (data.blender?.dang || data.mayQuay.dang || (data.banDung && data.banDung.dang) || (data.luong && data.luong.trangThai === "dang_chay") || coVanDang) || (flow && flow.nhipDang);
     hen = setTimeout(tai, ban2 ? 4000 : 20000);
   }
 
@@ -199,9 +201,18 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
 
   // Khối góp ý của Cố vấn ngay trên cổng duyệt: đang chấm, đã có (Markdown), lỗi, hoặc chưa có (chỉ luồng tự động mới gọi cố vấn).
   function veCoVan(so) {
-    const L = data.luong, cv = L && L.coVan && L.coVan[so];
-    const dang = L && L.coVanDang === so;
-    if (!L || (!cv && !dang)) return "";
+    const L = data.luong, cvLuong = L && L.coVan && L.coVan[so];
+    const tay = data.coVan && data.coVan.tay && data.coVan.tay[so];
+    const coTep = !!(data.coVan && data.coVan.co && data.coVan.co[so]);
+    const dang = (L && L.coVanDang === so) || !!(tay && tay.dang);
+    const coCanh = (data.phim.canh || []).length > 0;
+    // Phim mới (mới có ý tưởng, chưa có cảnh): vẫn cho anh biết có Cố vấn kịch bản, và cần gì để xin góp ý.
+    if (!coCanh && !coTep && !dang) return so === 1 ? `<section class="khoi" aria-labelledby="hCoVan1"><div class="dau-hang"><h2 class="dau" id="hCoVan1">Góp ý của Cố vấn trước Cổng 1</h2><span class="mo">Antigravity · chỉ đọc</span></div>` +
+      `<p class="mo">Khi kịch bản có ít nhất một cảnh, nút Xin góp ý hiện ở đây: Antigravity đọc kịch bản, chấm điểm và gợi ý cách kể, nhịp, cảnh quay.</p></section>` : "";
+    // Lỗi gần nhất: của lần anh bấm (nếu có) hoặc của bước Cố vấn trong luồng.
+    const loiGan = (tay && !tay.dang && tay.loi) || (!tay && cvLuong && cvLuong.loi) || "";
+    const cv = { luc: (tay && tay.luc) || (cvLuong && cvLuong.luc) || "", loi: loiGan, file: coTep ? `media/co-van/cong-${so}.md` : null };
+    const nut = coCanh ? `<button type="button" class="nut nho" data-xin-gop-y="${so}"${dang ? " disabled" : ""}>${coTep ? "Xin góp ý lại" : "Xin góp ý"}</button>` : "";
     // Bỏ dấu chữ ký và tiêu đề # của tệp (tiêu đề khối đã nói rõ); tóm tắt điểm + kết luận lên đầu, chi tiết gập lại.
     const sach = coVanNd ? coVanNd.replace(/^<!--[\s\S]*?-->\s*/, "").replace(/^#\s[^\n]*\n+/, "") : "";
     const diem = (sach.match(/(\d+(?:[.,]\d+)?)\s*\/\s*10\b/) || [])[1];
@@ -214,10 +225,13 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
       : sach ? `<div class="hang">${diem ? `<span class="nhan">Điểm ${esc(diem)}/10</span>` : ""}${ketLuan ? `<b class="${tot ? "dat" : "canh-bao"}">${esc(ketLuan)}</b>` : ""}</div>` +
         // Giữ trạng thái mở khi trang tự làm mới (coVanMo), để anh đang đọc không bị đóng sập.
         `<details data-co-van="${so}"${coVanMo.has(so) ? " open" : ""}><summary>Xem góp ý chi tiết</summary>${chiTiet}</details>`
-      : cv && cv.loi ? `<p class="canh-bao">Chưa có góp ý: ${esc(cv.loi)}. Sửa kịch bản hoặc khung hình thì luồng tự xin góp ý lại; anh vẫn duyệt được như thường.</p>`
-      : cv && cv.file ? `<p class="canh-bao">Chưa đọc được tệp góp ý <code>${esc(cv.file)}</code>. Luồng sẽ tự góp ý lại nếu tệp đã bị xoá; anh vẫn duyệt được như thường.</p>` : "";
+      : cv.loi ? `<p class="canh-bao">Chưa có góp ý: ${esc(cv.loi)}. Anh vẫn duyệt được như thường.</p>`
+      : cv.file ? `<p class="canh-bao">Chưa đọc được tệp góp ý <code>${esc(cv.file)}</code>. Bấm Xin góp ý lại nếu cần; anh vẫn duyệt được như thường.</p>`
+      : `<p class="mo">Bấm Xin góp ý để Antigravity đọc ${so === 1 ? "kịch bản" : "phân cảnh và các khung đã chọn"}, chấm điểm và gợi ý ${so === 1 ? "cách kể, nhịp và cảnh quay" : "góc máy, chuyển động, rủi ro khi quay"}. Chỉ đọc, không sửa gì.</p>`;
+    // Có góp ý mới mà vẫn hiện lỗi cũ thì chỉ hiện góp ý (lỗi đã thuộc lần trước).
+    const loiCu = sach && cv.loi ? `<p class="mo">Lần xin góp ý gần nhất chưa xong: ${esc(cv.loi)}</p>` : "";
     return `<section class="khoi" aria-labelledby="hCoVan${so}"><div class="dau-hang"><h2 class="dau" id="hCoVan${so}">Góp ý của Cố vấn trước Cổng ${so}</h2>` +
-      `<span class="mo">Antigravity · chỉ đọc${cv && cv.luc ? " · " + esc(luc(cv.luc)) : ""}</span></div>${than}</section>`;
+      `<span class="mo">Antigravity · chỉ đọc${cv.luc ? " · " + esc(luc(cv.luc)) : ""}</span>${nut}</div>${than}${dang ? "" : loiCu}</section>`;
   }
 
   function veKichBanVaGiong(p, k, mq, bd) {
@@ -609,6 +623,10 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
       return;
     }
     const b = e.target.closest("button"); if (!b || ban) return;
+    if (b.dataset.xinGopY) {
+      const so = Number(b.dataset.xinGopY);
+      return lam(() => ctl("/phim/co-van", { workspace: ws, cong: so }), `Đã giao Antigravity góp ý ${so === 1 ? "kịch bản" : "phân cảnh"}. Thường mất 1–3 phút, trang tự cập nhật.`);
+    }
     const d = b.dataset;
     const helper = { workspace: ws, ma: giaTri("helperNhanVat") };
     if (d.helperTab) { dungAnimatic(); huyGhi(); helperUI.tab = d.helperTab; ve(); return; }
