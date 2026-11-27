@@ -71,27 +71,39 @@ function parseReply(raw, who) {
 }
 
 // Lỗi khi chạy AI viết thành câu CEO đọc được, không in đuôi log JSON thô (CEO 28/11/2026).
-function loiDeHieu(log, status, who, maThoat = null) {
+// Dòng trông như mảnh JSON (JSON in nhiều dòng, dòng bị cắt): không đưa ra màn hình.
+// (Khoá kiểu `"key":` hoặc mẩu khoá bị cắt `ey":`; chữ thường "jetski: lỗi…" vẫn giữ.)
+const MANH_JSON = /^[{}[\]"]|^[\w$-]*"\s*:|[{[,]\s*$/;
+const QUOTA = /out of credits|usage[ _]limit|rate[ _]limit|hit your (\w+ )?limit|quota|"api_error_status":\s*429|hạn mức/i;
+function chuLoi(x) {
+  if (typeof x === "string") return x;
+  if (x && typeof x === "object") return typeof x.message === "string" ? x.message : typeof x.error === "string" ? x.error : (x.error && typeof x.error.message === "string" ? x.error.message : "");
+  return "";
+}
+// rong = AI chạy xong nhưng không nói gì (khác với tiến trình lỗi).
+function loiDeHieu(log, status, who, maThoat = null, { rong = false } = {}) {
   const p = PEOPLE[who], ten = p.name;
-  const cuoi = String(log || "").slice(-6000);
-  if (/out of credits|usage limit|rate limit|quota|hit your limit|hạn mức/i.test(cuoi))
-    return `${ten} (${p.role}) đã hết hạn mức gói, chưa trả lời được. Sếp hỏi người khác hoặc chờ gói hồi lại.`;
   if (status === "timeout") return `${ten} nghĩ quá 6 phút mà chưa xong. Sếp hỏi gọn hơn, hoặc chia câu hỏi thành vài câu nhỏ giúp em.`;
   if (status === "killed" || status === "cancelled") return `Câu trả lời của ${ten} đã bị dừng giữa chừng. Sếp gửi lại câu hỏi nếu vẫn cần.`;
-  // Tìm dòng kết quả cuối của CLI (Claude: {"type":"result",…}; Codex/agy: {"type":"error","message":…}).
+  // Tìm dòng kết quả cuối của CLI trên CẢ log (dòng kết quả có thể rất dài, cắt trước thì lọt JSON thô).
+  // Claude: {"type":"result",…}; Codex/agy: {"type":"error","message":…}.
+  const dongs = String(log || "").split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
   let kq = null;
-  for (const dong of cuoi.split(/\r?\n/).reverse()) {
-    const s = dong.trim();
-    if (!s.startsWith("{")) continue;
-    try { const v = JSON.parse(s); if (v && typeof v === "object" && (v.type === "result" || v.type === "error" || v.error || v.errors)) { kq = v; break; } } catch {}
+  for (let i = dongs.length - 1; i >= 0 && !kq; i--) {
+    if (!dongs[i].startsWith("{")) continue;
+    try { const v = JSON.parse(dongs[i]); if (v && typeof v === "object" && (v.type === "result" || v.type === "error" || v.error || v.errors)) kq = v; } catch {}
   }
   if (kq && (kq.subtype === "error_max_turns" || /maximum number of turns/i.test(JSON.stringify(kq.errors || ""))))
     return `${ten} phải đọc quá nhiều file nên chưa kịp kết luận. Sếp hỏi cụ thể hơn (nêu tên màn hình, file hay tính năng) giúp em.`;
-  const chiTiet = kq ? [].concat(kq.errors || [], kq.message || [], typeof kq.error === "string" ? kq.error : (kq.error && kq.error.message) || [], typeof kq.result === "string" ? kq.result : [])
-    .map(String).filter(Boolean).join(" · ") : "";
-  // Không có dòng kết quả: lấy vài dòng chữ cuối (không phải JSON) của log.
-  const chu = chiTiet || cuoi.split(/\r?\n/).map((x) => x.trim()).filter((x) => x && !x.startsWith("{")).slice(-3).join(" · ") || (maThoat != null ? "chương trình dừng với mã " + maThoat : "");
-  return `${ten} gặp lỗi nên chưa trả lời được. Sếp thử hỏi lại; vẫn lỗi thì báo Sakura xem giúp.` + (chu ? "\nChi tiết: " + maskSecrets(chu.slice(0, 300)) : "");
+  const chiTiet = kq ? [].concat(kq.errors || [], kq.message || [], kq.error || [], typeof kq.result === "string" ? kq.result : []).map(chuLoi).filter(Boolean).join(" · ") : "";
+  // Không có dòng kết quả: vài dòng chữ cuối của log, bỏ mọi dòng/mảnh JSON.
+  const chuCuoi = dongs.filter((x) => !MANH_JSON.test(x)).slice(-3).join(" · ");
+  // Hạn mức: chỉ xét chữ báo lỗi (không xét nội dung file AI đọc, dễ báo nhầm khi file có chữ "quota").
+  if (QUOTA.test(chiTiet || chuCuoi)) return `${ten} (${p.role}) đã hết hạn mức gói, chưa trả lời được. Sếp hỏi người khác hoặc chờ gói hồi lại.`;
+  const chu = chiTiet || chuCuoi || (maThoat != null && maThoat !== 0 ? "chương trình dừng với mã " + maThoat : "");
+  const dau = rong ? `${ten} không trả lời được.` : `${ten} gặp lỗi nên chưa trả lời được. Sếp thử hỏi lại; vẫn lỗi thì báo Sakura xem giúp.`;
+  // Che khóa TRƯỚC khi cắt: cắt trước thì khóa vắt ngang mốc cắt lọt phần đầu.
+  return dau + (chu ? "\nChi tiết: " + maskSecrets(chu).slice(0, 300) : "");
 }
 
 function createChat({ jobs, ws, runner, audit, dir }) {
@@ -124,7 +136,7 @@ function createChat({ jobs, ws, runner, audit, dir }) {
     try {
       const job = jobs.start({ kind: "cmd", agent: "CHAT_" + who.toUpperCase(), workspace: root, argv, timeoutMs: 6 * 60 * 1000, onExit: (j) => finish(root, who, reply.id, j) });
       reply.jobId = job.id;
-    } catch (e) { reply.status = "loi"; reply.text = "Không gọi được " + PEOPLE[who].name + ": " + e.message; }
+    } catch (e) { reply.status = "loi"; reply.text = "Không gọi được " + PEOPLE[who].name + ": " + maskSecrets(String(e.message)); }
     list.splice(0, Math.max(0, list.length - KEEP));
     save();
     audit.log("ceo", "chat.send", root, { who, jobId: reply.jobId });
@@ -143,10 +155,8 @@ function createChat({ jobs, ws, runner, audit, dir }) {
       const r = parseReply(responseText(log), who);
       for (const o of [r.route, r.task]) if (o) { o.why = maskText(o.why); o.prompt = maskText(o.prompt); }
       const empty = !r.route && !r.task && (!r.text.trim() || r.text === "(không có lời nhắn)");
-      // AI chạy xong mà không nói gì (vd. Antigravity bị chặn lệnh shell): báo lỗi kèm dòng đầu log để biết vì sao.
-      // Dòng đầu là JSON (vd. Claude hết lượt vẫn thoát mã 0) thì đổi thành câu dễ đọc thay vì in JSON thô.
-      const dau = log.trim().split(/\r?\n/)[0];
-      Object.assign(m, empty ? { status: "loi", text: !dau || dau.startsWith("{") ? loiDeHieu(log, job.status, who, job.exit_code) : PEOPLE[who].name + " không trả lời được.\nChi tiết: " + maskSecrets(dau.slice(0, 400)) }
+      // AI chạy xong mà không nói gì (vd. Antigravity bị chặn lệnh, Claude hết lượt vẫn thoát mã 0): câu dễ đọc kèm lý do ngắn.
+      Object.assign(m, empty ? { status: "loi", text: loiDeHieu(log, job.status, who, job.exit_code, { rong: true }) }
         : { status: "xong", text: maskText(r.text).slice(0, 20000), route: r.route, task: r.task });
     }
     m.at = Date.now();

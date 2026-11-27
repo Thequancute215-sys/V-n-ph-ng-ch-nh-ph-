@@ -148,7 +148,8 @@ const CLI_NAME = /^(claude|codex|agy)(\.(exe|cmd|js))?$/;
 function boGioiHanLuot(argv) {
   const prog = argv.findIndex((x) => CLI_NAME.test(base(x)));
   if (prog < 0 || base(argv[prog]).replace(/\..*$/, "") !== "claude") return argv;
-  return argv.filter((x, i) => !(i > prog && (x === "--max-turns" || argv[i - 1] === "--max-turns")));
+  // Gỡ cả dạng "--max-turns=12"; phần tử sau "--max-turns" chỉ bỏ khi là số lượt (không bao giờ bỏ "{prompt}").
+  return argv.filter((x, i) => !(i > prog && (x === "--max-turns" || x.startsWith("--max-turns=") || (argv[i - 1] === "--max-turns" && x !== "{prompt}" && !x.startsWith("-")))));
 }
 // Đổi lệnh đã cấu hình (kể cả ctl-agents.json của máy) sang toàn quyền: bỏ cờ giới hạn, thêm cờ bỏ qua quyền của đúng CLI.
 function fullAccessArgs(argv) {
@@ -176,7 +177,7 @@ function fullAccessArgs(argv) {
 }
 
 const DOC_FLAGS = {
-  claude: { value: ["--output-format", "--max-turns", "--effort"], toggle: ["--verbose", "--no-session-persistence"] },
+  claude: { value: ["--output-format", "--effort"], toggle: ["--verbose", "--no-session-persistence"] },
   codex: { value: ["-c", "--config", "--color"], toggle: ["--json", "--ephemeral", "--skip-git-repo-check"] },
   agy: { value: ["--output-format", "--print-timeout", "--effort"], toggle: [] },
 };
@@ -348,8 +349,11 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     // Cắt bằng phanChuongTrinh: lệnh chạy qua node.exe --preserve-symlinks … codex.js giữ đủ cờ node và file script
     // (cắt ở dấu "-" đầu tiên thì chat/soạn prompt của Codex chỉ còn "node.exe exec …", lỗi gặp thật 22/11/2026).
     if (!custom[role] && Array.isArray(base) && base.length > 1) a = [...phanChuongTrinh(base), ...AGENTS[role].argv.slice(1)];
-    if (!Array.isArray(a) || !a.every((x) => typeof x === "string") || !a.includes("{prompt}")) throw err("BAD_CONFIG", "ctl-agents.json: lệnh của " + role + " phải là mảng chuỗi có \"{prompt}\"");
-    return boGioiHanLuot(a);
+    const sai = () => err("BAD_CONFIG", "ctl-agents.json: lệnh của " + role + " phải là mảng chuỗi có \"{prompt}\"");
+    if (!Array.isArray(a) || !a.every((x) => typeof x === "string")) throw sai();
+    a = boGioiHanLuot(a);
+    if (!a.includes("{prompt}")) throw sai();
+    return a;
   }
 
   function status(workspace) {

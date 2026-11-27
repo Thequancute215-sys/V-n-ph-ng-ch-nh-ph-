@@ -139,7 +139,7 @@ function luuKhungPhim(root, ten, git) {
 // Tài liệu CEO đính kèm vào mô tả dự án mới (CEO 28/11/2026): đặc tả, ảnh phác thảo, tài liệu tham khảo để Hinata và đội
 // hình dung rõ sản phẩm. Lưu vào thư mục tai-lieu-y-tuong/ của repo vừa tải về và ghi vào .git/info/exclude: CHỈ nằm trên
 // máy, không commit, không đẩy lên GitHub (tài liệu riêng của CEO), cây làm việc vẫn sạch để chu trình tạo nhánh bình thường.
-const DINH_KEM = { thuMuc: "tai-lieu-y-tuong", toiDa: 5, moiTep: 4 * 1024 * 1024, tong: 10 * 1024 * 1024 };
+const DINH_KEM = { thuMuc: "tai-lieu-y-tuong", toiDa: 5, moiTep: 4 * 1024 * 1024, moiTepMd: 1024 * 1024, tong: 10 * 1024 * 1024 };
 const DUOI_DINH_KEM = new Set([".pdf", ".docx", ".pptx", ".xlsx", ".txt", ".md", ".csv", ".json", ".png", ".jpg", ".jpeg", ".webp"]);
 // Giới hạn thân yêu cầu POST /du-an-moi: base64 dài thêm 1/3, cộng chỗ cho ý tưởng và tên tệp.
 const DINH_KEM_BODY = Math.ceil(DINH_KEM.tong / 3) * 4 + 64 * 1024;
@@ -152,13 +152,19 @@ function kiemDinhKem(list) {
   let tong = 0;
   for (const x of list) {
     if (!x || typeof x.ten !== "string" || typeof x.base64 !== "string") throw err("BAD_REQUEST", "Tệp đính kèm không hợp lệ.");
-    // Chỉ giữ tên tệp (bỏ đường dẫn), ký tự an toàn; tên trùng thì thêm số.
-    let ten = x.ten.split(/[\\/]/).pop().normalize("NFC").replace(/[^\p{L}\p{M}\p{N}_.() -]/gu, "-").replace(/^[.\s]+/, "").trim().slice(-100);
-    const duoi = path.extname(ten).toLowerCase();
-    if (!ten || !DUOI_DINH_KEM.has(duoi)) throw err("BAD_REQUEST", "Tệp \"" + x.ten.slice(0, 80) + "\" không đính kèm được. Nhận: " + [...DUOI_DINH_KEM].join(", ") + ".");
+    // Chỉ giữ tên tệp (bỏ đường dẫn), ký tự an toàn; cắt phần gốc (giữ đuôi) TRƯỚC khi bỏ dấu chấm/khoảng trắng đầu-cuối
+    // để không ra tên ẩn kiểu "..md"; tên thiết bị Windows (CON, NUL, COM1…) thêm "_" phía trước.
+    const sach = x.ten.split(/[\\/]/).pop().normalize("NFC").replace(/[^\p{L}\p{M}\p{N}_.() -]/gu, "-");
+    const duoi = path.extname(sach).toLowerCase();
+    let goc = sach.slice(0, sach.length - duoi.length).slice(0, 90).replace(/^[.\s]+|[.\s]+$/g, "");
+    if (/^(con|prn|aux|nul|com\d|lpt\d)(\..*)?$/i.test(goc)) goc = "_" + goc;
+    let ten = goc + duoi;
+    if (!goc || !DUOI_DINH_KEM.has(duoi)) throw err("BAD_REQUEST", "Tệp \"" + x.ten.slice(0, 80) + "\" không đính kèm được. Nhận: " + [...DUOI_DINH_KEM].join(", ") + ".");
     const bytes = Buffer.from(x.base64, "base64");
     if (!bytes.length || bytes.toString("base64") !== x.base64.replace(/\s/g, "")) throw err("BAD_REQUEST", "Tệp \"" + ten + "\" rỗng hoặc không đọc được.");
-    if (bytes.length > DINH_KEM.moiTep) throw err("TOO_LARGE", "Tệp \"" + ten + "\" lớn quá " + DINH_KEM.moiTep / 1048576 + " MB.");
+    // .md bị bộ rà soát Toàn quyền (ctl/ra-soat.js) đọc với trần 1 MB: lớn hơn thì rà không hết và khoá luôn giao việc.
+    const tran = duoi === ".md" ? DINH_KEM.moiTepMd : DINH_KEM.moiTep;
+    if (bytes.length > tran) throw err("TOO_LARGE", "Tệp \"" + ten + "\" lớn quá " + tran / 1048576 + " MB.");
     tong += bytes.length;
     if (tong > DINH_KEM.tong) throw err("TOO_LARGE", "Tổng tài liệu đính kèm lớn quá " + DINH_KEM.tong / 1048576 + " MB.");
     for (let i = 2; out.some((o) => o.ten.toLowerCase() === ten.toLowerCase()); i++) ten = path.basename(ten, duoi).replace(/ \(\d+\)$/, "") + " (" + i + ")" + duoi;
@@ -187,16 +193,18 @@ function luuDinhKem(root, files) {
   const da = [];
   for (const { ten, bytes } of files) {
     let dich = ten;
-    for (let i = 2; fs.existsSync(path.join(dir, dich)); i++) dich = path.basename(ten, path.extname(ten)) + " (" + i + ")" + path.extname(ten);
+    // lstat (không theo liên kết): liên kết hỏng cũng tính là "đã có tên" để không ghi đè hay ném EEXIST.
+    for (let i = 2; fs.lstatSync(path.join(dir, dich), { throwIfNoEntry: false }); i++) dich = path.basename(ten, path.extname(ten)) + " (" + i + ")" + path.extname(ten);
     fs.writeFileSync(path.join(dir, dich), bytes, { flag: "wx" });
     da.push(dich);
   }
   return da;
 }
 
-// Dòng giao việc kèm theo ý tưởng: ngắn, vì mô tả ý tưởng (ctl/ideas.js) tối đa 2400 ký tự.
+// Dòng giao việc kèm theo ý tưởng. Tên tệp tối đa ~100 ký tự × 5 tệp nên dòng này dưới 750 ký tự, không cắt giữa tên;
+// mô tả ý tưởng (ctl/ideas.js, tối đa 2400 ký tự) bị rút ngắn thay cho dòng này.
 const loiDinhKem = (ds) => ds.length ? "\n\nTÀI LIỆU CEO ĐÍNH KÈM (" + ds.length + " tệp, đọc hết trước khi làm; chỉ có trên máy, không commit): " +
-  ds.map((t) => DINH_KEM.thuMuc + "/" + t).join(", ").slice(0, 600) : "";
+  ds.map((t) => DINH_KEM.thuMuc + "/" + t).join(", ") : "";
 
 function createDuAnMoi({ github, ideas, boKiem, dir = null, audit = { log() {} }, goiYAi = goiYClaude, cho = (ms) => new Promise((r) => setTimeout(r, ms)), now = Date.now }) {
   const ops = new Map();
