@@ -53,7 +53,14 @@ test("lệnh chat mặc định luôn chỉ đọc kể cả khi bật toàn quy
   const quyenAgy = JSON.parse(agy[agy.indexOf("--settings") + 1]).permissions;
   assert.ok(quyenAgy.deny.includes("write_file(*)"), "chat với Antigravity không ghi được file");
   // agy chạy nền tự từ chối công cụ chưa được cho phép, kể cả đọc file → trả lời rỗng. Phải cho phép rõ công cụ đọc.
-  assert.ok(quyenAgy.allow.includes("read_file(*)") && quyenAgy.allow.some((r) => /Get-ChildItem/.test(r)), "Antigravity được công cụ đọc để không bị chặn trả lời rỗng");
+  assert.ok(quyenAgy.allow.includes("read_file(*)"), "Antigravity được công cụ đọc để không bị chặn trả lời rỗng");
+  // CEO 28/11/2026: chat với Hinata/Kakashi được chạy shell để xem repo, vẫn chặn lệnh đổi repo/xoá file/mạng.
+  assert.ok(quyenAgy.allow.includes("command(*)"), "chat Antigravity được chạy shell");
+  const chan = quyenAgy.deny.filter((r) => r.startsWith("command(regex:")).map((r) => new RegExp(r.slice(14, -1).replace("(?i)", ""), "i"));
+  for (const lenh of ["git push origin main", "git commit -m x", "rm -rf src", "Remove-Item a.txt", "npm install x", "curl http://x", "git status; del a"])
+    assert.ok(chan.some((re) => re.test(lenh)), "phải chặn: " + lenh);
+  for (const lenh of ["git status", "git diff HEAD~1", "node --test test/a.test.js", "Get-ChildItem -Recurse", "type README.md"])
+    assert.ok(!chan.some((re) => re.test(lenh)), "không được chặn: " + lenh);
   for (const a of [claude, sol, astra, agy]) assert.ok(!a.some((x) => /dangerously/.test(x)), a.join(" "));
   assert.throws(() => ctl.runner.chatArgv("pain"), /Không có AI để chat/);
 });
