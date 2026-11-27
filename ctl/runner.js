@@ -53,7 +53,7 @@ const CAPTAIN = `\n\nQUYỀN ĐỘI TRƯỞNG: bạn được phản biện Anti
   ` Lượt kế tiếp là Sol (gpt-6.2-sol) hoặc Astra (gpt-6.2-astra) thì bạn được tự đặt mức suy luận, không cần hỏi CEO: thêm "effort":"xhigh" | "max" khi việc khó (kiến trúc phức tạp, lỗi khó tìm, bảo mật, sửa lại nhiều lần), "high" để trở về mặc định. Chỉ nâng khi cần vì mức cao tốn hạn mức hơn.`;
 
 // Lệnh mặc định: cờ của từng CLI cần kiểm chứng trên máy thật (phiên bản CLI thay đổi); sai thì sửa ở ctl-agents.json.
-const CLAUDE = ["claude", "-p", "{prompt}", "--output-format", "json", "--max-turns", "30", "--permission-mode", "acceptEdits",
+const CLAUDE = ["claude", "-p", "{prompt}", "--output-format", "json", "--permission-mode", "acceptEdits",
   "--allowedTools", "Read", "Grep", "Glob", "Edit", "Write", "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git show:*)", "Bash(git pull --ff-only)", "Bash(npm test:*)", "Bash(node --test:*)"];
 const CODEX = ["codex", "exec", "--json", "--approve-for-me", "{prompt}"];
 // Bộ kiểm hợp đồng của chính văn phòng: repo dự án chưa cài bộ kiểm thì AI chạy bản này (ở thư mục repo) thay vì tự tải
@@ -117,13 +117,13 @@ const AGENTS = {
   // Không khai riêng trong ctl-agents.json thì dùng lại chương trình của vai chính (CLAUDE_AUDITOR / CODEX_ASTRA_DEV / SPEC_ARCHITECT).
   CODEX_WEB_PROMPT: { base: "CODEX_ASTRA_DEV", argv: ["codex", "exec", "--json", "--sandbox", "read-only", "{prompt}"], timeoutMs: 10 * MIN, prompt: "" },
   AGY_WEB_PROMPT: { base: "SPEC_ARCHITECT", argv: ["agy", "-p", "{prompt}", "--output-format", "json", "--mode", "plan", "--print-timeout", "8m"], timeoutMs: 10 * MIN, prompt: "" },
-  CLAUDE_WEB_PROMPT: { base: "CLAUDE_AUDITOR",  argv: ["claude", "-p", "{prompt}", "--output-format", "json", "--max-turns", "15", "--permission-mode", "plan", "--tools", "Read,Grep,Glob"], timeoutMs: 8 * MIN, prompt: "" },
+  CLAUDE_WEB_PROMPT: { base: "CLAUDE_AUDITOR",  argv: ["claude", "-p", "{prompt}", "--output-format", "json", "--permission-mode", "plan", "--tools", "Read,Grep,Glob"], timeoutMs: 8 * MIN, prompt: "" },
   // Kiểm và áp kết quả CEO làm trên ChatGPT web vào repo, thay cho vai đang hết hạn mức (được sửa file như vai đó).
   CLAUDE_WEB_APPLY: { base: "CLAUDE_AUDITOR", argv: CLAUDE, timeoutMs: 20 * MIN, prompt: "" },
   CODEX_WEB_APPLY: { base: "CODEX_ASTRA_DEV", argv: CODEX, timeoutMs: 20 * MIN, prompt: "" },
-  CLAUDE_REPORTER: { argv: ["claude", "-p", "{prompt}", "--output-format", "json", "--max-turns", "5", "--permission-mode", "plan", "--tools", "Read,Grep,Glob"], timeoutMs: 5 * MIN, prompt: "" },
+  CLAUDE_REPORTER: { argv: ["claude", "-p", "{prompt}", "--output-format", "json", "--permission-mode", "plan", "--tools", "Read,Grep,Glob"], timeoutMs: 5 * MIN, prompt: "" },
   // CEO chat trực tiếp với từng AI (ctl/chat.js): luôn chỉ đọc, không theo toàn quyền.
-  CLAUDE_CHAT: { base: "CLAUDE_AUDITOR", argv: ["claude", "-p", "{prompt}", "--output-format", "json", "--max-turns", "12", "--permission-mode", "plan", "--tools", "Read,Grep,Glob"], timeoutMs: 6 * MIN, prompt: "" },
+  CLAUDE_CHAT: { base: "CLAUDE_AUDITOR", argv: ["claude", "-p", "{prompt}", "--output-format", "json", "--permission-mode", "plan", "--tools", "Read,Grep,Glob"], timeoutMs: 6 * MIN, prompt: "" },
   CODEX_CHAT: { base: "CODEX_ASTRA_DEV", argv: ["codex", "exec", "--json", "--sandbox", "read-only", "{prompt}"], timeoutMs: 6 * MIN, prompt: "" },
   // Cố vấn kịch bản và cảnh quay của luồng phim (CEO 26/11/2026): Antigravity Gemini 4 Carbon (High), luồng luôn gọi ở chế độ chỉ đọc.
   PHIM_CO_VAN: { base: "SPEC_ARCHITECT", argv: ["agy", "-p", "{prompt}", "--output-format", "stream-json", "--model", "gemini-4-carbon-high", "--print-timeout", "15m"], timeoutMs: 16 * MIN, prompt: "" },
@@ -135,6 +135,13 @@ const AGENTS = {
 // Báo cáo và soạn master prompt vẫn chỉ đọc. Tắt: ~/.van-phong-ao/quyen.json = {"toanQuyen": false}.
 const base = (x) => String(x).replace(/\\/g, "/").split("/").pop().toLowerCase();
 const CLI_NAME = /^(claude|codex|agy)(\.(exe|cmd|js))?$/;
+// Bỏ giới hạn lượt của Claude (CEO 28/11/2026): chat hết 12 lượt khi phải dò nhiều file thì không trả lời được gì.
+// Thời gian chạy (timeoutMs của từng vai) vẫn chặn trên. Gỡ cả cờ còn nằm trong ctl-agents.json của máy.
+function boGioiHanLuot(argv) {
+  const prog = argv.findIndex((x) => CLI_NAME.test(base(x)));
+  if (prog < 0 || base(argv[prog]).replace(/\..*$/, "") !== "claude") return argv;
+  return argv.filter((x, i) => !(i > prog && (x === "--max-turns" || argv[i - 1] === "--max-turns")));
+}
 // Đổi lệnh đã cấu hình (kể cả ctl-agents.json của máy) sang toàn quyền: bỏ cờ giới hạn, thêm cờ bỏ qua quyền của đúng CLI.
 function fullAccessArgs(argv) {
   const prog = argv.findIndex((x) => CLI_NAME.test(base(x)));
@@ -334,7 +341,7 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     // (cắt ở dấu "-" đầu tiên thì chat/soạn prompt của Codex chỉ còn "node.exe exec …", lỗi gặp thật 22/11/2026).
     if (!custom[role] && Array.isArray(base) && base.length > 1) a = [...phanChuongTrinh(base), ...AGENTS[role].argv.slice(1)];
     if (!Array.isArray(a) || !a.every((x) => typeof x === "string") || !a.includes("{prompt}")) throw err("BAD_CONFIG", "ctl-agents.json: lệnh của " + role + " phải là mảng chuỗi có \"{prompt}\"");
-    return a;
+    return boGioiHanLuot(a);
   }
 
   function status(workspace) {
@@ -685,4 +692,4 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
   return { run, report, chayPhim, dieuPhoi, quyen, webPrompt, applyWeb, chatArgv, cliOf, fullOn, CODEX_MODEL, DEFAULT_EFFORT, status, approve, answer, reject, ghiNhan, boLoi, conflicts, get: (id) => view(q.get.get(id)), pending: () => q.open.all().map(view), AGENTS };
 }
 
-module.exports = { createRunner, AGENTS, fullAccessArgs, readOnlyArgs, withMcp, FULL_ROLES, phanChuongTrinh, KIEM_HD };
+module.exports = { createRunner, AGENTS, fullAccessArgs, boGioiHanLuot, readOnlyArgs, withMcp, FULL_ROLES, phanChuongTrinh, KIEM_HD };

@@ -136,6 +136,68 @@ function luuKhungPhim(root, ten, git) {
   return { da, giu, commit };
 }
 
+// Tài liệu CEO đính kèm vào mô tả dự án mới (CEO 28/11/2026): đặc tả, ảnh phác thảo, tài liệu tham khảo để Hinata và đội
+// hình dung rõ sản phẩm. Lưu vào thư mục tai-lieu-y-tuong/ của repo vừa tải về và ghi vào .git/info/exclude: CHỈ nằm trên
+// máy, không commit, không đẩy lên GitHub (tài liệu riêng của CEO), cây làm việc vẫn sạch để chu trình tạo nhánh bình thường.
+const DINH_KEM = { thuMuc: "tai-lieu-y-tuong", toiDa: 5, moiTep: 4 * 1024 * 1024, tong: 10 * 1024 * 1024 };
+const DUOI_DINH_KEM = new Set([".pdf", ".docx", ".pptx", ".xlsx", ".txt", ".md", ".csv", ".json", ".png", ".jpg", ".jpeg", ".webp"]);
+// Giới hạn thân yêu cầu POST /du-an-moi: base64 dài thêm 1/3, cộng chỗ cho ý tưởng và tên tệp.
+const DINH_KEM_BODY = Math.ceil(DINH_KEM.tong / 3) * 4 + 64 * 1024;
+
+function kiemDinhKem(list) {
+  if (list == null) return [];
+  if (!Array.isArray(list)) throw err("BAD_REQUEST", "Tài liệu đính kèm phải là danh sách tệp.");
+  if (list.length > DINH_KEM.toiDa) throw err("BAD_REQUEST", "Đính kèm tối đa " + DINH_KEM.toiDa + " tệp.");
+  const out = [];
+  let tong = 0;
+  for (const x of list) {
+    if (!x || typeof x.ten !== "string" || typeof x.base64 !== "string") throw err("BAD_REQUEST", "Tệp đính kèm không hợp lệ.");
+    // Chỉ giữ tên tệp (bỏ đường dẫn), ký tự an toàn; tên trùng thì thêm số.
+    let ten = x.ten.split(/[\\/]/).pop().normalize("NFC").replace(/[^\p{L}\p{M}\p{N}_.() -]/gu, "-").replace(/^[.\s]+/, "").trim().slice(-100);
+    const duoi = path.extname(ten).toLowerCase();
+    if (!ten || !DUOI_DINH_KEM.has(duoi)) throw err("BAD_REQUEST", "Tệp \"" + x.ten.slice(0, 80) + "\" không đính kèm được. Nhận: " + [...DUOI_DINH_KEM].join(", ") + ".");
+    const bytes = Buffer.from(x.base64, "base64");
+    if (!bytes.length || bytes.toString("base64") !== x.base64.replace(/\s/g, "")) throw err("BAD_REQUEST", "Tệp \"" + ten + "\" rỗng hoặc không đọc được.");
+    if (bytes.length > DINH_KEM.moiTep) throw err("TOO_LARGE", "Tệp \"" + ten + "\" lớn quá " + DINH_KEM.moiTep / 1048576 + " MB.");
+    tong += bytes.length;
+    if (tong > DINH_KEM.tong) throw err("TOO_LARGE", "Tổng tài liệu đính kèm lớn quá " + DINH_KEM.tong / 1048576 + " MB.");
+    for (let i = 2; out.some((o) => o.ten.toLowerCase() === ten.toLowerCase()); i++) ten = path.basename(ten, duoi).replace(/ \(\d+\)$/, "") + " (" + i + ")" + duoi;
+    out.push({ ten, bytes });
+  }
+  return out;
+}
+
+// Ghi tệp vào repo (không ghi đè tệp đã có) và thêm thư mục vào .git/info/exclude. Trả danh sách tên đã lưu.
+function luuDinhKem(root, files) {
+  let gitPath = null;
+  try { gitPath = nhanh.git(root, ["rev-parse", "--git-path", "info/exclude"]).trim(); } catch {}
+  if (gitPath) {
+    const f = path.resolve(root, gitPath);
+    let txt = "";
+    try { txt = fs.readFileSync(f, "utf8"); } catch {}
+    if (!new RegExp("^/?" + DINH_KEM.thuMuc + "/?\\s*$", "m").test(txt)) {
+      fs.mkdirSync(path.dirname(f), { recursive: true });
+      fs.appendFileSync(f, (txt && !txt.endsWith("\n") ? "\n" : "") + "# Văn phòng AI: tài liệu CEO đính kèm khi tạo dự án, chỉ giữ trên máy\n/" + DINH_KEM.thuMuc + "/\n");
+    }
+  }
+  const dir = path.join(root, DINH_KEM.thuMuc);
+  const info = fs.lstatSync(dir, { throwIfNoEntry: false });
+  if (info && (!info.isDirectory() || info.isSymbolicLink())) throw err("PATH_ESCAPE", DINH_KEM.thuMuc + " trong repo phải là thư mục thường.");
+  fs.mkdirSync(dir, { recursive: true });
+  const da = [];
+  for (const { ten, bytes } of files) {
+    let dich = ten;
+    for (let i = 2; fs.existsSync(path.join(dir, dich)); i++) dich = path.basename(ten, path.extname(ten)) + " (" + i + ")" + path.extname(ten);
+    fs.writeFileSync(path.join(dir, dich), bytes, { flag: "wx" });
+    da.push(dich);
+  }
+  return da;
+}
+
+// Dòng giao việc kèm theo ý tưởng: ngắn, vì mô tả ý tưởng (ctl/ideas.js) tối đa 2400 ký tự.
+const loiDinhKem = (ds) => ds.length ? "\n\nTÀI LIỆU CEO ĐÍNH KÈM (" + ds.length + " tệp, đọc hết trước khi làm; chỉ có trên máy, không commit): " +
+  ds.map((t) => DINH_KEM.thuMuc + "/" + t).join(", ").slice(0, 600) : "";
+
 function createDuAnMoi({ github, ideas, boKiem, dir = null, audit = { log() {} }, goiYAi = goiYClaude, cho = (ms) => new Promise((r) => setTimeout(r, ms)), now = Date.now }) {
   const ops = new Map();
   // Repo văn phòng đã tạo (lưu xuống đĩa để còn sau khi ctl khởi động lại): bước sau lỗi thì duyệt lại cùng tên sẽ làm tiếp
@@ -175,28 +237,29 @@ function createDuAnMoi({ github, ideas, boKiem, dir = null, audit = { log() {} }
     return { login, goiY: goi, nguon, ghiChu };
   }
 
-  const BUOC = [["repo", "Tạo repo riêng tư trên GitHub"], ["tai-ve", "Tải về máy và mở làm dự án (agent.md)"], ["khung-phim", "Đặt khuôn hồ sơ phim (phim.json, kịch bản)"], ["y-tuong", "Lưu ý tưởng vào dự án"],
+  const BUOC = [["repo", "Tạo repo riêng tư trên GitHub"], ["tai-ve", "Tải về máy và mở làm dự án (agent.md)"], ["dinh-kem", "Lưu tài liệu đính kèm vào dự án (chỉ trên máy)"],["khung-phim", "Đặt khuôn hồ sơ phim (phim.json, kịch bản)"], ["y-tuong", "Lưu ý tưởng vào dự án"],
     ["bo-kiem", "Cài bộ kiểm chu trình CI (mở nhánh, chờ anh merge)"], ["hinata", "Giao Hinata viết đặc tả (bước 1 của chu trình)"]];
 
   // Quy trình khởi động sau khi CEO bấm duyệt. Trả ngay phiên làm việc; giao diện hỏi lại GET /du-an-moi/:id.
-  function tao({ ten, moTa = "", yTuong = "", rieng = true, caiBoKiem = true, giaoHinata = true, loai = "phan-mem" } = {}, actor = "ceo") {
+  function tao({ ten, moTa = "", yTuong = "", rieng = true, caiBoKiem = true, giaoHinata = true, loai = "phan-mem", dinhKem = null } = {}, actor = "ceo") {
     const t = chuanTen(ten);
     if (!t || t !== String(ten).trim()) throw err("BAD_REQUEST", "Tên repo chỉ gồm chữ thường không dấu, số và gạch ngang, 3–40 ký tự.");
     if (!LOAI.includes(loai)) throw err("BAD_REQUEST", "Loại dự án phải là " + LOAI.join(" hoặc ") + ".");
     yTuong = String(yTuong || "").trim();
     if (yTuong.length < 10 || yTuong.length > 2000) throw err("BAD_REQUEST", "Ý tưởng dài 10–2000 ký tự.");
+    const tep = kiemDinhKem(dinhKem);   // kiểm trước khi tạo repo: tệp sai thì không tạo gì
     if ([...ops.values()].some((o) => o.trangThai === "dang")) throw err("AI_BUSY", "Đang tạo một dự án khác. Chờ xong rồi tạo tiếp.");
     if (ops.size >= 20) ops.delete(ops.keys().next().value);
     const op = { id: "da-" + Date.now().toString(36) + "-" + crypto.randomBytes(3).toString("hex"), ten: t, loai, rieng: rieng !== false, trangThai: "dang", batDau: new Date().toISOString(),
-      buoc: BUOC.filter(([id]) => id !== "khung-phim" || loai === "phim")   // dự án phần mềm không hiện bước khuôn phim
+      buoc: BUOC.filter(([id]) => (id !== "khung-phim" || loai === "phim") && (id !== "dinh-kem" || tep.length))   // chỉ hiện bước khuôn phim / đính kèm khi có
         .map(([id, ten]) => ({ id, ten, trangThai: (id === "bo-kiem" && !caiBoKiem) || (id === "hinata" && !giaoHinata) ? "bo-qua" : "cho", ghiChu: "" })) };
     ops.set(op.id, op);
-    audit.log(actor, "du_an_moi.duyet", t, { loai, rieng: op.rieng, caiBoKiem, giaoHinata }, "approved");
-    chay(op, { moTa: String(moTa || "").slice(0, 350), yTuong }).catch(() => {});
+    audit.log(actor, "du_an_moi.duyet", t, { loai, rieng: op.rieng, caiBoKiem, giaoHinata, dinhKem: tep.length }, "approved");
+    chay(op, { moTa: String(moTa || "").slice(0, 350), yTuong, tep }).catch(() => {});
     return view(op);
   }
 
-  async function chay(op, { moTa, yTuong }) {
+  async function chay(op, { moTa, yTuong, tep = [] }) {
     const b = (id) => op.buoc.find((x) => x.id === id);
     const lam = async (id, fn) => {
       const s = b(id);
@@ -257,8 +320,12 @@ function createDuAnMoi({ github, ideas, boKiem, dir = null, audit = { log() {} }
       if (phim && b("hinata").trangThai === "bo-qua") {
         await lam("khung-phim", () => datKhung(nhanh.prepare(root, { task: "khung-phim-" + op.ten, id: op.id })));
       }
+      const daLuu = (await lam("dinh-kem", (s) => { const da = luuDinhKem(root, tep); s.ghiChu = DINH_KEM.thuMuc + "/: " + da.join(", "); return da; })) || [];
+      const ghiChuTep = loiDinhKem(daLuu);
+      let detail = phim ? VIEC_PHIM + yTuong : yTuong;
+      if (detail.length + ghiChuTep.length > 2400) detail = detail.slice(0, 2400 - ghiChuTep.length - 1) + "…";   // ideas.add nhận tối đa 2400 ký tự
       const idea = await lam("y-tuong", async () => ideas.add({ workspace: root, title: (phim ? "🎬 " : "") + op.ten + ": " + yTuong.split(/\r?\n/)[0].slice(0, 150),
-        detail: phim ? VIEC_PHIM + yTuong : yTuong }));
+        detail: detail + ghiChuTep }));
       try {
         await lam("bo-kiem", async (s) => { const r = boKiem.install(root, "ceo"); s.ghiChu = r && r.last && r.last.compareUrl ? "Mở PR: " + r.last.compareUrl : "Đã đẩy nhánh bộ kiểm"; });
       } catch { /* thiếu bộ kiểm không chặn việc giao Hinata: ghi lỗi ở bước, làm tiếp */ }
@@ -278,4 +345,4 @@ function createDuAnMoi({ github, ideas, boKiem, dir = null, audit = { log() {} }
   return { goiY, tao, get };
 }
 
-module.exports = { createDuAnMoi, slug, chuanTen, goiYQuyTac, goiYClaude, datKhungPhim, LOAI };
+module.exports = { createDuAnMoi, slug, chuanTen, goiYQuyTac, goiYClaude, datKhungPhim, kiemDinhKem, luuDinhKem, DINH_KEM, DINH_KEM_BODY, LOAI };

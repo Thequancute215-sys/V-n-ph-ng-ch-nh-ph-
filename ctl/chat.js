@@ -69,6 +69,30 @@ function parseReply(raw, who) {
   return { text: String(raw).trim(), route: null, task: null };
 }
 
+// Lỗi khi chạy AI viết thành câu CEO đọc được, không in đuôi log JSON thô (CEO 28/11/2026).
+function loiDeHieu(log, status, who, maThoat = null) {
+  const p = PEOPLE[who], ten = p.name;
+  const cuoi = String(log || "").slice(-6000);
+  if (/out of credits|usage limit|rate limit|quota|hit your limit|hạn mức/i.test(cuoi))
+    return `${ten} (${p.role}) đã hết hạn mức gói, chưa trả lời được. Sếp hỏi người khác hoặc chờ gói hồi lại.`;
+  if (status === "timeout") return `${ten} nghĩ quá 6 phút mà chưa xong. Sếp hỏi gọn hơn, hoặc chia câu hỏi thành vài câu nhỏ giúp em.`;
+  if (status === "killed" || status === "cancelled") return `Câu trả lời của ${ten} đã bị dừng giữa chừng. Sếp gửi lại câu hỏi nếu vẫn cần.`;
+  // Tìm dòng kết quả cuối của CLI (Claude: {"type":"result",…}; Codex/agy: {"type":"error","message":…}).
+  let kq = null;
+  for (const dong of cuoi.split(/\r?\n/).reverse()) {
+    const s = dong.trim();
+    if (!s.startsWith("{")) continue;
+    try { const v = JSON.parse(s); if (v && typeof v === "object" && (v.type === "result" || v.type === "error" || v.error || v.errors)) { kq = v; break; } } catch {}
+  }
+  if (kq && (kq.subtype === "error_max_turns" || /maximum number of turns/i.test(JSON.stringify(kq.errors || ""))))
+    return `${ten} phải đọc quá nhiều file nên chưa kịp kết luận. Sếp hỏi cụ thể hơn (nêu tên màn hình, file hay tính năng) giúp em.`;
+  const chiTiet = kq ? [].concat(kq.errors || [], kq.message || [], typeof kq.error === "string" ? kq.error : (kq.error && kq.error.message) || [], typeof kq.result === "string" ? kq.result : [])
+    .map(String).filter(Boolean).join(" · ") : "";
+  // Không có dòng kết quả: lấy vài dòng chữ cuối (không phải JSON) của log.
+  const chu = chiTiet || cuoi.split(/\r?\n/).map((x) => x.trim()).filter((x) => x && !x.startsWith("{")).slice(-3).join(" · ") || (maThoat != null ? "chương trình dừng với mã " + maThoat : "");
+  return `${ten} gặp lỗi nên chưa trả lời được. Sếp thử hỏi lại; vẫn lỗi thì báo Sakura xem giúp.` + (chu ? "\nChi tiết: " + maskSecrets(chu.slice(0, 300)) : "");
+}
+
 function createChat({ jobs, ws, runner, audit, dir }) {
   const file = path.join(dir, "chat.json");
   let store = {};
@@ -112,16 +136,16 @@ function createChat({ jobs, ws, runner, audit, dir }) {
     const log = jobs.rawLog(job.id) || "";
     if (job.status !== "done") {
       m.status = "loi";
-      const quota = /out of credits|usage limit|rate limit|quota|hit your limit|hạn mức/i.test(log.slice(-4000));
-      m.text = quota ? `${PEOPLE[who].name} (${PEOPLE[who].role}) đã hết hạn mức gói, chưa trả lời được. Sếp hỏi người khác hoặc chờ gói hồi lại.` :
-        (job.status === "timeout" ? "Quá 6 phút chưa trả lời xong." : "Lỗi khi chạy " + PEOPLE[who].name + " (" + job.status + ").") + (log.trim() ? "\n" + maskSecrets(log.trim().slice(-600)) : "");
+      m.text = loiDeHieu(log, job.status, who, job.exit_code);
     } else {
       // Tách dòng JSON trước rồi mới che khóa từng phần (che trước có thể làm hỏng dòng JSON).
       const r = parseReply(responseText(log), who);
       for (const o of [r.route, r.task]) if (o) { o.why = maskText(o.why); o.prompt = maskText(o.prompt); }
       const empty = !r.route && !r.task && (!r.text.trim() || r.text === "(không có lời nhắn)");
       // AI chạy xong mà không nói gì (vd. Antigravity bị chặn lệnh shell): báo lỗi kèm dòng đầu log để biết vì sao.
-      Object.assign(m, empty ? { status: "loi", text: PEOPLE[who].name + " không trả lời được." + (log.trim() ? "\n" + maskSecrets(log.trim().split(/\r?\n/)[0].slice(0, 400)) : "") }
+      // Dòng đầu là JSON (vd. Claude hết lượt vẫn thoát mã 0) thì đổi thành câu dễ đọc thay vì in JSON thô.
+      const dau = log.trim().split(/\r?\n/)[0];
+      Object.assign(m, empty ? { status: "loi", text: !dau || dau.startsWith("{") ? loiDeHieu(log, job.status, who, job.exit_code) : PEOPLE[who].name + " không trả lời được.\nChi tiết: " + maskSecrets(dau.slice(0, 400)) }
         : { status: "xong", text: maskText(r.text).slice(0, 20000), route: r.route, task: r.task });
     }
     m.at = Date.now();
@@ -139,4 +163,4 @@ function createChat({ jobs, ws, runner, audit, dir }) {
   return { get, send, clear, people: () => PEOPLE };
 }
 
-module.exports = { createChat, parseReply, promptFor, PEOPLE };
+module.exports = { createChat, parseReply, promptFor, loiDeHieu, PEOPLE };

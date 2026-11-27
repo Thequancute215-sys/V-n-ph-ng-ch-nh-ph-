@@ -141,13 +141,14 @@ test("chat không phải lượt AI: không chặn lượt làm việc; một ng
   ctl.chat.send({ workspace: repo, who: "sasuke", text: "chạy hỏng" });
   const bad = (await wait("sasuke")).messages.at(-1);
   assert.equal(bad.status, "loi");
-  assert.match(bad.text, /Lỗi khi chạy Sasuke \(failed\)/);
+  assert.match(bad.text, /^Sasuke gặp lỗi nên chưa trả lời được\./);
+  assert.match(bad.text, /Chi tiết: /);
   ctl.chat.send({ workspace: repo, who: "itachi", text: "hết credit" });
   assert.match((await wait("itachi")).messages.at(-1).text, /^Itachi .* đã hết hạn mức gói/);
   ctl.chat.send({ workspace: repo, who: "hinata", text: "im lặng" });
   const quiet = (await wait("hinata")).messages.at(-1);
   assert.equal(quiet.status, "loi");
-  assert.match(quiet.text, /^Hinata không trả lời được\.\njetski: no output produced/);
+  assert.match(quiet.text, /^Hinata không trả lời được\.\nChi tiết: jetski: no output produced/);
   assert.throws(() => ctl.chat.send({ workspace: repo, who: "ceo", text: "x" }), /Không có người để chat/);
   assert.throws(() => ctl.chat.send({ workspace: repo, who: "pain", text: "   " }), /trống/);
   assert.equal(ctl.chat.clear(repo, "sasuke").messages.length, 0);
