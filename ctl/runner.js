@@ -219,6 +219,65 @@ function readOnlyArgs(argv) {
     : ["--mode", "plan", "--settings", AGY_READ];
   return [...command, ...args, ...mode, "-p", "{prompt}"];
 }
+// Lượt chat chỉ đọc được lên web (CEO duyệt 28/11/2026). Claude: thêm WebSearch/WebFetch và CẤM đọc file khóa, để trang web
+// có chỉ dẫn ẩn cũng không lấy được khóa gửi ra ngoài qua đường link. Codex: bật web_search live (sandbox vẫn read-only).
+// Antigravity: cho mở URL (execute_url), vẫn cấm ghi file và MCP.
+const KHOA_NHA = [".claude/.credentials.json", ".codex/**", ".van-phong-ao/**", ".ssh/**", ".aws/**", ".gemini/**", ".npmrc", ".git-credentials", ".config/gh/**"];
+// Cả dạng ~/… lẫn đường dẫn tuyệt đối của thư mục nhà (Windows: AI hay đưa C:/Users/… thay vì ~).
+const NHA = require("os").homedir().replace(/\\/g, "/");
+const KHOA_DUONG = ["**/config.json", "**/.env", "**/.env.*", ...KHOA_NHA.map((p) => "~/" + p), ...KHOA_NHA.map((p) => "//" + NHA.replace(/^\/+/, "") + "/" + p)];
+// Cấm cả Grep/Glob (không chỉ Read): Grep đọc được nội dung file.
+const CHAT_CAM_DOC = ["Read", "Grep", "Glob"].flatMap((t) => KHOA_DUONG.map((p) => `${t}(${p})`));
+// Antigravity có web (lượt CEO hỏi trực tiếp): KHÔNG dùng AGY_CHAT_SETTINGS (shell tự do, command(*)) — shell không sandbox
+// cộng chữ từ trang web lạ trong cùng lượt thì trang độc có thể dụ chạy node -e/powershell để ghi file hay gửi khóa ra ngoài
+// trước khi CEO kịp duyệt (kiểm định Antigravity vòng 8, CAO). Dựng từ AGY_READ: công cụ đọc file + đúng git status/diff/log/show
+// và liệt kê thư mục; mở RIÊNG 3 công cụ web của agy; cấm công cụ đọc file vào file khóa. Shell tự do của main vẫn giữ cho
+// lượt KHÔNG web (lịch chạy tự động).
+const MANG_AGY = ["execute_url(*)", "read_url_content(*)", "search_web(*)"];
+const AGY_CHAT_WEB = (() => {
+  const goc = JSON.parse(AGY_READ).permissions;
+  return JSON.stringify({ permissions: {
+    allow: [...goc.allow, ...MANG_AGY],
+    deny: [...goc.deny.filter((r) => !MANG_AGY.includes(r)),
+      ...["read_file", "view_file", "grep_search"].flatMap((t) => KHOA_DUONG.map((p) => `${t}(${p})`))] } });
+})();
+function chatWebArgs(argv) {
+  const prog = docProgram(argv), kind = base(argv[prog]).replace(/\..*$/, "");
+  if (kind === "codex") { const at = argv.indexOf("exec"); return [...argv.slice(0, at + 1), "-c", 'web_search="live"', ...argv.slice(at + 1)]; }
+  const out = [...argv];
+  if (kind === "claude") {
+    const t = out.indexOf("--tools"); if (t >= 0) out[t + 1] = "Read,Grep,Glob,WebSearch,WebFetch";
+    // stream-json: nhật ký có từng lệnh WebFetch/WebSearch (link đã đọc) để cổng kiểm web biết trang nào cần kiểm.
+    const f = out.indexOf("--output-format");
+    if (f >= 0 && out[f + 1] === "json") { out[f + 1] = "stream-json"; if (!out.includes("--verbose")) out.splice(f + 2, 0, "--verbose"); }
+    const s = out.indexOf("--settings");
+    const st = { ...(s >= 0 ? JSON.parse(out[s + 1]) : {}), permissions: { allow: ["WebSearch", "WebFetch"], deny: CHAT_CAM_DOC } };
+    if (s >= 0) out[s + 1] = JSON.stringify(st); else out.push("--settings", JSON.stringify(st));
+    return out;
+  }
+  const s = out.indexOf("--settings"); if (s >= 0) out[s + 1] = AGY_CHAT_WEB;
+  // stream-json cho agy: nhật ký ghi từng bước execute_url/search_web để cổng kiểm web thấy trang AI đã mở.
+  const f = out.indexOf("--output-format");
+  if (f >= 0 && out[f + 1] === "json") out[f + 1] = "stream-json";
+  return out;
+}
+// Lượt duyệt không có mục xoá: Claude bị cấm lệnh xoá file/thư mục và lệnh git huỷ thay đổi (gộp vào --disallowedTools sẵn có).
+const LENH_XOA = ["rm", "rmdir", "del", "erase", "rd", "Remove-Item", "ri", "git clean", "git rm", "git reset --hard", "git checkout --", "git restore", "git stash", "unlink", "shred", "find . -delete"];
+const CAM_XOA = [...LENH_XOA.map((l) => `Bash(${l}:*)`), ...LENH_XOA.map((l) => `PowerShell(${l}:*)`)];
+function camLenhXoa(argv) {
+  const prog = argv.findIndex((x) => CLI_NAME.test(base(x)));
+  if (prog < 0 || base(argv[prog]).replace(/\..*$/, "") !== "claude") return argv;
+  const i = argv.indexOf("--disallowedTools");
+  return i >= 0 ? [...argv.slice(0, i + 1), ...CAM_XOA, ...argv.slice(i + 1)] : [...argv, "--disallowedTools", ...CAM_XOA];
+}
+// Lượt Claude chỉ đọc không có web nhưng vẫn cấm đọc file khóa (cổng kiểm web).
+function camDocKhoa(argv) {
+  const out = [...argv], s = out.indexOf("--settings");
+  if (base(argv[docProgram(argv)]).replace(/\..*$/, "") !== "claude") return out;
+  const st = { ...(s >= 0 ? JSON.parse(out[s + 1]) : {}), permissions: { deny: CHAT_CAM_DOC } };
+  if (s >= 0) out[s + 1] = JSON.stringify(st); else out.push("--settings", JSON.stringify(st));
+  return out;
+}
 // Kết nối theo phòng (CEO yêu cầu 07/11/2026): lượt của vai nào chỉ bật kết nối CEO giao cho phòng của vai đó (ctl/mcp-phong.js).
 // Gọi SAU fullAccessArgs để danh sách chặn gửi (CHAN_CLAUDE) vẫn còn; Claude gộp vào cùng một --disallowedTools, Codex thêm -c sau "exec".
 // Công cụ tra cứu Gemini miễn phí (ctl/tra-cuu-mcp.js, CEO duyệt 16/11/2026): thêm MCP "tra-cuu" cho lượt Claude/Codex khi
@@ -684,14 +743,43 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     return jobs.start({ kind: "ai", agent, workspace: root, argv, timeoutMs: AGENTS[agent].timeoutMs, onExit: (job) => done(job, { workspace: root, role, task, retried: false, allowRetry: false, before }) });
   }
 
-  // Lệnh chat chỉ đọc theo AI: Sol và Astra cùng chạy Codex nhưng khác model.
-  const CHAT = { claude: ["CLAUDE_CHAT"], sol: ["CODEX_CHAT", "SOL_ARCHITECT_PLANNER"], astra: ["CODEX_CHAT", "CODEX_ASTRA_DEV"], antigravity: ["AGY_CHAT"] };
-  function chatArgv(ai) {
+  // Lệnh chat theo AI: Sol và Astra cùng chạy Codex nhưng khác model. c[2] = vai làm việc dùng khi CEO duyệt mà toàn quyền chung tắt.
+  const CHAT = { claude: ["CLAUDE_CHAT", null, "CLAUDE_AUDITOR"], sol: ["CODEX_CHAT", "SOL_ARCHITECT_PLANNER", "SOL_ARCHITECT_PLANNER"],
+    astra: ["CODEX_CHAT", "CODEX_ASTRA_DEV", "CODEX_ASTRA_DEV"], antigravity: ["AGY_CHAT", null, "SPEC_ARCHITECT"] };
+  // Chat hai bước (CEO chọn 28/11/2026, cách B):
+  // - web: lượt chat thường vẫn CHỈ ĐỌC nhưng được tìm/đọc web không cần hỏi (Claude WebSearch/WebFetch, Codex web_search live,
+  //   Antigravity execute_url). Lượt có web không ghi được gì nên chỉ dẫn cài trong trang web không làm được việc gì trên máy.
+  // - duyet: CEO bấm "Đồng ý làm" cho đúng một việc AI xin ở tin trước → lượt đó chạy toàn quyền như vai làm việc
+  //   (fullAccessArgs: vẫn chặn gửi email/lịch/triển khai), hoặc mức ghi nháp của vai chính khi CEO tắt toàn quyền chung.
+  // Mức quyền của lượt duyệt = mức CEO đặt cho vai làm việc của phòng đó (trang Models và quyền): "doc" thì không cho làm.
+  const mucDuyet = (vai) => quyen.mucCua(FULL_ROLES.has(vai) ? vai : "CLAUDE_AUDITOR");
+  // camKhoa: lượt chỉ đọc cũng cấm đọc file khóa (Claude của cổng kiểm web đọc chữ từ trang lạ).
+  // choXoa: CEO đã duyệt mục xoá; không có thì lượt duyệt của Claude bị cấm hẳn lệnh xoá (ảnh chụp vẫn khôi phục với Codex/agy).
+  function chatArgv(ai, { web = false, duyet = false, workspace = null, vai = null, camKhoa = false, choXoa = false } = {}) {
     const c = CHAT[ai];
     if (!c) throw err("BAD_REQUEST", "Không có AI để chat: " + ai);
-    const base = argvFor(c[0]);
-    const argv = readOnlyArgs(c[1] ? codexArgs(base, c[1], null) : base);
-    if (kindOf(argv) === "agy") { const s = argv.indexOf("--settings"); if (s >= 0) argv[s + 1] = AGY_CHAT_SETTINGS; }
+    let argv;
+    if (duyet) {
+      const role = vai && FULL_ROLES.has(vai) ? vai : c[2], muc = mucDuyet(role);
+      if (muc === "doc") throw err("NOT_READY", "Phòng này đang đặt quyền Đề xuất (chỉ đọc) ở trang Models và quyền: đổi quyền rồi mới duyệt làm được");
+      if (muc === "toan") guard(ws.find(workspace).path, "toan");
+      const model = c[1] ? role : null;   // Codex: model theo vai của phòng (Sol/Astra)
+      const base = muc === "toan" ? argvFor(c[0]) : argvFor(role);
+      argv = model ? codexArgs(base, model, null) : base;
+      // Như lượt làm việc chính (apQuyen): toàn quyền + chỉ kết nối của đúng phòng, vẫn chặn gửi ra ngoài nhân danh CEO.
+      argv = withMcp(muc === "toan" ? fullAccessArgs(argv) : argv, role, dir, mcpKnown());
+      if (!choXoa) argv = camLenhXoa(argv);
+      const mt = argv.indexOf("--max-turns");
+      if (mt > 0) argv = [...argv.slice(0, mt + 1), "40", ...argv.slice(mt + 2)];
+      const pt = argv.indexOf("--print-timeout");
+      if (pt > 0) argv = [...argv.slice(0, pt + 1), "19m", ...argv.slice(pt + 2)];
+    } else {
+      const base = argvFor(c[0]);
+      argv = readOnlyArgs(c[1] ? codexArgs(base, c[1], null) : base);
+      if (kindOf(argv) === "agy") { const s = argv.indexOf("--settings"); if (s >= 0) argv[s + 1] = AGY_CHAT_SETTINGS; }
+      if (web) argv = chatWebArgs(argv);
+      else if (camKhoa) argv = camDocKhoa(argv);
+    }
     // Chat với Hinata/Kakashi chạy agy: đang mượn tài khoản nghỉ / còn phải trả lại thì xử lý trước (bận thì AGY_BUSY).
     if (agyTk && kindOf(argv) === "agy") agyTk.truocChay();
     return argv;
@@ -702,7 +790,7 @@ function createRunner({ jobs, ws, audit, db, dir, scanner = null, mcpKnown = () 
     return phanChuongTrinh(argvFor({ claude: "CLAUDE_AUDITOR", codex: "CODEX_ASTRA_DEV", agy: "SPEC_ARCHITECT" }[kind]));
   }
 
-  return { run, report, chayPhim, dieuPhoi, quyen, webPrompt, applyWeb, chatArgv, cliOf, fullOn, CODEX_MODEL, DEFAULT_EFFORT, status, approve, answer, reject, ghiNhan, boLoi, conflicts, get: (id) => view(q.get.get(id)), pending: () => q.open.all().map(view), AGENTS };
+  return { run, report, chayPhim, dieuPhoi, quyen, webPrompt, applyWeb, chatArgv, mucDuyet, cliOf, fullOn, CODEX_MODEL, DEFAULT_EFFORT, status, approve, answer, reject, ghiNhan, boLoi, conflicts, get: (id) => view(q.get.get(id)), pending: () => q.open.all().map(view), AGENTS };
 }
 
 module.exports = { createRunner, AGENTS, fullAccessArgs, boGioiHanLuot, readOnlyArgs, withMcp, FULL_ROLES, phanChuongTrinh, KIEM_HD };

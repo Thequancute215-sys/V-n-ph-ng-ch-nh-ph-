@@ -28,7 +28,8 @@ function createJobs(db, audit, logDir, { envFor = null } = {}) {
     byStatus: db.prepare(`SELECT ${COLS} FROM jobs WHERE status = ? ORDER BY started_at DESC LIMIT 500`),
     latest: db.prepare(`SELECT ${COLS} FROM jobs ORDER BY started_at DESC LIMIT 100`),
     running: db.prepare("SELECT id, pid FROM jobs WHERE status = 'running'"),
-    runningAi: db.prepare("SELECT id FROM jobs WHERE status IN ('running', 'pending_approval') AND kind = 'ai' AND workspace = ?"),
+    // Lượt chat CEO đã bấm "Đồng ý làm" (CHAT_<NGƯỜI>_DUYET, kind cmd) chạy toàn quyền trong repo nên cũng tính là bận.
+    runningAi: db.prepare("SELECT id FROM jobs WHERE status IN ('running', 'pending_approval') AND (kind = 'ai' OR agent LIKE 'CHAT\\_%\\_DUYET' ESCAPE '\\') AND workspace = ?"),
     // Chỉ việc còn 'running' mới được đổi trạng thái: tránh "done" ghi đè "killed" khi tiến trình thoát sau lệnh dừng.
     finish: db.prepare("UPDATE jobs SET status = ?, exit_code = ?, ended_at = ? WHERE id = ? AND status = 'running'"),
     reject: db.prepare("UPDATE jobs SET status = 'rejected', ended_at = ? WHERE id = ? AND status = 'pending_approval'"),
@@ -76,7 +77,7 @@ function createJobs(db, audit, logDir, { envFor = null } = {}) {
   function launch(id) {
     const j = q.get.get(id);
     if (q.running.all().filter((x) => x.id !== id).length >= MAX_RUNNING) throw err("TOO_MANY", "Đã có " + MAX_RUNNING + " việc đang chạy, dừng bớt trước");
-    if (j.kind === "ai" && j.workspace && q.runningAi.all(j.workspace).some((x) => x.id !== id && q.get.get(x.id).status === "running"))
+    if ((j.kind === "ai" || /^CHAT_.+_DUYET$/.test(j.agent || "")) && j.workspace && q.runningAi.all(j.workspace).some((x) => x.id !== id && q.get.get(x.id).status === "running"))
       throw err("AI_BUSY", "Workspace này đang có 1 lượt AI chạy");
     const argv = JSON.parse(j.argv);
     const fd = fs.openSync(j.log_path, "a", 0o600);

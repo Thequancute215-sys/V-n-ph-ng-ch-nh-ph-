@@ -10,6 +10,8 @@ Nếu bạn được giao sửa mã văn phòng: máy chủ `server.js` + `lib/`
 - `ctl/skill-duyet.js`, `ctl/skill.js`: `git ls-remote` / `git fetch` đúng commit từ GitHub và `npm view` tra gói, khi CEO dán link hoặc cài bộ skill.
 - `ctl/mcp-may.js`: `npm install` đúng phiên bản đã ghim (`--ignore-scripts`) khi CEO bấm cài MCP chạy trên máy.
 
+- `ctl/chat.js` + `ctl/runner.js` chatArgv (CEO duyệt 28/11/2026): lượt chat chỉ đọc được tìm/đọc web bằng công cụ web có sẵn của chính CLI (Claude WebSearch/WebFetch, Codex `web_search="live"`, Antigravity `execute_url`), cấm đọc file khóa; sửa file/chạy lệnh chỉ ở lượt CEO bấm "Đồng ý làm" (toàn quyền, vẫn chặn gửi ra ngoài nhân danh CEO).
+- `ctl/cong-web.js` (CEO duyệt 28/11/2026): cổng kiểm web — khi AI trong chat đã đọc web rồi xin làm, ctl tải lại (GET, không cookie, ≤ 1,5 MB, ≤ 15 giây, tối đa 8 link) đúng các link AI đã dùng để máy quét + Claude chỉ đọc chấm prompt injection/mã độc/SQL injection trước khi CEO bấm Đồng ý; link phải qua `kiemLink` (không địa chỉ nội bộ, không chuỗi giống khóa, không phần ?… dài) và tên miền không trỏ về IP nội bộ, link bị chặn thì không tải.
 Thêm đường mạng mới phải được CEO duyệt và ghi vào danh sách này (cả `AGENTS.md` lẫn `CLAUDE.md`, hai file giữ giống hệt nhau).
 
 ## Bản đồ hệ thống tự cập nhật (CEO duyệt 17/11/2026)

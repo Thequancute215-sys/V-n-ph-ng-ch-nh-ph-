@@ -31,7 +31,7 @@ const PROVIDER_NAME = { codex: "Codex", claude: "Claude", antigravity: "Antigrav
 const WRITER_NAME = { claude: "Claude (đội trưởng)", codex: "Codex (Sol/Astra)", antigravity: "Antigravity (Hinata)" };
 const WRITER_ORDER = ["claude", "codex", "antigravity"];
 // Dấu hiệu CLI báo hết hạn mức gói (khác lỗi mạng thường). Chỉ xét phần cuối log của lượt không có bàn giao hợp lệ.
-const QUOTA_HIT = /usage[_ ]limit|hit your (?:usage )?limit|limit reached|quota (?:exceeded|exhausted)|insufficient_quota|rate_limit_exceeded|out of (?:credits|quota)/i;
+const QUOTA_HIT = /usage[_ ]limit|hit your (?:\w+ )?limit|limit reached|quota (?:exceeded|exhausted)|insufficient_quota|rate_limit_exceeded|out of (?:credits|quota)|"api_error_status"\s*:\s*429/i;
 const MIN_WAIT = 2 * 60000, DEFAULT_WAIT = 30 * 60000, MAX_WAIT = 8 * 3600000, BUFFER = 60000;
 const SECTION = /===MASTER_PROMPT===\s*([\s\S]*?)\s*===CHUAN_DAU_RA===\s*([\s\S]*)$/;
 
@@ -63,6 +63,7 @@ function responseText(log) {
       const v = JSON.parse(lines[i]);
       if (typeof v.result === "string") return v.result;
       if (typeof v.response === "string") return v.response;
+      if (v.result && typeof v.result === "object" && typeof v.result.response === "string") return v.result.response;   // agy --output-format stream-json
       if (v.item && v.item.type === "agent_message" && typeof v.item.text === "string") return v.item.text;   // codex exec --json
     } catch {}
   }
@@ -842,4 +843,4 @@ function createAutopilot({ runner, jobs, ws, audit, dir, intervalMs = 500, quota
   return { start, stop, answer, decide, resumeNow, resumeScan, scanCanResumeLimited, webPrompt, applyWeb, pushBranch, stepDiff, preflight, view, list, get, busy, handoffRun, cancelJob, cancelAll, close, tick };
 }
 
-module.exports = { createAutopilot, responseText };
+module.exports = { QUOTA_HIT, createAutopilot, responseText };

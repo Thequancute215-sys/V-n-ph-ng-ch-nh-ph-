@@ -42,7 +42,7 @@ function laIpNoiBo(h) {
     return a === 10 || a === 127 || a === 0 || a >= 224 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127) ||
       (a === 198 && (b === 18 || b === 19)) || (a === 192 && b === 0 && c === 0);
   }
-  if (net.isIPv6(h)) return /^(::1?|f[cd]|fe8|::ffff:)/i.test(h);
+  if (net.isIPv6(h)) return /^(::|f[cd]|fe[89ab]|ff|64:ff9b:|100::|2001:db8:)/i.test(h);
   return false;
 }
 function kiemLink(url) {

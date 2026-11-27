@@ -65,7 +65,7 @@ const HTTP_CODE = {
   NOT_FOUND: 404, CONFLICT: 409, TOO_LARGE: 413, SECRET: 422,
   GITHUB_AUTH: 401, GITHUB_LIMIT: 429, GITHUB_OFFLINE: 502, GITHUB_CLONE: 502,
   CHANGED: 409, NOT_PENDING: 409, NOT_RUNNING: 409, NOT_WAITING: 409, NEEDS_SPEC_TURN: 409, NOT_YOUR_TURN: 409, AI_BUSY: 409, DECIDED: 409, TURN_CHANGED: 409, TOO_MANY: 409, HANDOFF_PENDING: 409, NEEDS_ANSWER: 409, NO_QUESTION: 422, BAD_OPTION: 400,
-  CHAT_BUSY: 409, PUBLISH_BUSY: 409, NOT_READY: 409, NO_RELEASE_WORKFLOW: 422, NOT_ON_MAIN: 409, TAG_EXISTS: 409, DIRTY_REPO: 409, NEEDS_SCAN_APPROVAL: 409, NO_COMMIT: 409, NO_QUOTA: 409, NO_GIT: 422, NO_REMOTE: 422, GIT_PUSH: 502,
+  CHAT_BUSY: 409, CONG_DANG_KIEM: 409, PUBLISH_BUSY: 409, NOT_READY: 409, NO_RELEASE_WORKFLOW: 422, NOT_ON_MAIN: 409, TAG_EXISTS: 409, DIRTY_REPO: 409, NEEDS_SCAN_APPROVAL: 409, NO_COMMIT: 409, NO_QUOTA: 409, NO_GIT: 422, NO_REMOTE: 422, GIT_PUSH: 502,
   UPDATE_BUSY: 409, NOT_APP: 409, UPDATE_FAILED: 500, GIT_BRANCH: 409, HANDOFF_IN_RUN: 409, DANG_CHAY: 409, MAY_ANH_LOI: 502,
   AGY_BUSY: 409, XUONG_BUSY: 409, CAI_LOI: 500, NO_KEY: 409, MAY_QUAY_BAN: 409, CAN_DOI_SOAT_CHI: 409, VUOT_NGAN_SACH: 409, TOI_DA_TAKE: 409, PHIM_LOI: 422, MAY_QUAY_LOI: 502, BAD_URL: 400, AGY_UNSAVED: 409, SKILL_BUSY: 409, SKILL_DA_CO: 409, BAD_CATALOG: 422, SONG_SONG: 409, AGY_CRED: 502, NO_LOGIN: 409, NOT_SUPPORTED: 501,
   CHUA_DUNG_DUOC: 422, DANG_DUNG: 409, THIEU_FFMPEG: 409, THIEU_THU_MUC: 409, DUNG_LOI: 500, CHUA_DU_DIEU_KIEN: 409,
@@ -96,6 +96,7 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
   const ideas = createIdeas({ dir, ws, runner, autopilot, audit });
   const publisher = createPublisher({ jobs, ws, audit, dir, notify: notifier, github: () => github });
   const chat = createChat({ jobs, ws, runner, audit, dir });
+  chat.datKiemLuong((root) => autopilot.busy(root));   // lượt chat đã duyệt không chạy chồng luồng tự chạy đang dở
   const skillDuyet = createSkillDuyet({ dir, jobs, runner, audit });   // CEO dán link repo skill → Claude đội trưởng xem → CEO duyệt cài
   const connectors = createConnectors({ runner, audit, dir });   // trang Kết nối (MCP) của đội
   // Xưởng phim P2: máy quay API (Gemini) và trạm Google Flow. Chỉ CEO bấm trên trang Xưởng phim; AI không gọi được.
@@ -459,6 +460,9 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
     ["POST", "/publish/:id/release", async (p, qs, b) => ({ run: await publisher.release(p.id, { version: b.version, confirm: b.confirm }) })],
     ["GET", "/chat", (p, qs) => ({ chat: chat.get(wsOf(qs.get("workspace")), String(qs.get("who") || "")) })],
     ["POST", "/chat", (p, qs, b) => [202, { chat: chat.send({ workspace: wsOf(b.workspace), who: String(b.who || ""), text: b.text }) }]],
+    ["POST", "/chat/duyet", (p, qs, b) => [202, { chat: chat.duyet({ workspace: wsOf(b.workspace), who: String(b.who || ""), id: String(b.id || "") }) }]],
+    ["POST", "/chat/file", (p, qs, b) => ({ chat: chat.xuLyFile({ workspace: wsOf(b.workspace), who: String(b.who || ""), id: String(b.id || ""), hanhDong: String(b.hanhDong || "") }) })],
+    ["POST", "/chat/tu-choi", (p, qs, b) => ({ chat: chat.tuChoi({ workspace: wsOf(b.workspace), who: String(b.who || ""), id: String(b.id || "") }) })],
     ["POST", "/chat/clear", (p, qs, b) => ({ chat: chat.clear(wsOf(b.workspace), String(b.who || "")) })],
     ["GET", "/bo-nao", () => ({ cay: boNao.cay() })],
     ["GET", "/bo-nao/doc", (p, qs) => boNao.doc(qs.get("p"))],
@@ -662,6 +666,7 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
     lichChay.dung();
     const dungLuongPhim = luongPhim.dungHet();
     const dungMayQuay = mayQuay.dungHet();
+    chat.dong();   // huỷ cổng kiểm web đang tải trang, không ghi vào db sau khi đóng
     await Promise.allSettled([...background]);
     github.close();
     autopilot.close();
