@@ -95,7 +95,8 @@ function loiDeHieu(log, status, who, maThoat = null, { rong = false } = {}) {
   }
   if (kq && (kq.subtype === "error_max_turns" || /maximum number of turns/i.test(JSON.stringify(kq.errors || ""))))
     return `${ten} phải đọc quá nhiều file nên chưa kịp kết luận. Sếp hỏi cụ thể hơn (nêu tên màn hình, file hay tính năng) giúp em.`;
-  const chiTiet = kq ? [].concat(kq.errors || [], kq.message || [], kq.error || [], typeof kq.result === "string" ? kq.result : []).map(chuLoi).filter(Boolean).join(" · ") : "";
+  const chiTiet = kq ? [].concat(kq.errors || [], kq.message || [], kq.error || [], typeof kq.result === "string" && kq.is_error ? kq.result : [])
+    .map(chuLoi).filter((x) => x && !MANH_JSON.test(x.trim())).join(" · ") : "";
   // Không có dòng kết quả: vài dòng chữ cuối của log, bỏ mọi dòng/mảnh JSON.
   const chuCuoi = dongs.filter((x) => !MANH_JSON.test(x)).slice(-3).join(" · ");
   // Hạn mức: chỉ xét chữ báo lỗi (không xét nội dung file AI đọc, dễ báo nhầm khi file có chữ "quota").

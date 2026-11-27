@@ -98,8 +98,8 @@ const AGY_READ = JSON.stringify({ permissions: {
 const AGY_CHAT_SETTINGS = JSON.stringify({ permissions: {
   allow: ["read_file(*)", "view_file(*)", "list_dir(*)", "grep_search(*)", "find_by_name(*)", "command(*)"],
   deny: [...JSON.parse(AGY_READ).permissions.deny,
-    "command(regex:(?i)\\bgit\\s+(push|commit|reset|checkout|switch|clean|rebase|merge|pull|stash|tag|branch\\s+-[dD]|remote|config)\\b)",
-    "command(regex:(?i)(^|[;&|]\\s*)(rm|rmdir|del|erase|rd|Remove-Item|Move-Item|mv|Set-Content|Out-File|Add-Content|New-Item|npm\\s+(i|install|publish)|npx|curl|wget|Invoke-WebRequest|iwr|Invoke-RestMethod|irm)\\b)"] } });
+    "command(regex:(?i)\\bgit\\s+(push|commit|reset|checkout|switch|clean|rebase|merge|pull|stash|tag|branch\\s+-[dD]|remote|config|add|rm|mv|restore|revert|apply|am|cherry-pick)\\b)",
+    "command(regex:(?i)(^|[;&|\\r\\n])\\s*(rm|rmdir|del|erase|rd|Remove-Item|Move-Item|mv|Set-Content|Out-File|Add-Content|New-Item|npm\\s+(i|ci|install|publish)|npx|curl|wget|Invoke-WebRequest|iwr|Invoke-RestMethod|irm)\\b)"] } });
 const AGY = ["agy", "-p", "{prompt}", "--output-format", "stream-json", "--mode", "accept-edits", "--print-timeout", "20m", "--settings", AGY_DRAFT];
 // Kakashi (FRONTEND_UIUX_DEV) dựng giao diện nên cần thêm lệnh cài gói, build, lint, test của npm; vẫn chặn mọi lệnh khác khi không bật toàn quyền.
 const AGY_FE_READ = JSON.stringify({ permissions: { allow: [...JSON.parse(AGY_DRAFT).permissions.allow, "command(regex:^npm (ci|install|test|run (build|lint|test|typecheck))$)"] } });

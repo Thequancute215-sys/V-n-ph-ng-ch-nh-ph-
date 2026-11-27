@@ -51,6 +51,9 @@ test("lỗi chat (kiểm định PR #87): JSON dài/nhiều dòng không lọt r
   assert.ok(!t.includes("sk-ant-api03-AAAA"), t);
   // Quá giờ khi AI đang đọc file có chữ "quota": báo quá giờ, không báo hết hạn mức.
   assert.match(loiDeHieu('{"type":"assistant","text":"quota config"}\nquota', "timeout", "pain"), /quá 6 phút/);
+  // Thoát mã 0, chỉ có dòng JSON kết thúc (không phải lỗi): không in JSON đó ra "Chi tiết".
+  const ketThuc = loiDeHieu(JSON.stringify({ type: "result", is_error: false, result: '{"chuyen_phong":null,"ly_do":"","prompt":""}' }), "done", "pain", 0, { rong: true });
+  assert.equal(ketThuc, "Pain không trả lời được.");
   // AI chạy xong không nói gì, có dòng cảnh báo trước dòng JSON hết lượt: vẫn nhận ra hết lượt.
   assert.match(loiDeHieu("warning: x\n" + '{"type":"result","subtype":"error_max_turns","errors":[]}', "done", "pain", 0, { rong: true }), /phải đọc quá nhiều file/);
 });

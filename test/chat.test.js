@@ -57,7 +57,8 @@ test("lệnh chat mặc định luôn chỉ đọc kể cả khi bật toàn quy
   // CEO 28/11/2026: chat với Hinata/Kakashi được chạy shell để xem repo, vẫn chặn lệnh đổi repo/xoá file/mạng.
   assert.ok(quyenAgy.allow.includes("command(*)"), "chat Antigravity được chạy shell");
   const chan = quyenAgy.deny.filter((r) => r.startsWith("command(regex:")).map((r) => new RegExp(r.slice(14, -1).replace("(?i)", ""), "i"));
-  for (const lenh of ["git push origin main", "git commit -m x", "rm -rf src", "Remove-Item a.txt", "npm install x", "curl http://x", "git status; del a"])
+  for (const lenh of ["git push origin main", "git commit -m x", "rm -rf src", "Remove-Item a.txt", "npm install x", "curl http://x", "git status; del a",
+    " rm a", "git status\nrm a", "git add .", "git restore a", "npm ci"])
     assert.ok(chan.some((re) => re.test(lenh)), "phải chặn: " + lenh);
   for (const lenh of ["git status", "git diff HEAD~1", "node --test test/a.test.js", "Get-ChildItem -Recurse", "type README.md"])
     assert.ok(!chan.some((re) => re.test(lenh)), "không được chặn: " + lenh);
