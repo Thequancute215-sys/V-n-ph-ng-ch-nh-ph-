@@ -267,14 +267,25 @@ def doc_elevenlabs(text, voice_id, output_base, ngon_ngu="vi", so_lan=3):
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{1,63}", voice_id or ""):
         thoat(1, "Mã giọng ElevenLabs không hợp lệ.")
     mp3, tam = output_base + ".mp3", output_base + ".mp3.dang-ghi"
+
+    class KhongChuyenHuong(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, *a, **k):  # không theo chuyển hướng: header khóa không đi sang máy khác
+            return None
+
+    mo = urllib.request.build_opener(KhongChuyenHuong)
     body = json.dumps({"text": text, "model_id": ELEVENLABS_MODEL, "language_code": ngon_ngu}).encode("utf-8")
     loi = None
     for lan in range(1, so_lan + 1):
         req = urllib.request.Request(ELEVENLABS_URL + voice_id + "?output_format=mp3_44100_128", data=body, method="POST",
                                      headers={"xi-api-key": khoa, "Content-Type": "application/json", "Accept": "audio/mpeg"})
         try:
-            with urllib.request.urlopen(req, timeout=90) as r, open(tam, "wb") as f:
-                shutil.copyfileobj(r, f)
+            with mo.open(req, timeout=90) as r, open(tam, "wb") as f:
+                da = 0
+                while khoi := r.read(65536):
+                    da += len(khoi)
+                    if da > 20 * 1024 * 1024:  # một cảnh ≤ 1400 ký tự không thể quá 20 MB
+                        raise LoiGiong("Âm thanh ElevenLabs quá lớn")
+                    f.write(khoi)
             if os.path.getsize(tam) == 0:
                 raise LoiGiong("ElevenLabs không trả về âm thanh")
             os.replace(tam, mp3)
@@ -338,8 +349,10 @@ def doc_theo_canh(loi_dan, args):
     ):
         thoat(1, "Cần 1–60 cảnh đều có lời dẫn (chuỗi, hoặc {text, may, ma, toc_do, cao_do} hợp lệ).")
 
+    env_ff = {k: v for k, v in os.environ.items() if k != "XUONG_PHIM_ELEVENLABS_KEY"}  # FFmpeg không cần khóa
+
     def ffmpeg(*tham_so):
-        ket_qua = subprocess.run([ff, "-nostdin", "-v", "error", "-n", *tham_so], capture_output=True)
+        ket_qua = subprocess.run([ff, "-nostdin", "-v", "error", "-n", *tham_so], capture_output=True, env=env_ff)
         if ket_qua.returncode:
             thoat(2, "FFmpeg không ghép được giọng theo cảnh.")
 

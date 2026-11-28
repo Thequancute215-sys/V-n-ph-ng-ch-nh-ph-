@@ -182,12 +182,16 @@ function promptKichBan(s, congCu, loi, taiLieu, chiMuc) {
 const loiDan = (phim) => phim.canh.map((c) => typeof c.loi_dan === "string" ? c.loi_dan.trim().replace(/\s+/g, " ") : "");
 const vanBan = (s) => String(s ?? "").normalize("NFC").toLowerCase().replace(/[^\p{L}\p{M}\p{N}]+/gu, "");
 // Giọng từng cảnh (người nói → bộ giọng, mã giọng, tốc độ, cao độ): đổi giọng nhân vật thì phải đọc lại.
-const giongCacCanh = (p) => giongTheoCanh(p) ? p.canh.map((c) => giongCua(p, c)) : [];
+// Đọc một mạch (phim không theo cảnh): một giọng duy nhất là giọng người dẫn (Edge; ElevenLabs bị bộ kiểm chặn ở chế độ này).
+const giongCacCanh = (p) => giongTheoCanh(p) ? p.canh.map((c) => giongCua(p, c)) : [giongCua(p, {})];
 const kyGiong = (p) => hash(JSON.stringify(giongCacCanh(p)), "sha256").slice(0, 32);
 // Ký giọng của bản đã đọc (media/giong/voice.giong.json). Bản đọc trước khi có tệp này dùng một giọng mặc định: coi như khớp
 // nếu mọi cảnh vẫn là giọng mặc định cũ (không bắt đọc lại phim cũ).
 const laGiongCu = (p) => giongCacCanh(p).every((g) => g.may === "edge" && g.ma === (p.ngon_ngu === "en" ? "en-us-authority" : "vi-nam") && g.toc_do === "+0%" && g.cao_do === "+0Hz");
-const kyDaDoc = (file, p) => { const d = docJson(file); return d && typeof d.ky === "string" ? d.ky : laGiongCu(p) ? kyGiong(p) : null; };
+const kyDaDoc = (file, p) => {
+  let d = null; try { d = docJson(file); } catch { return null; }   // tệp ký hỏng: coi như chưa đọc, đọc lại
+  return d && typeof d.ky === "string" ? d.ky : laGiongCu(p) ? kyGiong(p) : null;
+};
 const dinhDanhGiong = (p) => JSON.stringify([p.ngon_ngu, giongTheoCanh(p), loiDan(p), p.canh.map((c) => [c.ma, c.cau]), giongCacCanh(p)]);
 
 function dongBo(phim, giong) {
@@ -230,7 +234,12 @@ async function lamGiong(root, phim, xuongPhim, docPhim, ghiPhim, dirKhoa = "") {
     const giongs = giongCacCanh(phim);
     const canh = theoCanh ? loi.map((t, i) => ({ text: t, ...giongs[i] })) : null;
     fs.writeFileSync(kichBan, (theoCanh ? JSON.stringify(canh) : text) + "\n", "utf8");
-    const args = [tts, theoCanh ? "--scenes-file" : "--file", kichBan, "--output", ra, "--voice", phim.ngon_ngu === "en" ? "en-us-authority" : "vi-nam", "--lang", phim.ngon_ngu === "en" ? "en" : "vi"];
+    // Đọc một mạch: giọng người dẫn (preset Edge + tốc độ + cao độ). Đọc theo cảnh: giọng nằm trong từng cảnh.
+    const dan = theoCanh ? null : giongs[0];
+    if (dan && dan.may !== "edge") throw err("PHIM_LOI", "Phim đọc một mạch chỉ dùng giọng Edge cho người dẫn. Đổi giọng người dẫn sang Edge hoặc khai người nói cho từng cảnh.");
+    const args = [tts, theoCanh ? "--scenes-file" : "--file", kichBan, "--output", ra, "--voice", dan ? dan.ma : phim.ngon_ngu === "en" ? "en-us-authority" : "vi-nam", "--lang", phim.ngon_ngu === "en" ? "en" : "vi"];
+    // Dạng --rate=-5%: argparse hiểu "-5%" đứng riêng là một cờ mới (đã gặp khi chạy thật).
+    if (dan) args.push("--rate=" + dan.toc_do, "--pitch=" + dan.cao_do);
     if (models) args.push("--models", models);
     const env = cleanEnv({ ...process.env, ...xuongPhim.envAi() });
     if (giongs.some((g) => g.may === "elevenlabs")) {   // khóa chỉ cấp cho đúng lượt đọc có giọng ElevenLabs, không qua tham số dòng lệnh
@@ -544,7 +553,7 @@ function createLuongPhim({ dir, audit = { log() {} }, now = Date.now, setTimer =
       if (isKetThuc) return false;
       throw err("PHIM_LOI", "Hồ sơ phim thiếu danh sách cảnh.");
     }
-    if (buoc >= 3 && !isKetThuc && s.trangThai !== "xong" && congDaDuyet(phim, 1) && giongTheoCanh(phim)) {
+    if (buoc >= 3 && !isKetThuc && s.trangThai !== "xong" && congDaDuyet(phim, 1)) {   // mọi phim: lời, thứ tự cảnh hay giọng đổi thì quay lại bước đọc giọng
       const giong = docGiong(root);
       if (!giong || !giongKhopCanh(phim, giong) || kyDaDoc(tepThat(path.join(thuMucThat(root, "media", "giong"), "voice.giong.json")), phim) !== kyGiong(phim) || !fileTrong(root, "media/giong/voice.mp3") || !fileTrong(root, "media/giong/voice.srt")) {
         sang(s, 2);

@@ -135,7 +135,7 @@ test("ctl: lỗi ElevenLabs rõ ràng — chưa có khóa, khóa sai, hết hạ
   }
   const f = taoPhim(t);
   const p = f.doc(); p.nhan_vat[0].giong.mo_ta = "nữ"; fs.writeFileSync(path.join(f.root, "phim.json"), JSON.stringify(p));
-  await assert.rejects(createPhimGiong({ dir: f.dir, fetchImpl: () => assert.fail() }).thietKe(f.root, { ma: "lan" }), /ít nhất 10 ký tự/);
+  await assert.rejects(createPhimGiong({ dir: f.dir, fetchImpl: () => assert.fail() }).thietKe(f.root, { ma: "lan" }), /ít nhất 20 ký tự/);
 });
 
 test("đoạn mẫu thiết kế giọng: lời của đúng người nói, đủ 100 ký tự, không quá 1000", () => {
@@ -154,4 +154,77 @@ test("tts_sync.py: cảnh mang giọng riêng (Edge/ElevenLabs) và khóa Eleven
   assert.match(src, /"xi-api-key": khoa/);
   assert.match(src, /ELEVENLABS_MODEL = "eleven_flash_v2_5"/, "model đọc có tiếng Việt");
   assert.match(src, /def canh_hop_le\(c\)/);
+});
+
+// Kiểm định Antigravity vòng 1 (28/11/2026): các lỗi CAO/VỪA phải có test chặn tái phát.
+test("ctl: mã người nói lạ (../), thư mục media là junction, đầu vào không phải chuỗi đều bị chặn", async (t) => {
+  const f = taoPhim(t);
+  const p = f.doc(); p.nhan_vat.push({ ma: "../../thoat", ten: "X", giong: { mo_ta: "nữ khoảng 20 tuổi, giọng trong trẻo" } });
+  fs.writeFileSync(path.join(f.root, "phim.json"), JSON.stringify(p));
+  const g = createPhimGiong({ dir: f.dir, fetchImpl: () => assert.fail("không được gọi mạng") });
+  await assert.rejects(g.thietKe(f.root, { ma: "../../thoat" }), (e) => e.code === "BAD_REQUEST");
+  assert.ok(!g.list(f.root).nguoi.some((n) => n.ma.includes("..")), "danh sách bỏ mã lạ");
+  for (const bad of [{ ma: "lan", toc_do: ["+5%"] }, { ma: "lan", cao_do: ["-8Hz"] }, { ma: "lan", giong: ["vi-nu"] }, { ma: ["lan"] }, { ma: "lan", giong: "kokoro-heart" }])
+    assert.throws(() => g.chonEdge(f.root, bad), (e) => e.code === "BAD_REQUEST", JSON.stringify(bad));
+  assert.strictEqual(f.doc().nhan_vat[0].giong.may, undefined, "không ghi gì khi đầu vào sai");
+
+  const ngoai = fs.mkdtempSync(path.join(os.tmpdir(), "vp-giong-ngoai-"));
+  t.after(() => fs.rmSync(ngoai, { recursive: true, force: true }));
+  fs.symlinkSync(ngoai, path.join(f.root, "media"), "junction");
+  const g2 = createPhimGiong({ dir: f.dir, fetchImpl: async () => ({ ok: true, status: 200, json: async () => ({ previews: [{ audio_base_64: "bXAz", generated_voice_id: "gen1" }] }) }) });
+  await assert.rejects(g2.thietKe(f.root, { ma: "lan" }), (e) => e.code === "PATH_ESCAPE");
+  assert.deepStrictEqual(fs.readdirSync(ngoai), [], "không tạo thư mục nào ở ngoài dự án");
+});
+
+test("ctl: khóa ElevenLabs không lọt qua thông báo lỗi; bản mẫu quá lớn bị bỏ trước khi giải mã", async (t) => {
+  const khoa = "sk_" + "c0ffee".repeat(8);
+  const f = taoPhim(t, { khoa });
+  const g = createPhimGiong({ dir: f.dir, fetchImpl: async () => ({ ok: false, status: 500, json: async () => ({ detail: { message: "lỗi với khóa " + khoa + " nhé" } }) }) });
+  await assert.rejects(g.thietKe(f.root, { ma: "lan" }), (e) => e.code === "ELEVENLABS_LOI" && !e.message.includes(khoa) && e.message.includes("‹khóa›"));
+  const lon = createPhimGiong({ dir: f.dir, fetchImpl: async () => ({ ok: true, status: 200, json: async () => ({ previews: [{ audio_base_64: "A".repeat(7 * 1024 * 1024 + 1), generated_voice_id: "gen1" }] }) }) });
+  await assert.rejects(lon.thietKe(f.root, { ma: "lan" }), /không trả bản mẫu dùng được/);
+});
+
+test("ctl: chọn bản mẫu hai lần song song chỉ lưu một giọng; phim bận thì không lưu; người dẫn phim một mạch không dùng ElevenLabs", async (t) => {
+  const f = taoPhim(t);
+  let luu = 0, ban = false, xong;
+  const cho = new Promise((r) => { xong = r; });
+  const fetchImpl = async (url) => {
+    if (url.endsWith("/design")) return { ok: true, status: 200, json: async () => ({ previews: [{ audio_base_64: "bXAz", generated_voice_id: "gen1" }] }) };
+    luu++; await cho; return { ok: true, status: 200, json: async () => ({ voice_id: "voiceLan1" }) };
+  };
+  const g = createPhimGiong({ dir: f.dir, fetchImpl, dangBan: () => ban });
+  await g.thietKe(f.root, { ma: "lan" });
+  const a = g.chonMau(f.root, { ma: "lan", generatedVoiceId: "gen1" });
+  await assert.rejects(g.chonMau(f.root, { ma: "lan", generatedVoiceId: "gen1" }), (e) => e.code === "CONFLICT");
+  xong(); await a;
+  assert.strictEqual(luu, 1, "chỉ một lần lưu giọng trên ElevenLabs");
+
+  await g.thietKe(f.root, { ma: "minh" });
+  ban = true;
+  await assert.rejects(g.chonMau(f.root, { ma: "minh", generatedVoiceId: "gen1" }), (e) => e.code === "PHIM_BAN");
+  assert.throws(() => g.chonEdge(f.root, { ma: "minh" }), (e) => e.code === "PHIM_BAN");
+
+  const mot = taoPhim(t);
+  const p = mot.doc(); p.canh = p.canh.map(({ nguoi_noi, ...c }) => c); p.canh[0].cau = [1, 2]; p.canh[1].cau = [3]; p.canh.pop();
+  p.nguoi_dan = { giong: { mo_ta: "nữ trung niên, giọng ấm, đọc chậm rãi" } };
+  fs.writeFileSync(path.join(mot.root, "phim.json"), JSON.stringify(p));
+  const g3 = createPhimGiong({ dir: mot.dir, fetchImpl: () => assert.fail() });
+  assert.strictEqual(g3.list(mot.root).nguoi.find((n) => n.ma === "nguoi-dan").choEleven, false);
+  await assert.rejects(g3.thietKe(mot.root, { ma: "nguoi-dan" }), /chỉ dùng khi phim đọc theo cảnh/);
+  p.nguoi_dan.giong = { ...p.nguoi_dan.giong, may: "elevenlabs", ma: "voiceX1" };
+  assert.match(kiem(p).loi.map((l) => l.chiTiet).join("\n"), /nguoi_dan: giọng ElevenLabs chỉ dùng khi phim đọc theo cảnh/);
+});
+
+test("hồ sơ: mã nguoi-dan dành cho người dẫn, giọng Edge phải là preset, trường giọng phải là chuỗi; giới theo từ đứng trước", () => {
+  const p = PHIM();
+  p.nhan_vat.push({ ma: "nguoi-dan", ten: "Trùng", tham_chieu: [] });
+  p.nhan_vat[0].giong = { mo_ta: "x", may: "edge", ma: "kokoro-heart" };
+  p.nhan_vat[1].giong = { mo_ta: "y", may: "edge", ma: "vi-nam", toc_do: ["+5%"] };
+  const loi = kiem(p).loi.map((l) => l.chiTiet).join("\n");
+  assert.match(loi, /mã nguoi-dan dành cho người dẫn/);
+  assert.match(loi, /giọng Edge phải là vi-nam/);
+  assert.match(loi, /giong\.toc_do dạng/);
+  assert.strictEqual(goiYGiongEdge("nữ, giọng miền Nam").ma, "vi-nu");
+  assert.strictEqual(goiYGiongEdge("cụ ông 100 tuổi").cao_do, "-8Hz");
 });

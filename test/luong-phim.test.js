@@ -38,6 +38,7 @@ function tao(t, { may = ["omni-flash", "flow"], coPhim = false } = {}) {
     // Đọc theo cảnh: mỗi cảnh là đối tượng {text, may, ma, …} (giọng theo người nói); ghi lại để test kiểm giọng từng cảnh.
     const canh = theoCanh ? JSON.parse(input) : null;
     if (theoCanh) fs.writeFileSync("tts-canh.json", JSON.stringify({ canh, coKhoa: !!process.env.XUONG_PHIM_ELEVENLABS_KEY }));
+    fs.writeFileSync("tts-args.json", JSON.stringify(process.argv.slice(2)));
     const text = theoCanh ? canh.map((c) => typeof c === "string" ? c : c.text) : input.split("\\n");
     const out = arg("--output");
     let at = 0;
@@ -641,4 +642,27 @@ test("đọc giọng theo người nói: giọng từng cảnh, khóa ElevenLabs
   await f.tiep();
   assert.ok(fs.readFileSync(path.join(f.root, "tts-calls"), "utf8").length > lan, "đổi giọng nhân vật thì đọc lại");
   assert.strictEqual(JSON.parse(fs.readFileSync(path.join(f.root, "tts-canh.json"), "utf8")).coKhoa, false, "không còn giọng ElevenLabs: không cấp khóa");
+});
+
+// Kiểm định Antigravity vòng 1 (CAO): phim đọc một mạch (không người nói riêng) phải dùng giọng người dẫn CEO chọn, và đổi
+// giọng người dẫn thì luồng tự quay lại bước đọc giọng (không cần ép bước).
+test("phim đọc một mạch: giọng người dẫn đi vào lệnh đọc, đổi giọng người dẫn thì tự đọc lại", async (t) => {
+  const f = tao(t, { coPhim: true, may: ["omni-flash", "omni-flash"] });
+  f.mo();
+  f.batDau(); await f.tiep();
+  f.sua((p) => { p.nguoi_dan = { giong: { mo_ta: "nữ trung niên, giọng ấm", may: "edge", ma: "vi-nu", toc_do: "-5%", cao_do: "+3Hz" } }; });
+  f.duyet(1);
+  await f.tiep();
+  const args = JSON.parse(fs.readFileSync(path.join(f.root, "tts-args.json"), "utf8"));
+  const sau = (k) => args[args.indexOf(k) + 1];
+  assert.ok(args.includes("--file"), "đọc một mạch");
+  assert.strictEqual(sau("--voice"), "vi-nu");
+  assert.ok(args.includes("--rate=-5%") && args.includes("--pitch=+3Hz"), "giá trị âm phải đi dạng --rate=… (argparse): " + JSON.stringify(args));
+  const truoc = fs.readFileSync(path.join(f.root, "tts-calls"), "utf8").length;
+  f.sua((p) => { p.nguoi_dan.giong = { ...p.nguoi_dan.giong, ma: "vi-nam", cao_do: "-8Hz" }; });
+  await f.tiep();   // luồng đang ở bước sau: tự thấy giọng đổi, quay lại bước đọc giọng
+  await f.tiep();
+  assert.ok(fs.readFileSync(path.join(f.root, "tts-calls"), "utf8").length > truoc, "đổi giọng người dẫn thì đọc lại");
+  const moi = JSON.parse(fs.readFileSync(path.join(f.root, "tts-args.json"), "utf8"));
+  assert.strictEqual(moi[moi.indexOf("--voice") + 1], "vi-nam");
 });

@@ -173,7 +173,7 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
   // Phim đang quay / dựng / chạy luồng / Blender / nhịp Flow / AI Helper tạo ảnh / xuất gói CapCut thì không dọn nháp.
   const phimDangBan = (root) => !!(mayQuay.trangThai(root).dang || (banDung.trangThai(root) || {}).dang || (luongPhim.trangThai(root) || {}).trangThai === "dang_chay" ||
     (blenderPhim.trangThai(root) || {}).dang || helperDangTao.has(root) || capcutDangXuat.has(root) || nhipFlowCua(root));
-  const phimGiong = createPhimGiong({ dir, audit, ...phimGiongOptions });
+  const phimGiong = createPhimGiong({ dir, audit, dangBan: (root) => phimDangBan(root), ...phimGiongOptions });
   // Đổi giọng khi phim đang quay/dựng/chạy luồng thì giọng đang đọc lệch hồ sơ: chặn.
   const phimGiongRoot = (v) => { const root = phimLuongRoot(v); if (phimDangBan(root)) throw Object.assign(new Error("Phim đang chạy (quay, dựng hoặc luồng tự chạy). Đợi xong rồi đổi giọng."), { code: "PHIM_BAN" }); return root; };
   const nhipFlowCua = (root) => { const n = tramFlow.nhipDang(); return !!(n && n.root && path.resolve(n.root).toLowerCase() === path.resolve(root).toLowerCase()); };

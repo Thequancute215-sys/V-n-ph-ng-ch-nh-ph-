@@ -58,6 +58,7 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
   // Giọng theo nhân vật (CEO 28/11/2026): danh sách người nói (GET /phim/giong) và bản mẫu ElevenLabs vừa thiết kế (chưa chọn).
   let giongDs = null, loiGiong = "";
   const mauGiong = new Map();   // ma -> [{ so, generatedVoiceId, duongDan }]
+  let dangGiong = "";   // việc giọng đang chạy (ElevenLabs có thể mất tới 90 giây): hiện ở dòng trạng thái của khung
   vung.innerHTML = `<div class="vung" id="phim">${dangTai(4)}</div>`;
   const goc = vung.querySelector("#phim");
   const media = (rel, v) => "/ctl/phim/media?workspace=" + encodeURIComponent(ws) + "&path=" + encodeURIComponent(rel) + (v ? "&v=" + encodeURIComponent(v) : "");
@@ -119,7 +120,7 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
       coVanNd = nextCv;
       data = nextData; loiTai = nextLoi; flow = nextFlow; nghiemThu = nextNt;
       // Không vẽ lại khi dữ liệu không đổi hoặc anh đang xem/nghe một clip hay giọng đọc.
-      const ky = JSON.stringify([phan, data, flow, nghiemThu, coVanNd, loiTai, taiLieu, loiTaiLieu, goi, giongDs, loiGiong, [...mauGiong]]);
+      const ky = JSON.stringify([phan, data, flow, nghiemThu, coVanNd, loiTai, taiLieu, loiTaiLieu, goi, giongDs, loiGiong, [...mauGiong], dangGiong]);
       const dangXem = [...goc.querySelectorAll("video, audio")].some((v) => v.paused === false && !v.ended);
       if (ky !== kyCu && !dangXem && !xem && !ban && !dangGhi && !dangPhat) { kyCu = ky; ve(); }
     }
@@ -253,18 +254,20 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
       <div class="dau-hang"><h2 class="dau" id="hGiongNv">Giọng nhân vật</h2><span class="mo">${ds.length} người nói</span>
         ${chuaChon ? `<button type="button" class="nut nho" data-giong-tu-dong style="margin-left:auto">Tự chọn giọng Edge cho ${chuaChon} người chưa chọn</button>` : ""}</div>
       <p class="mo">Hinata ghi mô tả giọng (vd "nữ khoảng 20 tuổi, giọng trong trẻo") và cảnh nào ai nói. Edge miễn phí: máy chỉnh cao độ, tốc độ theo mô tả. ElevenLabs: thiết kế giọng riêng từ mô tả, anh nghe bản mẫu rồi chọn (trả theo ký tự).${giongDs.coKhoaEleven ? "" : ` Chưa có khóa ElevenLabs: lưu ở <a href="#/he/ket-noi">Kết nối</a>.`}</p>
+      <p class="mo" role="status" aria-live="polite"${dangGiong ? ' aria-busy="true"' : ""}>${esc(dangGiong)}</p>
       <div class="cot-doc">${ds.map((n) => {
         const mau = mauGiong.get(n.ma) || [];
-        return `<div class="dong" style="flex-wrap:wrap"><div style="min-width:0">
+        const ngan = (n.moTa || "").trim().length < 20;
+        return `<div style="display:flex;flex-wrap:wrap;gap:var(--space-xs) var(--space-sm);align-items:flex-start;padding:var(--space-sm) 0;border-bottom:var(--rule-hair) solid var(--color-rule)"><div style="flex:1 1 220px;min-width:0;overflow-wrap:anywhere">
             <div class="tieu"><b>${esc(n.ten)}</b> <span class="mo">· ${n.soCanh} cảnh nói</span></div>
             <div class="chi-tiet">Mô tả: ${esc(n.moTa || "(chưa có, nhờ Hinata ghi giong.mo_ta)")}</div>
             <div class="chi-tiet">${n.daChon ? "Đang dùng" : "Máy sẽ dùng"}: ${esc(moTaGiong(n.giong))}</div></div>
           <div class="hang" style="flex-wrap:wrap;min-width:0">
             <button type="button" class="nut nho" data-giong-edge="${esc(n.ma)}" aria-label="${esc("Dùng giọng Edge gợi ý cho " + n.ten + ": " + moTaGiong(n.goiYEdge))}">Dùng Edge gợi ý</button>
-            ${giongDs.coKhoaEleven ? `<button type="button" class="nut nho" data-giong-thiet-ke="${esc(n.ma)}"${(n.moTa || "").length < 10 ? " disabled" : ""}>Thiết kế giọng ElevenLabs</button>` : ""}</div>
-          ${mau.length ? `<div class="cot-doc" style="grid-column:1/-1;min-width:0"><span class="mo">Bản mẫu cho ${esc(n.ten)} (nghe rồi chọn, giữ 30 phút):</span>${mau.map((m) =>
+            ${giongDs.coKhoaEleven && n.choEleven ? `<button type="button" class="nut nho" data-giong-thiet-ke="${esc(n.ma)}" aria-label="${esc("Thiết kế giọng ElevenLabs cho " + n.ten)}"${ngan ? ` disabled title="Cần mô tả giọng ít nhất 20 ký tự (nhờ Hinata ghi giong.mo_ta)"` : ""}>Thiết kế giọng ElevenLabs</button>` : ""}</div>
+          ${mau.length ? `<div class="cot-doc" style="flex:1 1 100%;min-width:0"><span class="mo">Bản mẫu cho ${esc(n.ten)} (nghe rồi chọn, giữ 30 phút):</span>${mau.map((m) =>
             `<div class="hang" style="flex-wrap:wrap;min-width:0"><span>Bản ${m.so}</span><audio controls preload="none" src="${esc(media(m.duongDan))}" aria-label="${esc("Bản mẫu " + m.so + " của " + n.ten)}" style="max-width:100%"></audio>
-              <button type="button" class="nut-chinh" data-giong-chon="${esc(n.ma)}" data-giong-id="${esc(m.generatedVoiceId)}">Chọn bản ${m.so}</button></div>`).join("")}</div>` : ""}
+              <button type="button" class="nut-chinh" data-giong-chon="${esc(n.ma)}" data-giong-id="${esc(m.generatedVoiceId)}" aria-label="${esc("Chọn bản mẫu " + m.so + " làm giọng của " + n.ten)}">Chọn bản ${m.so}</button></div>`).join("")}</div>` : ""}
         </div>`;
       }).join("")}</div>
     </section>`;
@@ -660,20 +663,26 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
     }
     const b = e.target.closest("button"); if (!b || ban) return;
     if (b.hasAttribute("data-giong-tu-dong")) return lam(() => ctl("/phim/giong/tu-dong", { workspace: ws }), "Đã chọn giọng Edge theo mô tả cho người chưa có giọng.");
-    if (b.dataset.giongEdge) { const ma = b.dataset.giongEdge; mauGiong.delete(ma); return lam(() => ctl("/phim/giong/edge", { workspace: ws, ma }), "Đã dùng giọng Edge gợi ý."); }
+    if (b.dataset.giongEdge) { const ma = b.dataset.giongEdge; return lam(async () => { await ctl("/phim/giong/edge", { workspace: ws, ma }); mauGiong.delete(ma); }, "Đã dùng giọng Edge gợi ý."); }
     if (b.dataset.giongThietKe) {
       const ma = b.dataset.giongThietKe, workspace = ws;
       if (!confirm("Gửi mô tả giọng và một đoạn lời mẫu của nhân vật này tới ElevenLabs để tạo 3 bản mẫu? (tính vào hạn mức ký tự ElevenLabs của anh)")) return;
+      dangGiong = "Đang nhờ ElevenLabs thiết kế giọng (có thể mất tới 90 giây)…";
       return lam(async () => {
-        const r = (await ctl("/phim/giong/thiet-ke", { workspace, ma }, { timeout: 120000 })).giong;
-        if (conSong && workspace === ws) mauGiong.set(ma, r.mau || []);
+        try {
+          const r = (await ctl("/phim/giong/thiet-ke", { workspace, ma }, { timeout: 120000 })).giong;
+          if (conSong && workspace === ws) mauGiong.set(ma, r.mau || []);
+        } finally { dangGiong = ""; }
       }, "Đã có bản mẫu: nghe rồi bấm Chọn.");
     }
     if (b.dataset.giongChon) {
       const ma = b.dataset.giongChon, generatedVoiceId = b.dataset.giongId;
+      dangGiong = "Đang lưu giọng vào tài khoản ElevenLabs…";
       return lam(async () => {
-        await ctl("/phim/giong/chon", { workspace: ws, ma, generatedVoiceId }, { timeout: 120000 });
-        mauGiong.delete(ma);
+        try {
+          await ctl("/phim/giong/chon", { workspace: ws, ma, generatedVoiceId }, { timeout: 120000 });
+          mauGiong.delete(ma);
+        } finally { dangGiong = ""; }
       }, "Đã lưu giọng ElevenLabs cho nhân vật. Lần đọc giọng sau dùng giọng này.");
     }
     if (b.dataset.xinGopY) {
