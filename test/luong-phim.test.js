@@ -35,7 +35,10 @@ function tao(t, { may = ["omni-flash", "flow"], coPhim = false } = {}) {
     const arg = (key) => process.argv[process.argv.indexOf(key) + 1];
     const theoCanh = process.argv.includes("--scenes-file");
     const input = fs.readFileSync(arg(theoCanh ? "--scenes-file" : "--file"), "utf8").trim();
-    const text = theoCanh ? JSON.parse(input) : input.split("\\n");
+    // Đọc theo cảnh: mỗi cảnh là đối tượng {text, may, ma, …} (giọng theo người nói); ghi lại để test kiểm giọng từng cảnh.
+    const canh = theoCanh ? JSON.parse(input) : null;
+    if (theoCanh) fs.writeFileSync("tts-canh.json", JSON.stringify({ canh, coKhoa: !!process.env.XUONG_PHIM_ELEVENLABS_KEY }));
+    const text = theoCanh ? canh.map((c) => typeof c === "string" ? c : c.text) : input.split("\\n");
     const out = arg("--output");
     let at = 0;
     fs.writeFileSync(out + ".json", JSON.stringify(text.map((text, i) => {
@@ -609,4 +612,33 @@ test("Cố vấn: CEO bấm dừng trong lúc góp ý thì luồng dừng, khôn
   f.batDau();
   assert.equal((await f.tiep()).trangThai, "dung");
   assert.equal(fs.existsSync(path.join(f.root, "media", "co-van", "cong-1.md")), false, "dừng giữa chừng thì không ghi góp ý");
+});
+
+// Giọng theo nhân vật (CEO 28/11/2026): phim có người nói đọc theo cảnh, mỗi cảnh mang giọng của người nói; khóa ElevenLabs
+// chỉ cấp cho lượt đọc khi có giọng ElevenLabs; đổi giọng nhân vật thì đọc lại.
+test("đọc giọng theo người nói: giọng từng cảnh, khóa ElevenLabs chỉ khi cần, đổi giọng thì đọc lại", async (t) => {
+  const f = tao(t, { coPhim: true, may: ["omni-flash", "omni-flash"] });
+  f.mo();
+  f.batDau(); await f.tiep();
+  f.sua((p) => {
+    p.nhan_vat = [{ ma: "lan", ten: "Lan", tham_chieu: [], giong: { mo_ta: "nữ khoảng 20 tuổi, giọng trong trẻo" } },
+      { ma: "minh", ten: "Minh", tham_chieu: [], giong: { mo_ta: "nam trầm", may: "elevenlabs", ma: "voiceMinh1" } }];
+    p.canh[0].nguoi_noi = "lan"; p.canh[1].nguoi_noi = "minh";
+  });
+  f.duyet(1);
+  await f.tiep();
+  assert.match(JSON.stringify(f.tt()), /ElevenLabs nhưng văn phòng chưa có khóa/, "có giọng ElevenLabs mà chưa có khóa: dừng, báo rõ");
+  fs.writeFileSync(path.join(f.deps.dir, "keys.json"), JSON.stringify({ elevenlabs: "sk_" + "b".repeat(40) }));
+  const s = f.tt(); s.trangThai = "dang_chay"; fs.writeFileSync(f.stateFile, JSON.stringify(s));
+  await f.tiep();
+  const doc = JSON.parse(fs.readFileSync(path.join(f.root, "tts-canh.json"), "utf8"));
+  assert.deepStrictEqual(doc.canh.map((c) => [c.text, c.may, c.ma]), [["Đây là cảnh thứ 1.", "edge", "vi-nu"], ["Đây là cảnh thứ 2.", "elevenlabs", "voiceMinh1"]]);
+  assert.strictEqual(doc.coKhoa, true, "lượt đọc có giọng ElevenLabs nhận khóa qua biến môi trường");
+  assert.ok(fs.existsSync(path.join(f.root, "media", "giong", "voice.giong.json")), "ghi ký giọng của bản đã đọc");
+  const lan = fs.readFileSync(path.join(f.root, "tts-calls"), "utf8").length;
+  f.sua((p) => { p.nhan_vat[1].giong = { mo_ta: "nam trầm", may: "edge", ma: "vi-nam", toc_do: "+0%", cao_do: "-8Hz" }; });
+  const s2 = f.tt(); s2.buoc = "giong"; s2.trangThai = "dang_chay"; fs.writeFileSync(f.stateFile, JSON.stringify(s2));
+  await f.tiep();
+  assert.ok(fs.readFileSync(path.join(f.root, "tts-calls"), "utf8").length > lan, "đổi giọng nhân vật thì đọc lại");
+  assert.strictEqual(JSON.parse(fs.readFileSync(path.join(f.root, "tts-canh.json"), "utf8")).coKhoa, false, "không còn giọng ElevenLabs: không cấp khóa");
 });

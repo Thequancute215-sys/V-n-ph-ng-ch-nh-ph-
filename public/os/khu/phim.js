@@ -55,6 +55,9 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
   let gocHelper = [], helperNhanVat = "";
   const helperUI = { tab: "nhan-vat", styles: [], canh: "", frames: [], compareA: "", compareB: "", goi: null };
   let dangGhi = null, dangPhat = null;
+  // Giọng theo nhân vật (CEO 28/11/2026): danh sách người nói (GET /phim/giong) và bản mẫu ElevenLabs vừa thiết kế (chưa chọn).
+  let giongDs = null, loiGiong = "";
+  const mauGiong = new Map();   // ma -> [{ so, generatedVoiceId, duongDan }]
   vung.innerHTML = `<div class="vung" id="phim">${dangTai(4)}</div>`;
   const goc = vung.querySelector("#phim");
   const media = (rel, v) => "/ctl/phim/media?workspace=" + encodeURIComponent(ws) + "&path=" + encodeURIComponent(rel) + (v ? "&v=" + encodeURIComponent(v) : "");
@@ -90,6 +93,10 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
         catch (e) { error = e.message; }
         if (!conSong || mine !== phien || ws !== reqWs) return;
         taiLieu = ds; loiTaiLieu = error;
+        let g = null, gl = "";
+        try { g = (await ctl("/phim/giong?workspace=" + encodeURIComponent(reqWs))).giong; } catch (e) { gl = e.message; }
+        if (!conSong || mine !== phien || ws !== reqWs) return;
+        giongDs = g; loiGiong = gl;
       }
       if (phan === "canh") {
         try { nextFlow = (await ctl("/flow")).flow; } catch { nextFlow = null; }
@@ -112,7 +119,7 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
       coVanNd = nextCv;
       data = nextData; loiTai = nextLoi; flow = nextFlow; nghiemThu = nextNt;
       // Không vẽ lại khi dữ liệu không đổi hoặc anh đang xem/nghe một clip hay giọng đọc.
-      const ky = JSON.stringify([phan, data, flow, nghiemThu, coVanNd, loiTai, taiLieu, loiTaiLieu, goi]);
+      const ky = JSON.stringify([phan, data, flow, nghiemThu, coVanNd, loiTai, taiLieu, loiTaiLieu, goi, giongDs, loiGiong, [...mauGiong]]);
       const dangXem = [...goc.querySelectorAll("video, audio")].some((v) => v.paused === false && !v.ended);
       if (ky !== kyCu && !dangXem && !xem && !ban && !dangGhi && !dangPhat) { kyCu = ky; ve(); }
     }
@@ -234,6 +241,35 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
       `<span class="mo">Antigravity · chỉ đọc${cv.luc ? " · " + esc(luc(cv.luc)) : ""}</span>${nut}</div>${than}${dang ? "" : loiCu}</section>`;
   }
 
+  // Giọng theo nhân vật: mô tả do Hinata viết, giọng đang dùng, chọn Edge (miễn phí) hoặc thiết kế ElevenLabs rồi nghe chọn.
+  const moTaGiong = (g) => !g ? "—" : g.may === "elevenlabs" ? "ElevenLabs (giọng riêng)"
+    : `Edge ${({ "vi-nam": "nam", "vi-nu": "nữ", "en-us-authority": "nam (Anh)", "en-us-friendly": "nữ (Anh)", "en-uk-male": "nam (Anh-Anh)", "en-uk-female": "nữ (Anh-Anh)" })[g.ma] || g.ma}, cao độ ${g.cao_do || "+0Hz"}, tốc độ ${g.toc_do || "+0%"}`;
+  function veGiongNhanVat() {
+    if (loiGiong) return `<section class="khoi" aria-labelledby="hGiongNv"><h2 class="dau" id="hGiongNv">Giọng nhân vật</h2>${loi(loiGiong)}</section>`;
+    if (!giongDs) return "";
+    const ds = giongDs.nguoi || [];
+    const chuaChon = ds.filter((n) => !n.daChon && (n.soCanh || n.ma !== "nguoi-dan")).length;
+    return `<section class="khoi" aria-labelledby="hGiongNv">
+      <div class="dau-hang"><h2 class="dau" id="hGiongNv">Giọng nhân vật</h2><span class="mo">${ds.length} người nói</span>
+        ${chuaChon ? `<button type="button" class="nut nho" data-giong-tu-dong style="margin-left:auto">Tự chọn giọng Edge cho ${chuaChon} người chưa chọn</button>` : ""}</div>
+      <p class="mo">Hinata ghi mô tả giọng (vd "nữ khoảng 20 tuổi, giọng trong trẻo") và cảnh nào ai nói. Edge miễn phí: máy chỉnh cao độ, tốc độ theo mô tả. ElevenLabs: thiết kế giọng riêng từ mô tả, anh nghe bản mẫu rồi chọn (trả theo ký tự).${giongDs.coKhoaEleven ? "" : ` Chưa có khóa ElevenLabs: lưu ở <a href="#/he/ket-noi">Kết nối</a>.`}</p>
+      <div class="cot-doc">${ds.map((n) => {
+        const mau = mauGiong.get(n.ma) || [];
+        return `<div class="dong" style="flex-wrap:wrap"><div style="min-width:0">
+            <div class="tieu"><b>${esc(n.ten)}</b> <span class="mo">· ${n.soCanh} cảnh nói</span></div>
+            <div class="chi-tiet">Mô tả: ${esc(n.moTa || "(chưa có, nhờ Hinata ghi giong.mo_ta)")}</div>
+            <div class="chi-tiet">${n.daChon ? "Đang dùng" : "Máy sẽ dùng"}: ${esc(moTaGiong(n.giong))}</div></div>
+          <div class="hang" style="flex-wrap:wrap;min-width:0">
+            <button type="button" class="nut nho" data-giong-edge="${esc(n.ma)}" aria-label="${esc("Dùng giọng Edge gợi ý cho " + n.ten + ": " + moTaGiong(n.goiYEdge))}">Dùng Edge gợi ý</button>
+            ${giongDs.coKhoaEleven ? `<button type="button" class="nut nho" data-giong-thiet-ke="${esc(n.ma)}"${(n.moTa || "").length < 10 ? " disabled" : ""}>Thiết kế giọng ElevenLabs</button>` : ""}</div>
+          ${mau.length ? `<div class="cot-doc" style="grid-column:1/-1;min-width:0"><span class="mo">Bản mẫu cho ${esc(n.ten)} (nghe rồi chọn, giữ 30 phút):</span>${mau.map((m) =>
+            `<div class="hang" style="flex-wrap:wrap;min-width:0"><span>Bản ${m.so}</span><audio controls preload="none" src="${esc(media(m.duongDan))}" aria-label="${esc("Bản mẫu " + m.so + " của " + n.ten)}" style="max-width:100%"></audio>
+              <button type="button" class="nut-chinh" data-giong-chon="${esc(n.ma)}" data-giong-id="${esc(m.generatedVoiceId)}">Chọn bản ${m.so}</button></div>`).join("")}</div>` : ""}
+        </div>`;
+      }).join("")}</div>
+    </section>`;
+  }
+
   function veKichBanVaGiong(p, k, mq, bd) {
     const ngan = Number(p.ngan_sach_usd) || 0, toiDa = (k.chiPhi && k.chiPhi.usdToiDa) || 0;
     const pt = (x) => ngan > 0 ? Math.min(1, x / ngan) : (x > 0 ? 1 : 0);
@@ -261,15 +297,15 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
       ${coGiong
         ? `<div class="hang"><span class="dat">Đã đồng bộ giọng đọc (media/giong/voice.mp3).</span><audio class="giong-nghe" controls preload="none" src="${esc(media("media/giong/voice.mp3"))}"></audio></div>`
         : `<p class="mo">Chưa có tệp giọng đọc. Duyệt Cổng 1 rồi chạy luồng tự động (hoặc công cụ TTS của xưởng) để tạo giọng đọc và chốt thời lượng từng cảnh.</p>`}
-      ${dsCanh.length ? `<div class="bang-cuon"><table class="bang"><thead><tr><th>Cảnh</th><th class="so">Giây</th><th>Câu</th><th>Lời dẫn</th><th>Mô tả khung hình</th><th>Máy quay</th></tr></thead><tbody>` +
-        dsCanh.map((c) => `<tr><td><b>${esc(c.ma)}</b></td><td class="so">${c.giay ? esc(c.giay) + "s" : "—"}</td><td class="so mo">${esc((c.cau || []).join(", ") || "—")}</td><td>${esc(c.loi_dan || "(không lời)")}</td><td class="mo">${esc(c.khung_hinh || "(chưa có)")}</td><td><span class="nhan">${esc(c.may_quay || p.may_quay_mac_dinh || "flow")}</span></td></tr>`).join("") +
+      ${dsCanh.length ? `<div class="bang-cuon"><table class="bang"><thead><tr><th>Cảnh</th><th class="so">Giây</th><th>Câu</th><th>Người nói</th><th>Lời dẫn</th><th>Mô tả khung hình</th><th>Máy quay</th></tr></thead><tbody>` +
+        dsCanh.map((c) => `<tr><td><b>${esc(c.ma)}</b></td><td class="so">${c.giay ? esc(c.giay) + "s" : "—"}</td><td class="so mo">${esc((c.cau || []).join(", ") || "—")}</td><td class="mo">${esc(c.nguoi_noi ? ((p.nhan_vat || []).find((v) => v && v.ma === c.nguoi_noi) || {}).ten || c.nguoi_noi : "Người dẫn")}</td><td>${esc(c.loi_dan || "(không lời)")}</td><td class="mo">${esc(c.khung_hinh || "(chưa có)")}</td><td><span class="nhan">${esc(c.may_quay || p.may_quay_mac_dinh || "flow")}</span></td></tr>`).join("") +
         `</tbody></table></div><div class="hang"><a class="nut-chinh" href="#/phim/canh">Sang bước 2: Phân cảnh và quay →</a></div>`
         : rong("Phim chưa có cảnh nào", "Nhập đề bài ở mục Làm phim tự động phía trên để Hinata viết kịch bản và phân cảnh.")}
     </section>`;
 
     return veTaiLieu(p) + veHelper(p, taiLieu, gocHelper, helperNhanVat, { media, tep, state: helperUI }) +
       veBlender(p, data.blender || {}, taiLieu, bd, media) + veLuong(data.luong, p, false) + hoSo + veCoVan(1) +
-      veCong(bd, [1], "Cổng 1 · Duyệt kịch bản", "Duyệt kịch bản xong máy mới tạo giọng đọc và khung hình") + giongHtml;
+      veCong(bd, [1], "Cổng 1 · Duyệt kịch bản", "Duyệt kịch bản xong máy mới tạo giọng đọc và khung hình") + veGiongNhanVat() + giongHtml;
   }
 
   function veTaiLieu(p) {
@@ -476,7 +512,7 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
       dongXem(); dungAnimatic(); huyGhi();
       ws = t.value;
       try { localStorage.setItem("tqos-phim", ws); } catch {}
-      data = null; nghiemThu = null; coVanNd = null; coVanMo.clear(); taiLieu = []; loiTaiLieu = ""; goi = null; helperNhanVat = "";
+      data = null; nghiemThu = null; coVanNd = null; coVanMo.clear(); taiLieu = []; loiTaiLieu = ""; goi = null; helperNhanVat = ""; giongDs = null; loiGiong = ""; mauGiong.clear();
       Object.assign(helperUI, { canh: "", frames: [], compareA: "", compareB: "", goi: null });
       ve(); return tai();
     }
@@ -623,6 +659,23 @@ export async function moKhuPhim(vung, { ctl = ctlMacDinh, bao = baoMacDinh, sign
       return;
     }
     const b = e.target.closest("button"); if (!b || ban) return;
+    if (b.hasAttribute("data-giong-tu-dong")) return lam(() => ctl("/phim/giong/tu-dong", { workspace: ws }), "Đã chọn giọng Edge theo mô tả cho người chưa có giọng.");
+    if (b.dataset.giongEdge) { const ma = b.dataset.giongEdge; mauGiong.delete(ma); return lam(() => ctl("/phim/giong/edge", { workspace: ws, ma }), "Đã dùng giọng Edge gợi ý."); }
+    if (b.dataset.giongThietKe) {
+      const ma = b.dataset.giongThietKe, workspace = ws;
+      if (!confirm("Gửi mô tả giọng và một đoạn lời mẫu của nhân vật này tới ElevenLabs để tạo 3 bản mẫu? (tính vào hạn mức ký tự ElevenLabs của anh)")) return;
+      return lam(async () => {
+        const r = (await ctl("/phim/giong/thiet-ke", { workspace, ma }, { timeout: 120000 })).giong;
+        if (conSong && workspace === ws) mauGiong.set(ma, r.mau || []);
+      }, "Đã có bản mẫu: nghe rồi bấm Chọn.");
+    }
+    if (b.dataset.giongChon) {
+      const ma = b.dataset.giongChon, generatedVoiceId = b.dataset.giongId;
+      return lam(async () => {
+        await ctl("/phim/giong/chon", { workspace: ws, ma, generatedVoiceId }, { timeout: 120000 });
+        mauGiong.delete(ma);
+      }, "Đã lưu giọng ElevenLabs cho nhân vật. Lần đọc giọng sau dùng giọng này.");
+    }
     if (b.dataset.xinGopY) {
       const so = Number(b.dataset.xinGopY);
       return lam(() => ctl("/phim/co-van", { workspace: ws, cong: so }), `Đã giao Antigravity góp ý ${so === 1 ? "kịch bản" : "phân cảnh"}. Thường mất 1–3 phút, trang tự cập nhật.`);

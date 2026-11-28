@@ -224,6 +224,7 @@ button.act:disabled { opacity: .5; cursor: wait; }
     { id: "claude", ten: "Claude (Anthropic)", ph: "sk-ant-api03-...", moTa: "Dùng khi chạy bằng API Key thay cho claude login." },
     { id: "gpt", ten: "GPT / Codex (OpenAI)", ph: "sk-...", moTa: "Dùng khi chạy bằng OpenAI API Key thay cho codex login." },
     { id: "gemini", ten: "Gemini API (Tra cứu & Xưởng phim)", ph: "AIza...", moTa: "Dùng cho MCP tra cứu miễn phí và máy quay Gemini (tạo khóa tại aistudio.google.com/apikey)." },
+    { id: "elevenlabs", ten: "ElevenLabs (Giọng nhân vật Xưởng phim)", ph: "sk_...", moTa: "Thiết kế giọng từng nhân vật theo mô tả và đọc lời thoại (trả theo ký tự; tạo khóa tại elevenlabs.io → API Keys). Không có khóa thì xưởng dùng giọng Edge miễn phí." },
   ];
   let keyState = null, keyBusy = false, keyNote = null;
   function keyRender(err) {

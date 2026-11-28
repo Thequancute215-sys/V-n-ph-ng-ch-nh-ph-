@@ -95,7 +95,7 @@ test("khóa API: máy chủ mới được lưu, người xem và thiết bị �
     const read = await show(identity);
     assert.strictEqual(read.status, 200);
     assert.strictEqual(read.json.canManageKeys, false);
-    assert.deepStrictEqual(Object.keys(read.json.accounts).sort(), ["claude", "gemini", "gpt"]);
+    assert.deepStrictEqual(Object.keys(read.json.accounts).sort(), ["claude", "elevenlabs", "gemini", "gpt"]);
     for (const account of Object.values(read.json.accounts)) {
       assert.deepStrictEqual(Object.keys(account), ["connected"]);
     }
