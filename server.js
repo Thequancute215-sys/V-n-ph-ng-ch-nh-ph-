@@ -205,24 +205,29 @@ function agentFromLabel(label) {
 // Chi tiết của một việc cần anh (nút "Xem tin" ở Tổng quan): đoạn cuối tin AI, đủ dài để đọc trọn câu hỏi và ngữ cảnh.
 // Câu AI hỏi trong phiên KHÔNG nằm trong sổ tin nhắn (sổ chỉ có tin anh gõ và tin AI nhắn nhau), nên máy chủ gửi kèm ở đây.
 const DAI_CHI_TIET = 1500;
+// Chỉ che đúng dạng có dấu ":" hoặc "=" (key: val, token=val, "password": "val"): chữ thường như "tốn 5000 token rồi",
+// "đặt password mới", hàm byKey không bị che (kiểm định Antigravity vòng 2). Mỗi regex chỉ quét tiến một lượt (không lồng
+// lặp không neo) và chỉ chạy trên đoạn cuối tin, nên tin dài không làm khựng máy chủ.
 function maskDai(s) {
   if (!s) return "";
   return String(s)
+    .replace(/\*\*|`/g, "")
     .replace(/[A-Za-z]:[\\/][^\s|;,]*secrets?[^\s|;,]*/gi, "‹thư mục khóa›")
-    .replace(/[^\s"'`(<]*(?:\.env\b|keys\.json|\.credentials\.json|auth\.json|ctl-token|\.ssh[\\/]|id_rsa|id_ed25519|\.npmrc|git-credentials)[^\s"'`)>]*/gi, "‹tệp khóa›")
+    .replace(/(?<=^|[\s"'(<])[^\s"'(<]*(?:\.env\b|keys\.json|\.credentials\.json|auth\.json|ctl-token|\.ssh[\\/]|id_rsa|id_ed25519|\.npmrc|git-credentials)[^\s"')>]*/gi, "‹tệp khóa›")
     .replace(/:\/\/[^\s:/@]+:[^\s@/]+@/g, "://‹ẩn›@")
     .replace(/\bbearer\s+[^\s"',;]+/gi, "Bearer ‹ẩn›")
-    .replace(/("?(?:(?:api[_-]?)?key|token|secret|password|passwd|pwd|bearer|authorization)"?)(\s*[:=]\s*|\s+)("[^"\n]*"|'[^'\n]*'|[^\s"',;]+)/gi, "$1$2‹ẩn›")
-    .replace(/\b(?:sk|pk|rk|gh[pousr]|github_pat|xox[abprs]|AKIA|AIza)[-_A-Za-z0-9]{12,}/g, "‹khóa›")
+    .replace(/(?<![\w-])("?(?:(?:api[_-]?)?key|token|secret|password|passwd|pwd|authorization)"?)(\s*[:=]\s*)("[^"\n]*"|'[^'\n]*'|[^\s"',;)]+)/gi, "$1$2‹ẩn›")
+    .replace(/\b(?:sk-(?:ant-|proj-)?|pk[-_]|rk[-_]|gh[pousr]_|github_pat_|xox[abprs]-)[A-Za-z0-9_-]{12,}|\bAKIA[0-9A-Z]{16}\b|\bAIza[0-9A-Za-z_-]{30,}/g, "‹khóa›")
     .replace(/[A-Za-z0-9_\-+/=]{48,}/g, "…")
-    .replace(/\*\*|`/g, "")
     .replace(/[ \t]+/g, " ")
     .replace(/ *\n */g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
-// Đoạn cuối (đủ để đọc câu hỏi ở cuối tin), cắt thì đánh dấu "…" ở đầu.
-const cuoiDai = (s) => { const m = maskDai(s); return m.length > DAI_CHI_TIET ? "…" + m.slice(-(DAI_CHI_TIET - 1)) : m; };
+// Đoạn cuối (đủ để đọc câu hỏi ở cuối tin), cắt thì đánh dấu "…" ở đầu. Chỉ che 3 lần độ dài cần (tin AI có thể rất dài).
+const cuoiDai = (s) => { const m = maskDai(String(s).slice(-3 * DAI_CHI_TIET)); return m.length > DAI_CHI_TIET ? "…" + m.slice(-(DAI_CHI_TIET - 1)) : m; };
+// Đoạn đầu (kế hoạch: tiêu đề ở đầu), cắt thì đánh dấu "…" ở cuối.
+const dauDai = (s) => { const m = maskDai(String(s).slice(0, 3 * DAI_CHI_TIET)); return m.length > DAI_CHI_TIET ? m.slice(0, DAI_CHI_TIET - 1) + "…" : m; };
 const events = [];
 const seenEvt = new Set();
 function pushEvent(e) {
@@ -260,7 +265,7 @@ function parseClaude(a, line) {
     if (msg.stop_reason === "end_turn") { a.done.push({ t }); keep7(a.done); }
     const vanBan = [];
     for (const c of Array.isArray(msg.content) ? msg.content : []) {
-      if (c.type === "text" && c.text && c.text.trim()) { const m = mask(c.text); a.lastText = clip(m, 600); a.lastTail = m.slice(-500); a.lastTextAt = t; vanBan.push(c.text); a.lastDai = cuoiDai(vanBan.join("\n\n")); }
+      if (c.type === "text" && c.text && c.text.trim()) { const m = mask(c.text); a.lastText = clip(m, 600); a.lastTail = m.slice(-500); a.lastTextAt = t; vanBan.push(c.text); }
       if (c.type === "tool_use") {
         const inp = c.input || {}, n = c.name || "";
         if (/SendMessage|send_message/.test(n)) {
@@ -269,14 +274,16 @@ function parseClaude(a, line) {
           if (to && to !== a.key && body) pushEvent({ t, kind: "msg", from: a.key, to, title: titleOf(body), body: clip(mask(body), 700) });
         }
         if (n === "AskUserQuestion" || n === "ExitPlanMode") {
+          if (vanBan.length) { a.lastDai = cuoiDai(vanBan.join("\n\n")); vanBan.length = 0; }
           const q = n === "ExitPlanMode" ? "Duyệt kế hoạch trước khi làm" : ((inp.questions || []).map((x) => `${x.question} ${(x.options || []).map((o, i) => `(${String.fromCharCode(97 + i)}) ${o.label}`).join("; ")}`).join(" · ") || "Câu hỏi cho bạn");
           // Chi tiết: kế hoạch AI xin duyệt, hoặc từng câu hỏi kèm mô tả từng lựa chọn (xuống dòng cho dễ đọc).
           const ct = n === "ExitPlanMode" ? "Duyệt kế hoạch trước khi làm" + (inp.plan ? "\n\n" + inp.plan : a.lastDai ? "\n\n" + a.lastDai : "")
             : (inp.questions || []).map((x) => x.question + "\n" + (x.options || []).map((o, i) => `(${String.fromCharCode(97 + i)}) ${o.label}${o.description ? ": " + o.description : ""}`).join("\n")).join("\n\n") || q;
-          a.pendingAsk = { id: c.id, t, text: clip(mask(q), 300), chiTiet: n === "ExitPlanMode" && !inp.plan ? ct.slice(0, DAI_CHI_TIET) : cuoiDai(ct) };
+          a.pendingAsk = { id: c.id, t, text: clip(mask(q), 300), chiTiet: n === "ExitPlanMode" ? dauDai(ct) : cuoiDai(ct) };
         }
       }
     }
+    if (vanBan.length) a.lastDai = cuoiDai(vanBan.join("\n\n"));   // che một lần sau khi gom đủ các khối text của tin
   }
   if (j.type === "user") {
     const content = msg.content;

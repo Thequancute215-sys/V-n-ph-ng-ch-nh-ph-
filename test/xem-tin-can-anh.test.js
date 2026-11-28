@@ -22,6 +22,8 @@ const iso = (ms) => new Date(t0 + ms).toISOString();
 const khoaGia = "sk-ant-" + "a".repeat(30);
 // Phiên A: anh gõ việc, AI trả lời một tin hai khối text (khối trên nêu phương án kèm vài chuỗi bí mật, khối cuối hỏi).
 const khoiTren = "Phần mở đầu dài. ".repeat(80) + "\nPhương án:\n(a) Merge ngay\n(b) Chờ thêm\n" +
+  "Chữ thường không được che: tốn 5000 token rồi, đặt password mới hay giữ, hàm byKey có ổn, thư mục skills_directory.\n" +
+  "Markdown: **password**: matkhau123 và `token`: bimat2.\n" +
   "Lệnh thử: curl -H \"Authorization: Bearer abc123def456\" và {\"token\": \"bimat-ngan\"} với postgres://nguoi:matkhau@may/csdl, đọc C:\\Users\\x\\.env, khóa " + khoaGia + ".";
 const khoiCuoi = "Sếp duyệt giúp em merge PR này được không?";
 const PHIEN_A = [
@@ -35,6 +37,12 @@ const PHIEN_B = [
     { question: "Làm theo cách nào?", options: [{ label: "Cách A", description: "nhanh, ít kiểm" }, { label: "Cách B", description: "chậm, kiểm kỹ" }] }] } }] } },
 ];
 
+// Phiên C: tin dài 200 KB không khoảng trắng (JSON nén, base64) rồi mới hỏi: máy chủ không được khựng.
+const PHIEN_C = [
+  { type: "user", timestamp: iso(0), message: { role: "user", content: "Dán log giúp anh" } },
+  { type: "assistant", timestamp: iso(3000), message: { role: "assistant", stop_reason: "end_turn", content: [{ type: "text", text: "ab/".repeat(70000) + " Sếp xem log dài này rồi chọn giúp em nhé?" }] } },
+];
+
 async function startOffice(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vp-xem-tin-"));
   const home = path.join(dir, "home"), claudeDir = path.join(home, ".claude"), duAn = path.join(dir, "du-an");
@@ -42,7 +50,7 @@ async function startOffice(t) {
   for (const x of ["server.js", "package.json", "lib", "public"]) fs.cpSync(path.join(ROOT, x), path.join(dir, x), { recursive: true });
   const enc = path.resolve(duAn).replace(/[^a-zA-Z0-9]/g, "-").toLowerCase();
   const pdir = path.join(claudeDir, "projects", enc); fs.mkdirSync(pdir, { recursive: true });
-  for (const [id, lines] of [["11111111-2222-3333-4444-555555555555", PHIEN_A], ["66666666-2222-3333-4444-555555555555", PHIEN_B]]) {
+  for (const [id, lines] of [["11111111-2222-3333-4444-555555555555", PHIEN_A], ["66666666-2222-3333-4444-555555555555", PHIEN_B], ["77777777-2222-3333-4444-555555555555", PHIEN_C]]) {
     const f = path.join(pdir, id + ".jsonl");
     fs.writeFileSync(f, lines.map((x) => JSON.stringify(x)).join("\n") + "\n");
     const cu = new Date(t0 + 5000); fs.utimesSync(f, cu, cu);
@@ -69,18 +77,23 @@ test("Việc cần anh: chiTiet đủ dài, giữ xuống dòng, ghép các kh�
   let asks = [];
   for (let i = 0; i < 100; i++) {
     try { asks = (await getJson(port, "/state")).asks || []; } catch {}
-    if (asks.some((a) => a.kind === "reply") && asks.some((a) => a.kind === "hoi") && asks.filter((a) => a.kind === "so").length === 2) break;
+    if (asks.some((a) => a.kind === "reply") && asks.some((a) => a.kind === "hoi") && asks.filter((a) => a.kind === "so").length === 2 && asks.some((a) => /log dài này/.test(a.text || ""))) break;
     if (child.exitCode !== null) break;
     await new Promise((r) => setTimeout(r, 150));
   }
-  const reply = asks.find((a) => a.kind === "reply");
+  const reply = asks.find((a) => a.kind === "reply" && /duyệt giúp em merge/.test(a.text || ""));
   assert.ok(reply, "phải thấy câu hỏi đoán từ tin cuối:\n" + JSON.stringify(asks) + "\n" + log());
   const ct = reply.chiTiet;
   assert.ok(typeof ct === "string" && ct.length > 1000 && ct.length <= 1500, "chiTiet dài vừa đủ, có trần (" + (ct || "").length + ")");
   assert.ok(ct.startsWith("…"), "bị cắt đầu thì đánh dấu …");
   assert.match(ct, /Sếp duyệt giúp em merge PR này được không\?$/, "giữ trọn câu hỏi ở khối cuối");
   assert.match(ct, /Phương án:\n\(a\) Merge ngay\n\(b\) Chờ thêm/, "ghép khối trên và giữ xuống dòng");
-  for (const bimat of [khoaGia, "abc123def456", "bimat-ngan", "matkhau", "\\.env"]) assert.ok(!ct.includes(bimat), "phải che: " + bimat);
+  for (const chu of ["tốn 5000 token rồi", "đặt password mới hay giữ", "hàm byKey có ổn", "skills_directory"]) assert.ok(ct.includes(chu), "không che nhầm chữ thường: " + chu);
+  for (const bimat of [khoaGia, "abc123def456", "bimat-ngan", "matkhau", "bimat2", "\\.env"]) assert.ok(!ct.includes(bimat), "phải che: " + bimat);
+
+  const dai = asks.find((a) => /log dài này/.test(a.text || ""));
+  assert.ok(dai && dai.chiTiet.length <= 1500 && /chọn giúp em nhé\?$/.test(dai.chiTiet), "tin 200 KB: vẫn đọc được câu hỏi, có trần");
+  const bd = Date.now(); await getJson(port, "/state"); assert.ok(Date.now() - bd < 2000, "máy chủ không khựng vì tin dài");
 
   const hoi = asks.find((a) => a.kind === "hoi");
   assert.ok(hoi, "phải thấy hộp hỏi đang chờ");

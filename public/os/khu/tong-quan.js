@@ -62,8 +62,8 @@ export async function mo(vung, { kho, ngan, signal }) {
       const tieu = cat(a.text, 220), nguoi = a.who ? ten(a.who) : a.whoLabel || "AI";
       muc.push({ sap: a.since || 0, t: a.since, tieu, nguon: nguoi + (a.guess ? " (máy đoán từ câu cuối)" : ""),
         nut: `<button type="button" class="nut nho" data-xem-hoi="${esc(khoa)}" aria-expanded="${mo}"${mo ? ` aria-controls="${idCt}"` : ""} aria-label="${esc((mo ? "Thu gọn: " : "Xem tin: ") + cat(tieu, 80))}">${mo ? "Thu gọn" : "Xem tin"}</button>`,
-        sau: mo ? `<div class="cot-doc" id="${idCt}" style="grid-column:1/-1;min-width:0;gap:var(--space-xs)"><pre class="van-ban noi-dung" tabindex="0" data-cuon="${esc(khoa)}" aria-label="${esc("Toàn văn tin của " + nguoi)}" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto;margin:0;padding:var(--space-xs) var(--space-sm);border:var(--rule-hair) solid var(--color-rule);border-radius:var(--radius-sm, 6px)">${esc(a.chiTiet || a.text || "")}</pre>` +
-          `<div class="hang" style="flex-wrap:wrap;min-width:0"><span class="mo">Trả lời ngay trong phiên của ${esc(nguoi)}.</span>${a.who ? `<a class="nut nho" href="#/tin-nhan?ai=${encodeURIComponent(a.who)}" aria-label="${esc("Mở dòng tin với " + nguoi)}">Mở dòng tin</a>` : ""}</div></div>` : "" });
+        sau: mo ? `<div class="cot-doc" id="${idCt}" style="grid-column:1/-1;min-width:0;gap:var(--space-xs)"><pre class="van-ban noi-dung" tabindex="0" data-cuon="${esc(khoa)}" aria-label="${esc("Toàn văn tin của " + nguoi)}" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto;margin:0;padding:var(--space-xs) var(--space-sm);border:var(--rule-hair) solid var(--color-rule);border-radius:var(--radius-card)">${esc(a.chiTiet || a.text || "")}</pre>` +
+          `<div class="hang" style="flex-wrap:wrap;min-width:0"><span class="mo">Trả lời ngay trong phiên của ${esc(nguoi)}.</span>${a.who ? `<a class="nut nho" data-mo-tin="${esc(khoa)}" href="#/tin-nhan?ai=${encodeURIComponent(a.who)}" aria-label="${esc("Mở dòng tin với " + nguoi)}">Mở dòng tin</a>` : ""}</div></div>` : "" });
     });
     for (const k of [...moHoi]) if (!conMo.has(k)) moHoi.delete(k);   // việc đã hết thì quên trạng thái mở
     const nutNgan = (ref, chu, tieu, chinh = false) => `<button type="button" class="${chinh ? "nut-chinh" : "nut nho"}" data-ngan="${esc(ref)}" aria-label="${esc(chu + ": " + cat(tieu, 80))}">${esc(chu)}</button>`;
@@ -82,10 +82,10 @@ export async function mo(vung, { kho, ngan, signal }) {
     // Vẽ lại (có mục mới/đổi): giữ vị trí cuộn của các hộp chi tiết đang mở và ô đang giữ focus.
     const el = $("canAnh"), cuon = new Map([...el.querySelectorAll("[data-cuon]")].map((p) => [p.dataset.cuon, p.scrollTop]));
     const f = el.contains(document.activeElement) ? document.activeElement : null;
-    const giuFocus = f && (f.dataset.xemHoi ? ["data-xem-hoi", f.dataset.xemHoi] : f.dataset.cuon ? ["data-cuon", f.dataset.cuon] : f.dataset.ngan ? ["data-ngan", f.dataset.ngan] : null);
+    const giuFocus = f && (f.dataset.xemHoi ? ["data-xem-hoi", f.dataset.xemHoi] : f.dataset.cuon ? ["data-cuon", f.dataset.cuon] : f.dataset.moTin ? ["data-mo-tin", f.dataset.moTin] : f.dataset.ngan ? ["data-ngan", f.dataset.ngan] : null);
     el.innerHTML = html;
     for (const p of el.querySelectorAll("[data-cuon]")) if (cuon.has(p.dataset.cuon)) p.scrollTop = cuon.get(p.dataset.cuon);
-    if (giuFocus) [...el.querySelectorAll("[" + giuFocus[0] + "]")].find((x) => x.getAttribute(giuFocus[0]) === giuFocus[1])?.focus();
+    if (giuFocus) [...el.querySelectorAll("[" + giuFocus[0] + "]")].find((x) => x.getAttribute(giuFocus[0]) === giuFocus[1])?.focus({ preventScroll: true });
   }
 
   // Phim đang làm (chưa qua Cổng 4), mới nhất trước; bấm để mở đúng bước. Đủ danh sách và nhóm theo loại ở Kho phim.
