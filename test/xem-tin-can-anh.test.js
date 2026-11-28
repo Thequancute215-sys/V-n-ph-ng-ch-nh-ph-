@@ -51,12 +51,25 @@ const PHIEN_D = [
   wrap(3000, { recap: "Đã sửa nút Xem tin, chưa merge.", ask: "Merge PR #90 rồi phát hành?", actions: [{ label: "Merge và phát hành" }, { label: "Chỉ merge" }] }),
   { type: "assistant", timestamp: iso(4000), message: { role: "assistant", stop_reason: "end_turn", content: [{ type: "text", text: "Em đã sửa xong. Sếp muốn merge và phát hành hay chỉ merge?" }] } },
 ];
-// Phiên E: đã hỏi bằng ô bước tiếp theo nhưng anh đã trả lời sau đó, rồi lượt mới kết thúc không hỏi gì: không còn việc cần anh.
+// Phiên E: đã hỏi bằng ô bước tiếp theo, anh trả lời (bấm nút trong app = tin người dùng thường), lượt sau chưa kết thúc: hết việc.
 const PHIEN_E = [
   { type: "user", timestamp: iso(0), message: { role: "user", content: "Việc một" } },
   wrap(2000, { recap: "Xong việc một.", ask: "Làm tiếp việc hai không?", actions: [{ label: "Làm tiếp" }] }),
   { type: "user", timestamp: iso(3000), message: { role: "user", content: "Làm tiếp" } },
-  wrap(4000, { recap: "Xong việc hai." }),
+];
+// Phiên G: hỏi rồi lượt sau (chưa có tin anh) kết thúc bằng ô bước tiếp theo KHÔNG hỏi gì: câu hỏi cũ bỏ.
+const PHIEN_G = [
+  { type: "user", timestamp: iso(0), message: { role: "user", content: "Việc ba" } },
+  wrap(2000, { recap: "Xong việc ba.", ask: "Có làm việc bốn không?" }),
+  wrap(2500, { recap: "Đã tự xử lý thêm, không cần anh." }),
+];
+// Phiên F: AI viết tin TRƯỚC rồi mới gọi ô bước tiếp theo; hỏi hai lần (lần sau thay lần trước); câu hỏi/nhãn/tóm tắt có bí mật.
+const PHIEN_F = [
+  { type: "user", timestamp: iso(0), message: { role: "user", content: "Kiểm khóa giúp anh" } },
+  { type: "assistant", timestamp: iso(2000), message: { role: "assistant", content: [{ type: "text", text: "Em đã kiểm xong cấu hình máy chủ thử." }] } },
+  wrap(2500, { recap: "Bản nháp.", ask: "Câu hỏi cũ?" }),
+  wrap(3000, { recap: "Đã thấy Authorization: Bearer abc123def456 và **password**: matkhau9 trong log.", ask: "Xoá token: bimat8 khỏi log không?",
+    actions: [{ label: "Xoá DB_PASSWORD=bimat10" }, { label: "Để nguyên" }] }),
 ];
 
 async function startOffice(t) {
@@ -66,7 +79,7 @@ async function startOffice(t) {
   for (const x of ["server.js", "package.json", "lib", "public"]) fs.cpSync(path.join(ROOT, x), path.join(dir, x), { recursive: true });
   const enc = path.resolve(duAn).replace(/[^a-zA-Z0-9]/g, "-").toLowerCase();
   const pdir = path.join(claudeDir, "projects", enc); fs.mkdirSync(pdir, { recursive: true });
-  for (const [id, lines] of [["11111111-2222-3333-4444-555555555555", PHIEN_A], ["66666666-2222-3333-4444-555555555555", PHIEN_B], ["77777777-2222-3333-4444-555555555555", PHIEN_C], ["88888888-2222-3333-4444-555555555555", PHIEN_D], ["99999999-2222-3333-4444-555555555555", PHIEN_E]]) {
+  for (const [id, lines] of [["11111111-2222-3333-4444-555555555555", PHIEN_A], ["66666666-2222-3333-4444-555555555555", PHIEN_B], ["77777777-2222-3333-4444-555555555555", PHIEN_C], ["88888888-2222-3333-4444-555555555555", PHIEN_D], ["99999999-2222-3333-4444-555555555555", PHIEN_E], ["aaaaaaaa-2222-3333-4444-555555555555", PHIEN_F], ["bbbbbbbb-2222-3333-4444-555555555555", PHIEN_G]]) {
     const f = path.join(pdir, id + ".jsonl");
     fs.writeFileSync(f, lines.map((x) => JSON.stringify(x)).join("\n") + "\n");
     const cu = new Date(t0 + 5000); fs.utimesSync(f, cu, cu);
@@ -93,7 +106,7 @@ test("Việc cần anh: chiTiet đủ dài, giữ xuống dòng, ghép các kh�
   let asks = [];
   for (let i = 0; i < 100; i++) {
     try { asks = (await getJson(port, "/state")).asks || []; } catch {}
-    if (asks.some((a) => a.kind === "reply") && asks.some((a) => a.kind === "hoi") && asks.filter((a) => a.kind === "so").length === 2 && asks.some((a) => /log dài này/.test(a.text || "")) && asks.some((a) => a.kind === "hop")) break;
+    if (asks.some((a) => a.kind === "reply") && asks.some((a) => a.kind === "hoi") && asks.filter((a) => a.kind === "so").length === 2 && asks.some((a) => /log dài này/.test(a.text || "")) && asks.filter((a) => a.kind === "hop").length === 2) break;
     if (child.exitCode !== null) break;
     await new Promise((r) => setTimeout(r, 150));
   }
@@ -111,8 +124,14 @@ test("Việc cần anh: chiTiet đủ dài, giữ xuống dòng, ghép các kh�
   assert.ok(dai && dai.chiTiet.length <= 1500 && /chọn giúp em nhé\?$/.test(dai.chiTiet), "tin 200 KB: vẫn đọc được câu hỏi, có trần");
   const bd = Date.now(); await getJson(port, "/state"); assert.ok(Date.now() - bd < 2000, "máy chủ không khựng vì tin dài");
 
-  const hop = asks.filter((a) => a.kind === "hop");
-  assert.strictEqual(hop.length, 1, "chỉ phiên D còn câu hỏi ô bước tiếp theo (phiên E đã trả lời, lượt sau không hỏi): " + JSON.stringify(hop));
+  const hopTat = asks.filter((a) => a.kind === "hop");
+  assert.strictEqual(hopTat.length, 2, "chỉ phiên D và F còn câu hỏi (E đã trả lời, G kết thúc không hỏi): " + JSON.stringify(hopTat));
+  const f = hopTat.find((a) => /log/.test(a.hoi));
+  assert.ok(f, "phiên F: câu hỏi lần sau thay lần trước");
+  assert.match(f.hoi, /^Xoá token: ‹ẩn›/, "câu hỏi được che khóa");
+  for (const bimat of ["bimat8", "abc123def456", "matkhau9", "bimat10"]) assert.ok(!JSON.stringify(f).includes(bimat), "phải che: " + bimat);
+  assert.match(f.chiTiet, /Em đã kiểm xong cấu hình máy chủ thử\./, "AI viết tin trước ô bước tiếp theo: vẫn có ngữ cảnh");
+  const hop = hopTat.filter((a) => a !== f);
   assert.strictEqual(hop[0].hoi, "Merge PR #90 rồi phát hành?", "câu hỏi lấy đúng từ ô bước tiếp theo");
   assert.ok(!hop[0].guess, "không phải máy đoán");
   assert.deepStrictEqual(hop[0].chon, ["Merge và phát hành", "Chỉ merge"], "kèm các lựa chọn");
@@ -121,9 +140,9 @@ test("Việc cần anh: chiTiet đủ dài, giữ xuống dòng, ghép các kh�
   assert.ok(!asks.some((a) => a.who === hop[0].who && a.kind === "reply"), "không thêm mục đoán trùng cho cùng phiên");
 
   const hoi = asks.find((a) => a.kind === "hoi");
+  assert.ok(hoi, "phải thấy hộp hỏi đang chờ");
   assert.deepStrictEqual(hoi.chon, ["Cách A", "Cách B"], "hộp hỏi một câu: kèm lựa chọn");
   assert.strictEqual(hoi.hoi, "Làm theo cách nào?");
-  assert.ok(hoi, "phải thấy hộp hỏi đang chờ");
   assert.match(hoi.chiTiet, /Làm theo cách nào\?\n\(a\) Cách A: nhanh, ít kiểm\n\(b\) Cách B: chậm, kiểm kỹ/, "hộp hỏi: từng lựa chọn kèm mô tả, xuống dòng");
 
   const so = asks.filter((a) => a.kind === "so");
