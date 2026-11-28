@@ -5,12 +5,13 @@ const path = require("node:path");
 const { createHash } = require("node:crypto");
 const { execFile } = require("node:child_process");
 const { promisify } = require("node:util");
-const { kiem, dongBoGiong, giongKhopCanh, congDaDuyet, duongDanHopLe, MAY_QUAY, MAY_QUAY_MAC_DINH, TI_LE, TRANG_THAI } = require("../lib/phim");
+const { kiem, dongBoGiong, giongKhopCanh, giongTheoCanh, giongCua, congDaDuyet, duongDanHopLe, MAY_QUAY, MAY_QUAY_MAC_DINH, TI_LE, TRANG_THAI } = require("../lib/phim");
 const { CONG, NHAN_AI, dsCong } = require("./ban-dung");
 const { list: taiLieuPhim } = require("./phim-tai-lieu");
 const { remaining } = require("./dieu-phoi");
 const { writeAtomic, renameRetry } = require("../lib/ghi-file");
 const { cleanEnv, maskSecrets } = require("../lib/mask");
+const { khoaEleven } = require("./phim-giong");
 
 const ACTOR = "luong-phim";
 const BUOC = [null, "kich_ban", "giong", "khung", "cong_2", "quay", "dung", "nghiem_thu"];
@@ -167,7 +168,9 @@ function promptKichBan(s, congCu, loi, taiLieu, chiMuc) {
     chiMuc,
     `Tùy chọn CEO: ${JSON.stringify({ ti_le: ["9:16"], ngon_ngu: "vi", ngan_sach_usd: 0, may_quay: MAY_QUAY_MAC_DINH, ...Object.fromEntries(Object.entries(s.tuyChon).filter(([, v]) => v !== undefined)) })}.`,
     "Chỉ tạo hoặc sửa phim.json và kich-ban.md ở gốc phim. Giữ nguyên dữ liệu duyệt, tài sản và các thiết lập CEO đã nhập. Không tự ghi cổng duyệt.",
-    `phim.json là đối tượng có ten, ti_le (danh sách ${TI_LE.join(", ")}), ngon_ngu (vi/en), ngan_sach_usd (số không âm đúng mức CEO đặt), nhan_vat (danh sách {ma, ten, tham_chieu: []}), canh (danh sách có ít nhất một cảnh).`,
+    `phim.json là đối tượng có ten, ti_le (danh sách ${TI_LE.join(", ")}), ngon_ngu (vi/en), ngan_sach_usd (số không âm đúng mức CEO đặt), nhan_vat (danh sách {ma, ten, tham_chieu: [], giong: {mo_ta}}), canh (danh sách có ít nhất một cảnh).`,
+    "Giọng: mỗi nhân vật có lời thoại ghi giong.mo_ta ngắn (giới, tuổi, chất giọng; vd \"nữ khoảng 20 tuổi, giọng trong trẻo\", \"nam khoảng 30 tuổi, giọng trầm\"). Người dẫn chuyện (nếu cần giọng riêng) ghi nguoi_dan.giong.mo_ta. Không tự ghi giong.may hay giong.ma: CEO chọn giọng trên trang Xưởng phim.",
+    "Lời thoại: cảnh do một nhân vật nói thì ghi nguoi_noi (mã nhân vật) và loi_dan là đúng lời nhân vật đó; không ghi nguoi_noi thì người dẫn đọc. Mỗi cảnh chỉ một người nói: đối thoại thì tách thành các cảnh ngắn nối nhau. Phim có nguoi_noi thì mỗi cảnh đúng một câu: cau = [số thứ tự cảnh].",
     `Mỗi cảnh có ma (C01, C02…), loi_dan (chuỗi), khung_hinh (mô tả hình), nhan_vat (danh sách mã), may_quay (${Object.keys(MAY_QUAY).join(", ")}), trang_thai (${TRANG_THAI[0]}), giay (ước tính 4–15), so_phuong_an_khung (2) và cau (danh sách số thứ tự câu đọc trên toàn phim, bắt đầu từ 1).`,
     "Viết từng câu lời dẫn đầy đủ, ngắt bằng dấu kết câu, tránh chữ viết tắt gây tách nhầm câu. Các cảnh nối tiếp theo thứ tự câu, không dùng trùng câu, không bỏ sót câu.",
     "Chỉ đưa người thật vào phim khi đề bài nói rõ họ đã đồng ý cho dùng hình. Chỉ ghi nguoi_that[].dong_y theo xác nhận có thật của CEO.",
@@ -178,7 +181,18 @@ function promptKichBan(s, congCu, loi, taiLieu, chiMuc) {
 
 const loiDan = (phim) => phim.canh.map((c) => typeof c.loi_dan === "string" ? c.loi_dan.trim().replace(/\s+/g, " ") : "");
 const vanBan = (s) => String(s ?? "").normalize("NFC").toLowerCase().replace(/[^\p{L}\p{M}\p{N}]+/gu, "");
-const dinhDanhGiong = (p) => JSON.stringify([p.ngon_ngu, p.helper_giong_theo_canh === true, loiDan(p), p.canh.map((c) => [c.ma, c.cau])]);
+// Giọng từng cảnh (người nói → bộ giọng, mã giọng, tốc độ, cao độ): đổi giọng nhân vật thì phải đọc lại.
+// Đọc một mạch (phim không theo cảnh): một giọng duy nhất là giọng người dẫn (Edge; ElevenLabs bị bộ kiểm chặn ở chế độ này).
+const giongCacCanh = (p) => giongTheoCanh(p) ? p.canh.map((c) => giongCua(p, c)) : [giongCua(p, {})];
+const kyGiong = (p) => hash(JSON.stringify(giongCacCanh(p)), "sha256").slice(0, 32);
+// Ký giọng của bản đã đọc (media/giong/voice.giong.json). Bản đọc trước khi có tệp này dùng một giọng mặc định: coi như khớp
+// nếu mọi cảnh vẫn là giọng mặc định cũ (không bắt đọc lại phim cũ).
+const laGiongCu = (p) => giongCacCanh(p).every((g) => g.may === "edge" && g.ma === (p.ngon_ngu === "en" ? "en-us-authority" : "vi-nam") && g.toc_do === "+0%" && g.cao_do === "+0Hz");
+const kyDaDoc = (file, p) => {
+  let d = null; try { d = docJson(file); } catch { return null; }   // tệp ký hỏng: coi như chưa đọc, đọc lại
+  return d && typeof d.ky === "string" ? d.ky : laGiongCu(p) ? kyGiong(p) : null;
+};
+const dinhDanhGiong = (p) => JSON.stringify([p.ngon_ngu, giongTheoCanh(p), loiDan(p), p.canh.map((c) => [c.ma, c.cau]), giongCacCanh(p)]);
 
 function dongBo(phim, giong) {
   if (!Array.isArray(giong) || !giong.length || !giong.every((c, i) => c?.index === i + 1 && Number.isFinite(c.startMs) && Number.isFinite(c.endMs) && c.endMs > c.startMs)) {
@@ -194,15 +208,16 @@ function dongBo(phim, giong) {
   return moi;
 }
 
-async function lamGiong(root, phim, xuongPhim, docPhim, ghiPhim) {
+async function lamGiong(root, phim, xuongPhim, docPhim, ghiPhim, dirKhoa = "") {
   const thuMuc = thuMucThat(root, "media", "giong");
   const voice = path.join(thuMuc, "voice");
   const loi = loiDan(phim);
   if (loi.some((c) => !c)) throw err("GIONG_LOI", "Mỗi cảnh cần có lời dẫn để tạo giọng đọc.");
   const text = loi.join("\n");
   const daCo = docJson(tepThat(voice + ".json"));
+  const kyCu = kyDaDoc(tepThat(voice + ".giong.json"), phim);
   if (coFile(tepThat(voice + ".mp3")) && coFile(tepThat(voice + ".srt")) && Array.isArray(daCo) &&
-      giongKhopCanh(phim, daCo) && vanBan(daCo.map((c) => c?.text).join(" ")) === vanBan(text)) {
+      giongKhopCanh(phim, daCo) && vanBan(daCo.map((c) => c?.text).join(" ")) === vanBan(text) && kyCu === kyGiong(phim)) {
     ghiPhim(dongBo(phim, daCo));
     return;
   }
@@ -214,11 +229,25 @@ async function lamGiong(root, phim, xuongPhim, docPhim, ghiPhim) {
   try {
     const kichBan = path.join(tam, "loi-dan.txt");
     const ra = path.join(tam, "voice");
-    const theoCanh = phim.helper_giong_theo_canh === true;
-    fs.writeFileSync(kichBan, (theoCanh ? JSON.stringify(loi) : text) + "\n", "utf8");
-    const args = [tts, theoCanh ? "--scenes-file" : "--file", kichBan, "--output", ra, "--voice", phim.ngon_ngu === "en" ? "en-us-authority" : "vi-nam"];
+    const theoCanh = giongTheoCanh(phim);
+    // Đọc theo cảnh: mỗi cảnh mang giọng của người nói (nhân vật hoặc người dẫn) — Edge (preset + tốc độ + cao độ) hoặc ElevenLabs.
+    const giongs = giongCacCanh(phim);
+    const canh = theoCanh ? loi.map((t, i) => ({ text: t, ...giongs[i] })) : null;
+    fs.writeFileSync(kichBan, (theoCanh ? JSON.stringify(canh) : text) + "\n", "utf8");
+    // Đọc một mạch: giọng người dẫn (preset Edge + tốc độ + cao độ). Đọc theo cảnh: giọng nằm trong từng cảnh.
+    const dan = theoCanh ? null : giongs[0];
+    if (dan && dan.may !== "edge") throw err("PHIM_LOI", "Phim đọc một mạch chỉ dùng giọng Edge cho người dẫn. Đổi giọng người dẫn sang Edge hoặc khai người nói cho từng cảnh.");
+    const args = [tts, theoCanh ? "--scenes-file" : "--file", kichBan, "--output", ra, "--voice", dan ? dan.ma : phim.ngon_ngu === "en" ? "en-us-authority" : "vi-nam", "--lang", phim.ngon_ngu === "en" ? "en" : "vi"];
+    // Dạng --rate=-5%: argparse hiểu "-5%" đứng riêng là một cờ mới (đã gặp khi chạy thật).
+    if (dan) args.push("--rate=" + dan.toc_do, "--pitch=" + dan.cao_do);
     if (models) args.push("--models", models);
-    try { await chayLenh(python, args, { cwd: root, env: cleanEnv({ ...process.env, ...xuongPhim.envAi() }), timeout: 10 * 60 * 1000, windowsHide: true }); }
+    const env = cleanEnv({ ...process.env, ...xuongPhim.envAi() });
+    if (giongs.some((g) => g.may === "elevenlabs")) {   // khóa chỉ cấp cho đúng lượt đọc có giọng ElevenLabs, không qua tham số dòng lệnh
+      const khoa = khoaEleven(dirKhoa);
+      if (!khoa) throw err("CHUA_CO_KHOA", "Phim có giọng ElevenLabs nhưng văn phòng chưa có khóa ElevenLabs. Lưu khóa ở trang Kết nối hoặc đổi sang giọng Edge.");
+      env.XUONG_PHIM_ELEVENLABS_KEY = khoa;
+    }
+    try { await chayLenh(python, args, { cwd: root, env, timeout: 10 * 60 * 1000, windowsHide: true }); }
     catch (e) { throw err("GIONG_LOI", "Đọc giọng thất bại: " + (e.stderr?.trim() || e.message)); }
 
     const hienTai = docPhim();
@@ -227,6 +256,7 @@ async function lamGiong(root, phim, xuongPhim, docPhim, ghiPhim) {
     if (!coFile(ra + ".mp3") || !coFile(ra + ".srt")) throw err("GIONG_LOI", "Công cụ đọc giọng chưa xuất đủ voice.mp3 và voice.srt.");
     thuMucThat(root, "media", "giong");
     for (const ext of [".mp3", ".srt", ".json"]) renameRetry(ra + ext, tepThat(voice + ext));
+    ghiAtomic(tepThat(voice + ".giong.json"), JSON.stringify({ ky: kyGiong(hienTai) }) + "\n", 0o644);
     ghiPhim(moi);
   } finally { fs.rmSync(tam, { recursive: true, force: true }); }
 }
@@ -523,9 +553,9 @@ function createLuongPhim({ dir, audit = { log() {} }, now = Date.now, setTimer =
       if (isKetThuc) return false;
       throw err("PHIM_LOI", "Hồ sơ phim thiếu danh sách cảnh.");
     }
-    if (buoc >= 3 && !isKetThuc && s.trangThai !== "xong" && congDaDuyet(phim, 1) && phim.helper_giong_theo_canh === true) {
+    if (buoc >= 3 && !isKetThuc && s.trangThai !== "xong" && congDaDuyet(phim, 1)) {   // mọi phim: lời, thứ tự cảnh hay giọng đổi thì quay lại bước đọc giọng
       const giong = docGiong(root);
-      if (!giong || !giongKhopCanh(phim, giong) || !fileTrong(root, "media/giong/voice.mp3") || !fileTrong(root, "media/giong/voice.srt")) {
+      if (!giong || !giongKhopCanh(phim, giong) || kyDaDoc(tepThat(path.join(thuMucThat(root, "media", "giong"), "voice.giong.json")), phim) !== kyGiong(phim) || !fileTrong(root, "media/giong/voice.mp3") || !fileTrong(root, "media/giong/voice.srt")) {
         sang(s, 2);
         return true;
       }
@@ -546,7 +576,7 @@ function createLuongPhim({ dir, audit = { log() {} }, now = Date.now, setTimer =
     const mo3 = bangCong[2]?.duyet && bangCong[2].duoc;
 
     if (buoc === 2) {
-      await lamGiong(root, phim, xuongPhim, () => docPhim(root), (moi) => ghiPhim(root, moi));
+      await lamGiong(root, phim, xuongPhim, () => docPhim(root), (moi) => ghiPhim(root, moi), dir);
       ghi(s, "xong", "Đã chốt thời lượng theo giọng đọc.");
       sang(s, 3);
     } else if (buoc <= 4) {

@@ -753,7 +753,9 @@ function getAccountsStatus() {
       loginCmd: "codex login",
       hasApiKey: !!(process.env.OPENAI_API_KEY || keys.has("gpt"))
     },
-    gemini: geminiStatus
+    gemini: geminiStatus,
+    // Giọng nhân vật của Xưởng phim (ctl/phim-giong.js): chỉ báo đã có khóa hay chưa.
+    elevenlabs: { connected: null, engine: "ElevenLabs (giọng đọc Xưởng phim)", hasApiKey: keys.has("elevenlabs") }
   };
 }
 

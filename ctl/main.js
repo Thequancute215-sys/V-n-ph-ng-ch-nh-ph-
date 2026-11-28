@@ -35,6 +35,7 @@ const { createCoVanTay } = require("./co-van-tay");
 const { createPhimMau } = require("./phim-mau");
 const phimTaiLieu = require("./phim-tai-lieu");
 const phimHelper = require("./phim-helper");
+const { createPhimGiong } = require("./phim-giong");
 const { createPhimBlender } = require("./phim-blender");
 const { goiCapCut } = require("./phim-capcut");
 const libPhim = require("../lib/phim");
@@ -68,10 +69,11 @@ const HTTP_CODE = {
   CHAT_BUSY: 409, CONG_DANG_KIEM: 409, PUBLISH_BUSY: 409, NOT_READY: 409, NO_RELEASE_WORKFLOW: 422, NOT_ON_MAIN: 409, TAG_EXISTS: 409, DIRTY_REPO: 409, NEEDS_SCAN_APPROVAL: 409, NO_COMMIT: 409, NO_QUOTA: 409, NO_GIT: 422, NO_REMOTE: 422, GIT_PUSH: 502,
   UPDATE_BUSY: 409, NOT_APP: 409, UPDATE_FAILED: 500, GIT_BRANCH: 409, HANDOFF_IN_RUN: 409, DANG_CHAY: 409, MAY_ANH_LOI: 502,
   AGY_BUSY: 409, XUONG_BUSY: 409, CAI_LOI: 500, NO_KEY: 409, MAY_QUAY_BAN: 409, CAN_DOI_SOAT_CHI: 409, VUOT_NGAN_SACH: 409, TOI_DA_TAKE: 409, PHIM_LOI: 422, MAY_QUAY_LOI: 502, BAD_URL: 400, AGY_UNSAVED: 409, SKILL_BUSY: 409, SKILL_DA_CO: 409, BAD_CATALOG: 422, SONG_SONG: 409, AGY_CRED: 502, NO_LOGIN: 409, NOT_SUPPORTED: 501,
+  CHUA_CO_KHOA: 409, KHOA_SAI: 401, HET_HAN_MUC: 429, ELEVENLABS_LOI: 502, NETWORK: 502, PHIM_BAN: 409,
   CHUA_DUNG_DUOC: 422, DANG_DUNG: 409, THIEU_FFMPEG: 409, THIEU_THU_MUC: 409, DUNG_LOI: 500, CHUA_DU_DIEU_KIEN: 409,
 };
 
-function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {}, quotaOptions = {}, updaterOptions = {}, agyOptions = {}, autopilotOptions = {}, notify = false } = {}) {
+function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = crypto.randomBytes(32).toString("hex"), githubOptions = {}, quotaOptions = {}, updaterOptions = {}, agyOptions = {}, autopilotOptions = {}, phimGiongOptions = {}, notify = false } = {}) {
   const db = open(dir);
   const audit = createAudit(db);
   // Nhiều tài khoản GPT cho Codex (ctl/codex-tai-khoan.js): mỗi tiến trình Codex mở ra nhận CODEX_HOME của tài khoản đang chọn.
@@ -171,6 +173,9 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
   // Phim đang quay / dựng / chạy luồng / Blender / nhịp Flow / AI Helper tạo ảnh / xuất gói CapCut thì không dọn nháp.
   const phimDangBan = (root) => !!(mayQuay.trangThai(root).dang || (banDung.trangThai(root) || {}).dang || (luongPhim.trangThai(root) || {}).trangThai === "dang_chay" ||
     (blenderPhim.trangThai(root) || {}).dang || helperDangTao.has(root) || capcutDangXuat.has(root) || nhipFlowCua(root));
+  const phimGiong = createPhimGiong({ dir, audit, dangBan: (root) => phimDangBan(root), ...phimGiongOptions });
+  // Đổi giọng khi phim đang quay/dựng/chạy luồng thì giọng đang đọc lệch hồ sơ: chặn.
+  const phimGiongRoot = (v) => { const root = phimLuongRoot(v); if (phimDangBan(root)) throw Object.assign(new Error("Phim đang chạy (quay, dựng hoặc luồng tự chạy). Đợi xong rồi đổi giọng."), { code: "PHIM_BAN" }); return root; };
   const nhipFlowCua = (root) => { const n = tramFlow.nhipDang(); return !!(n && n.root && path.resolve(n.root).toLowerCase() === path.resolve(root).toLowerCase()); };
   const duAnMoi = createDuAnMoi({ github, ideas, boKiem, audit, dir, ...duAnOptions });
   const quotas = createQuotas({ ...quotaOptions, dir, agyTk, codexTk });
@@ -326,6 +331,13 @@ function createCtl({ khoPhimDir = null, duAnOptions = {}, dir = home(), token = 
       }
       return { take: phimTaiLieu.ghiTake(root, phim, b.canh, preview.sha256, clip) };
     }],
+    // Giọng theo nhân vật (CEO 28/11/2026): Edge miễn phí hoặc ElevenLabs thiết kế từ mô tả.
+    ["GET", "/phim/giong", (p, qs) => ({ giong: phimGiong.list(phimLuongRoot(qs.get("workspace"))) })],
+    ["POST", "/phim/giong/edge", (p, qs, b) => ({ giong: phimGiong.chonEdge(phimGiongRoot(b.workspace), b) })],
+    ["POST", "/phim/giong/tu-dong", (p, qs, b) => ({ giong: phimGiong.tuDong(phimGiongRoot(b.workspace)) })],
+    ["POST", "/phim/giong/thiet-ke", async (p, qs, b) => ({ giong: await phimGiong.thietKe(phimGiongRoot(b.workspace), b) })],
+    ["POST", "/phim/giong/chon", async (p, qs, b) => ({ giong: await phimGiong.chonMau(phimGiongRoot(b.workspace), b) })],
+    ["GET", "/phim/giong/han-muc", async () => ({ hanMuc: await phimGiong.hanMuc() })],
     ["POST", "/phim/helper/nhan-vat", (p, qs, b) => ({ nhanVat: phimHelper.taoNhanVat(phimLuongRoot(b.workspace), b) })],
     ["POST", "/phim/helper/nguon", (p, qs, b) => ({ helper: phimHelper.chonNguon(phimLuongRoot(b.workspace), b) })],
     ["POST", "/phim/helper/goc", (p, qs, b) => ({ helper: phimHelper.goc(phimLuongRoot(b.workspace), b) })],

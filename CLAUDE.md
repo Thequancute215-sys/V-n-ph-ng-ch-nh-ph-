@@ -12,6 +12,7 @@ Nếu bạn được giao sửa mã văn phòng: máy chủ `server.js` + `lib/`
 
 - `ctl/chat.js` + `ctl/runner.js` chatArgv (CEO duyệt 28/11/2026): lượt chat chỉ đọc được tìm/đọc web bằng công cụ web có sẵn của chính CLI (Claude WebSearch/WebFetch, Codex `web_search="live"`, Antigravity `execute_url`), cấm đọc file khóa; sửa file/chạy lệnh chỉ ở lượt CEO bấm "Đồng ý làm" (toàn quyền, vẫn chặn gửi ra ngoài nhân danh CEO).
 - `ctl/cong-web.js` (CEO duyệt 28/11/2026): cổng kiểm web — khi AI trong chat đã đọc web rồi xin làm, ctl tải lại (GET, không cookie, ≤ 1,5 MB, ≤ 15 giây, tối đa 8 link) đúng các link AI đã dùng để máy quét + Claude chỉ đọc chấm prompt injection/mã độc/SQL injection trước khi CEO bấm Đồng ý; link phải qua `kiemLink` (không địa chỉ nội bộ, không chuỗi giống khóa, không phần ?… dài) và tên miền không trỏ về IP nội bộ, link bị chặn thì không tải.
+- `ctl/phim-giong.js` + `tools/xuong-phim/tts_sync.py` (CEO duyệt 28/11/2026): giọng theo nhân vật của Xưởng phim qua ElevenLabs (api.elevenlabs.io) khi CEO đã lưu khóa ElevenLabs — thiết kế giọng gửi mô tả giọng + một đoạn lời mẫu của nhân vật (CEO bấm, có hỏi lại), lưu giọng CEO chọn vào tài khoản ElevenLabs của CEO; đọc lời cảnh có giọng ElevenLabs gửi đúng lời cảnh đó. Khóa đọc từ keys.json, chỉ đi qua header `xi-api-key` (cho tts_sync.py qua biến môi trường của đúng lượt đọc), không in ra, không trả về trình duyệt hay AI.
 Thêm đường mạng mới phải được CEO duyệt và ghi vào danh sách này (cả `AGENTS.md` lẫn `CLAUDE.md`, hai file giữ giống hệt nhau).
 
 ## Bản đồ hệ thống tự cập nhật (CEO duyệt 17/11/2026)

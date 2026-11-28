@@ -27,6 +27,21 @@ Không tự đổi trường của phòng khác. Thiếu hay mâu thuẫn thì g
 - `trang_thai`: `viet` → `co_khung` → `cho_quay` → `da_quay` → `da_chon`.
 - Người thật: khai ở `nguoi_that` với `dong_y: false`. Chỉ CEO đổi thành `true` khi người đó đã đồng ý cho dùng hình.
 
+## Giọng theo nhân vật
+
+```json
+"nhan_vat": [{ "ma": "lan", "ten": "Lan", "giong": { "mo_ta": "nữ khoảng 20 tuổi, giọng trong trẻo" } },
+             { "ma": "minh", "ten": "Minh", "giong": { "mo_ta": "nam khoảng 30 tuổi, giọng trầm" } }],
+"nguoi_dan": { "giong": { "mo_ta": "nam trung niên, giọng ấm, đọc chậm" } },
+"canh": [{ "ma": "C01", "cau": [1], "loi_dan": "Một chiều thu, hai người gặp nhau ở quán cà phê." },
+         { "ma": "C02", "cau": [2], "nguoi_noi": "lan", "loi_dan": "Anh đến muộn quá." },
+         { "ma": "C03", "cau": [3], "nguoi_noi": "minh", "loi_dan": "Xin lỗi em, đường tắc lắm." }]
+```
+
+- Hinata viết `giong.mo_ta` (giới, tuổi, chất giọng) và `nguoi_noi` của từng cảnh. Không ghi `nguoi_noi` thì người dẫn đọc.
+- Mỗi cảnh một người nói; đối thoại tách thành các cảnh ngắn nối nhau. Phim có `nguoi_noi` đọc theo cảnh: `cau` của cảnh thứ i là `[i]`.
+- `giong.may` / `giong.ma` do CEO chọn trên trang Xưởng phim: `edge` (miễn phí, máy chỉnh cao độ và tốc độ theo mô tả) hoặc `elevenlabs` (thiết kế giọng từ mô tả, trả theo ký tự). Chưa chọn thì máy tự dùng giọng Edge theo mô tả.
+
 ## Lệnh
 
 Trong lượt AI, văn phòng cấp sẵn các biến:
