@@ -227,6 +227,8 @@ function maskDai(s) {
 // Đoạn cuối (đủ để đọc câu hỏi ở cuối tin), cắt thì đánh dấu "…" ở đầu. Chỉ che 3 lần độ dài cần (tin AI có thể rất dài).
 const cuoiDai = (s) => { const m = maskDai(String(s).slice(-3 * DAI_CHI_TIET)); return m.length > DAI_CHI_TIET ? "…" + m.slice(-(DAI_CHI_TIET - 1)) : m; };
 // Đoạn đầu (kế hoạch: tiêu đề ở đầu), cắt thì đánh dấu "…" ở cuối.
+// Một dòng ngắn (câu hỏi, nhãn lựa chọn, tóm tắt ở ô bước tiếp theo): che chặt như chi tiết, gộp khoảng trắng, cắt độ dài.
+const maskNgan = (s, n) => clip(maskDai(String(s || "").slice(0, 3 * n)).replace(/\s+/g, " ").trim(), n);
 const dauDai = (s) => { const m = maskDai(String(s).slice(0, 3 * DAI_CHI_TIET)); return m.length > DAI_CHI_TIET ? m.slice(0, DAI_CHI_TIET - 1) + "…" : m; };
 const events = [];
 const seenEvt = new Set();
@@ -273,6 +275,11 @@ function parseClaude(a, line) {
           const body = inp.message || "";
           if (to && to !== a.key && body) pushEvent({ t, kind: "msg", from: a.key, to, title: titleOf(body), body: clip(mask(body), 700) });
         }
+        if (/(^|__)wrap_up$/.test(n)) {   // lượt kết thúc không hỏi gì (hoặc hỏi rỗng): bỏ câu hỏi cũ
+          const hoi = maskNgan(inp.ask, 300);
+          a.hopHoi = hoi ? { t, hoi, tomTat: maskNgan(inp.recap, 400),
+            chon: (Array.isArray(inp.actions) ? inp.actions : []).map((x) => maskNgan(x && x.label, 40)).filter(Boolean).slice(0, 4) } : null;
+        }
         if (n === "AskUserQuestion" || n === "ExitPlanMode") {
           const tinNay = vanBan.join("\n\n");   // chữ AI viết ngay trước hộp hỏi (kế hoạch khi không có inp.plan): giữ bản gốc, che một lần
           if (vanBan.length) { a.lastDai = cuoiDai(tinNay); vanBan.length = 0; }
@@ -280,7 +287,10 @@ function parseClaude(a, line) {
           // Chi tiết: kế hoạch AI xin duyệt, hoặc từng câu hỏi kèm mô tả từng lựa chọn (xuống dòng cho dễ đọc).
           const ct = n === "ExitPlanMode" ? "Duyệt kế hoạch trước khi làm" + (inp.plan ? "\n\n" + inp.plan : tinNay ? "\n\n" + tinNay : a.lastDai ? "\n\n" + a.lastDai : "")
             : (inp.questions || []).map((x) => x.question + "\n" + (x.options || []).map((o, i) => `(${String.fromCharCode(97 + i)}) ${o.label}${o.description ? ": " + o.description : ""}`).join("\n")).join("\n\n") || q;
-          a.pendingAsk = { id: c.id, t, text: clip(mask(q), 300), chiTiet: n === "ExitPlanMode" ? dauDai(ct) : cuoiDai(ct) };
+          const mot = n === "AskUserQuestion" && (inp.questions || []).length === 1 ? inp.questions[0] : null;
+          a.pendingAsk = { id: c.id, t, text: maskNgan((mot && mot.question) || q, 300) || "Câu hỏi cho anh", chiTiet: n === "ExitPlanMode" ? dauDai(ct) : cuoiDai(ct),
+            loai: n === "ExitPlanMode" ? "Xin anh duyệt kế hoạch" : "Câu hỏi cho anh",
+            chon: mot ? (Array.isArray(mot.options) ? mot.options : []).map((o) => maskNgan(o && o.label, 40)).filter(Boolean).slice(0, 6) : [] };
         }
       }
     }
@@ -299,11 +309,12 @@ function parseClaude(a, line) {
       const from = agentFromId(m[2]) || agentFromId(m[1]) || agentFromLabel(m[3]);
       const raw = m[4].replace(/<\/cross-session-message>[\s\S]*$/, "");
       if (from && from !== a.key) pushEvent({ t, kind: "msg", from, to: a.key, title: titleOf(raw), body: clip(mask(raw), 700) });
+      a.hopHoi = null;   // phiên khác giao việc mới: lượt mới bắt đầu, câu hỏi cũ không còn là việc đang chờ anh
       return;
     }
     const typed = typeof content === "string" || (Array.isArray(content) && !content.some((x) => x.type === "tool_result"));
     const s = txt.trim();
-    if (typed && !j.isMeta && s && !NOT_HUMAN.test(s)) { a.lastUserAt = t; ownerSays(a, t, s); }
+    if (typed && !j.isMeta && s && !NOT_HUMAN.test(s)) { a.lastUserAt = t; a.hopHoi = null; ownerSays(a, t, s); }   // anh đã trả lời: hết câu hỏi
   }
 }
 // ---------- đọc nhật ký Codex ----------
@@ -489,16 +500,25 @@ function askLine(text, re) {
 }
 function ceoAsks(out, t) {
   const items = [], seen = new Set();
-  for (const r of canAnh) if (r.open) { items.push({ kind: "so", exact: true, who: r.who, whoLabel: r.whoLabel, since: r.since, text: r.text + (r.options ? " — " + r.options : ""), chiTiet: r.text + (r.options ? "\n\nLựa chọn: " + r.options : ""), id: r.id, answered: !!(r.who && byKey[r.who] && byKey[r.who].lastUserAt > r.since) }); if (r.who) seen.add(r.who); }
-  for (const s of out) { const a = byKey[s.key]; if (a && a.pendingAsk && t - a.pendingAsk.t < 24 * 3600000) { items.push({ kind: "hoi", exact: true, who: s.key, since: a.pendingAsk.t, text: a.pendingAsk.text, chiTiet: a.pendingAsk.chiTiet || a.pendingAsk.text }); seen.add(s.key); } }
-  for (const e of events) if (t - e.t < 24 * 3600000 && /^\s*\[CẦN ANH/.test(e.body || e.title) && !seen.has(e.from)) { items.push({ kind: "tag", exact: true, who: e.from, to: e.to, since: e.t, text: clip(e.body || e.title, 300), chiTiet: e.body || e.title }); seen.add(e.from); }
+  for (const r of canAnh) if (r.open) { items.push({ kind: "so", exact: true, loai: "Cần anh quyết", who: r.who, whoLabel: r.whoLabel, since: r.since, text: r.text + (r.options ? " — " + r.options : ""), hoi: r.text, chon: r.options ? r.options.split(/\s*;\s*/).filter(Boolean).slice(0, 6) : [], chiTiet: r.text + (r.options ? "\n\nLựa chọn: " + r.options : ""), id: r.id, answered: !!(r.who && byKey[r.who] && byKey[r.who].lastUserAt > r.since) }); if (r.who) seen.add(r.who); }
+  for (const s of out) { const a = byKey[s.key]; if (a && a.pendingAsk && t - a.pendingAsk.t < 24 * 3600000) { items.push({ kind: "hoi", exact: true, loai: a.pendingAsk.loai || "Câu hỏi cho anh", who: s.key, since: a.pendingAsk.t, text: a.pendingAsk.text, hoi: a.pendingAsk.text, chon: a.pendingAsk.chon || [], chiTiet: a.pendingAsk.chiTiet || a.pendingAsk.text }); seen.add(s.key); } }
+  // Câu hỏi ở ô "bước tiếp theo" (wrap_up) mà anh chưa trả lời (chưa gõ gì cho phiên sau lúc hỏi), phiên đã dừng chờ anh.
+  for (const s of out) {
+    const a = byKey[s.key], h = a && a.hopHoi;
+    if (!h || seen.has(s.key) || s.status === "active" || (a.lastUserAt || 0) >= h.t || t - h.t >= 24 * 3600000) continue;
+    // Ngữ cảnh: tin AI của chính lượt này (sau tin anh gõ gần nhất), dù AI viết trước hay sau ô bước tiếp theo.
+    items.push({ kind: "hop", exact: true, loai: "Câu hỏi cho anh", who: s.key, since: h.t, text: h.hoi, hoi: h.hoi, chon: h.chon, tomTat: h.tomTat,
+      chiTiet: a.lastTextAt > (a.lastUserAt || 0) ? a.lastDai || "" : "" });
+    seen.add(s.key);
+  }
+  for (const e of events) if (t - e.t < 24 * 3600000 && /^\s*\[CẦN ANH/.test(e.body || e.title) && !seen.has(e.from)) { items.push({ kind: "tag", exact: true, loai: "Cần anh", who: e.from, to: e.to, since: e.t, text: clip(e.body || e.title, 300), chiTiet: e.body || e.title }); seen.add(e.from); }
   for (const s of out) {
     const a = byKey[s.key]; if (!a || a.ceo || !a.lastTail || s.status === "active" || seen.has(s.key)) continue;
     const tail = a.lastTail.split(/(?<=[.?!])\s+/).filter((x) => (x.match(/\|/g) || []).length < 2).join(" ");
     if (a.lastUserAt && a.lastTextAt > a.lastUserAt && t - a.lastTextAt < 24 * 3600000 && /\b(anh|chị|sếp|CEO)\b/i.test(tail) && ASK_REPLY.test(tail.slice(-300)) && !NOT_ASK.test(tail)) {
-      items.push({ kind: "reply", guess: true, who: s.key, since: a.lastTextAt, text: askLine(tail, /\?|anh (duyệt|chọn|quyết|cho phép|xác nhận|muốn|nói)|làm đi/i), chiTiet: a.lastDai || a.lastTail }); seen.add(s.key);
+      items.push({ kind: "reply", guess: true, loai: "Có vẻ đang hỏi anh", who: s.key, since: a.lastTextAt, text: askLine(tail, /\?|anh (duyệt|chọn|quyết|cho phép|xác nhận|muốn|nói)|làm đi/i), chiTiet: a.lastDai || a.lastTail }); seen.add(s.key);
     } else if (t - a.lastTextAt < 12 * 3600000 && ASK_EXPLICIT.test(tail) && !NOT_ASK.test(tail)) {
-      items.push({ kind: "stop", guess: true, who: s.key, since: a.lastTextAt, text: askLine(tail, ASK_EXPLICIT), chiTiet: a.lastDai || a.lastTail }); seen.add(s.key);
+      items.push({ kind: "stop", guess: true, loai: "Có vẻ đang chờ anh", who: s.key, since: a.lastTextAt, text: askLine(tail, ASK_EXPLICIT), chiTiet: a.lastDai || a.lastTail }); seen.add(s.key);
     }
   }
   return items.sort((x, y) => (!!x.guess - !!y.guess) || x.since - y.since).slice(0, 14);
