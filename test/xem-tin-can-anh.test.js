@@ -44,6 +44,34 @@ const PHIEN_C = [
   { type: "assistant", timestamp: iso(3000), message: { role: "assistant", stop_reason: "end_turn", content: [{ type: "text", text: "ab/".repeat(70000) + " Sếp xem log dài này rồi chọn giúp em nhé?" }] } },
 ];
 
+// Phiên D: kết thúc lượt bằng ô "bước tiếp theo" (wrap_up: ask + actions + recap) rồi mới viết tin cuối — câu hỏi THẬT cho anh.
+const wrap = (ms, input) => ({ type: "assistant", timestamp: iso(ms), message: { role: "assistant", content: [{ type: "tool_use", id: "wu_" + ms, name: "mcp__ccd_turn__wrap_up", input }] } });
+const PHIEN_D = [
+  { type: "user", timestamp: iso(0), message: { role: "user", content: "Làm xong thì hỏi anh" } },
+  wrap(3000, { recap: "Đã sửa nút Xem tin, chưa merge.", ask: "Merge PR #90 rồi phát hành?", actions: [{ label: "Merge và phát hành" }, { label: "Chỉ merge" }] }),
+  { type: "assistant", timestamp: iso(4000), message: { role: "assistant", stop_reason: "end_turn", content: [{ type: "text", text: "Em đã sửa xong. Sếp muốn merge và phát hành hay chỉ merge?" }] } },
+];
+// Phiên E: đã hỏi bằng ô bước tiếp theo, anh trả lời (bấm nút trong app = tin người dùng thường), lượt sau chưa kết thúc: hết việc.
+const PHIEN_E = [
+  { type: "user", timestamp: iso(0), message: { role: "user", content: "Việc một" } },
+  wrap(2000, { recap: "Xong việc một.", ask: "Làm tiếp việc hai không?", actions: [{ label: "Làm tiếp" }] }),
+  { type: "user", timestamp: iso(3000), message: { role: "user", content: "Làm tiếp" } },
+];
+// Phiên G: hỏi rồi lượt sau (chưa có tin anh) kết thúc bằng ô bước tiếp theo KHÔNG hỏi gì: câu hỏi cũ bỏ.
+const PHIEN_G = [
+  { type: "user", timestamp: iso(0), message: { role: "user", content: "Việc ba" } },
+  wrap(2000, { recap: "Xong việc ba.", ask: "Có làm việc bốn không?" }),
+  wrap(2500, { recap: "Đã tự xử lý thêm, không cần anh." }),
+];
+// Phiên F: AI viết tin TRƯỚC rồi mới gọi ô bước tiếp theo; hỏi hai lần (lần sau thay lần trước); câu hỏi/nhãn/tóm tắt có bí mật.
+const PHIEN_F = [
+  { type: "user", timestamp: iso(0), message: { role: "user", content: "Kiểm khóa giúp anh" } },
+  { type: "assistant", timestamp: iso(2000), message: { role: "assistant", content: [{ type: "text", text: "Em đã kiểm xong cấu hình máy chủ thử." }] } },
+  wrap(2500, { recap: "Bản nháp.", ask: "Câu hỏi cũ?" }),
+  wrap(3000, { recap: "Đã thấy Authorization: Bearer abc123def456 và **password**: matkhau9 trong log.", ask: "Xoá token: bimat8 khỏi log không?",
+    actions: [{ label: "Xoá DB_PASSWORD=bimat10" }, { label: "Để nguyên" }] }),
+];
+
 async function startOffice(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vp-xem-tin-"));
   const home = path.join(dir, "home"), claudeDir = path.join(home, ".claude"), duAn = path.join(dir, "du-an");
@@ -51,7 +79,7 @@ async function startOffice(t) {
   for (const x of ["server.js", "package.json", "lib", "public"]) fs.cpSync(path.join(ROOT, x), path.join(dir, x), { recursive: true });
   const enc = path.resolve(duAn).replace(/[^a-zA-Z0-9]/g, "-").toLowerCase();
   const pdir = path.join(claudeDir, "projects", enc); fs.mkdirSync(pdir, { recursive: true });
-  for (const [id, lines] of [["11111111-2222-3333-4444-555555555555", PHIEN_A], ["66666666-2222-3333-4444-555555555555", PHIEN_B], ["77777777-2222-3333-4444-555555555555", PHIEN_C]]) {
+  for (const [id, lines] of [["11111111-2222-3333-4444-555555555555", PHIEN_A], ["66666666-2222-3333-4444-555555555555", PHIEN_B], ["77777777-2222-3333-4444-555555555555", PHIEN_C], ["88888888-2222-3333-4444-555555555555", PHIEN_D], ["99999999-2222-3333-4444-555555555555", PHIEN_E], ["aaaaaaaa-2222-3333-4444-555555555555", PHIEN_F], ["bbbbbbbb-2222-3333-4444-555555555555", PHIEN_G]]) {
     const f = path.join(pdir, id + ".jsonl");
     fs.writeFileSync(f, lines.map((x) => JSON.stringify(x)).join("\n") + "\n");
     const cu = new Date(t0 + 5000); fs.utimesSync(f, cu, cu);
@@ -78,7 +106,7 @@ test("Việc cần anh: chiTiet đủ dài, giữ xuống dòng, ghép các kh�
   let asks = [];
   for (let i = 0; i < 100; i++) {
     try { asks = (await getJson(port, "/state")).asks || []; } catch {}
-    if (asks.some((a) => a.kind === "reply") && asks.some((a) => a.kind === "hoi") && asks.filter((a) => a.kind === "so").length === 2 && asks.some((a) => /log dài này/.test(a.text || ""))) break;
+    if (asks.some((a) => a.kind === "reply") && asks.some((a) => a.kind === "hoi") && asks.filter((a) => a.kind === "so").length === 2 && asks.some((a) => /log dài này/.test(a.text || "")) && asks.filter((a) => a.kind === "hop").length === 2) break;
     if (child.exitCode !== null) break;
     await new Promise((r) => setTimeout(r, 150));
   }
@@ -96,8 +124,25 @@ test("Việc cần anh: chiTiet đủ dài, giữ xuống dòng, ghép các kh�
   assert.ok(dai && dai.chiTiet.length <= 1500 && /chọn giúp em nhé\?$/.test(dai.chiTiet), "tin 200 KB: vẫn đọc được câu hỏi, có trần");
   const bd = Date.now(); await getJson(port, "/state"); assert.ok(Date.now() - bd < 2000, "máy chủ không khựng vì tin dài");
 
+  const hopTat = asks.filter((a) => a.kind === "hop");
+  assert.strictEqual(hopTat.length, 2, "chỉ phiên D và F còn câu hỏi (E đã trả lời, G kết thúc không hỏi): " + JSON.stringify(hopTat));
+  const f = hopTat.find((a) => /log/.test(a.hoi));
+  assert.ok(f, "phiên F: câu hỏi lần sau thay lần trước");
+  assert.match(f.hoi, /^Xoá token: ‹ẩn›/, "câu hỏi được che khóa");
+  for (const bimat of ["bimat8", "abc123def456", "matkhau9", "bimat10"]) assert.ok(!JSON.stringify(f).includes(bimat), "phải che: " + bimat);
+  assert.match(f.chiTiet, /Em đã kiểm xong cấu hình máy chủ thử\./, "AI viết tin trước ô bước tiếp theo: vẫn có ngữ cảnh");
+  const hop = hopTat.filter((a) => a !== f);
+  assert.strictEqual(hop[0].hoi, "Merge PR #90 rồi phát hành?", "câu hỏi lấy đúng từ ô bước tiếp theo");
+  assert.ok(!hop[0].guess, "không phải máy đoán");
+  assert.deepStrictEqual(hop[0].chon, ["Merge và phát hành", "Chỉ merge"], "kèm các lựa chọn");
+  assert.strictEqual(hop[0].tomTat, "Đã sửa nút Xem tin, chưa merge.");
+  assert.match(hop[0].loai, /Câu hỏi cho anh/);
+  assert.ok(!asks.some((a) => a.who === hop[0].who && a.kind === "reply"), "không thêm mục đoán trùng cho cùng phiên");
+
   const hoi = asks.find((a) => a.kind === "hoi");
   assert.ok(hoi, "phải thấy hộp hỏi đang chờ");
+  assert.deepStrictEqual(hoi.chon, ["Cách A", "Cách B"], "hộp hỏi một câu: kèm lựa chọn");
+  assert.strictEqual(hoi.hoi, "Làm theo cách nào?");
   assert.match(hoi.chiTiet, /Làm theo cách nào\?\n\(a\) Cách A: nhanh, ít kiểm\n\(b\) Cách B: chậm, kiểm kỹ/, "hộp hỏi: từng lựa chọn kèm mô tả, xuống dòng");
 
   const so = asks.filter((a) => a.kind === "so");
@@ -111,7 +156,10 @@ test("Tổng quan: Xem tin mở chi tiết tại hàng, khoá duy nhất, chỉ 
   assert.match(src, /data-xem-hoi=/, "nút Xem tin là nút mở chi tiết");
   assert.match(src, /aria-expanded=/, "nút báo trạng thái mở cho trình đọc màn hình");
   assert.match(src, /\$\{mo \? ` aria-controls=/, "aria-controls chỉ khi khối chi tiết có trong DOM");
-  assert.match(src, /esc\(a\.chiTiet \|\| a\.text/, "chi tiết phải thoát HTML");
+  assert.match(src, /\$\{esc\(a\.chiTiet\)\}<\/pre>/, "đoạn tin phải thoát HTML");
+  assert.match(src, /esc\(a\.loai \|\| "Cần anh"\)\}:<\/b> \$\{esc\(a\.hoi \|\| a\.text/, "đầu khung: loại việc + câu hỏi, đã thoát HTML");
+  assert.match(src, /a\.chon\.map\(\(c\) => [^\n]*\$\{esc\(c\)\}/, "lựa chọn đã thoát HTML");
+  assert.match(src, /Tóm tắt: \$\{esc\(a\.tomTat\)\}/, "tóm tắt đã thoát HTML");
   assert.match(src, /tabindex="0" data-cuon=/, "hộp chi tiết cuộn được bằng bàn phím");
   assert.match(src, /\[a\.kind \|\| "", a\.id \|\| "", a\.who \|\| "", a\.since \|\| 0/, "khoá gồm loại, mã dòng, người, thời điểm");
   assert.match(src, /daCo\.set\(goc, lan \+ 1\)/, "khoá trùng thì đánh số để vẫn duy nhất");
