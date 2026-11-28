@@ -63,7 +63,7 @@ function noiState() {
   es.onmessage = (m) => {
     let s; try { s = JSON.parse(m.data); } catch { return; }
     // Chỉ báo các khu khi có gì đổi (tin mới, trạng thái AI, việc cần anh, cảnh báo): đỡ vẽ lại mỗi giây.
-    const ky = [s.events.length, s.events.at(-1)?.t, (s.asks || []).map((a) => (a.since || 0) + ":" + String(a.chiTiet || a.text || "").length).join(","), (s.alerts || []).length, s.agents.map((a) => a.status + (a.lastTextAt || "")).join(","), s.sys && s.sys.cFreeGB].join("|");
+    const ky = [s.events.length, s.events.at(-1)?.t, (s.asks || []).map((a) => (a.since || 0) + ":" + String(a.chiTiet || a.text || "").length + ":" + (a.chon || []).length).join(","), (s.alerts || []).length, s.agents.map((a) => a.status + (a.lastTextAt || "")).join(","), s.sys && s.sys.cFreeGB].join("|");
     kho.state = s; kho.loiState = "";
     trangThaiMay();
     if (ky !== chuKy) { chuKy = ky; kho.bao(); }

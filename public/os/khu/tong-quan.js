@@ -29,6 +29,10 @@ export async function mo(vung, { kho, ngan, signal }) {
   // "Xem tin" của câu AI hỏi: mở chi tiết ngay tại hàng (câu hỏi nằm trong phiên AI, không nằm trong sổ tin nhắn).
   // Giữ mục đang mở qua các lần vẽ lại (kho đổi mỗi giây) bằng khoá ai + thời điểm.
   const moHoi = new Set();
+  // Đầu khung chi tiết: việc gì cần anh (câu hỏi/xin duyệt), các lựa chọn AI đưa ra, tóm tắt; đoạn tin chỉ là ngữ cảnh bên dưới.
+  const veViec = (a) => `<div class="tieu" style="overflow-wrap:anywhere"><b>${esc(a.loai || "Cần anh")}:</b> ${esc(a.hoi || a.text || "")}</div>` +
+    ((a.chon || []).length ? `<div class="hang" style="flex-wrap:wrap;min-width:0" role="list" aria-label="Các lựa chọn AI đưa ra"><span class="mo">Lựa chọn:</span>${a.chon.map((c) => `<span class="nhan" role="listitem" style="max-width:100%;overflow-wrap:anywhere">${esc(c)}</span>`).join("")}</div>` : "") +
+    (a.tomTat ? `<div class="mo" style="overflow-wrap:anywhere">Tóm tắt: ${esc(a.tomTat)}</div>` : "");
   let canAnhCuoi = "";   // chỉ thay DOM khi nội dung đổi: không làm mất focus, vị trí cuộn, chữ đang bôi đen
 
   async function taiCtl() {
@@ -62,7 +66,7 @@ export async function mo(vung, { kho, ngan, signal }) {
       const tieu = cat(a.text, 220), nguoi = a.who ? ten(a.who) : a.whoLabel || "AI";
       muc.push({ sap: a.since || 0, t: a.since, tieu, nguon: nguoi + (a.guess ? " (máy đoán từ câu cuối)" : ""),
         nut: `<button type="button" class="nut nho" data-xem-hoi="${esc(khoa)}" aria-expanded="${mo}"${mo ? ` aria-controls="${idCt}"` : ""} aria-label="${esc((mo ? "Thu gọn: " : "Xem tin: ") + cat(tieu, 80))}">${mo ? "Thu gọn" : "Xem tin"}</button>`,
-        sau: mo ? `<div class="cot-doc" id="${idCt}" style="grid-column:1/-1;min-width:0;gap:var(--space-xs)"><pre class="van-ban noi-dung" tabindex="0" data-cuon="${esc(khoa)}" aria-label="${esc("Toàn văn tin của " + nguoi)}" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto;margin:0;padding:var(--space-xs) var(--space-sm);border:var(--rule-hair) solid var(--color-rule);border-radius:var(--radius-card)">${esc(a.chiTiet || a.text || "")}</pre>` +
+        sau: mo ? `<div class="cot-doc" id="${idCt}" style="grid-column:1/-1;min-width:0;gap:var(--space-xs)">` + veViec(a) + (a.chiTiet && a.chiTiet !== a.hoi ? `<div class="mo">Đoạn cuối tin của ${esc(nguoi)}:</div><pre class="van-ban noi-dung" tabindex="0" data-cuon="${esc(khoa)}" aria-label="${esc("Toàn văn tin của " + nguoi)}" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto;margin:0;padding:var(--space-xs) var(--space-sm);border:var(--rule-hair) solid var(--color-rule);border-radius:var(--radius-card)">${esc(a.chiTiet)}</pre>` : "") +
           `<div class="hang" style="flex-wrap:wrap;min-width:0"><span class="mo">Trả lời ngay trong phiên của ${esc(nguoi)}.</span>${a.who ? `<a class="nut nho" data-mo-tin="${esc(khoa)}" href="#/tin-nhan?ai=${encodeURIComponent(a.who)}" aria-label="${esc("Mở dòng tin với " + nguoi)}">Mở dòng tin</a>` : ""}</div></div>` : "" });
     });
     for (const k of [...moHoi]) if (!conMo.has(k)) moHoi.delete(k);   // việc đã hết thì quên trạng thái mở

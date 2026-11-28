@@ -44,6 +44,21 @@ const PHIEN_C = [
   { type: "assistant", timestamp: iso(3000), message: { role: "assistant", stop_reason: "end_turn", content: [{ type: "text", text: "ab/".repeat(70000) + " Sếp xem log dài này rồi chọn giúp em nhé?" }] } },
 ];
 
+// Phiên D: kết thúc lượt bằng ô "bước tiếp theo" (wrap_up: ask + actions + recap) rồi mới viết tin cuối — câu hỏi THẬT cho anh.
+const wrap = (ms, input) => ({ type: "assistant", timestamp: iso(ms), message: { role: "assistant", content: [{ type: "tool_use", id: "wu_" + ms, name: "mcp__ccd_turn__wrap_up", input }] } });
+const PHIEN_D = [
+  { type: "user", timestamp: iso(0), message: { role: "user", content: "Làm xong thì hỏi anh" } },
+  wrap(3000, { recap: "Đã sửa nút Xem tin, chưa merge.", ask: "Merge PR #90 rồi phát hành?", actions: [{ label: "Merge và phát hành" }, { label: "Chỉ merge" }] }),
+  { type: "assistant", timestamp: iso(4000), message: { role: "assistant", stop_reason: "end_turn", content: [{ type: "text", text: "Em đã sửa xong. Sếp muốn merge và phát hành hay chỉ merge?" }] } },
+];
+// Phiên E: đã hỏi bằng ô bước tiếp theo nhưng anh đã trả lời sau đó, rồi lượt mới kết thúc không hỏi gì: không còn việc cần anh.
+const PHIEN_E = [
+  { type: "user", timestamp: iso(0), message: { role: "user", content: "Việc một" } },
+  wrap(2000, { recap: "Xong việc một.", ask: "Làm tiếp việc hai không?", actions: [{ label: "Làm tiếp" }] }),
+  { type: "user", timestamp: iso(3000), message: { role: "user", content: "Làm tiếp" } },
+  wrap(4000, { recap: "Xong việc hai." }),
+];
+
 async function startOffice(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vp-xem-tin-"));
   const home = path.join(dir, "home"), claudeDir = path.join(home, ".claude"), duAn = path.join(dir, "du-an");
@@ -51,7 +66,7 @@ async function startOffice(t) {
   for (const x of ["server.js", "package.json", "lib", "public"]) fs.cpSync(path.join(ROOT, x), path.join(dir, x), { recursive: true });
   const enc = path.resolve(duAn).replace(/[^a-zA-Z0-9]/g, "-").toLowerCase();
   const pdir = path.join(claudeDir, "projects", enc); fs.mkdirSync(pdir, { recursive: true });
-  for (const [id, lines] of [["11111111-2222-3333-4444-555555555555", PHIEN_A], ["66666666-2222-3333-4444-555555555555", PHIEN_B], ["77777777-2222-3333-4444-555555555555", PHIEN_C]]) {
+  for (const [id, lines] of [["11111111-2222-3333-4444-555555555555", PHIEN_A], ["66666666-2222-3333-4444-555555555555", PHIEN_B], ["77777777-2222-3333-4444-555555555555", PHIEN_C], ["88888888-2222-3333-4444-555555555555", PHIEN_D], ["99999999-2222-3333-4444-555555555555", PHIEN_E]]) {
     const f = path.join(pdir, id + ".jsonl");
     fs.writeFileSync(f, lines.map((x) => JSON.stringify(x)).join("\n") + "\n");
     const cu = new Date(t0 + 5000); fs.utimesSync(f, cu, cu);
@@ -78,7 +93,7 @@ test("Việc cần anh: chiTiet đủ dài, giữ xuống dòng, ghép các kh�
   let asks = [];
   for (let i = 0; i < 100; i++) {
     try { asks = (await getJson(port, "/state")).asks || []; } catch {}
-    if (asks.some((a) => a.kind === "reply") && asks.some((a) => a.kind === "hoi") && asks.filter((a) => a.kind === "so").length === 2 && asks.some((a) => /log dài này/.test(a.text || ""))) break;
+    if (asks.some((a) => a.kind === "reply") && asks.some((a) => a.kind === "hoi") && asks.filter((a) => a.kind === "so").length === 2 && asks.some((a) => /log dài này/.test(a.text || "")) && asks.some((a) => a.kind === "hop")) break;
     if (child.exitCode !== null) break;
     await new Promise((r) => setTimeout(r, 150));
   }
@@ -96,7 +111,18 @@ test("Việc cần anh: chiTiet đủ dài, giữ xuống dòng, ghép các kh�
   assert.ok(dai && dai.chiTiet.length <= 1500 && /chọn giúp em nhé\?$/.test(dai.chiTiet), "tin 200 KB: vẫn đọc được câu hỏi, có trần");
   const bd = Date.now(); await getJson(port, "/state"); assert.ok(Date.now() - bd < 2000, "máy chủ không khựng vì tin dài");
 
+  const hop = asks.filter((a) => a.kind === "hop");
+  assert.strictEqual(hop.length, 1, "chỉ phiên D còn câu hỏi ô bước tiếp theo (phiên E đã trả lời, lượt sau không hỏi): " + JSON.stringify(hop));
+  assert.strictEqual(hop[0].hoi, "Merge PR #90 rồi phát hành?", "câu hỏi lấy đúng từ ô bước tiếp theo");
+  assert.ok(!hop[0].guess, "không phải máy đoán");
+  assert.deepStrictEqual(hop[0].chon, ["Merge và phát hành", "Chỉ merge"], "kèm các lựa chọn");
+  assert.strictEqual(hop[0].tomTat, "Đã sửa nút Xem tin, chưa merge.");
+  assert.match(hop[0].loai, /Câu hỏi cho anh/);
+  assert.ok(!asks.some((a) => a.who === hop[0].who && a.kind === "reply"), "không thêm mục đoán trùng cho cùng phiên");
+
   const hoi = asks.find((a) => a.kind === "hoi");
+  assert.deepStrictEqual(hoi.chon, ["Cách A", "Cách B"], "hộp hỏi một câu: kèm lựa chọn");
+  assert.strictEqual(hoi.hoi, "Làm theo cách nào?");
   assert.ok(hoi, "phải thấy hộp hỏi đang chờ");
   assert.match(hoi.chiTiet, /Làm theo cách nào\?\n\(a\) Cách A: nhanh, ít kiểm\n\(b\) Cách B: chậm, kiểm kỹ/, "hộp hỏi: từng lựa chọn kèm mô tả, xuống dòng");
 
@@ -111,7 +137,10 @@ test("Tổng quan: Xem tin mở chi tiết tại hàng, khoá duy nhất, chỉ 
   assert.match(src, /data-xem-hoi=/, "nút Xem tin là nút mở chi tiết");
   assert.match(src, /aria-expanded=/, "nút báo trạng thái mở cho trình đọc màn hình");
   assert.match(src, /\$\{mo \? ` aria-controls=/, "aria-controls chỉ khi khối chi tiết có trong DOM");
-  assert.match(src, /esc\(a\.chiTiet \|\| a\.text/, "chi tiết phải thoát HTML");
+  assert.match(src, /\$\{esc\(a\.chiTiet\)\}<\/pre>/, "đoạn tin phải thoát HTML");
+  assert.match(src, /esc\(a\.loai \|\| "Cần anh"\)\}:<\/b> \$\{esc\(a\.hoi \|\| a\.text/, "đầu khung: loại việc + câu hỏi, đã thoát HTML");
+  assert.match(src, /a\.chon\.map\(\(c\) => [^\n]*\$\{esc\(c\)\}/, "lựa chọn đã thoát HTML");
+  assert.match(src, /Tóm tắt: \$\{esc\(a\.tomTat\)\}/, "tóm tắt đã thoát HTML");
   assert.match(src, /tabindex="0" data-cuon=/, "hộp chi tiết cuộn được bằng bàn phím");
   assert.match(src, /\[a\.kind \|\| "", a\.id \|\| "", a\.who \|\| "", a\.since \|\| 0/, "khoá gồm loại, mã dòng, người, thời điểm");
   assert.match(src, /daCo\.set\(goc, lan \+ 1\)/, "khoá trùng thì đánh số để vẫn duy nhất");
