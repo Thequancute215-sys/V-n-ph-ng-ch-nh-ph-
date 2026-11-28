@@ -24,6 +24,7 @@ const khoaGia = "sk-ant-" + "a".repeat(30);
 const khoiTren = "Phần mở đầu dài. ".repeat(80) + "\nPhương án:\n(a) Merge ngay\n(b) Chờ thêm\n" +
   "Chữ thường không được che: tốn 5000 token rồi, đặt password mới hay giữ, hàm byKey có ổn, thư mục skills_directory.\n" +
   "Markdown: **password**: matkhau123 và `token`: bimat2.\n" +
+  "Biến môi trường và cờ: DB_PASSWORD=matkhau4, X-API-Key: bimat5, --token=bimat6, {\"access_token\": \"bimat7\"}.\n" +
   "Lệnh thử: curl -H \"Authorization: Bearer abc123def456\" và {\"token\": \"bimat-ngan\"} với postgres://nguoi:matkhau@may/csdl, đọc C:\\Users\\x\\.env, khóa " + khoaGia + ".";
 const khoiCuoi = "Sếp duyệt giúp em merge PR này được không?";
 const PHIEN_A = [
@@ -89,7 +90,7 @@ test("Việc cần anh: chiTiet đủ dài, giữ xuống dòng, ghép các kh�
   assert.match(ct, /Sếp duyệt giúp em merge PR này được không\?$/, "giữ trọn câu hỏi ở khối cuối");
   assert.match(ct, /Phương án:\n\(a\) Merge ngay\n\(b\) Chờ thêm/, "ghép khối trên và giữ xuống dòng");
   for (const chu of ["tốn 5000 token rồi", "đặt password mới hay giữ", "hàm byKey có ổn", "skills_directory"]) assert.ok(ct.includes(chu), "không che nhầm chữ thường: " + chu);
-  for (const bimat of [khoaGia, "abc123def456", "bimat-ngan", "matkhau", "bimat2", "\\.env"]) assert.ok(!ct.includes(bimat), "phải che: " + bimat);
+  for (const bimat of [khoaGia, "abc123def456", "bimat-ngan", "matkhau", "bimat2", "bimat5", "bimat6", "bimat7", "\\.env"]) assert.ok(!ct.includes(bimat), "phải che: " + bimat);
 
   const dai = asks.find((a) => /log dài này/.test(a.text || ""));
   assert.ok(dai && dai.chiTiet.length <= 1500 && /chọn giúp em nhé\?$/.test(dai.chiTiet), "tin 200 KB: vẫn đọc được câu hỏi, có trần");

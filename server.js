@@ -216,7 +216,7 @@ function maskDai(s) {
     .replace(/(?<=^|[\s"'(<])[^\s"'(<]*(?:\.env\b|keys\.json|\.credentials\.json|auth\.json|ctl-token|\.ssh[\\/]|id_rsa|id_ed25519|\.npmrc|git-credentials)[^\s"')>]*/gi, "‹tệp khóa›")
     .replace(/:\/\/[^\s:/@]+:[^\s@/]+@/g, "://‹ẩn›@")
     .replace(/\bbearer\s+[^\s"',;]+/gi, "Bearer ‹ẩn›")
-    .replace(/(?<![\w-])("?(?:(?:api[_-]?)?key|token|secret|password|passwd|pwd|authorization)"?)(\s*[:=]\s*)("[^"\n]*"|'[^'\n]*'|[^\s"',;)]+)/gi, "$1$2‹ẩn›")
+    .replace(/(?<![A-Za-z0-9])("?(?:(?:api[_-]?)?key|token|secret|password|passwd|pwd|authorization)"?)(\s*[:=]\s*)("[^"\n]*"|'[^'\n]*'|[^\s"',;)]+)/gi, "$1$2‹ẩn›")
     .replace(/\b(?:sk-(?:ant-|proj-)?|pk[-_]|rk[-_]|gh[pousr]_|github_pat_|xox[abprs]-)[A-Za-z0-9_-]{12,}|\bAKIA[0-9A-Z]{16}\b|\bAIza[0-9A-Za-z_-]{30,}/g, "‹khóa›")
     .replace(/[A-Za-z0-9_\-+/=]{48,}/g, "…")
     .replace(/[ \t]+/g, " ")
@@ -274,10 +274,11 @@ function parseClaude(a, line) {
           if (to && to !== a.key && body) pushEvent({ t, kind: "msg", from: a.key, to, title: titleOf(body), body: clip(mask(body), 700) });
         }
         if (n === "AskUserQuestion" || n === "ExitPlanMode") {
-          if (vanBan.length) { a.lastDai = cuoiDai(vanBan.join("\n\n")); vanBan.length = 0; }
+          const tinNay = vanBan.join("\n\n");   // chữ AI viết ngay trước hộp hỏi (kế hoạch khi không có inp.plan): giữ bản gốc, che một lần
+          if (vanBan.length) { a.lastDai = cuoiDai(tinNay); vanBan.length = 0; }
           const q = n === "ExitPlanMode" ? "Duyệt kế hoạch trước khi làm" : ((inp.questions || []).map((x) => `${x.question} ${(x.options || []).map((o, i) => `(${String.fromCharCode(97 + i)}) ${o.label}`).join("; ")}`).join(" · ") || "Câu hỏi cho bạn");
           // Chi tiết: kế hoạch AI xin duyệt, hoặc từng câu hỏi kèm mô tả từng lựa chọn (xuống dòng cho dễ đọc).
-          const ct = n === "ExitPlanMode" ? "Duyệt kế hoạch trước khi làm" + (inp.plan ? "\n\n" + inp.plan : a.lastDai ? "\n\n" + a.lastDai : "")
+          const ct = n === "ExitPlanMode" ? "Duyệt kế hoạch trước khi làm" + (inp.plan ? "\n\n" + inp.plan : tinNay ? "\n\n" + tinNay : a.lastDai ? "\n\n" + a.lastDai : "")
             : (inp.questions || []).map((x) => x.question + "\n" + (x.options || []).map((o, i) => `(${String.fromCharCode(97 + i)}) ${o.label}${o.description ? ": " + o.description : ""}`).join("\n")).join("\n\n") || q;
           a.pendingAsk = { id: c.id, t, text: clip(mask(q), 300), chiTiet: n === "ExitPlanMode" ? dauDai(ct) : cuoiDai(ct) };
         }
