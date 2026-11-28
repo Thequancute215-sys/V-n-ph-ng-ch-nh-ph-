@@ -26,6 +26,10 @@ export async function mo(vung, { kho, ngan, signal }) {
   </div>`;
   const $ = (id) => vung.querySelector("#" + id);
   let handoffs = null, runs = null, loiCtl = "", hen = null, conSong = true, phien = 0;
+  // "Xem tin" của câu AI hỏi: mở chi tiết ngay tại hàng (câu hỏi nằm trong phiên AI, không nằm trong sổ tin nhắn).
+  // Giữ mục đang mở qua các lần vẽ lại (kho đổi mỗi giây) bằng khoá ai + thời điểm.
+  const moHoi = new Set();
+  let canAnhCuoi = "";   // chỉ thay DOM khi nội dung đổi: không làm mất focus, vị trí cuộn, chữ đang bôi đen
 
   async function taiCtl() {
     clearTimeout(hen);
@@ -48,7 +52,20 @@ export async function mo(vung, { kho, ngan, signal }) {
     const s = kho.state, ten = (k) => (s && s.agents.find((a) => a.key === k) || {}).name || k || "AI";
     if (!s && !handoffs && !runs) { $("canAnh").innerHTML = kho.loiState ? loi(kho.loiState, false) : dangTai(4); return; }
     const bay = Date.now(), muc = [];
-    for (const a of (s && s.asks) || []) muc.push({ sap: a.since || 0, t: a.since, tieu: cat(a.text, 220), nguon: ten(a.who) + (a.guess ? " (máy đoán từ câu cuối)" : ""), nut: `<a class="nut nho" href="#/tin-nhan?ai=${encodeURIComponent(a.who || "")}">Xem tin</a>` });
+    const conMo = new Set(), daCo = new Map();
+    ((s && s.asks) || []).forEach((a, i) => {
+      // Khoá ổn định và DUY NHẤT: sổ CAN-ANH có thể có hai dòng cùng người, cùng phút.
+      const goc = [a.kind || "", a.id || "", a.who || "", a.since || 0, a.id ? "" : String(a.text || "").slice(0, 40)].join("|");
+      const lan = daCo.get(goc) || 0; daCo.set(goc, lan + 1);
+      const khoa = lan ? goc + "#" + lan : goc, mo = moHoi.has(khoa), idCt = "hoiCt" + i;
+      if (mo) conMo.add(khoa);
+      const tieu = cat(a.text, 220), nguoi = a.who ? ten(a.who) : a.whoLabel || "AI";
+      muc.push({ sap: a.since || 0, t: a.since, tieu, nguon: nguoi + (a.guess ? " (máy đoán từ câu cuối)" : ""),
+        nut: `<button type="button" class="nut nho" data-xem-hoi="${esc(khoa)}" aria-expanded="${mo}"${mo ? ` aria-controls="${idCt}"` : ""} aria-label="${esc((mo ? "Thu gọn: " : "Xem tin: ") + cat(tieu, 80))}">${mo ? "Thu gọn" : "Xem tin"}</button>`,
+        sau: mo ? `<div class="cot-doc" id="${idCt}" style="grid-column:1/-1;min-width:0;gap:var(--space-xs)"><pre class="van-ban noi-dung" tabindex="0" data-cuon="${esc(khoa)}" aria-label="${esc("Toàn văn tin của " + nguoi)}" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto;margin:0;padding:var(--space-xs) var(--space-sm);border:var(--rule-hair) solid var(--color-rule);border-radius:var(--radius-card)">${esc(a.chiTiet || a.text || "")}</pre>` +
+          `<div class="hang" style="flex-wrap:wrap;min-width:0"><span class="mo">Trả lời ngay trong phiên của ${esc(nguoi)}.</span>${a.who ? `<a class="nut nho" data-mo-tin="${esc(khoa)}" href="#/tin-nhan?ai=${encodeURIComponent(a.who)}" aria-label="${esc("Mở dòng tin với " + nguoi)}">Mở dòng tin</a>` : ""}</div></div>` : "" });
+    });
+    for (const k of [...moHoi]) if (!conMo.has(k)) moHoi.delete(k);   // việc đã hết thì quên trạng thái mở
     const nutNgan = (ref, chu, tieu, chinh = false) => `<button type="button" class="${chinh ? "nut-chinh" : "nut nho"}" data-ngan="${esc(ref)}" aria-label="${esc(chu + ": " + cat(tieu, 80))}">${esc(chu)}</button>`;
     (handoffs || []).forEach((h, idx) => { const p = h.payload || {}, tieu = cat(tomTatGiaiThich(p.giai_thich) || p.tom_tat || h.summary || "Bàn giao chờ duyệt", 220);
       const t = h.createdAt || h.created_at || h.decided_at || 0;
@@ -57,9 +74,18 @@ export async function mo(vung, { kho, ngan, signal }) {
       muc.push({ sap: r.updatedAt || 0, t: r.updatedAt, tieu, nguon: "Luồng tự chạy: " + TT_LUONG[r.status], nut: nutNgan("luong:" + r.id, r.status === "awaiting_answer" ? "Trả lời" : "Mở", tieu, true) }); }
     muc.sort((x, y) => (y.sap || 0) - (x.sap || 0));
     $("soCanAnh").textContent = muc.length ? muc.length + " việc" : "";
-    $("canAnh").innerHTML = (loiCtl ? loi("Chưa đọc được bàn giao và luồng: " + loiCtl) : "") + (muc.length
-      ? muc.map((m) => `<div class="dong"><div><div class="tieu">${esc(m.tieu)}</div><div class="chi-tiet">${esc(m.nguon)}${m.t ? ", " + esc(luc(m.t)) : ""}</div></div>${m.nut}</div>`).join("")
+    const html = (loiCtl ? loi("Chưa đọc được bàn giao và luồng: " + loiCtl) : "") + (muc.length
+      ? muc.map((m) => `<div class="dong"><div><div class="tieu">${esc(m.tieu)}</div><div class="chi-tiet">${esc(m.nguon)}${m.t ? ", " + esc(luc(m.t)) : ""}</div></div>${m.nut}${m.sau || ""}</div>`).join("")
       : rong("Không có việc nào chờ anh", "Câu hỏi của AI, bàn giao chờ duyệt và luồng cần anh trả lời sẽ hiện ở đây.", `<a class="nut" href="#/code/giao-viec">Giao việc mới</a>`));
+    if (html === canAnhCuoi) return;
+    canAnhCuoi = html;
+    // Vẽ lại (có mục mới/đổi): giữ vị trí cuộn của các hộp chi tiết đang mở và ô đang giữ focus.
+    const el = $("canAnh"), cuon = new Map([...el.querySelectorAll("[data-cuon]")].map((p) => [p.dataset.cuon, p.scrollTop]));
+    const f = el.contains(document.activeElement) ? document.activeElement : null;
+    const giuFocus = f && (f.dataset.xemHoi ? ["data-xem-hoi", f.dataset.xemHoi] : f.dataset.cuon ? ["data-cuon", f.dataset.cuon] : f.dataset.moTin ? ["data-mo-tin", f.dataset.moTin] : f.dataset.ngan ? ["data-ngan", f.dataset.ngan] : null);
+    el.innerHTML = html;
+    for (const p of el.querySelectorAll("[data-cuon]")) if (cuon.has(p.dataset.cuon)) p.scrollTop = cuon.get(p.dataset.cuon);
+    if (giuFocus) [...el.querySelectorAll("[" + giuFocus[0] + "]")].find((x) => x.getAttribute(giuFocus[0]) === giuFocus[1])?.focus({ preventScroll: true });
   }
 
   // Phim đang làm (chưa qua Cổng 4), mới nhất trước; bấm để mở đúng bước. Đủ danh sách và nhóm theo loại ở Kho phim.
@@ -135,6 +161,15 @@ export async function mo(vung, { kho, ngan, signal }) {
   const bo = kho.on(veTuKho);
   vung.addEventListener("click", (e) => {
     const n = e.target.closest("[data-ngan]"); if (n) return ngan.mo(n.dataset.ngan, n, { khiDoi: taiCtl });
+    const x = e.target.closest("[data-xem-hoi]");
+    if (x) {
+      const khoa = x.dataset.xemHoi;
+      if (moHoi.has(khoa)) moHoi.delete(khoa); else moHoi.add(khoa);
+      veCanAnh();
+      const lai = [...vung.querySelectorAll("[data-xem-hoi]")].find((b) => b.dataset.xemHoi === khoa);
+      if (lai) lai.focus();
+      return;
+    }
     if (e.target.closest("[data-thu-lai]")) taiCtl();
   });
   const khiHien = () => { if (!document.hidden) taiCtl(); };

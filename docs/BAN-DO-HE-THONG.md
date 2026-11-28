@@ -1,10 +1,10 @@
 # Bản đồ hệ thống Văn phòng AI — từ workflow tới mã nguồn
 
-> Sinh tự động bằng `node tools/ve-ban-do.js` từ `.ua/domain-graph.json` (workflow nghiệp vụ) và `.ua/knowledge-graph.json` (bản đồ hệ thống) do Understand Anything vẽ tại commit `675e5a7`. Bản đồ tự cập nhật sau mỗi commit/merge: `node tools/cap-nhat-ban-do.js` giao Codex vẽ lại phần đổi rồi chạy lại lệnh trên (xem bản đồ có cũ không: `node tools/cap-nhat-ban-do.js --kiem`); đừng sửa tay trang này.
+> Sinh tự động bằng `node tools/ve-ban-do.js` từ `.ua/domain-graph.json` (workflow nghiệp vụ) và `.ua/knowledge-graph.json` (bản đồ hệ thống) do Understand Anything vẽ tại commit `6b30e9f`. Bản đồ tự cập nhật sau mỗi commit/merge: `node tools/cap-nhat-ban-do.js` giao Codex vẽ lại phần đổi rồi chạy lại lệnh trên (xem bản đồ có cũ không: `node tools/cap-nhat-ban-do.js --kiem`); đừng sửa tay trang này.
 
 **Bản tương tác** (bấm vào từng node, xem quan hệ, đi theo lộ trình): trong repo chạy `/understand-dashboard` của plugin Understand Anything (Claude Code), hoặc lệnh `npx` trong README của dự án Understand Anything. Lệnh đó tải và chạy mã của bên thứ ba: chỉ chạy khi anh tin nguồn; đọc các sơ đồ dưới đây trên GitHub thì không cần.
 
-Quy mô: 9 miền nghiệp vụ, 74 workflow, 456 bước · 957 node (229 file, 524 hàm, 167 route API, 36 tài liệu/cấu hình/CI) · 2187 quan hệ (244 lời gọi, 401 import, 162 liên kết test) · 10 lớp kiến trúc · lộ trình 13 bước.
+Quy mô: 9 miền nghiệp vụ, 74 workflow, 456 bước · 958 node (230 file, 524 hàm, 167 route API, 36 tài liệu/cấu hình/CI) · 2190 quan hệ (244 lời gọi, 399 import, 163 liên kết test) · 10 lớp kiến trúc · lộ trình 13 bước.
 
 Mục lục: [1. Miền nghiệp vụ](#1-các-miền-nghiệp-vụ) · [2. Workflow trung tâm](#2-workflow-trung-tâm-ceo-giao-việc--đội-ai--ceo-duyệt) · [3. Từng workflow](#3-từng-workflow-từng-bước-trỏ-tới-mã) · [4. Lớp kiến trúc](#4-bản-đồ-hệ-thống-các-lớp-kiến-trúc) · [5. Lộ trình đọc mã](#5-lộ-trình-đọc-mã) · [6. Điểm cần anh rà](#6-điểm-phát-hiện-khi-vẽ--đã-xử-lý)
 
@@ -2218,26 +2218,27 @@ flowchart TD
   layer_06_chat_luong_phat_hanh["<b>6 · Kiểm chu trình, xuất bản & cập nhật</b><br/>14 node"]
   layer_08_cai_dat_app["<b>8 · Cài đặt & app trên máy</b><br/>14 node"]
   layer_09_tai_lieu["<b>9 · Tài liệu & giao thức đội</b><br/>11 node"]
-  layer_10_kiem_thu["<b>10 · Kiểm thử</b><br/>73 node"]
+  layer_10_kiem_thu["<b>10 · Kiểm thử</b><br/>74 node"]
   layer_11_xuong_phim["<b>11 · Xưởng phim và tài sản</b><br/>24 node"]
   layer_01_giao_dien ---|3| layer_10_kiem_thu
   layer_02_van_phong ---|3| layer_03_so_dieu_phoi
   layer_02_van_phong ---|8| layer_04_os_controller
   layer_02_van_phong ---|33| layer_05_chu_trinh_ai
   layer_02_van_phong ---|8| layer_06_chat_luong_phat_hanh
-  layer_02_van_phong ---|7| layer_08_cai_dat_app
+  layer_02_van_phong ---|8| layer_08_cai_dat_app
   layer_02_van_phong ---|17| layer_10_kiem_thu
   layer_02_van_phong ---|13| layer_11_xuong_phim
+  layer_03_so_dieu_phoi ---|1| layer_08_cai_dat_app
   layer_04_os_controller ---|62| layer_05_chu_trinh_ai
   layer_04_os_controller ---|9| layer_06_chat_luong_phat_hanh
-  layer_04_os_controller ---|1| layer_08_cai_dat_app
+  layer_04_os_controller ---|2| layer_08_cai_dat_app
   layer_04_os_controller ---|44| layer_10_kiem_thu
   layer_04_os_controller ---|55| layer_11_xuong_phim
   layer_05_chu_trinh_ai ---|8| layer_06_chat_luong_phat_hanh
   layer_05_chu_trinh_ai ---|2| layer_08_cai_dat_app
   layer_05_chu_trinh_ai ---|65| layer_10_kiem_thu
   layer_05_chu_trinh_ai ---|9| layer_11_xuong_phim
-  layer_06_chat_luong_phat_hanh ---|4| layer_08_cai_dat_app
+  layer_06_chat_luong_phat_hanh ---|2| layer_08_cai_dat_app
   layer_06_chat_luong_phat_hanh ---|11| layer_10_kiem_thu
   layer_08_cai_dat_app ---|2| layer_10_kiem_thu
   layer_10_kiem_thu ---|20| layer_11_xuong_phim
@@ -2591,7 +2592,7 @@ Cài đặt lần đầu, bật/tắt văn phòng + ctl, tự bật lại, lối
 
 - [`.gitattributes`](../.gitattributes) — Quy định chuẩn hóa kết thúc dòng của tệp văn bản và shell script.
 - [`config.example.json`](../config.example.json) — Cấu hình config.example: title, subtitle, ownerName, port, host, projects, keepHours, accessKey.
-- [`package.json`](../package.json) — Khai báo gói Node.js và các lệnh chạy, kiểm thử, cài app và cập nhật của văn phòng.
+- [`package.json`](../package.json) — Khai báo gói văn phòng ảo phiên bản 1.7.0, điểm vào server.js, yêu cầu Node.js và các lệnh khởi động, quản lý app, điều khiển và kiểm thử.
 - [`scripts/cai-app.js`](../scripts/cai-app.js) — Cài Văn phòng AI thành app trên Windows: `npm run cai-app`. *Hàm chính:* `plan`.
 - [`scripts/cap-nhat.js`](../scripts/cap-nhat.js) — Kiểm bản phát hành và điều phối cập nhật app với kiểm sức khỏe và đường quay lại. *Hàm chính:* `ctlVersion`, `healthy`.
 - [`scripts/chay-tat-ca.js`](../scripts/chay-tat-ca.js) — Chạy cùng lúc văn phòng (server.js, cổng 7788) và OS Controller (ctl, cổng 7790): `npm run all`. *Hàm chính:* `launch`, `stop`.
@@ -2694,6 +2695,7 @@ Bộ kiểm thử Node.js cho backend, điều phối AI, bảo vệ file và we
 - [`test/tu-hanh.test.js`](../test/tu-hanh.test.js) — Kiểm thử tu hanh. *Hàm chính:* `fixture`.
 - [`test/van-phong-sach.test.js`](../test/van-phong-sach.test.js) — Kiểm thử van phong sach. *Hàm chính:* `startOffice`.
 - [`test/workspace-junction.test.js`](../test/workspace-junction.test.js) — Kiểm thử workspace junction. *Hàm chính:* `fixture`.
+- [`test/xem-tin-can-anh.test.js`](../test/xem-tin-can-anh.test.js) — Kiểm thử hồi quy mục Việc cần anh: khởi động máy chủ trong môi trường tạm, kiểm tra chiTiet giữ phần cuối câu trả lời AI, giới hạn 1500 ký tự và che khóa; đối chiếu mã T…
 - [`test/xuat-ban.test.js`](../test/xuat-ban.test.js) — Kiểm thử Chạy kiểm thử, xác định cách phát hành và điều phối xuất bản khi CEO yêu cầu. *Hàm chính:* `fixture`.
 - [`test/xuong-phim.test.js`](../test/xuong-phim.test.js) — Kiểm thử Quản lý môi trường xưởng phim, công cụ FFmpeg và các thành phần tạo media.
 - [`test/y-tuong.test.js`](../test/y-tuong.test.js) — Kiểm thử y tuong. *Hàm chính:* `fixture`.
