@@ -209,6 +209,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
 .chat-route pre { margin: 6px 0; max-height: 160px; overflow: auto; white-space: pre-wrap; font: 11px/1.45 ui-monospace, Consolas, monospace; color: #fde68a; background: rgba(0,0,0,.3); padding: 6px 8px; border-radius: 8px; }
 .chat-acts { display: flex; flex-wrap: wrap; gap: 6px; }
 .chat-acts button { cursor: pointer; font: inherit; font-size: 11px; font-weight: 700; border-radius: 8px; padding: 5px 9px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.06); color: #fff; }
+.chat-acts button:disabled { opacity: .45; cursor: not-allowed; }
 .chat-acts button.go { background: var(--cyan); color: #00121c; border-color: transparent; }
 .chat-note { font-size: 10.5px; color: var(--mute2); margin-top: 6px; line-height: 1.45; }
 /* iPhone (văn phòng 3D mở toàn màn hình từ trang điều khiển): chừa tai thỏ / Dynamic Island, thanh home và hai mép khi xoay ngang.
@@ -634,7 +635,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #070c14; col
       <div class="chat-log" id="chatLog" aria-live="polite"></div>
       <textarea id="chatInp" rows="3" placeholder="Bấm vào một AI trong văn phòng rồi nhắn ở đây…" style="width:100%;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px;color:#fff;font-family:inherit;font-size:12px;resize:vertical;outline:none"></textarea>
       <button class="btn" id="chatSendBtn" type="button" style="width:100%;margin-top:6px;justify-content:center">Gửi (Ctrl+Enter)</button>
-      <div class="chat-note">Chat chỉ đọc: AI xem repo để trả lời, không sửa file, không chuyển lượt. Việc ngoài phạm vi, AI sẽ chỉ sếp sang đúng phòng kèm prompt soạn sẵn. Mỗi câu hỏi tốn hạn mức gói của AI đó.</div>
+      <div class="chat-note">AI đọc repo và tự tìm web để trả lời; muốn sửa file hay chạy lệnh thì AI xin phép, sếp bấm "Đồng ý làm" mới làm (toàn quyền, vẫn không push, không sửa agent.md). Việc ngoài phạm vi, AI sẽ chỉ sếp sang đúng phòng kèm prompt soạn sẵn. Mỗi câu hỏi tốn hạn mức gói của AI đó.</div>
     </div>
 
   </div>
@@ -1012,12 +1013,14 @@ function updateSidebarAgentInfo(a) {
 
 // ================= CHAT TRỰC TIẾP VỚI TỪNG AI =================
 // Bấm nhân vật → khung phải → nhắn. ctl chạy AI ở chế độ chỉ đọc; việc ngoài phạm vi thì AI chỉ sang phòng khác kèm prompt.
-const chatState = { who: null, data: null, timer: null };
+const chatState = { who: null, data: null, timer: null, kyTu: "" };
+const TEN_MUC_CONG = { "an-toan": "an toàn", "chua-ro": "chưa rõ", "nghi-ngo": "nghi ngờ", "nguy-hiem": "NGUY HIỂM" };
 const escChat = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 async function chatReq(path, body) {
   // Điện thoại đã ghép gọi qua /dkx/api (public/office-desk.js ctlBase); máy tính dùng /ctl như cũ.
   const base = globalThis.vpCtlBase ? await globalThis.vpCtlBase() : "/ctl";
   if (base === "unpaired") throw new Error("Điện thoại chưa ghép: mở trang Điều khiển để ghép rồi quay lại.");
+  chatState.dienThoai = base !== "/ctl";   // /dkx/api không mở /chat/duyet: ẩn nút Đồng ý trên điện thoại
   const res = await fetch(base + path, { cache: "no-store", method: body ? "POST" : "GET", headers: body ? { "Content-Type": "application/json" } : {}, body: body ? JSON.stringify(body) : undefined, signal: AbortSignal.timeout(20000) });
   let data; try { data = await res.json(); } catch { throw new Error("Controller chưa trả JSON hợp lệ (Controller có đang chạy không?)"); }
   if (!res.ok || data.ok === false) throw new Error(data.error || "Lỗi HTTP " + res.status);
@@ -1035,13 +1038,50 @@ function renderChat(err) {
     const mid = escChat(m.id);
     const fromCls = m.from === "ceo" ? "ceo" : "ai";
     const statusCls = ["cho", "xong", "loi"].includes(m.status) ? m.status : "";
-    let h = escChat(m.status === "cho" ? (d.name + " đang đọc repo và trả lời…") : m.text);
+    let h = escChat(m.status === "cho" ? (d.name + (m.duyetMuc ? " đang làm việc sếp đã duyệt…" : " đang đọc repo và trả lời…")) : m.text);
     if (m.route) h += `<div class="chat-route">➡ Sếp nên sang <b>${escChat(m.route.room)}</b> gặp <b>${escChat(m.route.name)}</b>${m.route.why ? ": " + escChat(m.route.why) : ""}` +
       (m.route.prompt ? `<pre>${escChat(m.route.prompt)}</pre>` : "") +
       `<div class="chat-acts">${m.route.prompt ? `<button data-copy="${mid}">Chép prompt</button>` : ""}<button data-go="${escChat(m.route.to)}">Đi tới ${escChat(m.route.room)}</button>` +
       (m.route.prompt ? `<button class="go" data-ask="${mid}">Hỏi ${escChat(m.route.name)} luôn</button>` : "") + "</div></div>";
     else if (m.task) h += `<div class="chat-route">📝 Việc này cần sửa file thật${m.task.why ? ": " + escChat(m.task.why) : ""}. Prompt giao việc:<pre>${escChat(m.task.prompt)}</pre><div class="chat-acts"><button data-copy="${mid}">Chép prompt giao việc</button></div></div>`;
-    return `<div class="chat-msg ${fromCls}${statusCls ? " " + statusCls : ""}">${h}</div>`;
+    if (m.xinLam) {
+      const tt = m.xinLam.trangThai, kq = m.xinLam.cong, dangKiem = kq && kq.trangThai === "dang-kiem";
+      // Cổng kiểm web của Claude trên các trang AI vừa đọc: đang kiểm thì khoá nút; mức xấu thì cảnh báo đỏ (vẫn cho bấm).
+      const cong = !kq || kq.trangThai === "khong-can" ? "" : dangKiem ? `<div class="chat-note" role="status">Claude đang kiểm các trang web AI vừa đọc…</div>`
+        : kq.muc === "an-toan" ? `<div class="chat-note">Cổng kiểm web: an toàn${kq.tomTat ? " — " + escChat(kq.tomTat) : ""}</div>`
+        : `<div class="chat-route" role="alert" style="border-color:rgba(232,163,155,.8);color:#fecaca">⚠ <b style="color:#fca5a5">Cổng kiểm web: ${escChat(TEN_MUC_CONG[kq.muc] || kq.muc)}</b>${kq.tomTat ? " — " + escChat(kq.tomTat) : ""}` +
+          (kq.phatHien || []).slice(0, 6).map((f) => `<div>• ${escChat(String(f.nguon || "").slice(0, 80))}: ${escChat(f.ten || f.loai || "")}${f.trich ? ` <code>${escChat(String(f.trich).slice(0, 120))}</code>` : ""}</div>`).join("") + "</div>";
+      // Điện thoại (/dkx/api) không được duyệt cho AI làm việc trên máy: chỉ hiện lời xin, duyệt trên máy tính.
+      const sf = m.xinLam.suaFile || [], xf = m.xinLam.xoa || [];
+      const pv = `<div class="chat-note">File sẽ tạo/sửa: ${sf.length ? sf.map(escChat).join(", ") : "không có"}</div>` +
+        (xf.length ? `<div class="chat-route" role="alert" style="border-color:rgba(232,163,155,.8);color:#fecaca">⚠ <b style="color:#fca5a5">Sẽ XOÁ (cần sếp đồng ý):</b>` + xf.map((x) => `<div>• ${escChat(x.duongDan)} — vì: ${escChat(x.lyDo)}</div>`).join("") + "</div>" : "") +
+        (m.xinLam.khongGit ? `<div class="chat-note" style="color:#fca5a5">Dự án không dùng git: máy không chụp/khôi phục được file.</div>` : "") +
+        (m.xinLam.coSubmodule ? `<div class="chat-note" style="color:#fca5a5">Dự án có submodule: máy không thấy thay đổi bên trong submodule.</div>` : "");
+      h += `<div class="chat-route">🔐 ${escChat(d.name)} xin phép làm${m.xinLam.why ? " (" + escChat(m.xinLam.why) + ")" : ""}:<pre>${escChat(m.xinLam.viec)}</pre>` + pv + cong +
+        (tt === "cho" && chatState.dienThoai ? `<div class="chat-note">Mở văn phòng trên máy tính để Đồng ý hoặc từ chối.</div>`
+        : tt === "cho" ? `<div class="chat-acts"><button type="button" class="go" data-duyet="${escChat(m.id)}"${dangKiem ? " disabled" : ""}>${dangKiem ? "Chờ cổng kiểm web…" : "Đồng ý làm"}</button><button type="button" data-tu-choi="${escChat(m.id)}">Không</button></div>`
+          : `<div class="chat-note">${{ "da-duyet": "Sếp đã đồng ý.", "tu-choi": "Sếp đã từ chối.", "het-han": "Hết hiệu lực (sếp đã nhắn câu khác)." }[tt] || ""}</div>`) + "</div>";
+    }
+    if (m.kiemFile) {
+      const k = m.kiemFile, xl = k.daXuLy || {}, tg = k.tong || {};
+      const ds = (a, key) => a.map(escChat).join(", ") + (key && tg[key] > a.length ? " (và " + (tg[key] - a.length) + " file nữa)" : "");
+      const boQ = (h) => (xl[h + "-bo-qua"] ? "; bỏ qua vì đã đổi sau đó: " + ds(xl[h + "-bo-qua"]) : "");
+      const dong = k.khongGit ? ["Dự án không dùng git: không kiểm được file."] : k.loi ? ["Không kiểm được file: " + escChat(k.loi)] : [
+        k.dungPhamVi.length && "Sửa đúng phạm vi: " + ds(k.dungPhamVi),
+        k.xoaDuocDuyet.length && "Đã xoá (sếp đã duyệt): " + ds(k.xoaDuocDuyet),
+        k.daTraVe.length && "⚠ Sửa NGOÀI phạm vi, đã trả về bản cũ: " + ds(k.daTraVe, "daTraVe") + (xl["dung-ban-ai"] ? " (đã lấy lại bản sau lượt" + boQ("dung-ban-ai") + ")" : chatState.dienThoai ? "" : ` <button type="button" data-file="${escChat(m.id)}" data-hanh="dung-ban-ai">Lấy lại bản sau lượt</button>`),
+        k.daKhoiPhuc.length && "⚠ AI xoá khi chưa duyệt, đã khôi phục: " + ds(k.daKhoiPhuc, "daKhoiPhuc"),
+        k.fileMoiNgoai.length && "⚠ File mới ngoài phạm vi (không tự xoá): " + ds(k.fileMoiNgoai, "fileMoiNgoai") + (xl["xoa-file-moi"] ? " (đã xoá" + boQ("xoa-file-moi") + ")" : chatState.dienThoai ? "" : ` <button type="button" data-file="${escChat(m.id)}" data-hanh="xoa-file-moi">Xoá file mới</button>`),
+        k.boQuaMat.length && "⚠ File gitignore đã MẤT, không khôi phục được: " + ds(k.boQuaMat, "boQuaMat"),
+        (k.boQuaDoi || []).length && "⚠ File gitignore đã ĐỔI trong lúc lượt chạy, không có bản cũ: " + ds(k.boQuaDoi, "boQuaDoi"),
+        (k.loiKhoiPhuc || []).length && "⚠ KHÔNG khôi phục được (sếp kiểm bằng git): " + k.loiKhoiPhuc.map((x) => escChat(x.file) + " (" + escChat(x.loi) + ")").join(", "),
+        k.coSubmodule && "⚠ Dự án có submodule: thay đổi bên trong submodule không kiểm được.",
+      ].filter(Boolean);
+      const xauF = k.khongGit || k.loi || dong.some((x) => String(x).startsWith("⚠"));
+      h += `<div class="chat-route chat-acts"${xauF ? ' role="alert"' : ""} style="display:block${xauF ? ";border-color:rgba(232,163,155,.8)" : ""}"><b>Kiểm file sau lượt:</b>${dong.length ? dong.map((x) => "<div>• " + x + "</div>").join("") : " không đổi file nào."}</div>`;
+    }
+    if (m.canhBao) h += `<div class="chat-route" role="alert" style="border-color:rgba(232,163,155,.6)">⚠ ${escChat(m.canhBao)}</div>`;
+    return `<div class="chat-msg ${fromCls}${statusCls ? " " + statusCls : ""}">${m.duyetMuc ? `<div class="chat-note">Lượt sếp đã duyệt (${m.toanQuyen ? "toàn quyền" : "ghi nháp"})</div>` : ""}${h}</div>`;
   }).join("") : `<div class="chat-note">Chưa có tin nào. Hỏi ${escChat(d ? d.name : "")} về đúng việc của phòng này nhé.</div>`) +
     (err ? `<div class="chat-msg ai loi">${escChat(err)}</div>` : "");
   log.scrollTop = log.scrollHeight;
@@ -1050,13 +1090,16 @@ async function loadChat() {
   const who = chatState.who;
   clearTimeout(chatState.timer);
   if (!who) return renderChat();
-  try { const d = await chatReq("/chat?who=" + encodeURIComponent(who)); if (who !== chatState.who) return; chatState.data = d; renderChat(); if (d.busy) chatState.timer = setTimeout(loadChat, 2000); }
+  try { const d = await chatReq("/chat?who=" + encodeURIComponent(who)); if (who !== chatState.who) return; chatState.data = d;
+    // Chỉ vẽ lại khi dữ liệu đổi: đang chờ cổng kiểm web thì poll 2 giây không làm nhảy cuộn / mất vùng đang bôi đen.
+    const kyTu = JSON.stringify(d.messages); if (kyTu !== chatState.kyTu) { chatState.kyTu = kyTu; renderChat(); }
+    if (d.busy || d.dangKiem) chatState.timer = setTimeout(loadChat, 2000); }
   catch (e) { if (who === chatState.who) renderChat(e.message); }
 }
 function chatWith(agentKey) {
   const npc = NPC_OF[agentKey];
   chatState.who = ["pain", "hinata", "itachi", "sasuke", "kakashi", "sakura"].includes(npc) ? npc : null;
-  chatState.data = null;
+  chatState.data = null; chatState.kyTu = "";
   loadChat();
 }
 async function sendChat(text) {
@@ -1073,6 +1116,31 @@ $("chatClearBtn").addEventListener("click", async () => {
 });
 $("chatLog").addEventListener("click", async (e) => {
   const b = e.target.closest("button"); if (!b || !chatState.data) return;
+  if (b.dataset.file) {
+    const who = chatState.who, mm = chatState.data.messages.find((x) => x.id === b.dataset.file), k = mm && mm.kiemFile;
+    const ds = k ? (b.dataset.hanh === "xoa-file-moi" ? k.fileMoiNgoai : k.daTraVe).join("\n") : "";
+    if (!confirm(b.dataset.hanh === "xoa-file-moi" ? "XOÁ các file mới AI tạo ngoài phạm vi? Không hoàn tác được.\n\n" + ds : "Ghi đè bằng bản sau lượt (AI sửa ngoài phạm vi, hoặc sếp sửa trong lúc lượt chạy) cho:\n\n" + ds + "\n\nFile nào đã đổi sau đó thì máy bỏ qua.")) return;
+    clearTimeout(chatState.timer); b.disabled = true;
+    try { const d = await chatReq("/chat/file", { who, id: b.dataset.file, hanhDong: b.dataset.hanh }); if (who === chatState.who) { chatState.data = d; chatState.kyTu = ""; renderChat(); loadChat(); } }
+    catch (err) { if (who === chatState.who) renderChat(err.message); }
+    return;
+  }
+  if (b.dataset.duyet || b.dataset.tuChoi) {
+    const id = b.dataset.duyet || b.dataset.tuChoi, who = chatState.who, xin = (chatState.data.messages.find((x) => x.id === id) || {}).xinLam;
+    if (b.dataset.duyet && !confirm("Cho " + chatState.data.name + " làm đúng việc này trên máy (theo quyền của phòng)?\n\n" + (xin ? xin.viec : "") +
+      "\n\nFile được tạo/sửa: " + (xin && xin.suaFile && xin.suaFile.length ? xin.suaFile.join(", ") : "không có") +
+      (xin && xin.xoa && xin.xoa.length ? "\n\n⚠ SẼ XOÁ:\n" + xin.xoa.map((d) => "- " + d.duongDan + " — vì: " + d.lyDo).join("\n") : "\nKhông xoá gì.") +
+
+      (xin && xin.cong && xin.cong.trangThai === "xong" && xin.cong.muc !== "an-toan" ? "\n\n⚠ CỔNG KIỂM WEB: " + (TEN_MUC_CONG[xin.cong.muc] || xin.cong.muc) + ". " + (xin.cong.tomTat || "") : "") +
+      (xin && xin.khongGit ? "\n\n⚠ Dự án không dùng git: máy KHÔNG chụp/khôi phục được file. Máy chỉ chặn cứng: gửi email/lịch/triển khai nhân danh sếp, chạy chồng lượt khác."
+        : "\n\nMáy chặn cứng: sửa file ngoài danh sách (trả về bản cũ), xoá chưa duyệt (khôi phục), gửi email/lịch/triển khai nhân danh sếp, chạy chồng lượt khác.\nTrong lúc lượt chạy, sếp đừng tự sửa file khác trong dự án: máy sẽ trả về (vẫn lấy lại được).") +
+      "\nAI được dặn không push, không đọc file khóa.")) return;
+    clearTimeout(chatState.timer);
+    b.closest(".chat-acts").querySelectorAll("button").forEach((x) => { x.disabled = true; });
+    try { const d = await chatReq(b.dataset.duyet ? "/chat/duyet" : "/chat/tu-choi", { who, id }); if (who !== chatState.who) return; chatState.data = d; renderChat(); loadChat(); }
+    catch (err) { if (who === chatState.who) renderChat(err.message); }
+    return;
+  }
   const m = chatState.data.messages.find((x) => x.id === (b.dataset.copy || b.dataset.ask));
   if (b.dataset.copy && m) {
     const text = (m.route || m.task).prompt;
@@ -1084,7 +1152,7 @@ $("chatLog").addEventListener("click", async (e) => {
     const key = KEY_OF[m.route.to] || m.route.to, a = defaultAgents.find((x) => x.key === key);
     focusRoom(key);
     if (a) { selected = a.key; updateSidebarAgentInfo(a); }
-    chatState.who = m.route.to; chatState.data = null;
+    chatState.who = m.route.to; chatState.data = null; chatState.kyTu = "";
     await loadChat();
     sendChat(m.route.prompt);
   }
