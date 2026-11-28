@@ -13,7 +13,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "moderate"
     },
@@ -98,7 +99,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "simple"
     },
@@ -115,7 +117,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "moderate"
     },
@@ -200,7 +203,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "moderate"
     },
@@ -387,7 +391,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "moderate"
     },
@@ -523,7 +528,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "moderate"
     },
@@ -625,7 +631,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "moderate"
     },
@@ -676,7 +683,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "moderate"
     },
@@ -710,7 +718,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -863,7 +872,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -1033,7 +1043,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -1220,7 +1231,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "moderate"
     },
@@ -1833,7 +1845,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -2003,7 +2016,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "moderate"
     },
@@ -2037,7 +2051,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -2088,7 +2103,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "moderate"
     },
@@ -2122,7 +2138,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -2292,7 +2309,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -2343,7 +2361,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "moderate"
     },
@@ -2377,7 +2396,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -2445,7 +2465,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -2717,7 +2738,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -2785,7 +2807,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "moderate"
     },
@@ -3091,7 +3114,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -3159,7 +3183,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "moderate"
     },
@@ -3210,7 +3235,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -3363,7 +3389,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "simple"
     },
@@ -3397,7 +3424,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -3482,7 +3510,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -3584,7 +3613,8 @@
       "tags": [
         "văn-phòng",
         "cục-bộ",
-        "javascript"
+        "javascript",
+        "tested"
       ],
       "complexity": "simple"
     },
@@ -3669,7 +3699,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "moderate"
     },
@@ -3703,7 +3734,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -4471,7 +4503,8 @@
       "tags": [
         "văn-phòng",
         "cục-bộ",
-        "javascript"
+        "javascript",
+        "tested"
       ],
       "complexity": "moderate"
     },
@@ -5559,7 +5592,8 @@
       "tags": [
         "giao-diện",
         "trình-duyệt",
-        "tương-tác"
+        "tương-tác",
+        "tested"
       ],
       "complexity": "moderate"
     },
@@ -6035,7 +6069,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -6103,7 +6138,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -6188,7 +6224,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -6358,7 +6395,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -6562,7 +6600,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "simple"
     },
@@ -6647,7 +6686,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "moderate"
     },
@@ -7670,7 +7710,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -7874,7 +7915,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "simple"
     },
@@ -7959,7 +8001,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -8180,7 +8223,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "moderate"
     },
@@ -8214,7 +8258,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -8435,7 +8480,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "moderate"
     },
@@ -8656,7 +8702,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -9133,7 +9180,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "moderate"
     },
@@ -9269,7 +9317,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "moderate"
     },
@@ -9593,7 +9642,8 @@
       "tags": [
         "giao-diện",
         "trình-duyệt",
-        "tương-tác"
+        "tương-tác",
+        "tested"
       ],
       "complexity": "moderate"
     },
@@ -9865,7 +9915,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -9916,7 +9967,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "moderate"
     },
@@ -9984,7 +10036,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -10052,7 +10105,8 @@
       "tags": [
         "điều-phối",
         "cục-bộ",
-        "nodejs"
+        "nodejs",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -10290,7 +10344,8 @@
       "tags": [
         "văn-phòng",
         "cục-bộ",
-        "javascript"
+        "javascript",
+        "tested"
       ],
       "complexity": "moderate"
     },
@@ -10868,23 +10923,6 @@
         15
       ],
       "summary": "Cấu hình config.example: title, subtitle, ownerName, port, host, projects, keepHours, accessKey.",
-      "tags": [
-        "văn-phòng",
-        "cục-bộ",
-        "json"
-      ],
-      "complexity": "simple"
-    },
-    {
-      "id": "config:package.json",
-      "type": "config",
-      "name": "package.json",
-      "filePath": "package.json",
-      "lineRange": [
-        1,
-        22
-      ],
-      "summary": "Khai báo gói Node.js và các lệnh chạy, kiểm thử, cài app và cập nhật của văn phòng.",
       "tags": [
         "văn-phòng",
         "cục-bộ",
@@ -12435,7 +12473,8 @@
       "tags": [
         "văn-phòng",
         "cục-bộ",
-        "javascript"
+        "javascript",
+        "tested"
       ],
       "complexity": "complex"
     },
@@ -16280,6 +16319,42 @@
         "đọc"
       ],
       "complexity": "simple"
+    },
+    {
+      "id": "config:package.json",
+      "type": "config",
+      "name": "package.json",
+      "filePath": "package.json",
+      "lineRange": [
+        1,
+        22
+      ],
+      "summary": "Khai báo gói văn phòng ảo phiên bản 1.7.0, điểm vào server.js, yêu cầu Node.js và các lệnh khởi động, quản lý app, điều khiển và kiểm thử.",
+      "tags": [
+        "cấu-hình",
+        "nodejs",
+        "lệnh-chạy",
+        "kiểm-thử"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:test/xem-tin-can-anh.test.js",
+      "type": "file",
+      "name": "xem-tin-can-anh.test.js",
+      "filePath": "test/xem-tin-can-anh.test.js",
+      "lineRange": [
+        1,
+        68
+      ],
+      "summary": "Kiểm thử hồi quy mục Việc cần anh: khởi động máy chủ trong môi trường tạm, kiểm tra chiTiet giữ phần cuối câu trả lời AI, giới hạn 1500 ký tự và che khóa; đối chiếu mã Tổng quan để bảo đảm Xem tin mở tại hàng, thoát HTML và nhớ trạng thái mở.",
+      "tags": [
+        "kiểm-thử",
+        "hồi-quy",
+        "câu-hỏi",
+        "che-khóa"
+      ],
+      "complexity": "moderate"
     }
   ],
   "edges": [
@@ -16340,20 +16415,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:ctl/dieu-phoi.js",
-      "target": "file:ctl/mcp-phong.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/dieu-phoi.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:ctl/ket-noi.js",
       "target": "function:ctl/ket-noi.js:parseClaude",
       "type": "contains",
@@ -16408,27 +16469,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:ctl/ket-noi.js",
-      "target": "file:ctl/ket-noi-danh-muc.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/ket-noi.js",
-      "target": "file:ctl/mcp-may.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/ket-noi.js",
-      "target": "file:ctl/mcp-phong.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:ctl/mcp-may.js",
@@ -16571,13 +16611,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:ctl/mcp-may.js",
-      "target": "file:ctl/chrome-devtools.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:ctl/mcp-phong.js",
       "target": "function:ctl/mcp-phong.js:ROLE_PHONG",
       "type": "contains",
@@ -16674,27 +16707,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:ctl/mcp-phong.js",
-      "target": "file:ctl/ket-noi-danh-muc.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/mcp-phong.js",
-      "target": "file:ctl/mcp-may.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/mcp-phong.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:ctl/muc-luc.js",
@@ -16788,13 +16800,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:ctl/nhat-ky.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:ctl/quyen.js",
       "target": "function:ctl/quyen.js:createQuyen",
       "type": "contains",
@@ -16807,13 +16812,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:ctl/quyen.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:ctl/ra-soat.js",
@@ -16905,20 +16903,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:ctl/ra-soat.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/ra-soat.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:ctl/runner.js",
@@ -17024,125 +17008,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:ctl/runner.js",
-      "target": "file:ctl/chrome-devtools.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/runner.js",
-      "target": "file:ctl/dieu-phoi.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/runner.js",
-      "target": "file:ctl/handoff.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/runner.js",
-      "target": "file:ctl/ket-noi-danh-muc.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/runner.js",
-      "target": "file:ctl/mcp-may.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/runner.js",
-      "target": "file:ctl/mcp-phong.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/runner.js",
-      "target": "file:ctl/mien-hop-dong.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/runner.js",
-      "target": "file:ctl/muc-luc.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/runner.js",
-      "target": "file:ctl/policy.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/runner.js",
-      "target": "file:ctl/quyen.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/runner.js",
-      "target": "file:ctl/skill.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/runner.js",
-      "target": "file:ctl/song-song.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/runner.js",
-      "target": "file:ctl/tra-cuu.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/runner.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/runner.js",
-      "target": "file:lib/kiem-agent.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/runner.js",
-      "target": "file:lib/kiem-hop-dong.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/runner.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:ctl/skill-duyet.js",
@@ -17276,62 +17141,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:ctl/skill-duyet.js",
-      "target": "file:ctl/autopilot.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/skill-duyet.js",
-      "target": "file:ctl/ket-noi-danh-muc.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/skill-duyet.js",
-      "target": "file:ctl/mcp-may.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/skill-duyet.js",
-      "target": "file:ctl/mcp-phong.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/skill-duyet.js",
-      "target": "file:ctl/ra-soat.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/skill-duyet.js",
-      "target": "file:ctl/skill.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/skill-duyet.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/skill-duyet.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:ctl/skill.js",
@@ -17565,34 +17374,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:test/chrome-devtools.test.js",
-      "target": "file:ctl/chrome-devtools.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/chrome-devtools.test.js",
-      "target": "file:ctl/ket-noi.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/chrome-devtools.test.js",
-      "target": "file:ctl/mcp-phong.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/chrome-devtools.test.js",
-      "target": "file:ctl/runner.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:test/dieu-phoi.test.js",
       "target": "function:test/dieu-phoi.test.js:graphRepo",
       "type": "contains",
@@ -17607,116 +17388,11 @@
       "weight": 1
     },
     {
-      "source": "file:test/dieu-phoi.test.js",
-      "target": "file:ctl/dieu-phoi.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/dieu-phoi.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/dieu-phoi.test.js",
-      "target": "file:ctl/muc-luc.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/dieu-phoi.test.js",
-      "target": "file:ctl/quotas.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/dieu-phoi.test.js",
-      "target": "file:ctl/runner.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/ket-noi-nhat-ky.test.js",
-      "target": "file:ctl/ket-noi.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/ket-noi-nhat-ky.test.js",
-      "target": "file:ctl/nhat-ky.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/ket-noi-nhat-ky.test.js",
-      "target": "file:ctl/runner.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:test/kiem-hop-dong.test.js",
       "target": "function:test/kiem-hop-dong.test.js:HOP_DONG",
       "type": "contains",
       "direction": "forward",
       "weight": 1
-    },
-    {
-      "source": "file:test/kiem-hop-dong.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/kiem-hop-dong.test.js",
-      "target": "file:ctl/runner.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/kiem-hop-dong.test.js",
-      "target": "file:lib/kiem-hop-dong.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/mcp-phong.test.js",
-      "target": "file:ctl/ket-noi-danh-muc.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/mcp-phong.test.js",
-      "target": "file:ctl/ket-noi.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/mcp-phong.test.js",
-      "target": "file:ctl/mcp-phong.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/mcp-phong.test.js",
-      "target": "file:ctl/runner.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:test/quyen.test.js",
@@ -17726,60 +17402,11 @@
       "weight": 1
     },
     {
-      "source": "file:test/quyen.test.js",
-      "target": "file:ctl/quyen.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/quyen.test.js",
-      "target": "file:ctl/runner.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:test/skill-duyet.test.js",
       "target": "function:test/skill-duyet.test.js:fixture",
       "type": "contains",
       "direction": "forward",
       "weight": 1
-    },
-    {
-      "source": "file:test/skill-duyet.test.js",
-      "target": "file:ctl/mcp-may.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/skill-duyet.test.js",
-      "target": "file:ctl/mcp-phong.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/skill-duyet.test.js",
-      "target": "file:ctl/runner.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/skill-duyet.test.js",
-      "target": "file:ctl/skill-duyet.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/skill-duyet.test.js",
-      "target": "file:ctl/skill.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:test/toan-quyen.test.js",
@@ -17789,62 +17416,6 @@
       "weight": 1
     },
     {
-      "source": "file:test/toan-quyen.test.js",
-      "target": "file:ctl/handoff.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/toan-quyen.test.js",
-      "target": "file:ctl/ket-noi.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/toan-quyen.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/toan-quyen.test.js",
-      "target": "file:ctl/ra-soat.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/toan-quyen.test.js",
-      "target": "file:ctl/runner.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/toan-quyen.test.js",
-      "target": "file:public/progress-view.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:tools/cai-skill.js",
-      "target": "file:ctl/skill.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:tools/kiem-hop-dong.js",
-      "target": "file:lib/kiem-hop-dong.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:ctl/agy-tai-khoan.js",
       "target": "function:ctl/agy-tai-khoan.js:anEmail",
       "type": "contains",
@@ -17943,13 +17514,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:ctl/agy-tai-khoan.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:ctl/audit.js",
       "target": "function:ctl/audit.js:createAudit",
       "type": "contains",
@@ -17964,13 +17528,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:ctl/audit.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:ctl/bo-kiem.js",
       "target": "function:ctl/bo-kiem.js:createBoKiem",
       "type": "contains",
@@ -17983,27 +17540,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:ctl/bo-kiem.js",
-      "target": "file:ctl/nhanh.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/bo-kiem.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/bo-kiem.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:ctl/bo-nao.js",
@@ -18027,20 +17563,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:ctl/bo-nao.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/bo-nao.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:ctl/co-van-tay.js",
       "target": "function:ctl/co-van-tay.js:createCoVanTay",
       "type": "contains",
@@ -18053,20 +17575,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:ctl/co-van-tay.js",
-      "target": "file:ctl/luong-phim.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/co-van-tay.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:ctl/du-an-moi.js",
@@ -18188,34 +17696,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:ctl/du-an-moi.js",
-      "target": "file:ctl/nhanh.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/du-an-moi.js",
-      "target": "file:ctl/policy.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/du-an-moi.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/du-an-moi.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:ctl/github.js",
       "target": "function:ctl/github.js:remoteName",
       "type": "contains",
@@ -18244,13 +17724,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:ctl/github.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:ctl/ideas.js",
       "target": "function:ctl/ideas.js:createIdeas",
       "type": "contains",
@@ -18263,34 +17736,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:ctl/ideas.js",
-      "target": "file:ctl/handoff.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/ideas.js",
-      "target": "file:ctl/nhanh.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/ideas.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/ideas.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:ctl/kho-phim.js",
@@ -18326,41 +17771,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:ctl/kho-phim.js",
-      "target": "file:ctl/ban-dung.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/kho-phim.js",
-      "target": "file:ctl/du-an-moi.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/kho-phim.js",
-      "target": "file:ctl/nhanh.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/kho-phim.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/kho-phim.js",
-      "target": "file:lib/phim.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:ctl/luong-phim.js",
@@ -18531,48 +17941,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:ctl/luong-phim.js",
-      "target": "file:ctl/ban-dung.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/luong-phim.js",
-      "target": "file:ctl/dieu-phoi.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/luong-phim.js",
-      "target": "file:ctl/phim-tai-lieu.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/luong-phim.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/luong-phim.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/luong-phim.js",
-      "target": "file:lib/phim.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:ctl/main.js",
       "target": "function:ctl/main.js:createCtl",
       "type": "contains",
@@ -18585,328 +17953,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/agy-tai-khoan.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/audit.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/autopilot.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/ban-dung.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/bo-kiem.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/bo-nao.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/cap-nhat.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/chat.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/co-van-tay.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/codex-tai-khoan.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/db.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/dieu-phoi.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/du-an-moi.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/files.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/github.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/handoff.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/ideas.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/jobs.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/ket-noi.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/kho-phim.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/lich-chay.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/luong-phim.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/may-quay.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/monitor.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/nhat-ky.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/phim-blender.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/phim-capcut.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/phim-helper.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/phim-mau.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/phim-tai-lieu.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/policy.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/quotas.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/quyen.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/ra-soat.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/runner.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/skill-duyet.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/thongbao.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/tram-flow.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/workspaces.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/xuat-ban.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:ctl/xuong-phim.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:lib/guard.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "file:lib/phim.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/main.js",
-      "target": "config:package.json",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:ctl/monitor.js",
@@ -19161,20 +18207,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:ctl/nhanh.js",
-      "target": "file:ctl/policy.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/nhanh.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:ctl/phim-mau.js",
       "target": "function:ctl/phim-mau.js:promptPhanTich",
       "type": "contains",
@@ -19215,27 +18247,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:ctl/phim-mau.js",
-      "target": "file:ctl/kho-phim.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/phim-mau.js",
-      "target": "file:ctl/luong-phim.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/phim-mau.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:ctl/policy.js",
@@ -19371,27 +18382,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:ctl/quotas.js",
-      "target": "file:ctl/policy.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/quotas.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/quotas.js",
-      "target": "file:lib/proc.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:ctl/thongbao.js",
       "target": "function:ctl/thongbao.js:createNotifier",
       "type": "contains",
@@ -19404,13 +18394,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:ctl/thongbao.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:ctl/xuat-ban.js",
@@ -19467,34 +18450,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:ctl/xuat-ban.js",
-      "target": "file:ctl/github.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/xuat-ban.js",
-      "target": "file:ctl/nhanh.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/xuat-ban.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/xuat-ban.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:ctl/xuong-phim.js",
@@ -19637,27 +18592,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:ctl/cap-nhat.js",
-      "target": "file:lib/app.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/cap-nhat.js",
-      "target": "file:lib/cap-nhat.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/cap-nhat.js",
-      "target": "file:lib/config.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:ctl/jobs.js",
       "target": "function:ctl/jobs.js:createJobs",
       "type": "contains",
@@ -19670,27 +18604,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:ctl/jobs.js",
-      "target": "file:ctl/policy.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/jobs.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/jobs.js",
-      "target": "file:lib/proc.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:lib/app.js",
@@ -20071,13 +18984,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:lib/cap-nhat.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:lib/config.js",
       "target": "function:lib/config.js:loadConfig",
       "type": "contains",
@@ -20230,13 +19136,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:scripts/cai-app.js",
-      "target": "file:lib/app.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:scripts/cap-nhat.js",
@@ -20253,13 +19152,6 @@
       "weight": 1
     },
     {
-      "source": "file:scripts/cap-nhat.js",
-      "target": "file:lib/cap-nhat.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:scripts/chay-tat-ca.js",
       "target": "function:scripts/chay-tat-ca.js:launch",
       "type": "contains",
@@ -20272,69 +19164,6 @@
       "type": "contains",
       "direction": "forward",
       "weight": 1
-    },
-    {
-      "source": "file:scripts/chay-tat-ca.js",
-      "target": "file:lib/proc.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:scripts/mo-app.js",
-      "target": "file:lib/app.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:scripts/mo-app.js",
-      "target": "file:lib/config.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:scripts/tat-app.js",
-      "target": "file:lib/app.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:scripts/tat-app.js",
-      "target": "file:lib/config.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:scripts/tat-app.js",
-      "target": "file:lib/proc.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/app.test.js",
-      "target": "file:lib/app.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/app.test.js",
-      "target": "file:lib/proc.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/app.test.js",
-      "target": "file:scripts/cai-app.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:test/cap-nhat.test.js",
@@ -20351,81 +19180,11 @@
       "weight": 1
     },
     {
-      "source": "file:test/cap-nhat.test.js",
-      "target": "file:ctl/cap-nhat.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/cap-nhat.test.js",
-      "target": "file:ctl/db.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/cap-nhat.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/cap-nhat.test.js",
-      "target": "file:lib/cap-nhat.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/cap-nhat.test.js",
-      "target": "config:package.json",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:test/ctl.test.js",
       "target": "function:test/ctl.test.js:call",
       "type": "contains",
       "direction": "forward",
       "weight": 1
-    },
-    {
-      "source": "file:test/ctl.test.js",
-      "target": "file:ctl/jobs.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/ctl.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/ctl.test.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/ctl.test.js",
-      "target": "file:lib/proc.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/proc.test.js",
-      "target": "file:lib/proc.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:test/tat-ctl.test.js",
@@ -20442,25 +19201,11 @@
       "weight": 1
     },
     {
-      "source": "file:test/tat-ctl.test.js",
-      "target": "file:lib/proc.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:test/tu-bat-lai.test.js",
       "target": "function:test/tu-bat-lai.test.js:setup",
       "type": "contains",
       "direction": "forward",
       "weight": 1
-    },
-    {
-      "source": "file:test/tu-bat-lai.test.js",
-      "target": "file:lib/proc.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:tools/vp.js",
@@ -20491,27 +19236,6 @@
       "weight": 1
     },
     {
-      "source": "file:tools/vp.js",
-      "target": "file:lib/config.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:tools/vp.js",
-      "target": "file:lib/hopthu.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:tools/vp.js",
-      "target": "file:lib/mailbox.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:public/os/app.js",
       "target": "function:public/os/app.js:noiState",
       "type": "contains",
@@ -20533,20 +19257,6 @@
       "weight": 1
     },
     {
-      "source": "file:public/os/app.js",
-      "target": "file:public/os/ngan.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:public/os/app.js",
-      "target": "file:public/os/ui.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:public/os/khu/bo-nao.js",
       "target": "function:public/os/khu/bo-nao.js:mo",
       "type": "contains",
@@ -20559,13 +19269,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:public/os/khu/bo-nao.js",
-      "target": "file:public/os/ui.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:public/os/khu/code-du-an.js",
@@ -20582,13 +19285,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:public/os/khu/code-du-an.js",
-      "target": "file:public/os/ui.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:public/os/khu/code-pr.js",
       "target": "function:public/os/khu/code-pr.js:mo",
       "type": "contains",
@@ -20601,13 +19297,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:public/os/khu/code-pr.js",
-      "target": "file:public/os/ui.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:public/os/khu/cong-cu-cu.js",
@@ -20624,13 +19313,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:public/os/khu/cong-cu-cu.js",
-      "target": "file:public/os/ui.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:public/os/khu/cong-su.js",
       "target": "function:public/os/khu/cong-su.js:mo",
       "type": "contains",
@@ -20643,13 +19325,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:public/os/khu/cong-su.js",
-      "target": "file:public/os/ui.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:public/os/khu/giao-viec.js",
@@ -20666,20 +19341,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:public/os/khu/giao-viec.js",
-      "target": "file:public/os/ui.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:public/os/khu/giao-viec.js",
-      "target": "file:public/os/viec-chung.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:public/os/khu/luong.js",
       "target": "function:public/os/khu/luong.js:mo",
       "type": "contains",
@@ -20692,20 +19353,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:public/os/khu/luong.js",
-      "target": "file:public/os/ui.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:public/os/khu/luong.js",
-      "target": "file:public/os/viec-chung.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:public/os/khu/models.js",
@@ -20722,13 +19369,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:public/os/khu/models.js",
-      "target": "file:public/os/ui.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:public/os/khu/phim-ban-dung.js",
       "target": "function:public/os/khu/phim-ban-dung.js:mo",
       "type": "contains",
@@ -20743,13 +19383,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:public/os/khu/phim-ban-dung.js",
-      "target": "file:public/os/khu/phim.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:public/os/khu/phim-canh.js",
       "target": "function:public/os/khu/phim-canh.js:mo",
       "type": "contains",
@@ -20762,13 +19395,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:public/os/khu/phim-canh.js",
-      "target": "file:public/os/khu/phim.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:public/os/khu/phim-helper-ui.js",
@@ -20820,13 +19446,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:public/os/khu/phim-helper-ui.js",
-      "target": "file:public/os/ui.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:public/os/khu/phim-kho.js",
       "target": "function:public/os/khu/phim-kho.js:mo",
       "type": "contains",
@@ -20839,13 +19458,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:public/os/khu/phim-kho.js",
-      "target": "file:public/os/ui.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:public/os/khu/phim.js",
@@ -20876,20 +19488,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:public/os/khu/phim.js",
-      "target": "file:public/os/khu/phim-helper-ui.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:public/os/khu/phim.js",
-      "target": "file:public/os/ui.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:public/os/khu/tin-nhan.js",
       "target": "function:public/os/khu/tin-nhan.js:mo",
       "type": "contains",
@@ -20902,13 +19500,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:public/os/khu/tin-nhan.js",
-      "target": "file:public/os/ui.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:public/os/khu/tong-quan.js",
@@ -20925,20 +19516,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:public/os/khu/tong-quan.js",
-      "target": "file:public/os/ui.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:public/os/khu/tong-quan.js",
-      "target": "file:public/os/viec-chung.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:public/os/khu/viec.js",
       "target": "function:public/os/khu/viec.js:mo",
       "type": "contains",
@@ -20953,20 +19530,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:public/os/khu/viec.js",
-      "target": "file:public/os/ui.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:public/os/khu/viec.js",
-      "target": "file:public/os/viec-chung.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:public/os/ngan.js",
       "target": "function:public/os/ngan.js:taoNgan",
       "type": "contains",
@@ -20979,20 +19542,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:public/os/ngan.js",
-      "target": "file:public/os/ui.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:public/os/ngan.js",
-      "target": "file:public/os/viec-chung.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:public/os/ui.js",
@@ -21273,13 +19822,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:public/os/viec-chung.js",
-      "target": "file:public/os/ui.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:ctl/autopilot.js",
@@ -21317,62 +19859,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:ctl/autopilot.js",
-      "target": "file:ctl/handoff.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/autopilot.js",
-      "target": "file:ctl/mien-hop-dong.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/autopilot.js",
-      "target": "file:ctl/nhanh.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/autopilot.js",
-      "target": "file:ctl/quyen.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/autopilot.js",
-      "target": "file:ctl/runner.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/autopilot.js",
-      "target": "file:ctl/song-song.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/autopilot.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/autopilot.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:ctl/chat.js",
       "target": "function:ctl/chat.js:promptFor",
       "type": "contains",
@@ -21427,41 +19913,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:ctl/chat.js",
-      "target": "file:ctl/autopilot.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/chat.js",
-      "target": "file:ctl/chot-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/chat.js",
-      "target": "file:ctl/cong-web.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/chat.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/chat.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:ctl/chot-file.js",
@@ -21702,34 +20153,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:ctl/cong-web.js",
-      "target": "file:ctl/autopilot.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/cong-web.js",
-      "target": "file:ctl/ra-soat.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/cong-web.js",
-      "target": "file:ctl/tra-cuu.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/cong-web.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:ctl/files.js",
       "target": "function:ctl/files.js:createFiles",
       "type": "contains",
@@ -21742,13 +20165,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:ctl/files.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:ctl/mien-hop-dong.js",
@@ -21777,13 +20193,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:ctl/mien-hop-dong.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:ctl/tra-cuu-mcp.js",
@@ -21793,13 +20202,6 @@
       "weight": 1
     },
     {
-      "source": "file:ctl/tra-cuu-mcp.js",
-      "target": "file:ctl/tra-cuu.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:ctl/tra-cuu.js",
       "target": "function:ctl/tra-cuu.js:kiemCau",
       "type": "contains",
@@ -21870,13 +20272,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:ctl/tra-cuu.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:lib/ghi-file.js",
       "target": "function:lib/ghi-file.js:renameRetry",
       "type": "contains",
@@ -21945,13 +20340,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:lib/keys.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:test/autopilot.test.js",
@@ -21961,53 +20349,11 @@
       "weight": 1
     },
     {
-      "source": "file:test/autopilot.test.js",
-      "target": "file:ctl/autopilot.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/autopilot.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:test/chat.test.js",
       "target": "function:test/chat.test.js:fixture",
       "type": "contains",
       "direction": "forward",
       "weight": 1
-    },
-    {
-      "source": "file:test/chat.test.js",
-      "target": "file:ctl/chat.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/chat.test.js",
-      "target": "file:ctl/chot-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/chat.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/chot-file.test.js",
-      "target": "file:ctl/chot-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:test/cong-web.test.js",
@@ -22017,55 +20363,6 @@
       "weight": 1
     },
     {
-      "source": "file:test/cong-web.test.js",
-      "target": "file:ctl/autopilot.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/cong-web.test.js",
-      "target": "file:ctl/cong-web.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/dinh-kem-va-loi.test.js",
-      "target": "file:ctl/chat.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/dinh-kem-va-loi.test.js",
-      "target": "file:ctl/du-an-moi.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/dinh-kem-va-loi.test.js",
-      "target": "file:ctl/runner.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/ghi-file.test.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/keys.test.js",
-      "target": "file:lib/keys.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:test/mien-hop-dong.test.js",
       "target": "function:test/mien-hop-dong.test.js:fixture",
       "type": "contains",
@@ -22073,34 +20370,6 @@
       "weight": 1
     },
     {
-      "source": "file:test/mien-hop-dong.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/mien-hop-dong.test.js",
-      "target": "file:ctl/mien-hop-dong.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/tra-cuu.test.js",
-      "target": "file:ctl/runner.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/tra-cuu.test.js",
-      "target": "file:ctl/tra-cuu.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:lib/so-tin-nhan.js",
       "target": "function:lib/so-tin-nhan.js:khoaTin",
       "type": "contains",
@@ -22127,13 +20396,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:lib/so-tin-nhan.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:test/agy-tai-khoan.test.js",
@@ -22150,27 +20412,6 @@
       "weight": 1
     },
     {
-      "source": "file:test/agy-tai-khoan.test.js",
-      "target": "file:ctl/agy-tai-khoan.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/agy-tai-khoan.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/agy-tai-khoan.test.js",
-      "target": "file:ctl/quotas.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:test/bo-kiem.test.js",
       "target": "function:test/bo-kiem.test.js:fixture",
       "type": "contains",
@@ -22178,74 +20419,11 @@
       "weight": 1
     },
     {
-      "source": "file:test/bo-kiem.test.js",
-      "target": "file:ctl/bo-kiem.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/bo-kiem.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/bo-kiem.test.js",
-      "target": "file:lib/kiem-agent.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/bo-kiem.test.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/bo-kiem.test.js",
-      "target": "file:public/progress-view.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/bo-nao.test.js",
-      "target": "file:ctl/bo-nao.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/bo-nao.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/chay-phim.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:test/cho-han-muc.test.js",
       "target": "function:test/cho-han-muc.test.js:fixture",
       "type": "contains",
       "direction": "forward",
       "weight": 1
-    },
-    {
-      "source": "file:test/cho-han-muc.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:test/doc-repo.test.js",
@@ -22262,46 +20440,11 @@
       "weight": 1
     },
     {
-      "source": "file:test/doc-repo.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:test/github.test.js",
       "target": "function:test/github.test.js:fixture",
       "type": "contains",
       "direction": "forward",
       "weight": 1
-    },
-    {
-      "source": "file:test/github.test.js",
-      "target": "file:ctl/github.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/github.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/kho-phim.test.js",
-      "target": "file:ctl/kho-phim.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/kho-phim.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:test/nhanh-rieng.test.js",
@@ -22311,81 +20454,11 @@
       "weight": 1
     },
     {
-      "source": "file:test/nhanh-rieng.test.js",
-      "target": "file:ctl/autopilot.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/nhanh-rieng.test.js",
-      "target": "file:ctl/ideas.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/nhanh-rieng.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/nhanh-rieng.test.js",
-      "target": "file:ctl/nhanh.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/nhanh-rieng.test.js",
-      "target": "file:ctl/thongbao.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:test/phase4.test.js",
       "target": "function:test/phase4.test.js:call",
       "type": "contains",
       "direction": "forward",
       "weight": 1
-    },
-    {
-      "source": "file:test/phase4.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/phase4.test.js",
-      "target": "file:ctl/policy.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/phim-mau.test.js",
-      "target": "file:ctl/co-van-tay.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/phim-mau.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/phim-mau.test.js",
-      "target": "file:ctl/phim-mau.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:test/projects.test.js",
@@ -22395,46 +20468,11 @@
       "weight": 1
     },
     {
-      "source": "file:test/projects.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/quotas.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/quotas.test.js",
-      "target": "file:ctl/quotas.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:test/quyen-api.test.js",
       "target": "function:test/quyen-api.test.js:call",
       "type": "contains",
       "direction": "forward",
       "weight": 1
-    },
-    {
-      "source": "file:test/quyen-api.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/so-tin-nhan.test.js",
-      "target": "file:lib/so-tin-nhan.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:test/xuat-ban.test.js",
@@ -22444,53 +20482,11 @@
       "weight": 1
     },
     {
-      "source": "file:test/xuat-ban.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/xuat-ban.test.js",
-      "target": "file:ctl/policy.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/xuat-ban.test.js",
-      "target": "file:ctl/runner.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/xuat-ban.test.js",
-      "target": "file:ctl/xuat-ban.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/xuong-phim.test.js",
-      "target": "file:ctl/xuong-phim.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:test/y-tuong.test.js",
       "target": "function:test/y-tuong.test.js:fixture",
       "type": "contains",
       "direction": "forward",
       "weight": 1
-    },
-    {
-      "source": "file:test/y-tuong.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:ctl/ban-dung.js",
@@ -22640,20 +20636,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:ctl/ban-dung.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/ban-dung.js",
-      "target": "file:lib/phim.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:ctl/chrome-devtools.js",
       "target": "function:ctl/chrome-devtools.js:thuMuc",
       "type": "contains",
@@ -22708,13 +20690,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:ctl/chrome-devtools.js",
-      "target": "file:ctl/mcp-may.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:ctl/may-quay.js",
@@ -22794,48 +20769,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:ctl/may-quay.js",
-      "target": "file:ctl/phim-tai-lieu.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/may-quay.js",
-      "target": "file:ctl/tra-cuu.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/may-quay.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/may-quay.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/may-quay.js",
-      "target": "file:lib/phim.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/may-quay.js",
-      "target": "file:lib/proc.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:ctl/phim-blender.js",
       "target": "function:ctl/phim-blender.js:timBlender",
       "type": "contains",
@@ -22864,27 +20797,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:ctl/phim-blender.js",
-      "target": "file:ctl/phim-tai-lieu.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/phim-blender.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/phim-blender.js",
-      "target": "file:lib/proc.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:ctl/phim-capcut.js",
       "target": "function:ctl/phim-capcut.js:goiCapCut",
       "type": "contains",
@@ -22897,20 +20809,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:ctl/phim-capcut.js",
-      "target": "file:ctl/ban-dung.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/phim-capcut.js",
-      "target": "file:lib/phim.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:ctl/phim-helper.js",
@@ -23079,20 +20977,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:ctl/phim-helper.js",
-      "target": "file:ctl/phim-tai-lieu.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/phim-helper.js",
-      "target": "file:lib/phim.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:ctl/phim-tai-lieu.js",
@@ -23256,13 +21140,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:ctl/phim-tai-lieu.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:ctl/tram-flow.js",
       "target": "function:ctl/tram-flow.js:timChrome",
       "type": "contains",
@@ -23317,34 +21194,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:ctl/tram-flow.js",
-      "target": "file:ctl/chrome-devtools.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/tram-flow.js",
-      "target": "file:ctl/mcp-may.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/tram-flow.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/tram-flow.js",
-      "target": "file:lib/phim.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:lib/phim.js",
@@ -23457,13 +21306,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:test/ban-dung.test.js",
-      "target": "file:ctl/ban-dung.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:test/luong-phim.test.js",
@@ -23473,53 +21315,11 @@
       "weight": 1
     },
     {
-      "source": "file:test/luong-phim.test.js",
-      "target": "file:ctl/luong-phim.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/luong-phim.test.js",
-      "target": "file:ctl/phim-helper.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/luong-phim.test.js",
-      "target": "file:ctl/phim-tai-lieu.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/luong-phim.test.js",
-      "target": "file:lib/phim.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:test/may-anh-gpt.test.js",
       "target": "function:test/may-anh-gpt.test.js:lap",
       "type": "contains",
       "direction": "forward",
       "weight": 1
-    },
-    {
-      "source": "file:test/may-anh-gpt.test.js",
-      "target": "file:ctl/may-quay.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/may-anh-gpt.test.js",
-      "target": "file:lib/phim.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:test/may-quay.test.js",
@@ -23536,97 +21336,6 @@
       "weight": 1
     },
     {
-      "source": "file:test/may-quay.test.js",
-      "target": "file:ctl/chrome-devtools.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/may-quay.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/may-quay.test.js",
-      "target": "file:ctl/may-quay.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/may-quay.test.js",
-      "target": "file:ctl/tram-flow.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/may-quay.test.js",
-      "target": "file:lib/phim.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/phim-helper.test.js",
-      "target": "file:ctl/phim-helper.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/phim-helper.test.js",
-      "target": "file:ctl/phim-tai-lieu.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/phim-helper.test.js",
-      "target": "file:lib/phim.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/phim-tai-lieu.test.js",
-      "target": "file:ctl/phim-capcut.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/phim-tai-lieu.test.js",
-      "target": "file:ctl/phim-tai-lieu.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/phim.test.js",
-      "target": "file:ctl/du-an-moi.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/phim.test.js",
-      "target": "file:lib/phim.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:tools/cai-chrome-devtools.js",
-      "target": "file:ctl/chrome-devtools.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:tools/phim.js",
       "target": "function:tools/phim.js:main",
       "type": "contains",
@@ -23639,13 +21348,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:tools/phim.js",
-      "target": "file:lib/phim.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:ctl/handoff.js",
@@ -23732,20 +21434,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:ctl/handoff.js",
-      "target": "file:ctl/skill.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/handoff.js",
-      "target": "file:lib/kiem-agent.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:ctl/song-song.js",
       "target": "function:ctl/song-song.js:trongThuMuc",
       "type": "contains",
@@ -23842,41 +21530,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:ctl/song-song.js",
-      "target": "file:ctl/handoff.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/song-song.js",
-      "target": "file:ctl/nhanh.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/song-song.js",
-      "target": "file:lib/kiem-agent.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/song-song.js",
-      "target": "file:lib/kiem-hop-dong.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/song-song.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:lib/kiem-agent.js",
@@ -23998,32 +21651,11 @@
       "weight": 0.8
     },
     {
-      "source": "file:public/office-desk.js",
-      "target": "file:public/progress-view.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:test/codex-model.test.js",
       "target": "function:test/codex-model.test.js:fixture",
       "type": "contains",
       "direction": "forward",
       "weight": 1
-    },
-    {
-      "source": "file:test/codex-model.test.js",
-      "target": "file:ctl/handoff.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/codex-model.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:test/giai-thich.test.js",
@@ -24033,95 +21665,11 @@
       "weight": 1
     },
     {
-      "source": "file:test/giai-thich.test.js",
-      "target": "file:ctl/handoff.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/giai-thich.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/giai-thich.test.js",
-      "target": "file:public/progress-view.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/kakashi.test.js",
-      "target": "file:ctl/handoff.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/kakashi.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/kakashi.test.js",
-      "target": "file:ctl/runner.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/kakashi.test.js",
-      "target": "file:lib/kiem-agent.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/kiem-agent.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/kiem-agent.test.js",
-      "target": "file:lib/kiem-agent.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:test/phase5.test.js",
       "target": "function:test/phase5.test.js:call",
       "type": "contains",
       "direction": "forward",
       "weight": 1
-    },
-    {
-      "source": "file:test/phase5.test.js",
-      "target": "file:ctl/handoff.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/phase5.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/phase5.test.js",
-      "target": "file:ctl/runner.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:test/skill.test.js",
@@ -24131,46 +21679,11 @@
       "weight": 1
     },
     {
-      "source": "file:test/skill.test.js",
-      "target": "file:ctl/handoff.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/skill.test.js",
-      "target": "file:ctl/skill.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:test/song-song.test.js",
       "target": "function:test/song-song.test.js:fixture",
       "type": "contains",
       "direction": "forward",
       "weight": 1
-    },
-    {
-      "source": "file:test/song-song.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/song-song.test.js",
-      "target": "file:ctl/song-song.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/song-song.test.js",
-      "target": "file:lib/kiem-agent.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:test/tu-hanh.test.js",
@@ -24180,27 +21693,6 @@
       "weight": 1
     },
     {
-      "source": "file:test/tu-hanh.test.js",
-      "target": "file:ctl/handoff.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/tu-hanh.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:tools/kiem-agent.js",
-      "target": "file:lib/kiem-agent.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:ctl/codex-tai-khoan.js",
       "target": "function:ctl/codex-tai-khoan.js:conLaiCua",
       "type": "contains",
@@ -24227,20 +21719,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:ctl/codex-tai-khoan.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/codex-tai-khoan.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:ctl/db.js",
@@ -24313,34 +21791,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:ctl/lich-chay.js",
-      "target": "file:ctl/chat.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/lich-chay.js",
-      "target": "file:ctl/dieu-phoi.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/lich-chay.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:ctl/lich-chay.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:ctl/workspaces.js",
       "target": "function:ctl/workspaces.js:readProgress",
       "type": "contains",
@@ -24369,20 +21819,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:ctl/workspaces.js",
-      "target": "file:lib/mask.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/cap-nhat-ban-do.test.js",
-      "target": "file:tools/cap-nhat-ban-do.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:test/codex-tai-khoan.test.js",
       "target": "function:test/codex-tai-khoan.test.js:fixture",
       "type": "contains",
@@ -24390,67 +21826,11 @@
       "weight": 1
     },
     {
-      "source": "file:test/codex-tai-khoan.test.js",
-      "target": "file:ctl/codex-tai-khoan.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/codex-tai-khoan.test.js",
-      "target": "file:ctl/db.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/codex-tai-khoan.test.js",
-      "target": "file:ctl/jobs.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/codex-tai-khoan.test.js",
-      "target": "file:ctl/quotas.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/codex-tai-khoan.test.js",
-      "target": "file:ctl/runner.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:test/lich-chay.test.js",
       "target": "function:test/lich-chay.test.js:dungLich",
       "type": "contains",
       "direction": "forward",
       "weight": 1
-    },
-    {
-      "source": "file:test/lich-chay.test.js",
-      "target": "file:ctl/db.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/lich-chay.test.js",
-      "target": "file:ctl/lich-chay.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/lich-chay.test.js",
-      "target": "file:ctl/main.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:test/tien-do.test.js",
@@ -24467,39 +21847,11 @@
       "weight": 1
     },
     {
-      "source": "file:test/tien-do.test.js",
-      "target": "file:ctl/db.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/tien-do.test.js",
-      "target": "file:ctl/workspaces.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:test/workspace-junction.test.js",
       "target": "function:test/workspace-junction.test.js:fixture",
       "type": "contains",
       "direction": "forward",
       "weight": 1
-    },
-    {
-      "source": "file:test/workspace-junction.test.js",
-      "target": "file:ctl/db.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/workspace-junction.test.js",
-      "target": "file:ctl/workspaces.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:tools/cap-nhat-ban-do.js",
@@ -24544,13 +21896,6 @@
       "weight": 1
     },
     {
-      "source": "file:tools/cap-nhat-ban-do.js",
-      "target": "file:ctl/codex-tai-khoan.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:lib/ctlbridge.js",
       "target": "function:lib/ctlbridge.js:call",
       "type": "contains",
@@ -24591,13 +21936,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:lib/ctlbridge.js",
-      "target": "file:lib/guard.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:lib/dieu-khien-xa.js",
@@ -24656,13 +21994,6 @@
       "weight": 0.8
     },
     {
-      "source": "file:lib/dieu-khien-xa.js",
-      "target": "file:lib/ghi-file.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:lib/guard.js",
       "target": "function:lib/guard.js:checkHost",
       "type": "contains",
@@ -24717,13 +22048,6 @@
       "type": "exports",
       "direction": "forward",
       "weight": 0.8
-    },
-    {
-      "source": "file:test/ctlbridge.test.js",
-      "target": "file:lib/ctlbridge.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:test/dieu-khien-xa.test.js",
@@ -24733,53 +22057,11 @@
       "weight": 1
     },
     {
-      "source": "file:test/dieu-khien-xa.test.js",
-      "target": "file:lib/ctlbridge.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/dieu-khien-xa.test.js",
-      "target": "file:lib/dieu-khien-xa.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/dieu-khien-xa.test.js",
-      "target": "file:lib/guard.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
       "source": "file:test/du-an-moi.test.js",
       "target": "function:test/du-an-moi.test.js:gia",
       "type": "contains",
       "direction": "forward",
       "weight": 1
-    },
-    {
-      "source": "file:test/du-an-moi.test.js",
-      "target": "file:ctl/du-an-moi.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/du-an-moi.test.js",
-      "target": "file:lib/dieu-khien-xa.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
-    },
-    {
-      "source": "file:test/guard.test.js",
-      "target": "file:lib/guard.js",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.7
     },
     {
       "source": "file:lib/docs.js",
@@ -25712,13 +22994,6 @@
     },
     {
       "source": "file:ctl/main.js",
-      "target": "file:test/cap-nhat.test.js",
-      "type": "tested_by",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "config:package.json",
       "target": "file:test/cap-nhat.test.js",
       "type": "tested_by",
       "direction": "forward",
@@ -27049,13 +24324,6 @@
     },
     {
       "source": "document:README.md",
-      "target": "config:package.json",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:README.md",
       "target": "document:ctl/agent-template.md",
       "type": "documents",
       "direction": "forward",
@@ -27127,13 +24395,6 @@
     {
       "source": "document:YEU-CAU-SUA-LOI-CLAUDE.md",
       "target": "document:agent.md",
-      "type": "documents",
-      "direction": "forward",
-      "weight": 0.5
-    },
-    {
-      "source": "document:YEU-CAU-SUA-LOI-CLAUDE.md",
-      "target": "config:package.json",
       "type": "documents",
       "direction": "forward",
       "weight": 0.5
@@ -27910,13 +25171,6 @@
     },
     {
       "source": "pipeline:.github/workflows/kiem-tra.yml",
-      "target": "config:package.json",
-      "type": "triggers",
-      "direction": "forward",
-      "weight": 0.6
-    },
-    {
-      "source": "pipeline:.github/workflows/kiem-tra.yml",
       "target": "file:tools/kiem-agent.js",
       "type": "triggers",
       "direction": "forward",
@@ -27924,21 +25178,7 @@
     },
     {
       "source": "pipeline:.github/workflows/phat-hanh.yml",
-      "target": "config:package.json",
-      "type": "triggers",
-      "direction": "forward",
-      "weight": 0.6
-    },
-    {
-      "source": "pipeline:.github/workflows/phat-hanh.yml",
       "target": "file:tools/kiem-agent.js",
-      "type": "triggers",
-      "direction": "forward",
-      "weight": 0.6
-    },
-    {
-      "source": "config:ctl/khung/kiem-chu-trinh.yml",
-      "target": "config:package.json",
       "type": "triggers",
       "direction": "forward",
       "weight": 0.6
@@ -31535,20 +28775,6 @@
       "weight": 1
     },
     {
-      "source": "file:public/os/os.css",
-      "target": "file:public/os/base.css",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.6
-    },
-    {
-      "source": "file:public/os/os.css",
-      "target": "file:public/os/tokens.css",
-      "type": "imports",
-      "direction": "forward",
-      "weight": 0.6
-    },
-    {
       "source": "file:public/app.js",
       "target": "file:public/sw.js",
       "type": "depends_on",
@@ -31603,6 +28829,3275 @@
       "type": "depends_on",
       "direction": "forward",
       "weight": 0.6
+    },
+    {
+      "source": "config:package.json",
+      "target": "file:server.js",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:package.json",
+      "target": "file:setup.js",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:package.json",
+      "target": "file:tools/vp.js",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:package.json",
+      "target": "file:ctl/main.js",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:package.json",
+      "target": "file:scripts/chay-tat-ca.js",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:package.json",
+      "target": "file:scripts/mo-app.js",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:package.json",
+      "target": "file:scripts/tat-app.js",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:package.json",
+      "target": "file:scripts/cai-app.js",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "config:package.json",
+      "target": "file:tools/kiem-agent.js",
+      "type": "configures",
+      "direction": "forward",
+      "weight": 0.6
+    },
+    {
+      "source": "file:server.js",
+      "target": "file:test/xem-tin-can-anh.test.js",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:public/os/khu/tong-quan.js",
+      "target": "file:test/xem-tin-can-anh.test.js",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 0.5
+    },
+    {
+      "source": "file:ctl/agy-tai-khoan.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/audit.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/autopilot.js",
+      "target": "file:ctl/handoff.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/autopilot.js",
+      "target": "file:ctl/mien-hop-dong.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/autopilot.js",
+      "target": "file:ctl/nhanh.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/autopilot.js",
+      "target": "file:ctl/quyen.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/autopilot.js",
+      "target": "file:ctl/runner.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/autopilot.js",
+      "target": "file:ctl/song-song.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/autopilot.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/autopilot.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/ban-dung.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/ban-dung.js",
+      "target": "file:lib/phim.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/bo-kiem.js",
+      "target": "file:ctl/nhanh.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/bo-kiem.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/bo-kiem.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/bo-nao.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/bo-nao.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/cap-nhat.js",
+      "target": "file:lib/app.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/cap-nhat.js",
+      "target": "file:lib/cap-nhat.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/cap-nhat.js",
+      "target": "file:lib/config.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/chat.js",
+      "target": "file:ctl/autopilot.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/chat.js",
+      "target": "file:ctl/chot-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/chat.js",
+      "target": "file:ctl/cong-web.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/chat.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/chat.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/chrome-devtools.js",
+      "target": "file:ctl/mcp-may.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/co-van-tay.js",
+      "target": "file:ctl/luong-phim.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/co-van-tay.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/codex-tai-khoan.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/codex-tai-khoan.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/cong-web.js",
+      "target": "file:ctl/autopilot.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/cong-web.js",
+      "target": "file:ctl/ra-soat.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/cong-web.js",
+      "target": "file:ctl/tra-cuu.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/cong-web.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/dieu-phoi.js",
+      "target": "file:ctl/mcp-phong.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/dieu-phoi.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/du-an-moi.js",
+      "target": "file:ctl/nhanh.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/du-an-moi.js",
+      "target": "file:ctl/policy.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/du-an-moi.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/du-an-moi.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/files.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/github.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/handoff.js",
+      "target": "file:ctl/skill.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/handoff.js",
+      "target": "file:lib/kiem-agent.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/ideas.js",
+      "target": "file:ctl/handoff.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/ideas.js",
+      "target": "file:ctl/nhanh.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/ideas.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/ideas.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/jobs.js",
+      "target": "file:ctl/policy.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/jobs.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/jobs.js",
+      "target": "file:lib/proc.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/ket-noi.js",
+      "target": "file:ctl/ket-noi-danh-muc.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/ket-noi.js",
+      "target": "file:ctl/mcp-may.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/ket-noi.js",
+      "target": "file:ctl/mcp-phong.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/kho-phim.js",
+      "target": "file:ctl/ban-dung.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/kho-phim.js",
+      "target": "file:ctl/du-an-moi.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/kho-phim.js",
+      "target": "file:ctl/nhanh.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/kho-phim.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/kho-phim.js",
+      "target": "file:lib/phim.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/lich-chay.js",
+      "target": "file:ctl/chat.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/lich-chay.js",
+      "target": "file:ctl/dieu-phoi.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/lich-chay.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/lich-chay.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/luong-phim.js",
+      "target": "file:ctl/ban-dung.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/luong-phim.js",
+      "target": "file:ctl/dieu-phoi.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/luong-phim.js",
+      "target": "file:ctl/phim-tai-lieu.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/luong-phim.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/luong-phim.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/luong-phim.js",
+      "target": "file:lib/phim.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/agy-tai-khoan.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/audit.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/autopilot.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/ban-dung.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/bo-kiem.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/bo-nao.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/cap-nhat.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/chat.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/co-van-tay.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/codex-tai-khoan.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/db.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/dieu-phoi.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/du-an-moi.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/files.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/github.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/handoff.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/ideas.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/jobs.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/ket-noi.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/kho-phim.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/lich-chay.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/luong-phim.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/may-quay.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/monitor.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/nhat-ky.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/phim-blender.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/phim-capcut.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/phim-helper.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/phim-mau.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/phim-tai-lieu.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/policy.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/quotas.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/quyen.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/ra-soat.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/runner.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/skill-duyet.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/thongbao.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/tram-flow.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/workspaces.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/xuat-ban.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:ctl/xuong-phim.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:lib/guard.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "file:lib/phim.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/main.js",
+      "target": "config:package.json",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/may-quay.js",
+      "target": "file:ctl/phim-tai-lieu.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/may-quay.js",
+      "target": "file:ctl/tra-cuu.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/may-quay.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/may-quay.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/may-quay.js",
+      "target": "file:lib/phim.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/may-quay.js",
+      "target": "file:lib/proc.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/mcp-may.js",
+      "target": "file:ctl/chrome-devtools.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/mcp-phong.js",
+      "target": "file:ctl/ket-noi-danh-muc.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/mcp-phong.js",
+      "target": "file:ctl/mcp-may.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/mcp-phong.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/mien-hop-dong.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/nhanh.js",
+      "target": "file:ctl/policy.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/nhanh.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/nhat-ky.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/phim-blender.js",
+      "target": "file:ctl/phim-tai-lieu.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/phim-blender.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/phim-blender.js",
+      "target": "file:lib/proc.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/phim-capcut.js",
+      "target": "file:ctl/ban-dung.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/phim-capcut.js",
+      "target": "file:lib/phim.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/phim-helper.js",
+      "target": "file:ctl/phim-tai-lieu.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/phim-helper.js",
+      "target": "file:lib/phim.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/phim-mau.js",
+      "target": "file:ctl/kho-phim.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/phim-mau.js",
+      "target": "file:ctl/luong-phim.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/phim-mau.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/phim-tai-lieu.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/quotas.js",
+      "target": "file:ctl/policy.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/quotas.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/quotas.js",
+      "target": "file:lib/proc.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/quyen.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/ra-soat.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/ra-soat.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/runner.js",
+      "target": "file:ctl/chrome-devtools.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/runner.js",
+      "target": "file:ctl/dieu-phoi.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/runner.js",
+      "target": "file:ctl/handoff.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/runner.js",
+      "target": "file:ctl/ket-noi-danh-muc.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/runner.js",
+      "target": "file:ctl/mcp-may.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/runner.js",
+      "target": "file:ctl/mcp-phong.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/runner.js",
+      "target": "file:ctl/mien-hop-dong.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/runner.js",
+      "target": "file:ctl/muc-luc.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/runner.js",
+      "target": "file:ctl/policy.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/runner.js",
+      "target": "file:ctl/quyen.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/runner.js",
+      "target": "file:ctl/skill.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/runner.js",
+      "target": "file:ctl/song-song.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/runner.js",
+      "target": "file:ctl/tra-cuu.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/runner.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/runner.js",
+      "target": "file:lib/kiem-agent.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/runner.js",
+      "target": "file:lib/kiem-hop-dong.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/runner.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/skill-duyet.js",
+      "target": "file:ctl/autopilot.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/skill-duyet.js",
+      "target": "file:ctl/ket-noi-danh-muc.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/skill-duyet.js",
+      "target": "file:ctl/mcp-may.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/skill-duyet.js",
+      "target": "file:ctl/mcp-phong.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/skill-duyet.js",
+      "target": "file:ctl/ra-soat.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/skill-duyet.js",
+      "target": "file:ctl/skill.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/skill-duyet.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/skill-duyet.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/song-song.js",
+      "target": "file:ctl/handoff.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/song-song.js",
+      "target": "file:ctl/nhanh.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/song-song.js",
+      "target": "file:lib/kiem-agent.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/song-song.js",
+      "target": "file:lib/kiem-hop-dong.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/song-song.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/thongbao.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/tra-cuu-mcp.js",
+      "target": "file:ctl/tra-cuu.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/tra-cuu.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/tram-flow.js",
+      "target": "file:ctl/chrome-devtools.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/tram-flow.js",
+      "target": "file:ctl/mcp-may.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/tram-flow.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/tram-flow.js",
+      "target": "file:lib/phim.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/workspaces.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/xuat-ban.js",
+      "target": "file:ctl/github.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/xuat-ban.js",
+      "target": "file:ctl/nhanh.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/xuat-ban.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:ctl/xuat-ban.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:lib/cap-nhat.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:lib/ctlbridge.js",
+      "target": "file:lib/guard.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:lib/dieu-khien-xa.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:lib/keys.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:lib/so-tin-nhan.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/office-desk.js",
+      "target": "file:public/progress-view.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/os/app.js",
+      "target": "file:public/os/ngan.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/os/app.js",
+      "target": "file:public/os/ui.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/os/khu/bo-nao.js",
+      "target": "file:public/os/ui.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/os/khu/code-du-an.js",
+      "target": "file:public/os/ui.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/os/khu/code-pr.js",
+      "target": "file:public/os/ui.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/os/khu/cong-cu-cu.js",
+      "target": "file:public/os/ui.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/os/khu/cong-su.js",
+      "target": "file:public/os/ui.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/os/khu/giao-viec.js",
+      "target": "file:public/os/ui.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/os/khu/giao-viec.js",
+      "target": "file:public/os/viec-chung.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/os/khu/luong.js",
+      "target": "file:public/os/ui.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/os/khu/luong.js",
+      "target": "file:public/os/viec-chung.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/os/khu/models.js",
+      "target": "file:public/os/ui.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/os/khu/phim-ban-dung.js",
+      "target": "file:public/os/khu/phim.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/os/khu/phim-canh.js",
+      "target": "file:public/os/khu/phim.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/os/khu/phim-helper-ui.js",
+      "target": "file:public/os/ui.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/os/khu/phim-kho.js",
+      "target": "file:public/os/ui.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/os/khu/phim.js",
+      "target": "file:public/os/khu/phim-helper-ui.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/os/khu/phim.js",
+      "target": "file:public/os/ui.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/os/khu/tin-nhan.js",
+      "target": "file:public/os/ui.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/os/khu/tong-quan.js",
+      "target": "file:public/os/ui.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/os/khu/tong-quan.js",
+      "target": "file:public/os/viec-chung.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/os/khu/viec.js",
+      "target": "file:public/os/ui.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/os/khu/viec.js",
+      "target": "file:public/os/viec-chung.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/os/ngan.js",
+      "target": "file:public/os/ui.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/os/ngan.js",
+      "target": "file:public/os/viec-chung.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:public/os/viec-chung.js",
+      "target": "file:public/os/ui.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:scripts/cai-app.js",
+      "target": "file:lib/app.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:scripts/cap-nhat.js",
+      "target": "file:lib/cap-nhat.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:scripts/chay-tat-ca.js",
+      "target": "file:lib/proc.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:scripts/mo-app.js",
+      "target": "file:lib/app.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:scripts/mo-app.js",
+      "target": "file:lib/config.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:scripts/tat-app.js",
+      "target": "file:lib/app.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:scripts/tat-app.js",
+      "target": "file:lib/config.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:scripts/tat-app.js",
+      "target": "file:lib/proc.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/agy-tai-khoan.test.js",
+      "target": "file:ctl/agy-tai-khoan.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/agy-tai-khoan.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/agy-tai-khoan.test.js",
+      "target": "file:ctl/quotas.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/app.test.js",
+      "target": "file:lib/app.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/app.test.js",
+      "target": "file:lib/proc.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/app.test.js",
+      "target": "file:scripts/cai-app.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/autopilot.test.js",
+      "target": "file:ctl/autopilot.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/autopilot.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/ban-dung.test.js",
+      "target": "file:ctl/ban-dung.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/bo-kiem.test.js",
+      "target": "file:ctl/bo-kiem.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/bo-kiem.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/bo-kiem.test.js",
+      "target": "file:lib/kiem-agent.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/bo-kiem.test.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/bo-kiem.test.js",
+      "target": "file:public/progress-view.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/bo-nao.test.js",
+      "target": "file:ctl/bo-nao.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/bo-nao.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/cap-nhat-ban-do.test.js",
+      "target": "file:tools/cap-nhat-ban-do.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/cap-nhat.test.js",
+      "target": "file:ctl/cap-nhat.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/cap-nhat.test.js",
+      "target": "file:ctl/db.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/cap-nhat.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/cap-nhat.test.js",
+      "target": "file:lib/cap-nhat.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/cap-nhat.test.js",
+      "target": "config:package.json",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/chat.test.js",
+      "target": "file:ctl/chat.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/chat.test.js",
+      "target": "file:ctl/chot-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/chat.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/chay-phim.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/cho-han-muc.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/chot-file.test.js",
+      "target": "file:ctl/chot-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/chrome-devtools.test.js",
+      "target": "file:ctl/chrome-devtools.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/chrome-devtools.test.js",
+      "target": "file:ctl/ket-noi.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/chrome-devtools.test.js",
+      "target": "file:ctl/mcp-phong.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/chrome-devtools.test.js",
+      "target": "file:ctl/runner.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/codex-model.test.js",
+      "target": "file:ctl/handoff.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/codex-model.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/codex-tai-khoan.test.js",
+      "target": "file:ctl/codex-tai-khoan.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/codex-tai-khoan.test.js",
+      "target": "file:ctl/db.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/codex-tai-khoan.test.js",
+      "target": "file:ctl/jobs.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/codex-tai-khoan.test.js",
+      "target": "file:ctl/quotas.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/codex-tai-khoan.test.js",
+      "target": "file:ctl/runner.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/cong-web.test.js",
+      "target": "file:ctl/autopilot.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/cong-web.test.js",
+      "target": "file:ctl/cong-web.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/ctl.test.js",
+      "target": "file:ctl/jobs.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/ctl.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/ctl.test.js",
+      "target": "file:lib/mask.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/ctl.test.js",
+      "target": "file:lib/proc.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/ctlbridge.test.js",
+      "target": "file:lib/ctlbridge.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/dieu-khien-xa.test.js",
+      "target": "file:lib/ctlbridge.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/dieu-khien-xa.test.js",
+      "target": "file:lib/dieu-khien-xa.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/dieu-khien-xa.test.js",
+      "target": "file:lib/guard.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/dieu-phoi.test.js",
+      "target": "file:ctl/dieu-phoi.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/dieu-phoi.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/dieu-phoi.test.js",
+      "target": "file:ctl/muc-luc.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/dieu-phoi.test.js",
+      "target": "file:ctl/quotas.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/dieu-phoi.test.js",
+      "target": "file:ctl/runner.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/dinh-kem-va-loi.test.js",
+      "target": "file:ctl/chat.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/dinh-kem-va-loi.test.js",
+      "target": "file:ctl/du-an-moi.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/dinh-kem-va-loi.test.js",
+      "target": "file:ctl/runner.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/doc-repo.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/du-an-moi.test.js",
+      "target": "file:ctl/du-an-moi.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/du-an-moi.test.js",
+      "target": "file:lib/dieu-khien-xa.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/ghi-file.test.js",
+      "target": "file:lib/ghi-file.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/giai-thich.test.js",
+      "target": "file:ctl/handoff.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/giai-thich.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/giai-thich.test.js",
+      "target": "file:public/progress-view.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/github.test.js",
+      "target": "file:ctl/github.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/github.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/guard.test.js",
+      "target": "file:lib/guard.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/kakashi.test.js",
+      "target": "file:ctl/handoff.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/kakashi.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/kakashi.test.js",
+      "target": "file:ctl/runner.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/kakashi.test.js",
+      "target": "file:lib/kiem-agent.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/ket-noi-nhat-ky.test.js",
+      "target": "file:ctl/ket-noi.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/ket-noi-nhat-ky.test.js",
+      "target": "file:ctl/nhat-ky.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/ket-noi-nhat-ky.test.js",
+      "target": "file:ctl/runner.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/keys.test.js",
+      "target": "file:lib/keys.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/kho-phim.test.js",
+      "target": "file:ctl/kho-phim.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/kho-phim.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/kiem-agent.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/kiem-agent.test.js",
+      "target": "file:lib/kiem-agent.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/kiem-hop-dong.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/kiem-hop-dong.test.js",
+      "target": "file:ctl/runner.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/kiem-hop-dong.test.js",
+      "target": "file:lib/kiem-hop-dong.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/lich-chay.test.js",
+      "target": "file:ctl/db.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/lich-chay.test.js",
+      "target": "file:ctl/lich-chay.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/lich-chay.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/luong-phim.test.js",
+      "target": "file:ctl/luong-phim.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/luong-phim.test.js",
+      "target": "file:ctl/phim-helper.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/luong-phim.test.js",
+      "target": "file:ctl/phim-tai-lieu.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/luong-phim.test.js",
+      "target": "file:lib/phim.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/may-anh-gpt.test.js",
+      "target": "file:ctl/may-quay.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/may-anh-gpt.test.js",
+      "target": "file:lib/phim.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/may-quay.test.js",
+      "target": "file:ctl/chrome-devtools.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/may-quay.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/may-quay.test.js",
+      "target": "file:ctl/may-quay.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/may-quay.test.js",
+      "target": "file:ctl/tram-flow.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/may-quay.test.js",
+      "target": "file:lib/phim.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/mcp-phong.test.js",
+      "target": "file:ctl/ket-noi-danh-muc.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/mcp-phong.test.js",
+      "target": "file:ctl/ket-noi.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/mcp-phong.test.js",
+      "target": "file:ctl/mcp-phong.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/mcp-phong.test.js",
+      "target": "file:ctl/runner.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/mien-hop-dong.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/mien-hop-dong.test.js",
+      "target": "file:ctl/mien-hop-dong.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/nhanh-rieng.test.js",
+      "target": "file:ctl/autopilot.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/nhanh-rieng.test.js",
+      "target": "file:ctl/ideas.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/nhanh-rieng.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/nhanh-rieng.test.js",
+      "target": "file:ctl/nhanh.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/nhanh-rieng.test.js",
+      "target": "file:ctl/thongbao.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/phase4.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/phase4.test.js",
+      "target": "file:ctl/policy.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/phase5.test.js",
+      "target": "file:ctl/handoff.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/phase5.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/phase5.test.js",
+      "target": "file:ctl/runner.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/phim-helper.test.js",
+      "target": "file:ctl/phim-helper.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/phim-helper.test.js",
+      "target": "file:ctl/phim-tai-lieu.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/phim-helper.test.js",
+      "target": "file:lib/phim.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/phim-mau.test.js",
+      "target": "file:ctl/co-van-tay.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/phim-mau.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/phim-mau.test.js",
+      "target": "file:ctl/phim-mau.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/phim-tai-lieu.test.js",
+      "target": "file:ctl/phim-capcut.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/phim-tai-lieu.test.js",
+      "target": "file:ctl/phim-tai-lieu.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/phim.test.js",
+      "target": "file:ctl/du-an-moi.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/phim.test.js",
+      "target": "file:lib/phim.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/proc.test.js",
+      "target": "file:lib/proc.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/projects.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/quotas.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/quotas.test.js",
+      "target": "file:ctl/quotas.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/quyen-api.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/quyen.test.js",
+      "target": "file:ctl/quyen.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/quyen.test.js",
+      "target": "file:ctl/runner.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/skill-duyet.test.js",
+      "target": "file:ctl/mcp-may.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/skill-duyet.test.js",
+      "target": "file:ctl/mcp-phong.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/skill-duyet.test.js",
+      "target": "file:ctl/runner.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/skill-duyet.test.js",
+      "target": "file:ctl/skill-duyet.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/skill-duyet.test.js",
+      "target": "file:ctl/skill.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/skill.test.js",
+      "target": "file:ctl/handoff.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/skill.test.js",
+      "target": "file:ctl/skill.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/so-tin-nhan.test.js",
+      "target": "file:lib/so-tin-nhan.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/song-song.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/song-song.test.js",
+      "target": "file:ctl/song-song.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/song-song.test.js",
+      "target": "file:lib/kiem-agent.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/tat-ctl.test.js",
+      "target": "file:lib/proc.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/tien-do.test.js",
+      "target": "file:ctl/db.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/tien-do.test.js",
+      "target": "file:ctl/workspaces.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/toan-quyen.test.js",
+      "target": "file:ctl/handoff.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/toan-quyen.test.js",
+      "target": "file:ctl/ket-noi.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/toan-quyen.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/toan-quyen.test.js",
+      "target": "file:ctl/ra-soat.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/toan-quyen.test.js",
+      "target": "file:ctl/runner.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/toan-quyen.test.js",
+      "target": "file:public/progress-view.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/tra-cuu.test.js",
+      "target": "file:ctl/runner.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/tra-cuu.test.js",
+      "target": "file:ctl/tra-cuu.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/tu-bat-lai.test.js",
+      "target": "file:lib/proc.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/tu-hanh.test.js",
+      "target": "file:ctl/handoff.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/tu-hanh.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/workspace-junction.test.js",
+      "target": "file:ctl/db.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/workspace-junction.test.js",
+      "target": "file:ctl/workspaces.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/xuat-ban.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/xuat-ban.test.js",
+      "target": "file:ctl/policy.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/xuat-ban.test.js",
+      "target": "file:ctl/runner.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/xuat-ban.test.js",
+      "target": "file:ctl/xuat-ban.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/xuong-phim.test.js",
+      "target": "file:ctl/xuong-phim.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:test/y-tuong.test.js",
+      "target": "file:ctl/main.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:tools/cai-chrome-devtools.js",
+      "target": "file:ctl/chrome-devtools.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:tools/cai-skill.js",
+      "target": "file:ctl/skill.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:tools/cap-nhat-ban-do.js",
+      "target": "file:ctl/codex-tai-khoan.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:tools/kiem-agent.js",
+      "target": "file:lib/kiem-agent.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:tools/kiem-hop-dong.js",
+      "target": "file:lib/kiem-hop-dong.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:tools/phim.js",
+      "target": "file:lib/phim.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:tools/vp.js",
+      "target": "file:lib/config.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:tools/vp.js",
+      "target": "file:lib/hopthu.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
+    },
+    {
+      "source": "file:tools/vp.js",
+      "target": "file:lib/mailbox.js",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.7,
+      "recoveredFromImportMap": true
     }
   ],
   "layers": [
@@ -32074,7 +32569,8 @@
         "file:test/os.test.js",
         "file:test/ps1-bom.test.js",
         "file:test/thoitiet.test.js",
-        "file:test/van-phong-sach.test.js"
+        "file:test/van-phong-sach.test.js",
+        "file:test/xem-tin-can-anh.test.js"
       ]
     },
     {
@@ -32258,24 +32754,24 @@
     "name": "Văn phòng AI",
     "description": "Văn phòng cục bộ theo dõi đội AI, điều phối dự án code và sản xuất phim qua các cổng CEO duyệt.",
     "languages": [
-      "unknown",
-      "yaml",
-      "markdown",
-      "json",
-      "powershell",
-      "javascript",
-      "txt",
-      "html",
-      "webmanifest",
       "css",
+      "html",
+      "javascript",
+      "json",
+      "markdown",
+      "powershell",
+      "python",
       "shell",
-      "python"
+      "txt",
+      "unknown",
+      "webmanifest",
+      "yaml"
     ],
     "frameworks": [
       "Node.js",
       "Three.js"
     ],
-    "analyzedAt": "2026-11-27T22:44:34.421Z",
-    "gitCommitHash": "675e5a704ee4f23dc2a305f34ed3bfb5a587d396"
+    "analyzedAt": "2026-11-28T12:07:44.589Z",
+    "gitCommitHash": "6b30e9fe97189be9923f461544468835c6bdecae"
   }
 }

@@ -205,6 +205,24 @@ function agentFromLabel(label) {
 // Chi tiết của một việc cần anh (nút "Xem tin" ở Tổng quan): đoạn cuối tin AI, đủ dài để đọc trọn câu hỏi và ngữ cảnh.
 // Câu AI hỏi trong phiên KHÔNG nằm trong sổ tin nhắn (sổ chỉ có tin anh gõ và tin AI nhắn nhau), nên máy chủ gửi kèm ở đây.
 const DAI_CHI_TIET = 1500;
+function maskDai(s) {
+  if (!s) return "";
+  return String(s)
+    .replace(/[A-Za-z]:[\\/][^\s|;,]*secrets?[^\s|;,]*/gi, "‹thư mục khóa›")
+    .replace(/[^\s"'`(<]*(?:\.env\b|keys\.json|\.credentials\.json|auth\.json|ctl-token|\.ssh[\\/]|id_rsa|id_ed25519|\.npmrc|git-credentials)[^\s"'`)>]*/gi, "‹tệp khóa›")
+    .replace(/:\/\/[^\s:/@]+:[^\s@/]+@/g, "://‹ẩn›@")
+    .replace(/\bbearer\s+[^\s"',;]+/gi, "Bearer ‹ẩn›")
+    .replace(/("?(?:(?:api[_-]?)?key|token|secret|password|passwd|pwd|bearer|authorization)"?)(\s*[:=]\s*|\s+)("[^"\n]*"|'[^'\n]*'|[^\s"',;]+)/gi, "$1$2‹ẩn›")
+    .replace(/\b(?:sk|pk|rk|gh[pousr]|github_pat|xox[abprs]|AKIA|AIza)[-_A-Za-z0-9]{12,}/g, "‹khóa›")
+    .replace(/[A-Za-z0-9_\-+/=]{48,}/g, "…")
+    .replace(/\*\*|`/g, "")
+    .replace(/[ \t]+/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+// Đoạn cuối (đủ để đọc câu hỏi ở cuối tin), cắt thì đánh dấu "…" ở đầu.
+const cuoiDai = (s) => { const m = maskDai(s); return m.length > DAI_CHI_TIET ? "…" + m.slice(-(DAI_CHI_TIET - 1)) : m; };
 const events = [];
 const seenEvt = new Set();
 function pushEvent(e) {
@@ -240,8 +258,9 @@ function parseClaude(a, line) {
   if (j.type === "assistant") {
     mark(a, t);
     if (msg.stop_reason === "end_turn") { a.done.push({ t }); keep7(a.done); }
+    const vanBan = [];
     for (const c of Array.isArray(msg.content) ? msg.content : []) {
-      if (c.type === "text" && c.text && c.text.trim()) { a.lastText = clip(mask(c.text), 600); a.lastTail = mask(c.text).slice(-500); a.lastDai = mask(c.text).slice(-DAI_CHI_TIET); a.lastTextAt = t; }
+      if (c.type === "text" && c.text && c.text.trim()) { const m = mask(c.text); a.lastText = clip(m, 600); a.lastTail = m.slice(-500); a.lastTextAt = t; vanBan.push(c.text); a.lastDai = cuoiDai(vanBan.join("\n\n")); }
       if (c.type === "tool_use") {
         const inp = c.input || {}, n = c.name || "";
         if (/SendMessage|send_message/.test(n)) {
@@ -251,7 +270,10 @@ function parseClaude(a, line) {
         }
         if (n === "AskUserQuestion" || n === "ExitPlanMode") {
           const q = n === "ExitPlanMode" ? "Duyệt kế hoạch trước khi làm" : ((inp.questions || []).map((x) => `${x.question} ${(x.options || []).map((o, i) => `(${String.fromCharCode(97 + i)}) ${o.label}`).join("; ")}`).join(" · ") || "Câu hỏi cho bạn");
-          a.pendingAsk = { id: c.id, t, text: clip(mask(q), 300), chiTiet: clip(mask(q), DAI_CHI_TIET) };
+          // Chi tiết: kế hoạch AI xin duyệt, hoặc từng câu hỏi kèm mô tả từng lựa chọn (xuống dòng cho dễ đọc).
+          const ct = n === "ExitPlanMode" ? "Duyệt kế hoạch trước khi làm" + (inp.plan ? "\n\n" + inp.plan : a.lastDai ? "\n\n" + a.lastDai : "")
+            : (inp.questions || []).map((x) => x.question + "\n" + (x.options || []).map((o, i) => `(${String.fromCharCode(97 + i)}) ${o.label}${o.description ? ": " + o.description : ""}`).join("\n")).join("\n\n") || q;
+          a.pendingAsk = { id: c.id, t, text: clip(mask(q), 300), chiTiet: n === "ExitPlanMode" && !inp.plan ? ct.slice(0, DAI_CHI_TIET) : cuoiDai(ct) };
         }
       }
     }
@@ -285,7 +307,7 @@ function parseCodex(a, line) {
   if (j.type === "response_item" || j.type === "event_msg") mark(a, t);
   if (j.type === "response_item" && p.type === "message") {
     const txt = textOfContent(p.content);
-    if (p.role === "assistant" && txt.trim()) { a.lastText = clip(mask(txt), 600); a.lastTail = mask(txt).slice(-500); a.lastDai = mask(txt).slice(-DAI_CHI_TIET); a.lastTextAt = t; }
+    if (p.role === "assistant" && txt.trim()) { const m = mask(txt); a.lastText = clip(m, 600); a.lastTail = m.slice(-500); a.lastDai = cuoiDai(txt); a.lastTextAt = t; }
     if (p.role === "user" && txt.trim()) {
       const peer = txt.match(/\[PEER MESSAGE[^\]]*\]\s*([^\n(]+)/);
       const body = peer ? txt.slice(txt.indexOf(peer[0]) + peer[0].length) : txt;

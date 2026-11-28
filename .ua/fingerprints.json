@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "gitCommitHash": "675e5a704ee4f23dc2a305f34ed3bfb5a587d396",
-  "generatedAt": "2026-11-27T22:44:43.462Z",
+  "gitCommitHash": "6b30e9fe97189be9923f461544468835c6bdecae",
+  "generatedAt": "2026-11-28T12:07:44.679Z",
   "files": {
     ".gitattributes": {
       "filePath": ".gitattributes",
@@ -6172,7 +6172,7 @@
     },
     "package.json": {
       "filePath": "package.json",
-      "contentHash": "7d4263efe96913d9e61b928a27af02117a0089fb8a97ac631305296bfe6d3d80",
+      "contentHash": "0bc15f196895659fcd9ba68bb08e1ea73fcacbd2db5c66f3629f44b4e2858ffd",
       "functions": [],
       "classes": [],
       "imports": [],
@@ -7265,7 +7265,7 @@
     },
     "public/os/khu/tong-quan.js": {
       "filePath": "public/os/khu/tong-quan.js",
-      "contentHash": "64d39ffd889a200ec042e9dd5dd0c1edfe33e4e241747089f9b2956e6b564abe",
+      "contentHash": "0efc1fdf6965af867fe2a9d353d3fa18a5551bdb3dcea573d55f025fab0b474a",
       "functions": [
         {
           "name": "mo",
@@ -7273,7 +7273,7 @@
             "vung"
           ],
           "exported": true,
-          "lineCount": 143
+          "lineCount": 167
         }
       ],
       "classes": [],
@@ -7305,7 +7305,7 @@
       "exports": [
         "mo"
       ],
-      "totalLines": 155,
+      "totalLines": 179,
       "hasStructuralAnalysis": true
     },
     "public/os/khu/viec.js": {
@@ -8017,7 +8017,7 @@
     },
     "server.js": {
       "filePath": "server.js",
-      "contentHash": "1167d9fa277d9371397e4dc2740daa85db4664074082de87cec24b1e2023f7a6",
+      "contentHash": "59f47d582da59dea0fdca35b14eba227757dd171afdda97df44c8318e03c8629",
       "functions": [
         {
           "name": "now",
@@ -8448,7 +8448,7 @@
       "classes": [],
       "imports": [],
       "exports": [],
-      "totalLines": 833,
+      "totalLines": 836,
       "hasStructuralAnalysis": true
     },
     "setup.js": {
@@ -11489,6 +11489,32 @@
         "main"
       ],
       "totalLines": 338,
+      "hasStructuralAnalysis": true
+    },
+    "test/xem-tin-can-anh.test.js": {
+      "filePath": "test/xem-tin-can-anh.test.js",
+      "contentHash": "a86f63082ca494dced24bf8ed57c1a70dfdc23993baf93a439eefe28c8a2a3ec",
+      "functions": [
+        {
+          "name": "freePort",
+          "params": [],
+          "exported": false,
+          "lineCount": 1
+        },
+        {
+          "name": "getJson",
+          "params": [
+            "port",
+            "p"
+          ],
+          "exported": false,
+          "lineCount": 3
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 69,
       "hasStructuralAnalysis": true
     }
   }
