@@ -85,7 +85,7 @@ const hidden = new Set(CFG.hide || []);
 const agents = [];
 const byKey = {};
 function mark(a, t) { a.mins.add(Math.floor(t / 60000)); if (a.mins.size > 12000) { const cut = Math.floor((now() - 8 * 86400000) / 60000); for (const m of a.mins) if (m < cut) a.mins.delete(m); } }
-function blank(a) { return { ...a, file: null, size: 0, offset: 0, mtime: 0, lastText: "", lastTail: "", lastTextAt: 0, working: false, subActive: 0, mins: new Set(), done: [], tools: [], lastUserAt: 0, ceoLastAt: 0, ceoLastText: "" }; }
+function blank(a) { return { ...a, file: null, size: 0, offset: 0, mtime: 0, lastText: "", lastTail: "", lastDai: "", lastTextAt: 0, working: false, subActive: 0, mins: new Set(), done: [], tools: [], lastUserAt: 0, ceoLastAt: 0, ceoLastText: "" }; }
 const ceo = blank({ key: "ceo", name: CFG.ownerName, role: "Chủ văn phòng", platform: "human", room: "ceo", journal: "none:ceo", ceo: true, aliases: [CFG.ownerName, "CEO", "Giám đốc"] });
 agents.push(ceo); byKey.ceo = ceo;
 function override(name, id) { return (CFG.staff || []).find((s) => s.match && (String(name).toLowerCase().includes(String(s.match).toLowerCase()) || String(id).startsWith(s.match))); }
@@ -202,6 +202,9 @@ function agentFromLabel(label) {
 }
 
 // ---------- tin nhắn ----------
+// Chi tiết của một việc cần anh (nút "Xem tin" ở Tổng quan): đoạn cuối tin AI, đủ dài để đọc trọn câu hỏi và ngữ cảnh.
+// Câu AI hỏi trong phiên KHÔNG nằm trong sổ tin nhắn (sổ chỉ có tin anh gõ và tin AI nhắn nhau), nên máy chủ gửi kèm ở đây.
+const DAI_CHI_TIET = 1500;
 const events = [];
 const seenEvt = new Set();
 function pushEvent(e) {
@@ -238,7 +241,7 @@ function parseClaude(a, line) {
     mark(a, t);
     if (msg.stop_reason === "end_turn") { a.done.push({ t }); keep7(a.done); }
     for (const c of Array.isArray(msg.content) ? msg.content : []) {
-      if (c.type === "text" && c.text && c.text.trim()) { a.lastText = clip(mask(c.text), 600); a.lastTail = mask(c.text).slice(-500); a.lastTextAt = t; }
+      if (c.type === "text" && c.text && c.text.trim()) { a.lastText = clip(mask(c.text), 600); a.lastTail = mask(c.text).slice(-500); a.lastDai = mask(c.text).slice(-DAI_CHI_TIET); a.lastTextAt = t; }
       if (c.type === "tool_use") {
         const inp = c.input || {}, n = c.name || "";
         if (/SendMessage|send_message/.test(n)) {
@@ -248,7 +251,7 @@ function parseClaude(a, line) {
         }
         if (n === "AskUserQuestion" || n === "ExitPlanMode") {
           const q = n === "ExitPlanMode" ? "Duyệt kế hoạch trước khi làm" : ((inp.questions || []).map((x) => `${x.question} ${(x.options || []).map((o, i) => `(${String.fromCharCode(97 + i)}) ${o.label}`).join("; ")}`).join(" · ") || "Câu hỏi cho bạn");
-          a.pendingAsk = { id: c.id, t, text: clip(mask(q), 300) };
+          a.pendingAsk = { id: c.id, t, text: clip(mask(q), 300), chiTiet: clip(mask(q), DAI_CHI_TIET) };
         }
       }
     }
@@ -282,7 +285,7 @@ function parseCodex(a, line) {
   if (j.type === "response_item" || j.type === "event_msg") mark(a, t);
   if (j.type === "response_item" && p.type === "message") {
     const txt = textOfContent(p.content);
-    if (p.role === "assistant" && txt.trim()) { a.lastText = clip(mask(txt), 600); a.lastTail = mask(txt).slice(-500); a.lastTextAt = t; }
+    if (p.role === "assistant" && txt.trim()) { a.lastText = clip(mask(txt), 600); a.lastTail = mask(txt).slice(-500); a.lastDai = mask(txt).slice(-DAI_CHI_TIET); a.lastTextAt = t; }
     if (p.role === "user" && txt.trim()) {
       const peer = txt.match(/\[PEER MESSAGE[^\]]*\]\s*([^\n(]+)/);
       const body = peer ? txt.slice(txt.indexOf(peer[0]) + peer[0].length) : txt;
@@ -456,16 +459,16 @@ function askLine(text, re) {
 }
 function ceoAsks(out, t) {
   const items = [], seen = new Set();
-  for (const r of canAnh) if (r.open) { items.push({ kind: "so", exact: true, who: r.who, whoLabel: r.whoLabel, since: r.since, text: r.text + (r.options ? " — " + r.options : ""), id: r.id, answered: !!(r.who && byKey[r.who] && byKey[r.who].lastUserAt > r.since) }); if (r.who) seen.add(r.who); }
-  for (const s of out) { const a = byKey[s.key]; if (a && a.pendingAsk && t - a.pendingAsk.t < 24 * 3600000) { items.push({ kind: "hoi", exact: true, who: s.key, since: a.pendingAsk.t, text: a.pendingAsk.text }); seen.add(s.key); } }
-  for (const e of events) if (t - e.t < 24 * 3600000 && /^\s*\[CẦN ANH/.test(e.body || e.title) && !seen.has(e.from)) { items.push({ kind: "tag", exact: true, who: e.from, to: e.to, since: e.t, text: clip(e.body || e.title, 300) }); seen.add(e.from); }
+  for (const r of canAnh) if (r.open) { items.push({ kind: "so", exact: true, who: r.who, whoLabel: r.whoLabel, since: r.since, text: r.text + (r.options ? " — " + r.options : ""), chiTiet: r.text + (r.options ? "\n\nLựa chọn: " + r.options : ""), id: r.id, answered: !!(r.who && byKey[r.who] && byKey[r.who].lastUserAt > r.since) }); if (r.who) seen.add(r.who); }
+  for (const s of out) { const a = byKey[s.key]; if (a && a.pendingAsk && t - a.pendingAsk.t < 24 * 3600000) { items.push({ kind: "hoi", exact: true, who: s.key, since: a.pendingAsk.t, text: a.pendingAsk.text, chiTiet: a.pendingAsk.chiTiet || a.pendingAsk.text }); seen.add(s.key); } }
+  for (const e of events) if (t - e.t < 24 * 3600000 && /^\s*\[CẦN ANH/.test(e.body || e.title) && !seen.has(e.from)) { items.push({ kind: "tag", exact: true, who: e.from, to: e.to, since: e.t, text: clip(e.body || e.title, 300), chiTiet: e.body || e.title }); seen.add(e.from); }
   for (const s of out) {
     const a = byKey[s.key]; if (!a || a.ceo || !a.lastTail || s.status === "active" || seen.has(s.key)) continue;
     const tail = a.lastTail.split(/(?<=[.?!])\s+/).filter((x) => (x.match(/\|/g) || []).length < 2).join(" ");
     if (a.lastUserAt && a.lastTextAt > a.lastUserAt && t - a.lastTextAt < 24 * 3600000 && /\b(anh|chị|sếp|CEO)\b/i.test(tail) && ASK_REPLY.test(tail.slice(-300)) && !NOT_ASK.test(tail)) {
-      items.push({ kind: "reply", guess: true, who: s.key, since: a.lastTextAt, text: askLine(tail, /\?|anh (duyệt|chọn|quyết|cho phép|xác nhận|muốn|nói)|làm đi/i) }); seen.add(s.key);
+      items.push({ kind: "reply", guess: true, who: s.key, since: a.lastTextAt, text: askLine(tail, /\?|anh (duyệt|chọn|quyết|cho phép|xác nhận|muốn|nói)|làm đi/i), chiTiet: a.lastDai || a.lastTail }); seen.add(s.key);
     } else if (t - a.lastTextAt < 12 * 3600000 && ASK_EXPLICIT.test(tail) && !NOT_ASK.test(tail)) {
-      items.push({ kind: "stop", guess: true, who: s.key, since: a.lastTextAt, text: askLine(tail, ASK_EXPLICIT) }); seen.add(s.key);
+      items.push({ kind: "stop", guess: true, who: s.key, since: a.lastTextAt, text: askLine(tail, ASK_EXPLICIT), chiTiet: a.lastDai || a.lastTail }); seen.add(s.key);
     }
   }
   return items.sort((x, y) => (!!x.guess - !!y.guess) || x.since - y.since).slice(0, 14);

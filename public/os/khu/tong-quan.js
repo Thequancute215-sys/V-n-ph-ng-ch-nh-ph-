@@ -26,6 +26,10 @@ export async function mo(vung, { kho, ngan, signal }) {
   </div>`;
   const $ = (id) => vung.querySelector("#" + id);
   let handoffs = null, runs = null, loiCtl = "", hen = null, conSong = true, phien = 0;
+  // "Xem tin" của câu AI hỏi: mở chi tiết ngay tại hàng (câu hỏi nằm trong phiên AI, không nằm trong sổ tin nhắn).
+  // Giữ mục đang mở qua các lần vẽ lại (kho đổi mỗi giây) bằng khoá ai + thời điểm.
+  const moHoi = new Set();
+  let hoiHienTai = [];
 
   async function taiCtl() {
     clearTimeout(hen);
@@ -48,7 +52,18 @@ export async function mo(vung, { kho, ngan, signal }) {
     const s = kho.state, ten = (k) => (s && s.agents.find((a) => a.key === k) || {}).name || k || "AI";
     if (!s && !handoffs && !runs) { $("canAnh").innerHTML = kho.loiState ? loi(kho.loiState, false) : dangTai(4); return; }
     const bay = Date.now(), muc = [];
-    for (const a of (s && s.asks) || []) muc.push({ sap: a.since || 0, t: a.since, tieu: cat(a.text, 220), nguon: ten(a.who) + (a.guess ? " (máy đoán từ câu cuối)" : ""), nut: `<a class="nut nho" href="#/tin-nhan?ai=${encodeURIComponent(a.who || "")}">Xem tin</a>` });
+    hoiHienTai = (s && s.asks) || [];
+    const conMo = new Set();
+    hoiHienTai.forEach((a, i) => {
+      const khoa = (a.who || "") + "@" + (a.since || 0), mo = moHoi.has(khoa), idCt = "hoiCt" + i;
+      if (mo) conMo.add(khoa);
+      const tieu = cat(a.text, 220);
+      muc.push({ sap: a.since || 0, t: a.since, tieu, nguon: ten(a.who) + (a.guess ? " (máy đoán từ câu cuối)" : ""),
+        nut: `<button type="button" class="nut nho" data-xem-hoi="${esc(khoa)}" aria-expanded="${mo}" aria-controls="${idCt}" aria-label="${esc((mo ? "Thu gọn: " : "Xem tin: ") + cat(tieu, 80))}">${mo ? "Thu gọn" : "Xem tin"}</button>`,
+        sau: mo ? `<div class="cot-doc" id="${idCt}" style="grid-column:1/-1;min-width:0;gap:var(--space-xs)"><pre class="van-ban noi-dung" style="white-space:pre-wrap;max-height:320px;overflow:auto">${esc(a.chiTiet || a.text || "")}</pre>` +
+          `<div class="hang"><span class="mo">Trả lời ngay trong phiên của ${esc(ten(a.who))}.</span>${a.who ? `<a class="nut nho" href="#/tin-nhan?ai=${encodeURIComponent(a.who)}">Dòng tin với ${esc(ten(a.who))}</a>` : ""}</div></div>` : "" });
+    });
+    for (const k of [...moHoi]) if (!conMo.has(k)) moHoi.delete(k);   // việc đã hết thì quên trạng thái mở
     const nutNgan = (ref, chu, tieu, chinh = false) => `<button type="button" class="${chinh ? "nut-chinh" : "nut nho"}" data-ngan="${esc(ref)}" aria-label="${esc(chu + ": " + cat(tieu, 80))}">${esc(chu)}</button>`;
     (handoffs || []).forEach((h, idx) => { const p = h.payload || {}, tieu = cat(tomTatGiaiThich(p.giai_thich) || p.tom_tat || h.summary || "Bàn giao chờ duyệt", 220);
       const t = h.createdAt || h.created_at || h.decided_at || 0;
@@ -58,7 +73,7 @@ export async function mo(vung, { kho, ngan, signal }) {
     muc.sort((x, y) => (y.sap || 0) - (x.sap || 0));
     $("soCanAnh").textContent = muc.length ? muc.length + " việc" : "";
     $("canAnh").innerHTML = (loiCtl ? loi("Chưa đọc được bàn giao và luồng: " + loiCtl) : "") + (muc.length
-      ? muc.map((m) => `<div class="dong"><div><div class="tieu">${esc(m.tieu)}</div><div class="chi-tiet">${esc(m.nguon)}${m.t ? ", " + esc(luc(m.t)) : ""}</div></div>${m.nut}</div>`).join("")
+      ? muc.map((m) => `<div class="dong"><div><div class="tieu">${esc(m.tieu)}</div><div class="chi-tiet">${esc(m.nguon)}${m.t ? ", " + esc(luc(m.t)) : ""}</div></div>${m.nut}${m.sau || ""}</div>`).join("")
       : rong("Không có việc nào chờ anh", "Câu hỏi của AI, bàn giao chờ duyệt và luồng cần anh trả lời sẽ hiện ở đây.", `<a class="nut" href="#/code/giao-viec">Giao việc mới</a>`));
   }
 
@@ -135,6 +150,15 @@ export async function mo(vung, { kho, ngan, signal }) {
   const bo = kho.on(veTuKho);
   vung.addEventListener("click", (e) => {
     const n = e.target.closest("[data-ngan]"); if (n) return ngan.mo(n.dataset.ngan, n, { khiDoi: taiCtl });
+    const x = e.target.closest("[data-xem-hoi]");
+    if (x) {
+      const khoa = x.dataset.xemHoi;
+      if (moHoi.has(khoa)) moHoi.delete(khoa); else moHoi.add(khoa);
+      veCanAnh();
+      const lai = [...vung.querySelectorAll("[data-xem-hoi]")].find((b) => b.dataset.xemHoi === khoa);
+      if (lai) lai.focus();
+      return;
+    }
     if (e.target.closest("[data-thu-lai]")) taiCtl();
   });
   const khiHien = () => { if (!document.hidden) taiCtl(); };
